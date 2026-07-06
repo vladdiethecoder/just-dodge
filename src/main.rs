@@ -9,7 +9,6 @@ mod input;
 mod asset;
 mod motion;
 mod combat;
-mod mannequin;
 
 struct App {
     window: Option<Arc<Window>>,
@@ -147,7 +146,8 @@ impl ApplicationHandler for App {
                             timestamp_writes: None,
                             occlusion_query_set: None,
                         });
-                        renderer.render(&mut rpass);
+                        renderer.render_arena(&mut rpass);
+                        renderer.render_mannequin(&mut rpass);
                     }
                     queue.submit(std::iter::once(encoder.finish()));
                     frame.present();
