@@ -8,6 +8,8 @@ mod renderer;
 mod input;
 mod asset;
 mod motion;
+mod combat;
+mod mannequin;
 
 struct App {
     window: Option<Arc<Window>>,
