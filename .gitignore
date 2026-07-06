@@ -1,0 +1,45 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Godot (legacy; kept if any tools remain)
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Mono
+.mono/
+data_*/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Builds
+/build/
+/dist/
+*.exe
+*.x86_64
+*.app
+
+
+# Added by cargo
+
+/target
+*.onnx.data
+motionbricks_*.onnx
+motionbricks_*.npy
+poseb_*.npy
+rootb_*.npy
+motionbricks_meta.json
+*.zip
+*.zip
+__pycache__/

@@ -1,0 +1,7 @@
+/motion_clip/
+├── joint_pos.csv       ← 29-joint positions (IsaacLab ordering)
+├── joint_vel.csv       ← 29-joint velocities
+├── body_quat.csv       ← root orientation (quaternion)
+├── body_pos.csv        ← root world position
+├── body_lin_vel.csv    ← root linear velocity
+└── body_ang_vel.csv    ← root angular velocity

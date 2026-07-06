@@ -1,0 +1,5 @@
+Per Frame Output:
+├── Joint Local Rotations     → quaternion or 6D rotation per joint
+├── Root Linear Velocity      → vec3 (global space)
+├── Root Angular Velocity     → vec3 (global space)
+└── Keypoints                 → contact points (hands, feet) for grounding

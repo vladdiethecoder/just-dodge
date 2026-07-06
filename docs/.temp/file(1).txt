@@ -1,0 +1,12 @@
+MotionBricks (29 joints)          Your Mannequin (~120 bones)
+─────────────────────────         ──────────────────────────
+Root                         →    Pelvis
+Spine (simplified)           →    L1 → L5 → T6–T12 → C1–C7 (interpolated)
+L/R Shoulder                 →    Clavicle → Scapula → Shoulder
+L/R Elbow                    →    Elbow + Forearm twist
+L/R Wrist                    →    Wrist
+[NO FINGER DATA]             →    ⚠️ Finger joints = custom sim layer
+L/R Hip                      →    Hip
+L/R Knee                     →    Knee
+L/R Ankle                    →    Ankle + Subtalar
+[NO TOE DATA]                →    ⚠️ Toe joints = custom sim layer

@@ -1,0 +1,27 @@
+┌─────────────────────────────────────────────────────┐
+│                  YOUR GAME ENGINE                   │
+│                                                     │
+│  MotionBricks Neural Backend (Python/C++ sidecar)   │
+│       ↓ joint_rotations[29] + root_velocity         │
+│                                                     │
+│  ── RETARGETING LAYER ──────────────────────────    │
+│  Map 29 → ~120 bones via:                           │
+│    • Direct mapping for major joints                │
+│    • Procedural IK for fingers/toes                 │
+│    • Spline interpolation for spine segments        │
+│                                                     │
+│  ── INJURY / DAMAGE LAYER ─────────────────────     │
+│  Per-joint constraint modifiers:                    │
+│    • Broken finger → clamp finger ROM               │
+│    • Sprained ankle → add noise + limit eversion    │
+│    • Cracked rib → bias torso style weight          │
+│    • Dislocated shoulder → hard ROM limit           │
+│                                                     │
+│  ── PHYSICS / COLLISION LAYER ─────────────────     │
+│  Per-bone hitboxes + ragdoll fallback               │
+│  Contact keypoints → foot/hand IK grounding         │
+│                                                     │
+│  ── RENDER LAYER ──────────────────────────────     │
+│  Skinned mesh (your mannequin GLB/FBX)              │
+│  Muscle deformation → driven by joint angles        │
+└─────────────────────────────────────────────────────┘
