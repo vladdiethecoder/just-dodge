@@ -1,0 +1,8 @@
+ARMOR CLASS     TOTAL WEIGHT    STAMINA DRAIN   SPEED MOD   JOINT ROM RESTRICTION
+────────────────────────────────────────────────────────────────────────────────
+① Ascetic       0 kg            ×1.0            ×1.0        None — full ROM
+② Duelist       4–8 kg          ×1.1            ×0.95       Slight shoulder/elbow
+③ Sentinel      12–18 kg        ×1.3            ×0.87       Shoulder, hip, knee
+④ Juggernaut    25–40 kg        ×1.7            ×0.72       Major — all major joints
+⑤ Mystic        2–5 kg          ×1.05           ×0.98       Near-none — flowing
+⑥ Warden        8–14 kg         ×1.2            ×0.90       Asymmetric (bone coverage)

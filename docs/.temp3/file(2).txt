@@ -1,0 +1,10 @@
+Simulation Method: Mass-Spring System + Plasticity layer
+─────────────────────────────────────────────────────────────────────
+FORCE < 15 MPa     → Elastic deformation, returns to shape
+FORCE 15–30 MPa    → Plastic creasing — permanent indent/fold
+FORCE > 40 MPa     → Rip initiation — tears along stress lines
+SLASH (sharp)      → Deep cut groove, splits if momentum high
+PIERCE             → Puncture + stretch-hole (leather resists clean exit)
+BLUNT (low vel)    → Compression dent, absorbs impact
+BLUNT (high vel)   → Bottoms out → force transfers to bone underneath
+REPEATED stress    → Progressive micro-tearing → integrity decay

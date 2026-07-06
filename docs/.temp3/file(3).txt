@@ -1,0 +1,14 @@
+Simulation Method: Rigid Body Constraint Network
+─────────────────────────────────────────────────────────────────────
+STRUCTURE: Each ring = rigid body, linked by 4 angular constraints
+─────────────────────────────────────────────────────────────────────
+SLASH              → Rings deflect blade — low damage transfer
+PIERCE (low vel)   → Ring constraint holds — deflects
+PIERCE (high vel)  → Ring opens (constraint breaks) → gap forms
+                     Adjacent rings cascade → hole widens
+BLUNT              → Force distributes across ring network →
+                     transfers ~70% to underlying layer / bone
+CLEAVE             → Severs ring clusters → mail separates
+GRAB/GRAPPLE       → Rings caught by fingers → pull deforms section
+REPEATED pierce    → Progressive ring failures → mail degrades
+                     into a loose, poorly protecting layer

@@ -1,0 +1,13 @@
+INTEGRITY STATES:
+100% → Pristine      Full protection values
+75%  → Worn          -10% protection, visual scratches
+50%  → Damaged       -25% protection, visible dents/cracks
+25%  → Compromised   -50% protection, piece partially detached
+0%   → Destroyed     Piece falls off mesh, bone exposed, full damage node
+
+DEGRADATION TRIGGERS:
+• Direct hit on covered zone        → -5 to -30% integrity (by weapon force)
+• Critical hit (high force)         → -40 to -60% integrity (sudden fracture)
+• Rune-Marble on crit               → shatters (0% instantly, visual explosion)
+• Blunt vs Plate                    → integrity -15%, but also joint trauma through armor
+• Ground impact / throws            → -10% to hit-zone integrity

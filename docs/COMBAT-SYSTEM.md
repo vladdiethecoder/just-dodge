@@ -68,6 +68,18 @@ Body parts track cumulative injury:
 
 Injury is the result of the resolver, not the cause. The resolver uses action matchup + hit location to assign damage.
 
+Armor sits between contact and injury. Each armor piece covers a bone or joint group, has material thresholds, integrity, resistance by damage type, weight, noise, and a range-of-motion clamp. If armor absorbs the hit, the injury system receives only residual force. If armor fails, the underlying anatomy receives the remaining force plus any fracture-specific consequences.
+
+Armor resolution is documented in `docs/ARMOR-DAMAGE-SYSTEM.md` and follows this order:
+
+1. Compute impact force from weapon mass, attack velocity, and contact area.
+2. Apply contact angle; glancing angles above 70° deflect.
+3. Compare effective force against material yield and ultimate thresholds.
+4. Apply armor integrity as a threshold modifier.
+5. Resolve damage family: slash, pierce, blunt, cleave, wrap, bash.
+6. Apply residual force to anatomy.
+7. Reduce armor integrity and update ROM/noise/visual state.
+
 ## 6. Stance & Zones
 
 - **High stance:** favors High Attack, Parry, Block high.
@@ -82,6 +94,7 @@ Stance is chosen during the planning phase and is visible to the opponent as a s
 - Disengage restores tempo.
 - Overcommitting (whiffing heavy attacks) drains tempo heavily.
 - Tempo does not stop actions mid-animation; it gates what you can select next.
+- Armor class modifies stamina and speed: heavy plate drains more tempo and slows movement, while ascetic/wrap loadouts preserve full ROM and speed.
 
 ## 8. Distance & Position
 
@@ -108,13 +121,15 @@ AI is deterministic and readable, not omniscient.
 
 ## 11. MotionBricks Integration
 
-MotionBricks in Just Dodge interpolates between static poses derived from action states.
+MotionBricks in Just Dodge interpolates between static poses derived from action states and later retargets a 29-joint neural motion source onto the richer combat mannequin.
 
 - Each action maps to a base pose (weapon position, body lean, guard height).
 - Transitions between actions are interpolated over a fixed duration.
 - Impact frames hold a pose + camera shake + audio.
 - Idle/breathing loops add life without affecting truth.
 - All interpolation is presentation-only; the resolver uses discrete action IDs and frame counts.
+- Injury and armor constraints can bias style weights and clamp joint ROM after the resolver has already committed the truth state.
+- The retargeting plan is documented in `docs/MOTIONBRICKS-RETARGETING.md`.
 
 ## 12. Readability Requirements
 

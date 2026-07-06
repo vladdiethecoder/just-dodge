@@ -1,0 +1,23 @@
+RECOMMENDED STACK FOR YOUR CUSTOM ENGINE:
+──────────────────────────────────────────────────────────────────
+Cloth/Leather    → Position-Based Dynamics (XPBD)
+                   Open source: "PositionBasedDynamics" (Bender et al.)
+
+Chainmail        → Custom rigid body constraint graph
+                   Per-ring: mass + 4 angular constraints
+                   GPU-parallelized constraint solver
+
+Plate (FEM)      → Corotational tetrahedral FEM
+                   Reference: ARCSim (Berkeley) for sheet deformation
+                   GPU: JAX-FEM or Acc-FEM for real-time throughput
+
+Rune-Marble      → Voronoi pre-fracture + runtime crack propagation
+                   Reference: "Real-Time Deformation and Fracture"
+                              Parker & O'Brien (adapted)
+
+Bone Plates      → Brittle FEM with splinter physics
+                   Irregular Voronoi + surface normal bias
+
+Visual updates   → Dynamic mesh deformation on GPU
+                   Dent maps baked per-frame at impact site
+                   Shader: integrity → crack overlay → shatter UV

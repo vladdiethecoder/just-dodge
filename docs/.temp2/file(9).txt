@@ -1,0 +1,7 @@
+Pauldrons       → Shoulder abduction limit  (can't raise arm fully overhead)
+Couters         → Elbow hyperextension block
+Gauntlets       → Finger curl ROM, grip strength modifier
+Cuisses         → Hip flexion limit (high kicks restricted in heavy)
+Poleyns         → Knee ROM limit (no full squat in heavy plate)
+Greaves         → Ankle plantarflexion limit (affects footwork)
+Helm (great)    → Neck rotation -60%, peripheral vision -40%

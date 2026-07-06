@@ -1,0 +1,10 @@
+MATERIAL        SLASH   PIERCE  BLUNT   CLEAVE   NOTES
+──────────────────────────────────────────────────────────────
+Bare Skin       ✗✗✗     ✗✗✗     ✗✗      ✗✗✗      No resistance
+Cloth/Wrap      ✗✗      ✗✗✗     ✗       ✗✗       Friction only
+Leather         ✗       ✗✗      ✗       ✗        Absorbs glancing
+Chainmail       ✓✓      ✗       ✓       ✗✗       Pierce-vulnerable
+Lamellar        ✓✓      ✓       ✗       ✓        Blunt-vulnerable
+Plate (thin)    ✓✓✓     ✓✓      ✓       ✓✓       Deflects most
+Plate (thick)   ✓✓✓✓    ✓✓✓     ✓✓      ✓✓✓      Blunt = joint trauma
+Rune-Marble*    ✓✓✓✓    ✓✓✓✓    ✓✓✓     ✓✓✓✓     Divine material, brittle on crit

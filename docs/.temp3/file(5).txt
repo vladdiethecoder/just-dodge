@@ -1,0 +1,19 @@
+Simulation Method: Brittle Fracture + Voronoi shatter
+─────────────────────────────────────────────────────────────────────
+ELASTIC ZONE       → Force < 380 MPa — near-perfect resistance
+                     Golden veins pulse brighter under stress
+                     Material "sings" — high-frequency resonance audio
+
+PLASTIC ZONE       → Almost none — Rune-Marble has <5% plastic range
+                     Micro-cracks form in golden vein network
+                     Visual: veins flicker, crack lines appear
+
+FRACTURE           → Force > 420 MPa threshold
+                     Voronoi fracture — shatters into physics shards
+                     Shards retain velocity → secondary projectile damage
+                     Golden energy discharge on shatter (AoE stagger)
+                     CANNOT be repaired — permanent destruction
+
+PIERCE             → Rune-Marble is crystalline — pierce = cone fracture
+                     Hertzian cone crack pattern (like glass)
+                     Piece weakened catastrophically at pierce site

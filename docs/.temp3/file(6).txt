@@ -1,0 +1,10 @@
+Simulation Method: Brittle FEM + Organic surface deformation
+─────────────────────────────────────────────────────────────────────
+ELASTIC ZONE       → Force < 130 MPa — flexes slightly (organic quality)
+PLASTIC ZONE       → 130–170 MPa — crack propagation, hairline fractures
+FRACTURE           → > 170 MPa — splintered fracture (irregular, jagged)
+                     Splinters become wound-extenders (cuts on exit)
+FUSED PIECES       → Cannot be removed — fracture stays on body
+                     Broken bone-plate fragments shift → new injury node
+                     Warden unique: destroyed pieces become weapons
+                     (bone shards embedded in attacker on close range hit)

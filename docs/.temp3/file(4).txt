@@ -1,0 +1,30 @@
+Simulation Method: Finite Element Method (FEM) — corotational tetrahedral
+─────────────────────────────────────────────────────────────────────
+ELASTIC ZONE       → Force < yield strength (200–250 MPa)
+                     Plate vibrates, rings, returns to shape
+                     Audio: metallic ring proportional to force
+
+PLASTIC ZONE       → Force exceeds yield strength
+                     Permanent dent forms at impact site
+                     Dent depth = f(mass × velocity²) / area
+                     Dented plate: reduced coverage, stress concentrator
+
+PIERCING THRESHOLD → Pierce stress > ultimate strength / tip area
+                     Weapon tip punches through → hole + petal deform
+                     Petals fold inward → secondary wound geometry
+
+SHEAR / CLEAVE     → Lateral force along plate edge
+                     Plate edge curls, buckles, or severs
+                     Severed plate section becomes physics object
+
+BLUNT (war hammer) → Force below pierce threshold
+                     Plate dents inward → contacts bone/flesh
+                     "Transmission trauma" — bone fracture under intact plate
+                     Plate integrity reduced, joint ROM changes from deformation
+
+CUMULATIVE dents   → Stress concentration at dent sites
+                     Subsequent hits at same site → fracture threshold -40%
+                     Plate eventually shatters at fracture point
+
+HALF-SWORDING      → Grip on blade = blunt force application to plate gaps
+                     Concentrated force on joint seams → pry/lever open

@@ -1,0 +1,13 @@
+HIT ZONE        WEAPON TYPE     CONSEQUENCE
+──────────────────────────────────────────────────────────────────
+Neck (unarmored)    Cleave/Slash    Decapitation — instant kill
+Neck (gorget)       Cleave          Gorget destroyed, stagger
+Limb joint          Cleave (crit)   De-limbing — limb physics detach
+Limb joint          Blunt (crit)    Joint dislocation — ROM = 0, dangling
+Spine               Blunt (crit)    Knockdown, possible paralysis state
+Skull (no helm)     Blunt           Concussion — vision blur, stagger
+Skull (great helm)  Blunt (crit)    Helm deforms, neck trauma, stagger
+Knee (no poleyn)    Sweep/Kick      Knee collapse — locomotion style: "injured-leg"
+Ribs (no chest)     Blunt           Breathing interrupt, stamina penalty
+Hands (no gaunt)    Slash           Finger severance — grip = 0, weapon dropped
+Ankle (no sabatons) Sweep           Ankle break — locomotion: "drag-foot"

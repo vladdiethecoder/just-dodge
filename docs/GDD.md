@@ -7,7 +7,7 @@
 **Target Platforms:** Linux, Windows (Steam), macOS if feasible
 **Players:** 1v1 (local first, networked later)
 **Session Length:** 1–5 minutes per duel
-**Core Fantasy:** "I feel like a duelist who wins by reading my opponent's intent a split second before steel meets steel."
+**Core Fantasy:** "I feel like a duelist who wins by reading my opponent's intent a split second before steel meets steel — then sees the exact armor, bone, and motion consequence of that read."
 
 ## 2. Core Loop (One Sentence)
 
@@ -37,6 +37,7 @@ Total action count target: **13 actions**, matching OATHYARD's proven cardinalit
 ## 4. Win/Loss Conditions
 
 - **Health/Injury Model:** localized body-part injury instead of a single HP bar.
+- **Armor Model:** armor pieces protect specific bones, degrade under force, restrict range of motion, alter noise, and can expose new injury nodes when destroyed.
 - Incapacitation when:
   - head injury threshold reached,
   - torso injury threshold reached,
@@ -68,6 +69,7 @@ Total action count target: **13 actions**, matching OATHYARD's proven cardinalit
 - Large-scale multiplayer or MMO systems.
 - Complex narrative or dialogue trees.
 - Physics-driven emergent comedy (this is a serious combat sim).
+- Full armor/FEM/fracture simulation in the shape prototype; armor simulation arrives only after the core loop is fun.
 
 ## 8. Aesthetics
 
@@ -85,7 +87,20 @@ Total action count target: **13 actions**, matching OATHYARD's proven cardinalit
 5. **Replay Theater** — browse, share, and analyze match replays.
 6. **Fight Film** — auto-generated cinematic highlight reel.
 
-## 10. Success Metrics
+## 10. Fighter and Armor Identities
+
+Armor class should create readable counterplay rather than hidden RPG arithmetic:
+
+- **Ascetic:** zero armor, full ROM; every hit lands on flesh.
+- **Duelist:** partial leather/light plate; fast, gap-based defense.
+- **Sentinel:** chain and segmented plate; balanced coverage versus mobility.
+- **Juggernaut:** full heavy plate; slow, noisy, highly protected; half-swording and blunt trauma become essential.
+- **Mystic:** flowing silk and Rune-Marble accessories; little physical protection, supernatural brittle resistance.
+- **Warden:** asymmetric bone/organic armor; fused plates can fracture into new injury nodes.
+
+Detailed material, class, integrity, and critical-hit behavior lives in `docs/ARMOR-DAMAGE-SYSTEM.md`.
+
+## 11. Success Metrics
 
 - A first-time player completes a full match without asking what to do.
 - 10 consecutive internal playtests produce at least one "great exchange" per match.

@@ -1,0 +1,8 @@
+MATERIAL     PRISTINE → WORN → DAMAGED → COMPROMISED → DESTROYED
+──────────────────────────────────────────────────────────────────
+Cloth        Clean → Frayed → Torn strips → Hanging tatters → Gone
+Leather      Smooth → Scuffed → Gashed → Flapping pieces → Shredded
+Chainmail    Tight → Loose rings → Gaps → Large holes → Coif falls
+Plate        Polished → Scratched → Dented → Cracked → Shattered
+Rune-Marble  Glowing → Flickering → Cracked veins → Dark cracks → SHATTER
+Bone         Smooth → Hairline cracks → Fractured → Splintered → Destroyed

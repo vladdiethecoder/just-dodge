@@ -14,6 +14,8 @@ This roadmap assumes a solo developer with mentoring, building a custom Rust/wgp
 - [ ] Complete `docs/COMBAT-SYSTEM.md` v1 (13-action matrix).
 - [ ] Complete `docs/TECH-STACK.md` v1 (custom Rust/wgpu).
 - [ ] Complete `docs/ENGINE-SKELETON.md` v1.
+- [ ] Complete `docs/MOTIONBRICKS-RETARGETING.md` v1.
+- [ ] Complete `docs/ARMOR-DAMAGE-SYSTEM.md` v1.
 - [ ] Paper prototype: 3-action YOMI triangle.
 - [ ] Paper prototype report: result + decision.
 - [ ] Shape prototype: 3-action triangles in minimal custom engine.

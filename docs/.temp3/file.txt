@@ -1,0 +1,12 @@
+MATERIAL        YIELD STR   ULTIMATE STR  DENSITY     ELASTIC MOD   BEHAVIOR CLASS
+────────────────────────────────────────────────────────────────────────────────────
+Cloth/Silk      ~0.5 MPa    ~1 MPa        0.3 kg/m²   Very low      Soft body / tear
+Leather         15–30 MPa   40 MPa        0.9 kg/m²   Low           Mass-spring / rip
+Chainmail       180 MPa*    280 MPa*      8.0 kg/m²   High          Constraint network
+Lamellar        160 MPa     240 MPa       5.5 kg/m²   Medium-high   Rigid + hinge
+Plate (thin)    200 MPa     400 MPa       7.8 kg/m²   210 GPa       FEM / plastic
+Plate (thick)   250 MPa     500 MPa       7.8 kg/m²   210 GPa       FEM / plastic
+Rune-Marble     380 MPa     420 MPa       2.7 kg/m²   70 GPa        Brittle fracture
+Bone (Warden)   130 MPa     170 MPa       1.9 kg/m²   20 GPa        Brittle + organic
+
+*Chainmail yield = ring separation threshold, not material yield

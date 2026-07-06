@@ -1,0 +1,12 @@
+Simulation Method: Position-Based Dynamics (PBD) + GPU cloth solver
+─────────────────────────────────────────────────────────────────────
+FORCE < 0.5 MPa    → Elastic flutter, billowing, wind interaction
+FORCE > 0.5 MPa    → Permanent crease / compression deformation
+FORCE > 1.0 MPa    → Tear initiates at stress concentration point
+SLASH impact       → Clean linear tear along blade vector
+PIERCE impact      → Puncture hole, radial tear propagation
+BLUNT impact       → Compression wave, no tear (absorbs via stretch)
+FIRE/heat          → Char deformation, progressive ash state
+
+Tear propagation: GPU dynamic remeshing — arbitrary direction,
+no pre-authored tear lines. Tear follows grain + stress field.

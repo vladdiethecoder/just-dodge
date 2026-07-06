@@ -1,0 +1,8 @@
+MATERIAL        NOISE LEVEL     DETECTION RANGE
+─────────────────────────────────────────────
+Cloth/Wrap      Silent          0m
+Leather         Whisper         2m
+Chainmail       Jingle          8m passive / 15m on sprint
+Lamellar        Clatter         10m passive / 20m on sprint
+Plate           Clank           15m passive / 30m on sprint
+Rune-Marble     Resonant hum    Constant 20m (divine material glows)

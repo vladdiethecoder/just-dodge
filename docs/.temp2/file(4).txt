@@ -1,0 +1,15 @@
+BODY REGION          ARMOR SLOT          BONES COVERED
+─────────────────────────────────────────────────────────────
+Head                 Helm                Skull, C1-C2 (neck base)
+Neck                 Gorget              C3-C7
+Upper Torso          Breastplate         T6-T12, Sternum
+Lower Torso          Fauld/Tasset        L1-L5, Pelvis
+Shoulders            Pauldrons (L/R)     Clavicle, Scapula, Shoulder ball
+Upper Arms           Rerebraces (L/R)    Humerus
+Elbows               Couters (L/R)       Elbow joint
+Forearms             Vambraces (L/R)     Radius/Ulna
+Hands                Gauntlets (L/R)     Wrist, Metacarpals, Phalanges
+Upper Legs           Cuisses (L/R)       Femur
+Knees                Poleyns (L/R)       Knee joint
+Shins                Greaves (L/R)       Tibia/Fibula
+Feet                 Sabatons (L/R)      Ankle, Subtalar, Metatarsals

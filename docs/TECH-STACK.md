@@ -9,7 +9,7 @@ Rendering: **wgpu** (same lineage as OATHYARD)
 Audio: **rodio** or **kira**
 Input: **winit** event loop
 Asset format: **GLB** with `combat_metadata.json` sidecars
-Physics: **none for prototype; deterministic geometric collision only**
+Physics: **none for prototype; deterministic geometric collision only; later armor deformation/fracture is gated by playable combat need**
 Networking: added after local gameplay is verified fun
 Platform: Linux-first, Windows second, macOS if feasible
 
@@ -30,6 +30,7 @@ A custom engine lets us enforce these invariants at the architecture level. This
 ┌─────────────────────────────────────────────┐
 │  Presentation Layer                         │
 │  wgpu renderer, camera, animation, VFX, UI  │
+│  MotionBricks retargeting, armor visuals    │
 ├─────────────────────────────────────────────┤
 │  Presentation-Truth Bridge                  │
 │  read combat state → drive renderer nodes   │
@@ -37,6 +38,7 @@ A custom engine lets us enforce these invariants at the architecture level. This
 ├─────────────────────────────────────────────┤
 │  Combat Simulation (deterministic)          │
 │  state machine, matchup matrix, injury      │
+│  armor slots, material thresholds, ROM      │
 │  truth hash, replay recording               │
 ├─────────────────────────────────────────────┤
 │  Platform Layer                             │
@@ -51,6 +53,7 @@ A custom engine lets us enforce these invariants at the architecture level. This
 - A material/shader pipeline beyond flat colors.
 - Audio beyond beeps.
 - Asset import beyond hard-coded shapes.
+- FEM/fracture/cloth/chainmail solvers before the YOMI loop proves fun.
 
 The shape prototype uses:
 - one window,
@@ -91,9 +94,22 @@ pub struct CombatAction {
 - Characters/weapons: GLB format, PBR materials.
 - Each asset must include a `combat_metadata.json` sidecar:
   - bone names for weapon socket, head, torso, arms, legs
+  - armor slot coverage and destructible piece metadata
+  - material class and integrity state mesh variants
   - hitbox proxy mesh paths
   - material slots
 - Validator tool checks every imported asset before it enters a build.
+
+## Motion and Armor Research Stack
+
+These systems are later-stage presentation/simulation targets, not shape-prototype requirements:
+
+- MotionBricks neural backend outputs 29-joint motion plus root velocity; Just Dodge retargets it to the richer mannequin skeleton through direct joint mapping, spine interpolation, finger/toe IK, and injury-driven ROM clamps. See `docs/MOTIONBRICKS-RETARGETING.md`.
+- Cloth/leather: XPBD / Position-Based Dynamics.
+- Chainmail: rigid-body constraint graph, one ring per rigid body with angular constraints.
+- Plate: corotational tetrahedral FEM for dents, petal deformation, and transmission trauma.
+- Rune-Marble and bone plates: brittle fracture/Voronoi shatter with integrity-driven visual states.
+- Armor damage must remain deterministic at combat-truth level; visual mesh deformation and shatter presentation must not feed back into the resolver unless represented as explicit deterministic state.
 
 ## Tooling to Build
 
@@ -113,5 +129,6 @@ pub struct CombatAction {
 
 - 60 FPS on mid-tier hardware at 1080p.
 - Input latency < 3 frames.
+- Motion/armor presentation must not add selection latency or change fixed-step combat results.
 - Match replay file < 100 KB.
 - Load time from executable launch to menu < 5 seconds.

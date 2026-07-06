@@ -1,0 +1,44 @@
+INPUT VARIABLES:
+─────────────────────────────────────────────────────────────────────
+weapon_mass         (kg)          — from weapon data
+attack_velocity     (m/s)         — from MotionBricks joint velocity
+contact_angle       (degrees)     — relative to armor surface normal
+contact_area        (cm²)         — weapon tip / edge / flat
+armor_material      (struct)      — yield, ultimate, elastic mod
+armor_integrity     (0.0–1.0)     — current degradation state
+armor_thickness     (mm)          — per piece spec
+underlying_tissue   (struct)      — bone, muscle, organ, joint
+
+RESOLUTION PIPELINE:
+─────────────────────────────────────────────────────────────────────
+1. COMPUTE IMPACT FORCE
+   F = (weapon_mass × attack_velocity²) / (2 × contact_area)
+
+2. APPLY ANGLE MODIFIER
+   effective_F = F × cos(contact_angle)  ← glancing = reduced
+   ricochet_threshold: if angle > 70° → full deflect, armor intact
+
+3. COMPARE TO MATERIAL THRESHOLDS
+   if effective_F < yield_strength      → elastic deform only
+   if effective_F < ultimate_strength   → plastic deform + dent
+   if effective_F > ultimate_strength   → penetration / fracture
+
+4. APPLY INTEGRITY MODIFIER
+   threshold_modifier = armor_integrity × 0.8 + 0.2
+   actual_threshold = material_threshold × threshold_modifier
+   (damaged armor is easier to breach)
+
+5. RESOLVE DEFORMATION TYPE
+   SLASH  → check blade_sharpness vs material_hardness
+   PIERCE → check tip_area vs plate_thickness
+   BLUNT  → compute transmission_ratio → apply to bone underneath
+   CLEAVE → compute shear stress along impact vector
+
+6. COMPUTE RESIDUAL FORCE
+   residual_F = max(0, effective_F - material_absorption)
+   apply residual_F to underlying anatomy (injury system)
+
+7. UPDATE ARMOR STATE
+   integrity -= deformation_severity
+   deform_mesh(contact_point, deformation_vector, magnitude)
+   if integrity <= 0 → trigger destruction behavior

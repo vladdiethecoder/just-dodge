@@ -1,14 +1,50 @@
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::event::WindowEvent;
+use winit::event::{WindowEvent, ElementState, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
+use winit::keyboard::Key;
+use glam::{Mat4, Vec3, vec3};
 
 mod renderer;
 mod input;
 mod asset;
 mod motion;
 mod combat;
+
+struct Camera {
+    /// Spherical coordinates around origin
+    theta: f32,   // azimuth (horizontal angle), radians
+    phi: f32,     // elevation, radians
+    radius: f32,  // distance from origin
+    /// Mouse state for drag
+    dragging: bool,
+    last_mouse: (f64, f64),
+}
+
+impl Camera {
+    fn new() -> Self {
+        Self {
+            theta: std::f32::consts::FRAC_PI_4,  // 45°
+            phi: std::f32::consts::FRAC_PI_4,    // 45°
+            radius: 5.0,
+            dragging: false,
+            last_mouse: (0.0, 0.0),
+        }
+    }
+
+    /// Compute view-projection matrix
+    fn proj_view(&self, aspect: f32) -> Mat4 {
+        let eye = vec3(
+            self.radius * self.phi.sin() * self.theta.sin(),
+            self.radius * self.phi.cos(),
+            self.radius * self.phi.sin() * self.theta.cos(),
+        );
+        let view = Mat4::look_at_lh(eye, Vec3::ZERO, Vec3::Y);
+        let proj = Mat4::perspective_lh(std::f32::consts::FRAC_PI_4, aspect, 0.1, 100.0);
+        proj * view
+    }
+}
 
 struct App {
     window: Option<Arc<Window>>,
@@ -17,40 +53,28 @@ struct App {
     queue: Option<wgpu::Queue>,
     config: Option<wgpu::SurfaceConfiguration>,
     renderer: Option<renderer::Renderer>,
+    camera: Camera,
 }
 
 impl ApplicationHandler for App {
-
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-
-        // 1. Create the window (wrapped in Arc so surface can hold 'static ref)
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes().with_title("Just Dodge"))
+                .create_window(Window::default_attributes().with_title("Just Dodge — Arena"))
                 .unwrap(),
         );
 
-        // 2. Create wgpu instance
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-
-        // 3. Create surface from the window (Arc keeps the window alive for 'static)
         let surface = instance.create_surface(Arc::clone(&window)).unwrap();
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            compatible_surface: Some(&surface),
+            ..Default::default()
+        }))
+        .expect("No suitable GPU adapter found");
+        let (device, queue) =
+            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default(), None))
+                .expect("Failed to create device");
 
-        // 4. Request adapter (async via pollster)
-        let adapter = pollster::block_on(instance.request_adapter(
-            &wgpu::RequestAdapterOptions {
-                compatible_surface: Some(&surface),
-                ..Default::default()
-            },
-        )).expect("No suitable GPU adapter found");
-
-        // 5. Request device + queue (async via pollster)
-        let (device, queue) = pollster::block_on(adapter.request_device(
-            &wgpu::DeviceDescriptor::default(),
-            None,
-        )).expect("Failed to create device");
-
-        // 6. Configure swapchain
         let size = window.inner_size();
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -64,7 +88,6 @@ impl ApplicationHandler for App {
         };
         surface.configure(&device, &config);
 
-        // 7. Store everything
         self.renderer = Some(renderer::Renderer::new(&device, &config, &queue));
         self.window = Some(window);
         self.surface = Some(surface);
@@ -72,7 +95,6 @@ impl ApplicationHandler for App {
         self.queue = Some(queue);
         self.config = Some(config);
 
-        // 8. Request the first redraw
         self.window.as_ref().unwrap().request_redraw();
     }
 
@@ -83,9 +105,32 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
+            WindowEvent::CloseRequested => event_loop.exit(),
+
+            WindowEvent::MouseInput { state, button, .. } => {
+                if button == MouseButton::Left {
+                    self.camera.dragging = state == ElementState::Pressed;
+                }
             }
+
+            WindowEvent::CursorMoved { position, .. } => {
+                if self.camera.dragging {
+                    let dx = position.x - self.camera.last_mouse.0;
+                    let dy = position.y - self.camera.last_mouse.1;
+                    self.camera.theta -= dx as f32 * 0.005;
+                    self.camera.phi = (self.camera.phi - dy as f32 * 0.005).clamp(0.1, std::f32::consts::PI - 0.1);
+                }
+                self.camera.last_mouse = (position.x, position.y);
+            }
+
+            WindowEvent::MouseWheel { delta, .. } => {
+                let scroll = match delta {
+                    MouseScrollDelta::LineDelta(_, y) => y,
+                    MouseScrollDelta::PixelDelta(p) => p.y as f32 * 0.1,
+                };
+                self.camera.radius = (self.camera.radius - scroll * 0.5).clamp(1.0, 20.0);
+            }
+
             WindowEvent::RedrawRequested => {
                 if let (Some(surface), Some(device), Some(queue), Some(renderer), Some(config)) = (
                     self.surface.as_ref(),
@@ -95,30 +140,28 @@ impl ApplicationHandler for App {
                     self.config.as_ref(),
                 ) {
                     let frame = surface.get_current_texture().unwrap();
-                    let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                    let view = frame
+                        .texture
+                        .create_view(&wgpu::TextureViewDescriptor::default());
 
                     let aspect = config.width as f32 / config.height as f32;
-                    let projection = glam::Mat4::perspective_lh(
-                        std::f32::consts::FRAC_PI_4,
-                        aspect,
-                        0.1,
-                        100.0,
-                    );
+                    let proj_view = self.camera.proj_view(aspect);
 
-                    let view_matrix = glam::Mat4::look_at_lh(
-                        glam::vec3(2.0, 2.0, 2.0),
-                        glam::vec3(0.0, 0.0, 0.0),
-                        glam::vec3(0.0, 1.0, 0.0),
-                    );
-                    let mvp = projection * view_matrix;
-
+                    // Update all per-object MVPs
                     queue.write_buffer(
-                        &renderer.uniform_buffer,
-                        0,
-                        bytemuck::bytes_of(&[mvp]),
+                        &renderer.objects[0].uniform_buffer, 0,
+                        bytemuck::bytes_of(&[proj_view * renderer.objects[0].model]),
                     );
+                    // We update all in renderer internally but the current API needs 
+                    // per-frame update. For now, update in render loop.
+                    // Inlined MVP updates for all objects:
+                    for obj in &renderer.objects {
+                        let mvp = proj_view * obj.model;
+                        queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
+                    }
 
-                    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                    let mut encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                     {
                         let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                             label: None,
@@ -126,46 +169,53 @@ impl ApplicationHandler for App {
                                 view: &view,
                                 resolve_target: None,
                                 ops: wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                                        r: 0.1,
-                                        g: 0.1,
-                                        b: 0.2,
-                                        a: 1.0,
-                                    }),
+                                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 1.0, g: 0.0, b: 0.5, a: 1.0 }),
                                     store: wgpu::StoreOp::Store,
                                 },
                             })],
-                            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                                view: &renderer.depth_view,
-                                depth_ops: Some(wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(1.0),
-                                    store: wgpu::StoreOp::Store,
-                                }),
-                                stencil_ops: None,
-                            }),
+                            depth_stencil_attachment: Some(
+                                wgpu::RenderPassDepthStencilAttachment {
+                                    view: &renderer.depth_view,
+                                    depth_ops: Some(wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(1.0),
+                                        store: wgpu::StoreOp::Store,
+                                    }),
+                                    stencil_ops: None,
+                                },
+                            ),
                             timestamp_writes: None,
                             occlusion_query_set: None,
                         });
-                        renderer.render_arena(&mut rpass);
-                        renderer.render_mannequin(&mut rpass);
+                        renderer.render(&mut rpass);
                     }
                     queue.submit(std::iter::once(encoder.finish()));
                     frame.present();
                 }
                 self.window.as_ref().unwrap().request_redraw();
             }
+
             WindowEvent::KeyboardInput { event, .. } => {
                 if let Some(action) = input::handle_key(&event) {
                     println!("Action: {:?}", action);
                 }
+                // R key resets camera
+                if event.state == ElementState::Pressed {
+                    if let Key::Character(c) = &event.logical_key {
+                        if c.as_str() == "r" {
+                            self.camera = Camera::new();
+                            println!("Camera reset");
+                        }
+                    }
+                }
             }
+
             _ => {}
         }
     }
-
 }
 
 fn main() {
+    env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
         window: None,
@@ -173,7 +223,8 @@ fn main() {
         device: None,
         queue: None,
         config: None,
-        renderer: None, 
+        renderer: None,
+        camera: Camera::new(),
     };
     event_loop.run_app(&mut app).unwrap();
 }
