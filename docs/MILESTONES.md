@@ -45,12 +45,13 @@
 
 ## Milestone 4: Vertical Slice
 
-**Definition:** 13 actions, localized injury, AI, readable motion.
+**Definition:** 13 actions, localized injury, armor/loadout consequences, AI, readable motion.
 **Acceptance Criteria:**
 - [ ] Full 13×13 matrix resolves correctly.
 - [ ] Localized injury affects gameplay.
+- [ ] Armor integrity, ROM, noise, and residual-force routing affect gameplay without hiding the YOMI read.
 - [ ] AI has 3+ personalities.
-- [ ] MotionBricks interpolation active.
+- [ ] MotionBricks interpolation and retargeting active.
 - [ ] Truth hash stable across runs.
 - [ ] 10 playtests, each with at least one "great exchange."
 

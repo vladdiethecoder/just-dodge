@@ -2,7 +2,7 @@
 
 ## Pre-Production
 
-- [ ] Read `docs/GDD.md`, `docs/ROADMAP.md`, `docs/LESSONS-FROM-OATHYARD.md`, `docs/ENGINE-SKELETON.md`.
+- [ ] Read `docs/GDD.md`, `docs/ROADMAP.md`, `docs/LESSONS-FROM-OATHYARD.md`, `docs/ENGINE-SKELETON.md`, `docs/MOTIONBRICKS-RETARGETING.md`, and `docs/ARMOR-DAMAGE-SYSTEM.md`.
 - [ ] Install Rust toolchain and verify `cargo` works.
 - [ ] Initialize git repo in project root.
 - [ ] Add `.gitignore` for Rust projects.
@@ -50,10 +50,12 @@
 
 - [ ] Author full 13×13 matchup matrix as data.
 - [ ] Implement localized body-part injury.
+- [ ] Implement armor slots, integrity states, and residual-force injury routing.
 - [ ] Implement stance system.
 - [ ] Implement tempo gate.
 - [ ] Implement AI personalities.
 - [ ] Implement MotionBricks pose interpolation.
+- [ ] Retarget MotionBricks 29-joint output onto the combat mannequin.
 - [ ] Attach weapon models to fighters.
 - [ ] Add readable action tells (pose + audio + camera).
 - [ ] Add replay viewer.
@@ -65,6 +67,7 @@
 
 - [ ] Create 3+ fighters with distinct stats.
 - [ ] Create 6+ weapons with timing profiles.
+- [ ] Create armor/loadout identities with visible ROM, noise, weight, and protection tradeoffs.
 - [ ] Create 3+ arenas.
 - [ ] Build tutorial mode.
 - [ ] Build local 2P mode.

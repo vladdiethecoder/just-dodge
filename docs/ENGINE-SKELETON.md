@@ -26,6 +26,8 @@ This document defines the smallest custom engine needed for the Shape Prototype.
 - Menus, settings, save/load.
 - Networking.
 - Asset pipeline.
+- MotionBricks neural retargeting.
+- Armor deformation, FEM, cloth, chainmail, or fracture simulation.
 
 ## Suggested Crate Stack
 
@@ -90,6 +92,8 @@ fn render(&mut self) {
 ## First Compile Target
 
 A window with a blue and red triangle. Nothing else. Once that runs, add input. Once input works, add the state machine. Build one verified layer at a time.
+
+Future motion and armor systems are documented separately in `docs/MOTIONBRICKS-RETARGETING.md` and `docs/ARMOR-DAMAGE-SYSTEM.md`; they must not expand the shape-prototype engine scope.
 
 ## Verification Checklist
 

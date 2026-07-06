@@ -1,23 +1,21 @@
+use glam::{Mat4, Vec3, vec3};
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
-use winit::event::{WindowEvent, ElementState, MouseButton, MouseScrollDelta};
+use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowId};
 use winit::keyboard::Key;
-use glam::{Mat4, Vec3, vec3};
+use winit::window::{Window, WindowId};
 
-mod renderer;
-mod input;
 mod asset;
-mod motion;
 mod combat;
+mod input;
+mod motion;
+mod renderer;
 
 struct Camera {
-    /// Spherical coordinates around origin
-    theta: f32,   // azimuth (horizontal angle), radians
-    phi: f32,     // elevation, radians
-    radius: f32,  // distance from origin
-    /// Mouse state for drag
+    theta: f32,
+    phi: f32,
+    radius: f32,
     dragging: bool,
     last_mouse: (f64, f64),
 }
@@ -25,15 +23,14 @@ struct Camera {
 impl Camera {
     fn new() -> Self {
         Self {
-            theta: std::f32::consts::FRAC_PI_4,  // 45°
-            phi: std::f32::consts::FRAC_PI_4,    // 45°
+            theta: std::f32::consts::FRAC_PI_4,
+            phi: std::f32::consts::FRAC_PI_4,
             radius: 5.0,
             dragging: false,
             last_mouse: (0.0, 0.0),
         }
     }
 
-    /// Compute view-projection matrix
     fn proj_view(&self, aspect: f32) -> Mat4 {
         let eye = vec3(
             self.radius * self.phi.sin() * self.theta.sin(),
@@ -121,7 +118,8 @@ impl ApplicationHandler for App {
                     let dx = position.x - self.camera.last_mouse.0;
                     let dy = position.y - self.camera.last_mouse.1;
                     self.camera.theta -= dx as f32 * 0.005;
-                    self.camera.phi = (self.camera.phi - dy as f32 * 0.005).clamp(0.1, std::f32::consts::PI - 0.1);
+                    self.camera.phi = (self.camera.phi - dy as f32 * 0.005)
+                        .clamp(0.1, std::f32::consts::PI - 0.1);
                 }
                 self.camera.last_mouse = (position.x, position.y);
             }
@@ -143,21 +141,11 @@ impl ApplicationHandler for App {
                     self.config.as_ref(),
                 ) {
                     let frame = surface.get_current_texture().unwrap();
-                    let view = frame
-                        .texture
-                        .create_view(&wgpu::TextureViewDescriptor::default());
+                    let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
                     let aspect = config.width as f32 / config.height as f32;
                     let proj_view = self.camera.proj_view(aspect);
 
-                    // Update all per-object MVPs
-                    queue.write_buffer(
-                        &renderer.objects[0].uniform_buffer, 0,
-                        bytemuck::bytes_of(&[proj_view * renderer.objects[0].model]),
-                    );
-                    // We update all in renderer internally but the current API needs 
-                    // per-frame update. For now, update in render loop.
-                    // Inlined MVP updates for all objects:
                     for obj in &renderer.objects {
                         let mvp = proj_view * obj.model;
                         queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
@@ -172,20 +160,20 @@ impl ApplicationHandler for App {
                                 view: &view,
                                 resolve_target: None,
                                 ops: wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(wgpu::Color { r: 1.0, g: 0.0, b: 0.5, a: 1.0 }),
+                                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                                        r: 0.05, g: 0.05, b: 0.08, a: 1.0,
+                                    }),
                                     store: wgpu::StoreOp::Store,
                                 },
                             })],
-                            depth_stencil_attachment: Some(
-                                wgpu::RenderPassDepthStencilAttachment {
-                                    view: &renderer.depth_view,
-                                    depth_ops: Some(wgpu::Operations {
-                                        load: wgpu::LoadOp::Clear(1.0),
-                                        store: wgpu::StoreOp::Store,
-                                    }),
-                                    stencil_ops: None,
-                                },
-                            ),
+                            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                                view: &renderer.depth_view,
+                                depth_ops: Some(wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(1.0),
+                                    store: wgpu::StoreOp::Store,
+                                }),
+                                stencil_ops: None,
+                            }),
                             timestamp_writes: None,
                             occlusion_query_set: None,
                         });
@@ -201,7 +189,6 @@ impl ApplicationHandler for App {
                 if let Some(action) = input::handle_key(&event) {
                     println!("Action: {:?}", action);
                 }
-                // R key resets camera
                 if event.state == ElementState::Pressed {
                     if let Key::Character(c) = &event.logical_key {
                         if c.as_str() == "r" {
@@ -218,7 +205,6 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
-    env_logger::init();
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
         window: None,

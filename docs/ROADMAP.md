@@ -46,17 +46,19 @@ This roadmap assumes a solo developer with mentoring, building a custom Rust/wgp
 
 - [ ] Implement full 13×13 matchup matrix as data.
 - [ ] Localized body-part injury system.
+- [ ] Armor slot/integrity model connected to localized injury.
 - [ ] Stance system (high / low / neutral).
 - [ ] Tempo / stamina gate.
 - [ ] Deterministic AI with personalities.
 - [ ] MotionBricks-style procedural pose interpolation.
+- [ ] MotionBricks retargeting from 29-joint output to mannequin skeleton.
 - [ ] Weapon socket attachment and basic weapon models.
 - [ ] Readable action tells: pose, audio, camera.
 - [ ] Post-match replay viewer.
 - [ ] Fight Film auto-cinematic.
 - [ ] Packaging + clean executable verification.
 
-**Gate:** 10 internal playtests produce at least one "great exchange" each; truth hash stable.
+**Gate:** 10 internal playtests produce at least one "great exchange" each; truth hash stable; armor/loadout choices create readable counterplay instead of hidden stat arithmetic.
 
 ## Stage 3: Content & Polish (Weeks 27–50)
 
@@ -64,6 +66,7 @@ This roadmap assumes a solo developer with mentoring, building a custom Rust/wgp
 
 - [ ] 3+ distinct fighters with different base stats.
 - [ ] 6+ weapons with unique timing profiles.
+- [ ] 6 armor/loadout identities with visible tradeoffs in ROM, noise, and protection.
 - [ ] 3+ arenas with different lighting/readability challenges.
 - [ ] Tutorial mode.
 - [ ] Local duel mode for two human players.

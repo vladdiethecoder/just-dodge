@@ -76,6 +76,20 @@ Every risk has a likelihood, impact, mitigation, and owner. Review this weekly. 
 - **Mitigation:** Explicit no-placeholder-UI rule. Separate dev/player modes. UI/UX pass scheduled in Milestone 5.
 - **Owner:** Developer
 
+### RISK-011: MotionBricks becomes animation-first instead of read-first
+
+- **Likelihood:** Medium
+- **Impact:** Better-looking motion can make intent less legible and weaken the YOMI read.
+- **Mitigation:** Prototype motion with blind readability tests. Retargeting is presentation-only and must preserve truth hash. See `docs/MOTIONBRICKS-RETARGETING.md`.
+- **Owner:** Developer + Mentor
+
+### RISK-012: Armor simulation becomes hidden stat complexity
+
+- **Likelihood:** High
+- **Impact:** Players lose because of invisible material math instead of readable choices.
+- **Mitigation:** Armor must surface through visible loadouts, ROM limits, noise, deformation, and weapon counterplay. No FEM/fracture solver work until the simplified armor model improves play. See `docs/ARMOR-DAMAGE-SYSTEM.md`.
+- **Owner:** Developer + Mentor
+
 ## Closed Risks
 
 None yet.

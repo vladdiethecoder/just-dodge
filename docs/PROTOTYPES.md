@@ -104,18 +104,44 @@ If players stick to only 3 actions, the matrix is too complex and must be simpli
 - One fighter model.
 - One weapon model.
 - MotionBricks-style interpolation between action poses.
+- MotionBricks 29-joint output retargeted to the richer mannequin skeleton through direct mapping, spine interpolation, and finger/toe IK.
 - Distinct audio wind-up per action.
 - First-person camera reacts to wind-up.
 - No particles, no full animation clips.
 
-## Prototype 5: AI Personalities
+### Gate
+
+Motion passes only if readability improves. It does not pass for looking better while making opponent intent harder to read.
+
+## Prototype 5: Armor and Damage Readability
+
+**Question:** Do armor classes, material failure, and localized injury create readable counterplay without hiding the YOMI loop behind stat math?
+**Duration:** 2 weeks.
+**Method:** Add documented armor slots, integrity states, material resistance, ROM clamps, noise, and residual-force injury routing to the playable vertical-slice loop.
+**Success Criterion:** A returning player can explain why they changed weapon/action choice against at least three armor classes after 10 matches.
+
+### Scope
+
+- Armor slots mapped to bones/joints.
+- Six loadout identities: Ascetic, Duelist, Sentinel, Juggernaut, Mystic, Warden.
+- Integrity states: Pristine, Worn, Damaged, Compromised, Destroyed.
+- Material response for cloth, leather, chainmail, plate, Rune-Marble, and Warden bone.
+- Weapon damage families: slash, pierce, blunt, cleave, wrap, bash.
+- ROM, stamina, speed, and noise modifiers.
+- No expensive FEM/cloth/fracture implementation until the simplified deterministic model proves fun.
+
+### Gate
+
+If armor choices are perceived as hidden numbers or pure visuals, cut/simplify the system before adding solver complexity.
+
+## Prototype 6: AI Personalities
 
 **Question:** Does adaptive deterministic AI feel fair and varied?
 **Duration:** 1 week.
 **Method:** Implement 3 AI personalities and test against each.
 **Success Criterion:** Player changes strategy noticeably against each personality.
 
-## Prototype 6: Network Rollback (Late)
+## Prototype 7: Network Rollback (Late)
 
 **Question:** Can remote 1v1 maintain the deterministic combat feel?
 **Duration:** 3 weeks.
