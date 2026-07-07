@@ -54,7 +54,7 @@ impl MotionPipeline {
         let t0 = std::time::Instant::now();
         let mut b = Session::builder()?;
         let decoder = b
-            .commit_from_file(base.join("motionbricks_vqvae_decoder.onnx"))
+            .commit_from_file(base.join("motionbricks_vqvae_decoder.fixed.onnx"))
             .context("Failed to load VQVAE decoder")?;
         eprintln!("[MotionPipeline] decoder loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
@@ -201,10 +201,10 @@ impl MotionPipeline {
     }
 
     /// Decode quantized features to motion frames.
-    /// quantized shape: [1, code_dim, T/4] (ONNX format)
+    /// quantized shape: [1, code_dim, T/4] (ONNX format — channels-first)
     /// Returns reconstructed motion [1, T, 413] (GlobalRootGlobalJoints global subset).
     pub fn decode_frames(&mut self, quantized: &ArrayD<f32>) -> Result<ArrayD<f32>> {
-        let t = quantized.shape()[1];
+        let t = quantized.shape()[2];
         let out_frames = t * 4;
         let target_cond_dim = 304usize;
         let external_cond_dim = 2usize;
@@ -304,11 +304,33 @@ impl MotionPipeline {
         let shape: Vec<i64> = vec![1, 304, t as i64];
         let flat: Vec<f32> = enc_in.to_vec();
         let tensor = Tensor::<f32>::from_array((ort::value::Shape::new(shape), flat))?;
-        let (qshape, qdata_flat) = Self::encode_to_vec(&mut self.encoder, tensor)?;
-        let q_shape: Vec<usize> = qshape.iter().map(|&d| d as usize).collect();
-        // Pass encoder output data directly to decoder — no feats reconstruction.
-        let q_arr = ArrayD::from_shape_vec(IxDyn(&q_shape), qdata_flat)
-            .context("quantized reshape")?;
+        let mut enc_out = (&mut self.encoder).run(ort::inputs!["input_frames" => tensor])?;
+        // Use indices output + codebook dequantization (avoids ORT version mismatch on quantized)
+        let indices_val = enc_out
+            .remove("indices")
+            .ok_or_else(|| anyhow::anyhow!("no indices output"))?;
+        let (idx_shape, idx_data) = indices_val.try_extract_tensor::<i64>()?;
+        let idx_owned: Vec<i64> = idx_data.iter().copied().collect();
+        let idx_shape_v: Vec<usize> = idx_shape.iter().map(|&d| d as usize).collect();
+        drop(idx_data);
+        drop(indices_val);
+        drop(enc_out);
+        // Dequantize: for each head+time, look up codebook entry
+        let nh = idx_shape_v[1];
+        let tt = idx_shape_v[2];
+        let cd = self.meta.code_dim; // 256
+        let cdph = self.meta.code_dim_per_head; // 32
+        let mut feats = vec![0f32; cd * tt];
+        for h in 0..nh {
+            for t2 in 0..tt {
+                let code = idx_owned[t2 + h * tt] as usize;
+                for d in 0..cdph {
+                    feats[t2 * cd + h * cdph + d] = self.codebook[[h, code, d]];
+                }
+            }
+        }
+        let q_arr = ArrayD::from_shape_vec(IxDyn(&[1, cd, tt]), feats)
+            .context("quantized dequantized")?;
         let rec = self.decode_frames(&q_arr)?; // [1, out_frames, 413]
         let rec_data = rec.as_standard_layout();
         let data = rec_data.as_slice().unwrap();
