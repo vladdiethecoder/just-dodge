@@ -224,8 +224,12 @@ impl MotionPipeline {
         let t_tensor = Tensor::<f32>::from_array((ort::value::Shape::new(t_shape), t_flat))?;
         let e_tensor = Tensor::<f32>::from_array((ort::value::Shape::new(e_shape), e_flat))?;
 
-        let outputs = (&mut self.decoder).run(ort::inputs![q_tensor, t_tensor, e_tensor])?;
-        // decoder output is a single tensor (name varies by export); take it by position
+        // Named inputs — decoder graph matches tensors by name, not position.
+        let outputs = (&mut self.decoder).run(ort::inputs![
+            "quantized" => q_tensor,
+            "target_cond" => t_tensor,
+            "external_cond" => e_tensor,
+        ])?;
         let out_vec: Vec<DynValue> = outputs.into_iter().map(|(_, v)| v).collect();
         let output = out_vec
             .into_iter()
@@ -300,41 +304,33 @@ impl MotionPipeline {
         let shape: Vec<i64> = vec![1, 304, t as i64];
         let flat: Vec<f32> = enc_in.to_vec();
         let tensor = Tensor::<f32>::from_array((ort::value::Shape::new(shape), flat))?;
-        let enc_out = (&mut self.encoder).run(ort::inputs![tensor])?;
-        let enc_vec: Vec<DynValue> = enc_out.into_iter().map(|(_, v)| v).collect();
-        // encoder outputs: [0]=quantized [1,256,T/4], [1]=indices [1,8,T/4]
-        let quantized_dv = enc_vec
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("no quantized"))?;
-        let (qshape, qdata) = quantized_dv.try_extract_tensor::<f32>()?;
-        let _ = qshape;
-        let tt = t / 4;
-        // dequantize via codebook [8,10,32]
-        let mut feats = vec![0f32; 1 * 256 * tt];
-        for h in 0..8usize {
-            for k in 0..tt {
-                // indices tensor is [1,8,tt]; we approximate by reading the flat quantized
-                // channel at (h*32 .. h*32+32, k)
-                for d in 0..32usize {
-                    feats[k * 256 + h * 32 + d] = qdata[h * 32 + d + k * 256];
-                }
-            }
-        }
-        // indices path: we need codebook lookups, but the encoder already outputs quantized
-        // continuous features (not discrete). Decode those directly.
-        let q_arr =
-            ArrayD::from_shape_vec(IxDyn(&[1, 256, tt]), feats).context("quantized reshape")?;
-        let rec = self.decode_frames(&q_arr)?; // [1, T, 413]
+        let (qshape, qdata_flat) = Self::encode_to_vec(&mut self.encoder, tensor)?;
+        let q_shape: Vec<usize> = qshape.iter().map(|&d| d as usize).collect();
+        // Pass encoder output data directly to decoder — no feats reconstruction.
+        let q_arr = ArrayD::from_shape_vec(IxDyn(&q_shape), qdata_flat)
+            .context("quantized reshape")?;
+        let rec = self.decode_frames(&q_arr)?; // [1, out_frames, 413]
         let rec_data = rec.as_standard_layout();
         let data = rec_data.as_slice().unwrap();
-        let mut frames = Vec::with_capacity(t);
-        for f in 0..t {
+        let out_frames = rec.shape()[1];
+        let mut frames = Vec::with_capacity(out_frames);
+        for f in 0..out_frames {
             let base = f * 413;
             let slice = &data[base..base + 413];
             frames.push(Self::parse_g1_frame(slice));
         }
         Ok(frames)
+    }
+
+    /// Run encoder on a tensor, return (shape, flat owned data) of quantized output.
+    fn encode_to_vec(encoder: &mut Session, tensor: Tensor<f32>) -> Result<(Vec<i64>, Vec<f32>)> {
+        let mut enc_out = encoder.run(ort::inputs!["input_frames" => tensor])?;
+        let quantized = enc_out
+            .remove("quantized")
+            .ok_or_else(|| anyhow::anyhow!("no quantized"))?;
+        let (shape, view) = quantized.try_extract_tensor::<f32>()?;
+        let data = view.to_vec();
+        Ok((shape.to_vec(), data))
     }
 
     /// Build a synthetic idle/feedback clip as MotionBricks encoder input [1,304,T].
@@ -397,7 +393,7 @@ impl MotionPipeline {
         let shape: Vec<i64> = input.shape().iter().map(|&d| d as i64).collect();
         let flat: Vec<f32> = input.iter().copied().collect();
         let tensor = Tensor::<f32>::from_array((ort::value::Shape::new(shape), flat))?;
-        let mut outputs = (&mut self.encoder).run(ort::inputs![tensor])?;
+        let mut outputs = (&mut self.encoder).run(ort::inputs!["input_frames" => tensor])?;
         outputs
             .remove("quantized")
             .ok_or_else(|| anyhow::anyhow!("Missing 'quantized' output"))
