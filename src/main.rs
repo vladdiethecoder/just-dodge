@@ -1,6 +1,12 @@
+#![allow(dead_code)]
+
 use glam::{Mat4, Vec3, vec3};
 use std::sync::Arc;
+use std::sync::mpsc::{self, Receiver, TryRecvError};
+use std::thread;
+use std::time::Instant;
 use winit::application::ApplicationHandler;
+use winit::dpi::LogicalSize;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::Key;
@@ -23,9 +29,9 @@ struct Camera {
 impl Camera {
     fn new() -> Self {
         Self {
-            theta: std::f32::consts::FRAC_PI_4,
-            phi: std::f32::consts::FRAC_PI_4,
-            radius: 5.0,
+            theta: 0.6,
+            phi: 0.85, // ~49° from vertical: angled top-down view of the ground
+            radius: 16.0,
             dragging: false,
             last_mouse: (0.0, 0.0),
         }
@@ -51,19 +57,37 @@ struct App {
     config: Option<wgpu::SurfaceConfiguration>,
     renderer: Option<renderer::Renderer>,
     camera: Camera,
+    start_time: Instant,
+    // MotionBricks-driven skinning clip (24 joint matrices per frame)
+    clip_frames: Vec<[Mat4; 24]>,
+    clip_fps: f32,
+    clip_rx: Option<Receiver<Vec<[Mat4; 24]>>>,
+    // Staged startup: present a clear frame before loading the heavy scene
+    first_frame_presented: bool,
+    motion_started: bool,
 }
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        eprintln!("main: resumed enter");
+
         let window = Arc::new(
             event_loop
-                .create_window(Window::default_attributes().with_title("Just Dodge — Arena"))
+                .create_window(
+                    Window::default_attributes()
+                        .with_title("Just Dodge — Arena")
+                        .with_inner_size(LogicalSize::new(1280.0, 720.0)),
+                )
                 .unwrap(),
         );
+        eprintln!("main: window created");
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::VULKAN,
-            ..Default::default()
+            flags: wgpu::InstanceFlags::default(),
+            memory_budget_thresholds: wgpu::MemoryBudgetThresholds::default(),
+            backend_options: wgpu::BackendOptions::default(),
+            display: None,
         });
         let surface = instance.create_surface(Arc::clone(&window)).unwrap();
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -72,7 +96,7 @@ impl ApplicationHandler for App {
         }))
         .expect("No suitable GPU adapter found");
         let (device, queue) =
-            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default(), None))
+            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default()))
                 .expect("Failed to create device");
 
         let size = window.inner_size();
@@ -84,18 +108,71 @@ impl ApplicationHandler for App {
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             view_formats: vec![],
+            color_space: wgpu::SurfaceColorSpace::Auto,
             desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &config);
+        eprintln!("main: surface configured");
 
-        self.renderer = Some(renderer::Renderer::new(&device, &config, &queue));
         self.window = Some(window);
         self.surface = Some(surface);
         self.device = Some(device);
         self.queue = Some(queue);
         self.config = Some(config);
 
+        eprintln!("main: window/device ready, requesting redraw");
         self.window.as_ref().unwrap().request_redraw();
+        // resumed() returns NOW — no Renderer::new(), no ONNX.
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+        // Poll MotionBricks result if a worker thread is active.
+        if let Some(rx) = &self.clip_rx {
+            match rx.try_recv() {
+                Ok(clip) => {
+                    if !clip.is_empty() {
+                        eprintln!("main: MotionBricks clip received: {} frames", clip.len());
+                        self.clip_frames = clip;
+                    }
+                    self.clip_rx = None;
+                    if let Some(w) = self.window.as_ref() {
+                        w.request_redraw();
+                    }
+                }
+                Err(TryRecvError::Empty) => { /* keep polling */ }
+                Err(TryRecvError::Disconnected) => {
+                    eprintln!("main: MotionBricks worker disconnected");
+                    self.clip_rx = None;
+                }
+            }
+        }
+
+        // Defer heavy Renderer::new() until after the first clear frame was
+        // actually presented — this is what lets the Wayland compositor map the
+        // window before the app loads 209K+ verts.
+        if self.first_frame_presented && self.renderer.is_none() {
+            if let (Some(device), Some(queue), Some(config)) = (
+                self.device.as_ref(),
+                self.queue.as_ref(),
+                self.config.as_ref(),
+            ) {
+                eprintln!("main: starting renderer init after first present");
+                self.renderer = Some(renderer::Renderer::new(device, queue, config));
+                eprintln!("main: renderer init done");
+            }
+
+            // NOTE: MotionBricks worker + skinned mannequin are deferred until
+            // the ground/sky baseline is verified. No ONNX thread spawned yet.
+
+            if let Some(w) = self.window.as_ref() {
+                w.request_redraw();
+            }
+        }
+
+        // Keep animation ticking.
+        if let Some(w) = self.window.as_ref() {
+            w.request_redraw();
+        }
     }
 
     fn window_event(
@@ -106,6 +183,32 @@ impl ApplicationHandler for App {
     ) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
+
+            WindowEvent::Resized(physical) => {
+                // Reconfigure the wgpu surface and the renderer's depth buffer
+                // when the window size changes.
+                let Some(device) = self.device.as_ref() else {
+                    return;
+                };
+                let Some(config) = self.config.as_mut() else {
+                    return;
+                };
+                let Some(surface) = self.surface.as_ref() else {
+                    return;
+                };
+
+                config.width = physical.width.max(1);
+                config.height = physical.height.max(1);
+                surface.configure(device, config);
+
+                if let Some(renderer) = self.renderer.as_mut() {
+                    renderer.resize(device, config);
+                }
+
+                if let Some(w) = self.window.as_ref() {
+                    w.request_redraw();
+                }
+            }
 
             WindowEvent::MouseInput { state, button, .. } => {
                 if button == MouseButton::Left {
@@ -133,20 +236,45 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
-                if let (Some(surface), Some(device), Some(queue), Some(renderer), Some(config)) = (
-                    self.surface.as_ref(),
-                    self.device.as_ref(),
-                    self.queue.as_ref(),
-                    self.renderer.as_ref(),
-                    self.config.as_ref(),
-                ) {
-                    let frame = surface.get_current_texture().unwrap();
-                    let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                let Some(surface) = self.surface.as_ref() else {
+                    return;
+                };
+                let Some(device) = self.device.as_ref() else {
+                    return;
+                };
+                let Some(queue) = self.queue.as_ref() else {
+                    return;
+                };
+                let Some(config) = self.config.as_ref() else {
+                    return;
+                };
 
+                let frame = surface.get_current_texture();
+                let Ok(surface_texture) = (|| match frame {
+                    wgpu::CurrentSurfaceTexture::Success(t) => Ok(t),
+                    wgpu::CurrentSurfaceTexture::Suboptimal(t) => Ok(t),
+                    wgpu::CurrentSurfaceTexture::Occluded
+                    | wgpu::CurrentSurfaceTexture::Timeout => Err("occluded"),
+                    wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                        surface.configure(device, config);
+                        Err("outdated")
+                    }
+                    wgpu::CurrentSurfaceTexture::Validation => Err("validation"),
+                })() else {
+                    // Skip this frame; about_to_wait will request a retry.
+                    return;
+                };
+
+                let view = surface_texture
+                    .texture
+                    .create_view(&wgpu::TextureViewDescriptor::default());
+
+                if let Some(renderer) = self.renderer.as_ref() {
+                    // --- Full render pass (arena + skinned mannequin) ---
                     let aspect = config.width as f32 / config.height as f32;
                     let proj_view = self.camera.proj_view(aspect);
 
-                    for obj in &renderer.objects {
+                    for obj in renderer.objects.iter() {
                         let mvp = proj_view * obj.model;
                         queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
                     }
@@ -159,41 +287,82 @@ impl ApplicationHandler for App {
                             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                                 view: &view,
                                 resolve_target: None,
+                                depth_slice: None,
                                 ops: wgpu::Operations {
                                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                                        r: 0.05, g: 0.05, b: 0.08, a: 1.0,
+                                        r: 0.55,
+                                        g: 0.70,
+                                        b: 0.92,
+                                        a: 1.0,
                                     }),
                                     store: wgpu::StoreOp::Store,
                                 },
                             })],
-                            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                                view: &renderer.depth_view,
-                                depth_ops: Some(wgpu::Operations {
-                                    load: wgpu::LoadOp::Clear(1.0),
-                                    store: wgpu::StoreOp::Store,
-                                }),
-                                stencil_ops: None,
-                            }),
+                            depth_stencil_attachment: Some(
+                                wgpu::RenderPassDepthStencilAttachment {
+                                    view: &renderer.depth_view,
+                                    depth_ops: Some(wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(1.0),
+                                        store: wgpu::StoreOp::Store,
+                                    }),
+                                    stencil_ops: None,
+                                },
+                            ),
                             timestamp_writes: None,
+                            multiview_mask: None,
                             occlusion_query_set: None,
                         });
                         renderer.render(&mut rpass);
                     }
                     queue.submit(std::iter::once(encoder.finish()));
-                    frame.present();
+                } else {
+                    // --- Fallback clear frame: present a solid color so the
+                    //     Wayland compositor maps the window before heavy init ---
+                    let mut encoder =
+                        device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                    {
+                        let _rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                            label: Some("initial clear"),
+                            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                view: &view,
+                                resolve_target: None,
+                                depth_slice: None,
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                                        r: 0.02,
+                                        g: 0.02,
+                                        b: 0.05,
+                                        a: 1.0,
+                                    }),
+                                    store: wgpu::StoreOp::Store,
+                                },
+                            })],
+                            depth_stencil_attachment: None,
+                            timestamp_writes: None,
+                            multiview_mask: None,
+                            occlusion_query_set: None,
+                        });
+                    }
+                    queue.submit(std::iter::once(encoder.finish()));
+
+                    if !self.first_frame_presented {
+                        self.first_frame_presented = true;
+                        eprintln!("main: first clear frame presented");
+                    }
                 }
-                self.window.as_ref().unwrap().request_redraw();
+
+                queue.present(surface_texture);
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
                 if let Some(action) = input::handle_key(&event) {
-                    println!("Action: {:?}", action);
+                    eprintln!("Action: {:?}", action);
                 }
                 if event.state == ElementState::Pressed {
                     if let Key::Character(c) = &event.logical_key {
                         if c.as_str() == "r" {
                             self.camera = Camera::new();
-                            println!("Camera reset");
+                            eprintln!("Camera reset");
                         }
                     }
                 }
@@ -202,6 +371,63 @@ impl ApplicationHandler for App {
             _ => {}
         }
     }
+}
+
+impl App {
+    fn spawn_motion_worker(&mut self) {
+        if self.motion_started {
+            return;
+        }
+        self.motion_started = true;
+        eprintln!("main: spawning MotionBricks worker");
+        let (tx, rx) = mpsc::channel();
+        self.clip_rx = Some(rx);
+        thread::spawn(move || {
+            eprintln!("[MotionBricks worker] start");
+            let started = Instant::now();
+            let clip = build_motionbricks_clip();
+            eprintln!(
+                "[MotionBricks worker] done: {} frames in {:.2}s",
+                clip.len(),
+                started.elapsed().as_secs_f32()
+            );
+            let _ = tx.send(clip);
+        });
+    }
+}
+
+/// Run the real MotionBricks VQVAE encoder+decoder on a synthetic idle seed and
+/// return retargeted 24-bone skinning matrices per frame. The decoded motion
+/// (not the seed) drives the skeleton.
+fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
+    let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
+    let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets)) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("Skinned mesh load failed: {e}");
+            return Vec::new();
+        }
+    };
+    let mut pipe = match motion::MotionPipeline::new(&assets) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("MotionBricks init failed: {e}");
+            return Vec::new();
+        }
+    };
+    let t = 40usize; // ~1.3s clip at 30fps
+    let enc_in = pipe.build_idle_encoder_input(t);
+    let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("MotionBricks decode failed: {e}");
+            return Vec::new();
+        }
+    };
+    g1_frames
+        .iter()
+        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+        .collect()
 }
 
 fn main() {
@@ -214,6 +440,12 @@ fn main() {
         config: None,
         renderer: None,
         camera: Camera::new(),
+        start_time: Instant::now(),
+        clip_frames: vec![[Mat4::IDENTITY; 24]],
+        clip_fps: 30.0,
+        clip_rx: None,
+        first_frame_presented: false,
+        motion_started: false,
     };
     event_loop.run_app(&mut app).unwrap();
 }

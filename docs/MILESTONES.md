@@ -25,7 +25,7 @@
 
 **Definition:** Digital 3-action prototype is playable and fun.
 **Acceptance Criteria:**
-- [ ] Godot project compiles and runs.
+- [ ] Rust/wgpu executable compiles and runs.
 - [ ] Player can complete 5 matches without explanation.
 - [ ] `docs/reports/PROTOTYPE_02_SHAPE_PROTOTYPE.md` says CONTINUE.
 - [ ] No production code claimed; prototype code is throwaway.
@@ -49,7 +49,7 @@
 **Acceptance Criteria:**
 - [ ] Full 13×13 matrix resolves correctly.
 - [ ] Localized injury affects gameplay.
-- [ ] Armor integrity, ROM, noise, and residual-force routing affect gameplay without hiding the YOMI read.
+- [ ] Armor integrity, persistent damage state, ROM, noise, and residual-force routing affect gameplay without hiding the YOMI read.
 - [ ] AI has 3+ personalities.
 - [ ] MotionBricks interpolation and retargeting active.
 - [ ] Truth hash stable across runs.

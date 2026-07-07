@@ -6,9 +6,9 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 
 ## Project Status
 
-- Stage: Pre-production / Design Lock
-- Repo initialized: empty project directory
-- First playable target: TBD
+- Stage: Custom Rust/wgpu prototype architecture + planning lock
+- Current baseline: textured arena renderer, orbital camera, static/skinned mannequin asset paths, MotionBricks ONNX integration work, and documentation-driven combat/armor/motion design
+- Next playable target: verified 3-action Strike/Block/Grab match loop with replay/truth-hash evidence
 
 ## Quick Links
 
@@ -16,6 +16,11 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 - [Full Roadmap](docs/ROADMAP.md)
 - [Combat System Design](docs/COMBAT-SYSTEM.md)
 - [Technical Stack](docs/TECH-STACK.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Systems Design](docs/SYSTEMS-DESIGN.md)
+- [Phased Production Plan](docs/PHASED-PRODUCTION-PLAN.md)
+- [QA, Visual Verification, and Agentic Playtesting](docs/QA-AGENTIC-PLAYTESTING.md)
+- [File Inventory Audit](docs/FILE-INVENTORY-AUDIT.md)
 - [Verifiable Milestones](docs/MILESTONES.md)
 - [Prototype Plans](docs/PROTOTYPES.md)
 - [Master Checklist](docs/CHECKLIST.md)
@@ -36,6 +41,6 @@ A first-person duel game where you and your opponent each commit to one hidden a
 
 ## How to Use This Repo
 
-This repo is intentionally code-empty at the start. All design, planning, and verification artifacts live under `docs/`. Code appears only after a prototype phase passes and a milestone is accepted.
+This repo is documentation-gated and evidence-gated. Code and assets exist, but no feature should be accepted until the corresponding playable prototype, replay/truth-hash test, visual QA pass, and playtest evidence pass.
 
-Do not write production code until the corresponding prototype report says CONTINUE.
+Do not advance production scope until the corresponding prototype report says CONTINUE and the evidence gate in `docs/PHASED-PRODUCTION-PLAN.md` passes.

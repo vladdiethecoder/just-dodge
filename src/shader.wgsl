@@ -34,10 +34,10 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let tex_color = textureSample(base_color, base_sampler, input.frag_uv);
-    // Simple directional lighting
-    let light_dir = normalize(vec3<f32>(0.6, -1.0, 0.0));
+    // Directional light coming FROM above-front so upward-facing ground is lit.
+    let light_dir = normalize(vec3<f32>(0.4, 1.0, 0.3));
     let diff = max(dot(input.world_normal, light_dir), 0.0);
-    let ambient = 0.3;
-    let intensity = ambient + diff * 0.7;
+    let ambient = 0.45;
+    let intensity = ambient + diff * 0.55;
     return vec4<f32>(tex_color.rgb * intensity, 1.0);
 }

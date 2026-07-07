@@ -1,0 +1,10 @@
+TRIGGER             MATERIAL          RESULT
+──────────────────────────────────────────────────────────────
+Blunt impact        Plate             Dent mesh deformed at contact point
+                                      Depth = f(mass × velocity / area)
+Slash               Leather           Surface groove cut into mesh
+Pierce              Chainmail         Ring constraint broken → gap in mesh
+Pierce              Plate             Petal deform at hole site
+Fracture threshold  Rune-Marble       Voronoi shatter → shard physics objects
+Splinter threshold  Bone              Irregular crack → splinter geometry
+Slash               Cloth/Silk        Edge split → hanging strip physics

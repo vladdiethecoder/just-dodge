@@ -98,7 +98,7 @@ Armor class should create readable counterplay rather than hidden RPG arithmetic
 - **Mystic:** flowing silk and Rune-Marble accessories; little physical protection, supernatural brittle resistance.
 - **Warden:** asymmetric bone/organic armor; fused plates can fracture into new injury nodes.
 
-Detailed material, class, integrity, and critical-hit behavior lives in `docs/ARMOR-DAMAGE-SYSTEM.md`.
+Armor pieces are persistent physical records, not disposable visual skins: dents, tears, cracks, ring gaps, grime, burns, and blood are written by actual combat events and must remain readable after save/load. Detailed material, class, integrity, event-recording, and critical-hit behavior lives in `docs/ARMOR-DAMAGE-SYSTEM.md`.
 
 ## 11. Success Metrics
 

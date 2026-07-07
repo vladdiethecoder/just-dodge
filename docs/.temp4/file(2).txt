@@ -1,0 +1,8 @@
+EVENT               SHADER WRITE
+──────────────────────────────────────────────────────────────
+Impact              → Write scratch/scuff decal at UV contact point
+Dent formed         → Update normal map at dent region
+Blood contact       → Progressive blood accumulation texture layer
+Dirt/sand contact   → Grime layer builds in recessed geometry
+Burn/fire           → Char overlay, soot deposit
+Repeated impacts    → Metal surface finish degrades (polished → matte → pitted)

@@ -1,0 +1,8 @@
+INTEGRITY   VISUAL STATE          PHYSICS BEHAVIOR CHANGE
+──────────────────────────────────────────────────────────────
+1.0         Pristine / new        Full material thresholds
+0.8         First marks           Cosmetic only, full protection
+0.6         Visibly damaged       Threshold -15% at damage sites
+0.4         Compromised           Threshold -35%, piece mobility affected
+0.2         Critical              Threshold -60%, piece may detach
+0.0         Destroyed             Piece removed from simulation

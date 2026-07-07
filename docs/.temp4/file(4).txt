@@ -1,0 +1,13 @@
+Each armor piece stores:
+  damage_events[]     ← array of {impact_point, force, type, timestamp}
+  deform_map[]        ← GPU texture written per-hit
+  integrity_float     ← current structural value
+  crack_network[]     ← fracture line graph (marble/bone only)
+  ring_state[]        ← per-ring integrity (chainmail only)
+
+This means:
+→ Save/load preserves exact damage state
+→ Each piece is a unique physical record of its owner's fights
+→ NPCs with heavily damaged armor = they've survived a lot
+→ Fresh armor on a veteran = they just re-equipped
+→ Armor recognition by damage pattern is possible

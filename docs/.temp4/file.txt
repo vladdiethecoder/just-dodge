@@ -1,0 +1,9 @@
+ARMOR SPAWNS PRISTINE
+        ↓
+Physics simulation writes damage to the mesh and material in real time
+        ↓
+Every dent, tear, crack, ring gap = a record of actual combat events
+        ↓
+Armor that has never been hit looks brand new
+Armor that survived 10 fights shows exactly those 10 fights
+No two armor pieces ever look the same after combat

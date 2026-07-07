@@ -4,6 +4,8 @@
 
 Armor is not a cosmetic stat block. It changes readable combat choices by altering protection, stamina cost, speed, joint range of motion, sound, and failure behavior.
 
+Armor is also a persistent combat record. A pristine piece starts visually clean. Physics events then write dents, tears, cracks, ring gaps, scuffs, blood, dirt, and burn marks into the piece's damage state. Armor that survives ten fights should visibly show those ten fights; no two pieces should remain visually identical after different combat histories.
+
 This system is planned for later playable milestones. It is not part of the minimal shape prototype.
 
 ## Armor Slots
@@ -43,8 +45,20 @@ struct ArmorPiece {
     bool            destructible;       // Warden fused pieces can be false
     MeshID          visual_mesh;        // swappable per integrity state
     MeshID          destroyed_mesh;     // exposed bone/flesh mesh
+    DamageEvent[]   damage_events;      // {impact_point, force, type, timestamp}
+    TextureID       deform_map;         // GPU-written per-hit dents/cuts/scuffs
+    CrackGraph      crack_network;      // marble/bone fracture graph only
+    RingState[]     ring_state;         // chainmail per-ring integrity only
 };
 ```
+
+Persistent state requirements:
+
+- Save/load preserves exact damage state, not only the integrity percentage.
+- A heavily damaged NPC armor piece communicates prior survival, not a random cosmetic variant.
+- Fresh armor on a veteran communicates re-equipping.
+- Recognizing a recurring fighter by their armor damage pattern is allowed.
+- Damage state must stay deterministic: the same combat event stream produces the same visual and gameplay state.
 
 ## Materials
 
@@ -123,6 +137,45 @@ Resolution steps:
 9. Reduce armor integrity by deformation severity.
 10. If integrity reaches 0, trigger destruction behavior.
 
+## Combat Event to Damage Record
+
+Armor damage is authored as event-driven state, not random wear.
+
+```text
+ARMOR SPAWNS PRISTINE
+        ↓
+Physics simulation writes damage to the mesh and material in real time
+        ↓
+Every dent, tear, crack, ring gap = a record of actual combat events
+        ↓
+Armor that has never been hit looks brand new
+Armor that survived 10 fights shows exactly those 10 fights
+No two armor pieces ever look the same after combat
+```
+
+Failure events:
+
+| Trigger | Material | Result |
+|---|---|---|
+| Blunt impact | Plate | Dent mesh deformed at contact point; depth follows mass × velocity / contact area |
+| Slash | Leather | Surface groove cut into mesh |
+| Pierce | Chainmail | Ring constraint broken, creating a gap in the mesh |
+| Pierce | Plate | Petal deformation around the hole site |
+| Fracture threshold | Rune-Marble | Voronoi shatter into shard physics objects |
+| Splinter threshold | Bone | Irregular crack into splinter geometry |
+| Slash | Cloth/Silk | Edge split into hanging strip physics |
+
+Shader/state writes:
+
+| Event | Shader / State Write |
+|---|---|
+| Impact | Write scratch/scuff decal at UV contact point |
+| Dent formed | Update normal map at dent region |
+| Blood contact | Add to progressive blood accumulation texture layer |
+| Dirt/sand contact | Add grime layer, especially in recessed geometry |
+| Burn/fire | Add char overlay and soot deposit |
+| Repeated impacts | Degrade metal finish from polished to matte to pitted |
+
 ## Integrity States
 
 | Integrity | State | Gameplay/Visual Meaning |
@@ -140,6 +193,17 @@ Degradation triggers:
 - Rune-Marble critical hit: shatters to 0% instantly with visual explosion.
 - Blunt vs plate: armor integrity -15% and joint trauma through armor.
 - Ground impact or throw: -10% to hit-zone integrity.
+
+Readable state bands for the simplified deterministic model:
+
+| Integrity | Visual State | Physics Behavior Change |
+|---:|---|---|
+| 1.0 | Pristine / new | Full material thresholds |
+| 0.8 | First marks | Cosmetic only, full protection |
+| 0.6 | Visibly damaged | Threshold -15% at damage sites |
+| 0.4 | Compromised | Threshold -35%, piece mobility affected |
+| 0.2 | Critical | Threshold -60%, piece may detach |
+| 0.0 | Destroyed | Piece removed from simulation |
 
 ## Material Failure Behavior
 

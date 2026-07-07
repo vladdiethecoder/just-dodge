@@ -3,6 +3,7 @@
 ## Pre-Production
 
 - [ ] Read `docs/GDD.md`, `docs/ROADMAP.md`, `docs/LESSONS-FROM-OATHYARD.md`, `docs/ENGINE-SKELETON.md`, `docs/MOTIONBRICKS-RETARGETING.md`, and `docs/ARMOR-DAMAGE-SYSTEM.md`.
+- [ ] Read `docs/ARCHITECTURE.md`, `docs/SYSTEMS-DESIGN.md`, `docs/PHASED-PRODUCTION-PLAN.md`, and `docs/QA-AGENTIC-PLAYTESTING.md` before any new implementation phase.
 - [ ] Install Rust toolchain and verify `cargo` works.
 - [ ] Initialize git repo in project root.
 - [ ] Add `.gitignore` for Rust projects.
@@ -50,7 +51,7 @@
 
 - [ ] Author full 13×13 matchup matrix as data.
 - [ ] Implement localized body-part injury.
-- [ ] Implement armor slots, integrity states, and residual-force injury routing.
+- [ ] Implement armor slots, integrity states, persistent damage records, and residual-force injury routing.
 - [ ] Implement stance system.
 - [ ] Implement tempo gate.
 - [ ] Implement AI personalities.

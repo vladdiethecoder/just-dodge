@@ -78,7 +78,7 @@ Armor resolution is documented in `docs/ARMOR-DAMAGE-SYSTEM.md` and follows this
 4. Apply armor integrity as a threshold modifier.
 5. Resolve damage family: slash, pierce, blunt, cleave, wrap, bash.
 6. Apply residual force to anatomy.
-7. Reduce armor integrity and update ROM/noise/visual state.
+7. Reduce armor integrity and write deterministic damage events, deformation maps, crack/ring state, ROM/noise changes, and visual state.
 
 ## 6. Stance & Zones
 

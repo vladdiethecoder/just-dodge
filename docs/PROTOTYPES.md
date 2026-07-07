@@ -125,6 +125,7 @@ Motion passes only if readability improves. It does not pass for looking better 
 - Armor slots mapped to bones/joints.
 - Six loadout identities: Ascetic, Duelist, Sentinel, Juggernaut, Mystic, Warden.
 - Integrity states: Pristine, Worn, Damaged, Compromised, Destroyed.
+- Persistent damage state: event log, deformation map, crack network, and chainmail ring state survive save/load.
 - Material response for cloth, leather, chainmail, plate, Rune-Marble, and Warden bone.
 - Weapon damage families: slash, pierce, blunt, cleave, wrap, bash.
 - ROM, stamina, speed, and noise modifiers.

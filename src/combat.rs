@@ -20,15 +20,15 @@ use glam::Vec3;
 /// Local root constraint: root-relative motion features (4 dims)
 #[derive(Debug, Clone, Copy)]
 pub struct LocalRootConstraint {
-    pub rot_vel: f32,     // angular velocity around Y
-    pub lin_vel_xz: [f32; 2],  // forward/lateral velocity
-    pub root_y: f32,      // height above ground
+    pub rot_vel: f32,         // angular velocity around Y
+    pub lin_vel_xz: [f32; 2], // forward/lateral velocity
+    pub root_y: f32,          // height above ground
 }
 
 /// Global root constraint: world-frame root state (5 dims)
 #[derive(Debug, Clone, Copy)]
 pub struct GlobalRootConstraint {
-    pub pos_xz: [f32; 2],  // world X, Z
+    pub pos_xz: [f32; 2],    // world X, Z
     pub heading: (f32, f32), // (cos, sin)
     pub pelvis_height: f32,
 }
@@ -39,7 +39,7 @@ pub struct Keyframe {
     pub local_root: LocalRootConstraint,
     pub global_root: GlobalRootConstraint,
     /// Whether this keyframe is a hard constraint (tau=0) or soft (tau>0)
-    pub tau: u8,  // 0 = hard, >0 = may advance early
+    pub tau: u8, // 0 = hard, >0 = may advance early
     pub drop_frame: bool,
 }
 
@@ -64,7 +64,7 @@ pub struct ActionProfile {
     /// Number of tokens for this action (6..16 range, 4 frames each)
     pub duration_tokens: u8,
     /// Root trajectory: displacement over the action duration
-    pub root_displacement: Vec3,  // world-space delta over the full motion
+    pub root_displacement: Vec3, // world-space delta over the full motion
     /// Heading change: delta in radians
     pub heading_delta: f32,
     /// Base movement speed multiplier
@@ -96,7 +96,7 @@ fn neutral_local_root() -> LocalRootConstraint {
     LocalRootConstraint {
         rot_vel: 0.0,
         lin_vel_xz: [0.0, 0.0],
-        root_y: 0.0,  // neutral height
+        root_y: 0.0, // neutral height
     }
 }
 
@@ -125,12 +125,12 @@ fn strike_profile() -> ActionProfile {
     kf.local_root = LocalRootConstraint {
         rot_vel: 0.0,
         lin_vel_xz: [0.8, 0.0], // forward velocity
-        root_y: -0.02, // slight crouch
+        root_y: -0.02,          // slight crouch
     };
     ActionProfile {
         action: Action::Strike,
         target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 8,  // 32 frames ≈ 1.07s at 30fps
+        duration_tokens: 8,                          // 32 frames ≈ 1.07s at 30fps
         root_displacement: Vec3::new(0.0, 0.0, 0.5), // 0.5m forward
         heading_delta: 0.0,
         speed_multiplier: 1.0,
@@ -143,12 +143,12 @@ fn block_profile() -> ActionProfile {
     kf.local_root = LocalRootConstraint {
         rot_vel: 0.0,
         lin_vel_xz: [0.0, 0.0], // stationary
-        root_y: -0.04, // deeper crouch for stability
+        root_y: -0.04,          // deeper crouch for stability
     };
     ActionProfile {
         action: Action::Block,
         target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 6,  // 24 frames ≈ 0.8s
+        duration_tokens: 6,                            // 24 frames ≈ 0.8s
         root_displacement: Vec3::new(0.0, 0.0, -0.05), // slight backstep
         heading_delta: 0.0,
         speed_multiplier: 1.0,
@@ -166,7 +166,7 @@ fn grab_profile() -> ActionProfile {
     ActionProfile {
         action: Action::Grab,
         target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 10, // 40 frames ≈ 1.33s
+        duration_tokens: 10,                         // 40 frames ≈ 1.33s
         root_displacement: Vec3::new(0.0, 0.0, 1.0), // 1m lunge
         heading_delta: 0.0,
         speed_multiplier: 1.5,
@@ -203,7 +203,7 @@ impl ActionState {
             complete: false,
         }
     }
-    
+
     /// Advance one frame. Returns true if action just completed.
     pub fn tick(&mut self) -> bool {
         self.elapsed_frames += 1;
@@ -215,7 +215,7 @@ impl ActionState {
             false
         }
     }
-    
+
     /// Check if replanning should trigger this frame.
     /// Per Appendix C: every 3-9 frames or when command changes.
     pub fn should_replan(&self, command_changed: bool) -> bool {
@@ -229,7 +229,7 @@ impl ActionState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_action_profiles_exist() {
         for action in &[Action::Strike, Action::Block, Action::Grab] {
@@ -238,13 +238,13 @@ mod tests {
             assert!(profile.duration_tokens >= 6 && profile.duration_tokens <= 16);
         }
     }
-    
+
     #[test]
     fn test_action_state_lifecycle() {
         let mut state = ActionState::from_action(Action::Strike);
         assert_eq!(state.total_frames, 32); // 8 tokens * 4
         assert!(!state.complete);
-        
+
         // Tick through all frames
         for i in 1..=32 {
             let completed = state.tick();
@@ -256,13 +256,13 @@ mod tests {
         }
         assert!(state.complete);
     }
-    
+
     #[test]
     fn test_replanning_triggers() {
         let state = ActionState::from_action(Action::Block);
         // Low buffer should trigger replan
         assert!(state.should_replan(false)); // frames_remaining <= 3 triggers
-        
+
         let new_state = ActionState::from_action(Action::Block);
         assert!(new_state.should_replan(true)); // command changed triggers
     }

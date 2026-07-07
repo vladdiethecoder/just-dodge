@@ -6,6 +6,14 @@ No production code until the corresponding prototype says CONTINUE. Every stage 
 
 This roadmap assumes a solo developer with mentoring, building a custom Rust/wgpu engine. Scale timelines if scope or availability changes.
 
+Expanded architecture, systems, QA, and full production planning lives in:
+
+- `docs/ARCHITECTURE.md`
+- `docs/SYSTEMS-DESIGN.md`
+- `docs/PHASED-PRODUCTION-PLAN.md`
+- `docs/QA-AGENTIC-PLAYTESTING.md`
+- `docs/FILE-INVENTORY-AUDIT.md`
+
 ## Stage 0: Foundation (Weeks 1–3)
 
 **Goal:** Lock the core design and prove it is fun on paper and with the smallest possible custom engine.
@@ -46,7 +54,7 @@ This roadmap assumes a solo developer with mentoring, building a custom Rust/wgp
 
 - [ ] Implement full 13×13 matchup matrix as data.
 - [ ] Localized body-part injury system.
-- [ ] Armor slot/integrity model connected to localized injury.
+- [ ] Armor slot/integrity/persistent-damage model connected to localized injury.
 - [ ] Stance system (high / low / neutral).
 - [ ] Tempo / stamina gate.
 - [ ] Deterministic AI with personalities.
