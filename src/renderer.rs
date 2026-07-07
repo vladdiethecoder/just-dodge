@@ -662,7 +662,7 @@ impl Renderer {
 
         let mut bone_parents: Vec<i32> = Vec::new();
         let correct_model = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-            * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+            * Mat4::from_rotation_x(-std::f32::consts::FRAC_PI_2);
 
         for (bin_name, tex_name, pos) in [
             ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
