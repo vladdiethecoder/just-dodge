@@ -30,8 +30,8 @@ impl Camera {
     fn new() -> Self {
         Self {
             theta: 0.6,
-            phi: 0.85, // ~49° from vertical: angled top-down view of the ground
-            radius: 16.0,
+            phi: 1.0, // look slightly down at the upright mannequin
+            radius: 12.0,
             dragging: false,
             last_mouse: (0.0, 0.0),
         }
@@ -279,6 +279,10 @@ impl ApplicationHandler for App {
                         queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
                     }
 
+                    if !self.clip_frames.is_empty() {
+                        renderer.update_skin_joints(queue, &self.clip_frames[0]);
+                    }
+
                     let mut encoder =
                         device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                     {
@@ -313,6 +317,7 @@ impl ApplicationHandler for App {
                             occlusion_query_set: None,
                         });
                         renderer.render(&mut rpass);
+                        renderer.render_skinned(&mut rpass);
                     }
                     queue.submit(std::iter::once(encoder.finish()));
                 } else {
@@ -447,5 +452,8 @@ fn main() {
         first_frame_presented: false,
         motion_started: false,
     };
+    let correct = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
+        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+    app.clip_frames = vec![[correct; 24]];
     event_loop.run_app(&mut app).unwrap();
 }

@@ -457,7 +457,23 @@ impl Renderer {
             model: Mat4,
         }
         // Arena assets stripped for baseline: ground + sky only.
-        let cfgs: [ObjCfg; 0] = [];
+        let cfgs = [
+            ObjCfg {
+                bin: "arena_rock.bin",
+                tex: "arena_rock_0.png",
+                model: Mat4::from_translation(glam::vec3(0.0, -0.2, -3.0)),
+            },
+            ObjCfg {
+                bin: "lintel_gate.bin",
+                tex: "lintel_gate_0.jpg",
+                model: Mat4::from_translation(glam::vec3(2.6, -0.1, 1.5)),
+            },
+            ObjCfg {
+                bin: "rune_pillar.bin",
+                tex: "rune_pillar_0.jpg",
+                model: Mat4::from_translation(glam::vec3(-2.6, 0.0, 1.5)),
+            },
+        ];
 
         for cfg in cfgs {
             let mesh = asset::load_binary(&format!("{}/{}", assets, cfg.bin))
