@@ -7,8 +7,14 @@ use glam::{Mat4, Vec3, vec3};
 
 #[path = "../asset.rs"]
 mod asset;
+#[path = "../motion.rs"]
+mod motion;
 #[path = "../renderer.rs"]
 mod renderer;
+#[path = "../retarget.rs"]
+mod retarget;
+#[path = "../skeleton.rs"]
+mod skeleton;
 
 struct View {
     name: &'static str,
@@ -263,8 +269,49 @@ async fn run() {
         println!("shot: wrote {}", path);
     }
 
-    // ─── Gate 2: Procedural sine-wave arm animation ─────────────────
-    // Front camera, 6 frames, right-shoulder rotation about X axis.
+    // ─── Gate 2: Real MotionBricks idle animation frames ────────────
+    // Run the MotionBricks ONNX pipeline to produce 40 frames of real
+    // animation, then render 8 evenly-spaced frames for visual QA.
+    let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
+    let clip = {
+        let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
+        {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("FAIL: load skinned mesh: {e}");
+                return;
+            }
+        };
+        let mut pipe = match motion::MotionPipeline::new(&assets) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("FAIL: MotionPipeline::new: {e}");
+                return;
+            }
+        };
+        let t = 40usize;
+        let enc_in = pipe.build_idle_encoder_input(t);
+        let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("FAIL: decode_encoder_input: {e}");
+                return;
+            }
+        };
+        let skin_frames: Vec<[Mat4; 24]> = g1_frames
+            .iter()
+            .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+            .collect();
+        eprintln!("[shot] MotionBricks: {} frames", skin_frames.len());
+        skin_frames
+    };
+
+    if clip.is_empty() {
+        eprintln!("[shot] no clip frames, skipping animation QA");
+        return;
+    }
+
+    // Front camera for animation sequence
     let view_mat = Mat4::look_at_lh(vec3(0.0, 1.0, 4.0), vec3(0.0, 1.0, 0.0), Vec3::Y);
     let proj = Mat4::perspective_lh(
         std::f32::consts::FRAC_PI_4,
@@ -275,18 +322,12 @@ async fn run() {
     let proj_view = proj * view_mat;
     renderer.update_camera(&queue, &proj_view);
 
-    let total_frames = 6usize;
-    for fi in 0..total_frames {
-        let t = fi as f32 / (total_frames - 1) as f32;
-        let angle = (t * std::f32::consts::TAU).sin() * std::f32::consts::FRAC_PI_4;
-        let mut joints = [correct; 24];
-        // Apply the world-Z rotation to the entire right-arm chain so the
-        // arm swings as a rigid unit (shoulder, arm, forearm, hand).
-        for bi in [16, 17, 18, 19] {
-            joints[bi] = Mat4::from_rotation_z(angle) * correct;
-        }
-
-        renderer.update_skin_joints(&queue, &joints);
+    // Render 8 evenly-spaced frames from the 40-frame clip
+    let sample_count = 8usize;
+    let step = (clip.len() / sample_count).max(1);
+    for si in 0..sample_count {
+        let fi = (si * step) % clip.len();
+        renderer.update_skin_joints(&queue, &clip[fi]);
 
         let color_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("anim color"),
@@ -354,7 +395,7 @@ async fn run() {
         }
         drop(data);
         read_buf.unmap();
-        let path = format!("/tmp/jd_anim_{:02}.png", fi);
+        let path = format!("/tmp/jd_mb_anim_{:02}.png", si);
         img.save(&path).expect("save png");
         println!("anim: wrote {}", path);
     }

@@ -527,7 +527,7 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
     };
     g1_frames
         .iter()
-        .map(|g1| retarget::g1_to_skin(g1, &mesh))
+        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
         .collect()
 }
 

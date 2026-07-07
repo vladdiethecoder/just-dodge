@@ -38,10 +38,11 @@ fn main() {
     };
     done("MotionPipeline::new", t0);
 
-    let t = 40usize; // ~1.3s clip at 30fps
-    let t0 = step("build_idle_encoder_input");
-    let enc_in = pipe.build_idle_encoder_input(t);
-    done("build_idle_encoder_input", t0);
+    let t = 40usize;
+    let t0 = step("build_mesh_rest_input");
+    let ib: Vec<_> = mesh.bones.iter().map(|b| b.inverse_bind).collect();
+    let enc_in = pipe.build_mesh_rest_input(t, &asset::G1_TO_MANNEQUIN, &ib);
+    done("build_mesh_rest_input", t0);
 
     let t0 = step("decode_encoder_input (ONNX inference, 40 frames)");
     let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
@@ -50,10 +51,10 @@ fn main() {
     };
     done("decode_encoder_input", t0);
 
-    let t0 = step("compute_skin_matrices (retarget G1→mannequin)");
+    let t0 = step("compute_skin_matrices (retarget G1->mannequin)");
     let skin_frames: Vec<[glam::Mat4; 24]> = g1_frames
         .iter()
-        .map(|g1| retarget::g1_to_skin(g1, &mesh))
+        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
         .collect();
     done("compute_skin_matrices", t0);
 

@@ -355,6 +355,92 @@ impl MotionPipeline {
         Ok((shape.to_vec(), data))
     }
 
+    /// Build a rest-pose encoder input from the mannequin mesh's bind data.
+    /// Uses actual bone world positions from the SKM1 inverse_bind matrices,
+    /// producing a much more realistic seed for the VQVAE encoder+decoder.
+    /// Channels-first layout matching build_idle_encoder_input.
+    pub fn build_mesh_rest_input(&self, t: usize, g1_to_mannequin: &[usize; 24], mesh_bone_ib: &[Mat4]) -> Vec<f32> {
+        // Compute mannequin bone world positions from inverse_bind
+        let mut mann_world = vec![glam::Vec3::ZERO; mesh_bone_ib.len()];
+        for i in 0..mesh_bone_ib.len() {
+            let w = mesh_bone_ib[i].inverse();
+            mann_world[i] = w.w_axis.truncate();
+        }
+
+        // Compute G1 bone root-relative positions from mannequin positions
+        // via G1_TO_MANNEQUIN mapping
+        let g1_nb = Self::G1_NB;
+        let g1_parents = Self::G1_PARENTS;
+
+        let mut g1_world = [glam::Vec3::ZERO; 34];
+        for i in 0..34 {
+            // Try to find a mannequin bone that maps to this G1 bone
+            let mut found = false;
+            for mi in 0..24.min(g1_to_mannequin.len()) {
+                if g1_to_mannequin[mi] == i {
+                    if mi < mann_world.len() {
+                        g1_world[i] = mann_world[mi];
+                        found = true;
+                    }
+                    break;
+                }
+            }
+            if !found {
+                // Not mapped: interpolate from parent
+                let p = g1_parents[i] as usize;
+                if p < i && p != usize::MAX {
+                    g1_world[i] = g1_world[p] + glam::vec3(0.0, 0.12, 0.0);
+                } else {
+                    g1_world[i] = mann_world[0]; // fallback to Hips
+                }
+            }
+        }
+
+        let pelvis_y = g1_world[0].y;
+        let mut buf = vec![0f32; 1 * 304 * t];
+        for f in 0..t {
+            let phase = 2.0 * std::f32::consts::PI * (f as f32) / (t as f32);
+            let breathe = 0.02 * (phase * 0.5).sin();
+            let sway = 0.01 * phase.sin();
+
+            // Rotations: identity 6D for all bones (cont6d: [1,0,0,0,1,0])
+            for j in 0..g1_nb {
+                let gr_base = f * 304 + j * 6;
+                buf[gr_base + 0] = 1.0;
+                buf[gr_base + 1] = 0.0;
+                buf[gr_base + 2] = 0.0;
+                buf[gr_base + 3] = 0.0;
+                buf[gr_base + 4] = 1.0;
+                buf[gr_base + 5] = 0.0;
+            }
+
+            // Positions: root-relative, with subtle idle perturbations
+            for j in 0..g1_nb {
+                let mut p = g1_world[j];
+                // Subtle breathing: Y oscillation
+                p.y += breathe;
+                // Subtle sway: X oscillation for upper body
+                if j >= 15 && j <= 17 { // spine bones
+                    p.x += sway;
+                }
+                let ric = if j == 0 {
+                    p // root position (hip height)
+                } else {
+                    p - g1_world[0] // root-relative
+                };
+                if j == 0 {
+                    buf[f * 304 + 303] = ric.y; // hip height
+                } else {
+                    let ric_base = f * 304 + 204 + (j - 1) * 3;
+                    buf[ric_base + 0] = ric.x;
+                    buf[ric_base + 1] = ric.y;
+                    buf[ric_base + 2] = ric.z;
+                }
+            }
+        }
+        buf
+    }
+
     /// Build a synthetic idle/feedback clip as MotionBricks encoder input [1,304,T].
     /// This is a procedural seed fed through the real MotionBricks VQVAE encoder+decoder;
     /// the decoded output (not this seed) drives the skeleton. Channels-first layout:
