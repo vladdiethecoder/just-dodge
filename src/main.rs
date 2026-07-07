@@ -497,58 +497,35 @@ impl App {
     }
 }
 
-/// Run MotionBricks ONNX pipeline or fall back to procedural G1 frames.
-/// Returns 24-bone skinning matrices per frame.
+/// Load MotionBricks-exported G1 frames from MB_CLIP env or assets/mb_idle.g1.
+/// No fallbacks — game requires real motion data.
 fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
     let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets)) {
         Ok(m) => m,
         Err(e) => {
-            eprintln!("Skinned mesh load failed: {e}");
+            eprintln!("FATAL: Skinned mesh load failed: {e}");
             return Vec::new();
         }
     };
 
-    // Only try ONNX pipeline if ORT_DYLIB_PATH is set (prevents hang without it)
-    if std::env::var("ORT_DYLIB_PATH").is_ok() {
-        if let Ok(mut pipe) = motion::MotionPipeline::new(&assets) {
-            let t = 40usize;
-            let enc_in = pipe.build_idle_encoder_input(t);
-            if let Ok(g1_frames) = pipe.decode_encoder_input(&enc_in, t) {
-                eprintln!("[MotionBricks] ONNX decoded {} frames", g1_frames.len());
-                return g1_frames
-                    .iter()
-                    .map(|g1| asset::compute_skin_matrices(g1, &mesh))
-                    .collect();
-            }
-            eprintln!("[MotionBricks] ONNX decode failed, falling back to procedural");
-        } else {
-            eprintln!("[MotionBricks] ONNX init failed, falling back to procedural");
+    let g1_path = std::env::var("MB_CLIP").unwrap_or_else(|_| format!("{}/mb_idle.g1", assets));
+    match motion::load_g1_frames(&g1_path) {
+        Ok(frames) => {
+            eprintln!("[MotionBricks] loaded {} frames from {}", frames.len(), g1_path);
+            frames.iter().map(|g1| asset::compute_skin_matrices(g1, &mesh)).collect()
+        }
+        Err(e) => {
+            eprintln!(
+                "FATAL: No animation clip found. Export from GR00T repo:\n  \
+                 cd /run/media/vdubrov/Bulk-SSD/GR00T-WholeBodyControl/motionbricks && \\\n  \
+                 DISPLAY=:0 python3 scripts/export_motion.py --style idle --output {}\n  \
+                 Error: {e}",
+                g1_path
+            );
+            Vec::new()
         }
     }
-
-    // Try loading MotionBricks-exported G1 frames from file
-    let g1_path = std::env::var("MB_CLIP").unwrap_or_else(|_| format!("{}/mb_idle.g1", assets));
-    if let Ok(g1_frames) = motion::load_g1_frames(&g1_path) {
-        eprintln!("[MotionBricks] loaded {} frames from {}", g1_frames.len(), g1_path);
-        return g1_frames
-            .iter()
-            .map(|g1| asset::compute_skin_matrices(g1, &mesh))
-            .collect();
-    }
-
-    // Fallback: procedural G1 frames (no ONNX dependency)
-    let frame_count = 60usize;
-    let g1_frames =
-        motion::build_procedural_g1_clip(frame_count, &mesh, &asset::G1_TO_MANNEQUIN);
-    eprintln!(
-        "[MotionBricks] procedural: {} frames",
-        g1_frames.len()
-    );
-    g1_frames
-        .iter()
-        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
-        .collect()
 }
 
 fn main() {
