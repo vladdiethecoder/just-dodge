@@ -32,7 +32,7 @@ pub struct Renderer {
     pub pipeline: wgpu::RenderPipeline,
     pub skin_pipeline: wgpu::RenderPipeline,
     pub objects: Vec<MeshObject>,
-    pub skinned: Option<SkinnedObject>,
+    pub skinned: Vec<SkinnedObject>,
     pub depth_view: wgpu::TextureView,
     proj_view: Mat4,
 }
@@ -573,11 +573,16 @@ impl Renderer {
             });
         }
 
-        // --- Skinned mannequin (MotionBricks-driven) ---
-        let mut skinned: Option<SkinnedObject> = None;
-        let skin_path = format!("{}/characters/mannequin_male.bin", assets);
-        if let Ok(mesh) = asset::load_skinned(&skin_path) {
-            let vc = mesh.vertices.len();
+        // --- Skinned characters ---
+        let mut skinned: Vec<SkinnedObject> = Vec::new();
+
+        for (bin_name, tex_name, pos) in [
+            ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
+            ("mannequin_female.bin", "mannequin_female_0.png", glam::vec3(0.0, 0.0, -1.0)),
+        ] {
+            let skin_path = format!("{}/characters/{}", assets, bin_name);
+            if let Ok(mesh) = asset::load_skinned(&skin_path) {
+                let vc = mesh.vertices.len();
             let mut interleaved: Vec<u8> =
                 Vec::with_capacity(vc * std::mem::size_of::<asset::SkinnedVertex>());
             for v in &mesh.vertices {
@@ -612,7 +617,7 @@ impl Renderer {
                 }],
             });
             let (_st, stv, sts) =
-                load_texture(device, queue, &format!("{}/mannequin_male_0.png", assets));
+                load_texture(device, queue, &format!("{}/{}", assets, tex_name));
             let stbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("Skin TBG"),
                 layout: &texture_bgl,
@@ -647,7 +652,7 @@ impl Renderer {
                 vc,
                 mesh.indices.len()
             );
-            skinned = Some(SkinnedObject {
+            skinned.push(SkinnedObject {
                 vertex_buffer: svb,
                 index_buffer: sib,
                 index_count: mesh.indices.len() as u32,
@@ -656,8 +661,9 @@ impl Renderer {
                 texture_bind_group: stbg,
                 joint_buffer,
                 joint_bind_group,
-                model: Mat4::IDENTITY,
+                model: Mat4::from_translation(pos),
             });
+            }
         }
 
         Self {
@@ -672,8 +678,19 @@ impl Renderer {
 
     /// Write a frame's 24 skinning matrices into the joint storage buffer.
     pub fn update_skin_joints(&self, queue: &wgpu::Queue, joints: &[Mat4; 24]) {
-        if let Some(s) = &self.skinned {
+        for s in &self.skinned {
             // Column-major f32 array of 24 mat4 (each 16 f32).
+            let mut data = Vec::with_capacity(24 * 16);
+            for m in joints.iter() {
+                data.extend_from_slice(&m.to_cols_array());
+            }
+            queue.write_buffer(&s.joint_buffer, 0, bytemuck::cast_slice(&data));
+        }
+    }
+
+    /// Write skinning matrices to a specific skinned object by index.
+    pub fn update_skin_joints_indexed(&self, queue: &wgpu::Queue, idx: usize, joints: &[Mat4; 24]) {
+        if let Some(s) = self.skinned.get(idx) {
             let mut data = Vec::with_capacity(24 * 16);
             for m in joints.iter() {
                 data.extend_from_slice(&m.to_cols_array());
@@ -691,7 +708,7 @@ impl Renderer {
             queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
         }
         // Mannequin uniform (identity model; skinning happens in the vertex shader)
-        if let Some(s) = &self.skinned {
+        for s in &self.skinned {
             let mvp = self.proj_view * s.model;
             queue.write_buffer(&s.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
         }
@@ -711,17 +728,15 @@ impl Renderer {
 
     /// Render the skinned mannequin (no-op if mesh failed to load)
     pub fn render_skinned<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
-        let s = match &self.skinned {
-            Some(s) => s,
-            None => return,
-        };
-        rpass.set_pipeline(&self.skin_pipeline);
-        rpass.set_bind_group(0, &s.uniform_bind_group, &[]);
-        rpass.set_bind_group(1, &s.texture_bind_group, &[]);
-        rpass.set_bind_group(2, &s.joint_bind_group, &[]);
-        rpass.set_vertex_buffer(0, s.vertex_buffer.slice(..));
-        rpass.set_index_buffer(s.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        rpass.draw_indexed(0..s.index_count, 0, 0..1);
+        for s in &self.skinned {
+            rpass.set_pipeline(&self.skin_pipeline);
+            rpass.set_bind_group(0, &s.uniform_bind_group, &[]);
+            rpass.set_bind_group(1, &s.texture_bind_group, &[]);
+            rpass.set_bind_group(2, &s.joint_bind_group, &[]);
+            rpass.set_vertex_buffer(0, s.vertex_buffer.slice(..));
+            rpass.set_index_buffer(s.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            rpass.draw_indexed(0..s.index_count, 0, 0..1);
+        }
     }
 
     /// Recreate the depth buffer after a window resize.

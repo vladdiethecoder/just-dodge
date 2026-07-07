@@ -17,6 +17,8 @@ mod combat;
 mod input;
 mod motion;
 mod renderer;
+mod retarget;
+mod skeleton;
 
 struct Camera {
     theta: f32,
@@ -58,6 +60,7 @@ struct App {
     renderer: Option<renderer::Renderer>,
     camera: Camera,
     start_time: Instant,
+    input: input::InputState,
     // MotionBricks-driven skinning clip (24 joint matrices per frame)
     clip_frames: Vec<[Mat4; 24]>,
     clip_fps: f32,
@@ -65,6 +68,13 @@ struct App {
     // Staged startup: present a clear frame before loading the heavy scene
     first_frame_presented: bool,
     motion_started: bool,
+    // Combat state
+    opponent_attack_timer: f32,
+    opponent_attack_active: bool,
+    opponent_attack_windup_end: f32,
+    opponent_attack_duration: f32,
+    player_distance: f32,
+    combat_log: Vec<String>,
 }
 
 impl ApplicationHandler for App {
@@ -166,6 +176,11 @@ impl ApplicationHandler for App {
 
             if let Some(w) = self.window.as_ref() {
                 w.request_redraw();
+            }
+
+            // Spawn MotionBricks after renderer is ready.
+            if self.renderer.is_some() {
+                self.spawn_motion_worker();
             }
         }
 
@@ -278,9 +293,53 @@ impl ApplicationHandler for App {
                         let mvp = proj_view * obj.model;
                         queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
                     }
+                    for s in renderer.skinned.iter() {
+                        let mvp = proj_view * s.model;
+                        queue.write_buffer(&s.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
+                    }
 
                     if !self.clip_frames.is_empty() {
-                        renderer.update_skin_joints(queue, &self.clip_frames[0]);
+                        let elapsed = self.start_time.elapsed().as_secs_f32();
+                        let fc = self.clip_frames.len();
+                        let fi = (elapsed * self.clip_fps) as usize % fc;
+                        // Player: current frame
+                        renderer.update_skin_joints_indexed(queue, 0, &self.clip_frames[fi]);
+                        // Opponent: half-cycle phase shift for visual distinction
+                        let opp_fi = (fi + fc / 2) % fc;
+                        renderer.update_skin_joints_indexed(queue, 1, &self.clip_frames[opp_fi]);
+
+                        // Combat intent log
+                        let intent = self.input.intent();
+                        if intent != input::PlayerIntent::Idle {
+                            eprintln!("[{:5.1}s] Intent: {:?}", elapsed, intent);
+                        }
+                        self.input.reset_deltas();
+
+                        // --- Opponent attack timer & hit resolution ---
+                        // Player model at z=+1, opponent at z=-1 → ~2m apart.
+                        // Approximate pelvis distance as combat range.
+                        self.player_distance = 2.0; // fixed for now (models are static)
+                        if !self.opponent_attack_active {
+                            // Start new attack every 3 seconds
+                            self.opponent_attack_timer += 1.0 / self.clip_fps;
+                            if self.opponent_attack_timer >= 3.0 {
+                                self.opponent_attack_active = true;
+                                self.opponent_attack_timer = 0.0;
+                                self.opponent_attack_windup_end = elapsed + 0.5;
+                                eprintln!("[{}s] OPPONENT: strike windup (0.5s)", elapsed as u32);
+                            }
+                        } else {
+                            let attack_elapsed = elapsed - (self.opponent_attack_windup_end - 0.5);
+                            if attack_elapsed >= self.opponent_attack_duration {
+                                // Attack resolved at end of active window
+                                let hit = self.player_distance < 1.5;
+                                let zone = if hit { "Torso" } else { "WHIFF" };
+                                let msg = format!("[{:5.1}s] COMBAT: {}  dist={:.2}m", elapsed, zone, self.player_distance);
+                                eprintln!("{}", msg);
+                                self.combat_log.push(msg);
+                                self.opponent_attack_active = false;
+                            }
+                        }
                     }
 
                     let mut encoder =
@@ -360,9 +419,7 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
-                if let Some(action) = input::handle_key(&event) {
-                    eprintln!("Action: {:?}", action);
-                }
+                self.input.handle_key(&event);
                 if event.state == ElementState::Pressed {
                     if let Key::Character(c) = &event.logical_key {
                         if c.as_str() == "r" {
@@ -431,7 +488,7 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
     };
     g1_frames
         .iter()
-        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+        .map(|g1| retarget::g1_to_skin(g1, &mesh))
         .collect()
 }
 
@@ -446,14 +503,21 @@ fn main() {
         renderer: None,
         camera: Camera::new(),
         start_time: Instant::now(),
+        input: input::InputState::default(),
         clip_frames: vec![[Mat4::IDENTITY; 24]],
         clip_fps: 30.0,
         clip_rx: None,
         first_frame_presented: false,
         motion_started: false,
+        opponent_attack_timer: 0.0,
+        opponent_attack_active: false,
+        opponent_attack_windup_end: 0.0,
+        opponent_attack_duration: 1.5,
+        player_distance: 2.0,
+        combat_log: Vec::new(),
     };
-    let correct = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
-    app.clip_frames = vec![[correct; 24]];
+    // Initial clip: bind pose (identity skinning matrices).
+    // MotionBricks will replace this with animated frames when ready.
+    app.clip_frames = vec![[Mat4::IDENTITY; 24]];
     event_loop.run_app(&mut app).unwrap();
 }
