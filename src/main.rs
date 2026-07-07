@@ -497,9 +497,8 @@ impl App {
     }
 }
 
-/// Run the real MotionBricks VQVAE encoder+decoder on a synthetic idle seed and
-/// return retargeted 24-bone skinning matrices per frame. The decoded motion
-/// (not the seed) drives the skeleton.
+/// Run MotionBricks ONNX pipeline or fall back to procedural G1 frames.
+/// Returns 24-bone skinning matrices per frame.
 fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
     let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets)) {
@@ -509,22 +508,34 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
             return Vec::new();
         }
     };
-    let mut pipe = match motion::MotionPipeline::new(&assets) {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("MotionBricks init failed: {e}");
-            return Vec::new();
+
+    // Try ONNX pipeline first
+    if let Ok(mut pipe) = motion::MotionPipeline::new(&assets) {
+        let t = 40usize;
+        let enc_in = pipe.build_idle_encoder_input(t);
+        if let Ok(g1_frames) = pipe.decode_encoder_input(&enc_in, t) {
+            eprintln!(
+                "[MotionBricks] ONNX decoded {} frames",
+                g1_frames.len()
+            );
+            return g1_frames
+                .iter()
+                .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+                .collect();
         }
-    };
-    let t = 40usize; // ~1.3s clip at 30fps
-    let enc_in = pipe.build_idle_encoder_input(t);
-    let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("MotionBricks decode failed: {e}");
-            return Vec::new();
-        }
-    };
+        eprintln!("[MotionBricks] ONNX decode failed, falling back to procedural");
+    } else {
+        eprintln!("[MotionBricks] ONNX init failed, falling back to procedural");
+    }
+
+    // Fallback: procedural G1 frames (no ONNX dependency)
+    let frame_count = 60usize;
+    let g1_frames =
+        motion::build_procedural_g1_clip(frame_count, &mesh, &asset::G1_TO_MANNEQUIN);
+    eprintln!(
+        "[MotionBricks] procedural: {} frames",
+        g1_frames.len()
+    );
     g1_frames
         .iter()
         .map(|g1| asset::compute_skin_matrices(g1, &mesh))
