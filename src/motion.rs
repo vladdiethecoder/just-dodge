@@ -44,45 +44,58 @@ impl MotionPipeline {
     pub fn new(assets_path: &str) -> Result<Self> {
         let base = Path::new(assets_path);
 
+        let t0 = std::time::Instant::now();
         let mut b = Session::builder()?;
         let encoder = b
             .commit_from_file(base.join("motionbricks_vqvae_encoder.onnx"))
             .context("Failed to load VQVAE encoder")?;
+        eprintln!("[MotionPipeline] encoder loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
+        let t0 = std::time::Instant::now();
         let mut b = Session::builder()?;
         let decoder = b
             .commit_from_file(base.join("motionbricks_vqvae_decoder.onnx"))
             .context("Failed to load VQVAE decoder")?;
+        eprintln!("[MotionPipeline] decoder loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
         let mut b = Session::builder()?;
+        let t0 = std::time::Instant::now();
         let pose_transformer = b
             .commit_from_file(base.join("motionbricks_pose_transformer.onnx"))
             .context("Failed to load pose transformer")?;
+        eprintln!("[MotionPipeline] pose_transformer loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
         let mut b = Session::builder()?;
+        let t0 = std::time::Instant::now();
         let root_shared = b
             .commit_from_file(base.join("motionbricks_root_shared.onnx"))
             .context("Failed to load root shared transformer")?;
+        eprintln!("[MotionPipeline] root_shared loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
         let root_token = {
             let p = base.join("motionbricks_root_token.onnx");
             if p.exists() {
+                let t0 = std::time::Instant::now();
                 let mut b = Session::builder()?;
-                Some(
-                    b.commit_from_file(p)
-                        .context("Failed to load root token transformer")?,
-                )
+                let rt = b.commit_from_file(p)
+                    .context("Failed to load root token transformer")?;
+                eprintln!("[MotionPipeline] root_token loaded in {:.2}s", t0.elapsed().as_secs_f32());
+                Some(rt)
             } else {
                 None
             }
         };
 
+        let t0 = std::time::Instant::now();
         let mut b = Session::builder()?;
         let root_conv = b
             .commit_from_file(base.join("motionbricks_root_conv.onnx"))
             .context("Failed to load root conv decoder")?;
+        eprintln!("[MotionPipeline] root_conv loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
+        let t0 = std::time::Instant::now();
         let codebook = Self::load_npy(&base.join("motionbricks_codebook.npy"), &[8, 10, 32])?;
+        eprintln!("[MotionPipeline] codebook loaded in {:.2}s", t0.elapsed().as_secs_f32());
 
         Ok(Self {
             encoder,

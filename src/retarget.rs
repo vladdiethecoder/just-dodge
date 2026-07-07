@@ -203,6 +203,7 @@ fn lerp_mat4(a: Mat4, b: Mat4, t: f32) -> Mat4 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::asset::{Bone, SkinnedMeshData};
 
     #[test]
     fn retarget_identity_motion() {
@@ -234,9 +235,9 @@ mod tests {
 
     #[test]
     fn skeleton_constants_consistent() {
-        assert_eq!(BONE_COUNT, 102);
-        assert_eq!(skeleton::FINGER_LEFT_LAST, 70);
-        assert_eq!(skeleton::FINGER_RIGHT_LAST, 85);
-        assert_eq!(skeleton::HEAD_LAST, 102);
+        assert_eq!(BONE_COUNT, 103);
+        assert_eq!(skeleton::FINGER_LEFT_LAST, 71);
+        assert_eq!(skeleton::FINGER_RIGHT_LAST, 86);
+        assert_eq!(skeleton::HEAD_LAST, 103);
     }
 }

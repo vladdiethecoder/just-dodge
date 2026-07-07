@@ -382,8 +382,8 @@ mod tests {
 
     #[test]
     fn head_chain() {
-        assert_eq!(bone_parent(HEAD_IK), C1);
-        assert_eq!(bone_parent(HEAD_SKULL), C1);
+        assert_eq!(bone_parent(HEAD_IK), C1 as i32);
+        assert_eq!(bone_parent(HEAD_SKULL), C1 as i32);
         assert_eq!(bone_parent(HEAD_JAW), HEAD_SKULL as i32);
     }
 }
