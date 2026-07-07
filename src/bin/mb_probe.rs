@@ -53,7 +53,7 @@ fn main() {
     let t0 = step("compute_skin_matrices (retarget G1→mannequin)");
     let skin_frames: Vec<[glam::Mat4; 24]> = g1_frames
         .iter()
-        .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+        .map(|g1| retarget::g1_to_skin(g1, &mesh))
         .collect();
     done("compute_skin_matrices", t0);
 

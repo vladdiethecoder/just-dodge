@@ -13,6 +13,7 @@
 //!   [93..100]       Right foot details               (7 bones)
 //!   [100..103]      Head: Skull, Jaw, HeadIK        (3 bones)
 
+use crate::asset::SkinnedMeshData;
 use glam::Mat4;
 
 // ── constants ───────────────────────────────────────────────────────────────
@@ -359,6 +360,45 @@ pub const ARMOR_SLOTS: &[(&str, &[usize])] = &[
 /// Initialize a default rest-pose transform array.
 pub fn default_rest_transforms() -> [Mat4; BONE_COUNT] {
     [Mat4::IDENTITY; BONE_COUNT]
+}
+
+/// Build rich skeleton rest-pose world transforms from mannequin mesh bind data.
+///
+/// For rich bones that map to a skin bone (via SKIN_MAP), the rest-pose world
+/// transform is derived from the mannequin's inverse_bind matrix.
+/// For rich bones without a skin mapping (fingers, foot details, IK targets),
+/// the transform follows the hierarchy with identity local transforms.
+pub fn rest_pose_from_mesh(mesh: &SkinnedMeshData) -> [Mat4; BONE_COUNT] {
+    let mut world = [Mat4::IDENTITY; BONE_COUNT];
+
+    // Build skin-bind world matrices from inverse_bind
+    let mut skin_bind = [Mat4::IDENTITY; 24];
+    for i in 0..24.min(mesh.bones.len()) {
+        skin_bind[i] = mesh.bones[i].inverse_bind.inverse();
+    }
+
+    // Map SKIN_MAP: rich bone → skin bind world (when available)
+    for rich_idx in 0..BONE_COUNT {
+        let skin_idx = SKIN_MAP[rich_idx];
+        if skin_idx >= 0 && (skin_idx as usize) < mesh.bones.len() {
+            world[rich_idx] = skin_bind[skin_idx as usize];
+        }
+    }
+
+    // Fill unmapped bones via rest-pose hierarchy (identity local transforms)
+    // This means fingers, foot details, IK targets follow their parents.
+    // Already handled because they start as IDENTITY and propagate via FK.
+    // But we need at least one pass of FK for the unmapped bones.
+    for i in 0..BONE_COUNT {
+        if SKIN_MAP[i] < 0 || (SKIN_MAP[i] as usize) >= mesh.bones.len() {
+            let p = bone_parent(i);
+            if p >= 0 {
+                world[i] = world[p as usize]; // identity local → same as parent
+            }
+        }
+    }
+
+    world
 }
 
 #[cfg(test)]
