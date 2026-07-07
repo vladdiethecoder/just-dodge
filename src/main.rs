@@ -509,25 +509,23 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
         }
     };
 
-    // Try ONNX pipeline first
-    if let Ok(mut pipe) = motion::MotionPipeline::new(&assets) {
-        let t = 40usize;
-        let enc_in = pipe.build_idle_encoder_input(t);
-        if let Ok(g1_frames) = pipe.decode_encoder_input(&enc_in, t) {
-            eprintln!(
-                "[MotionBricks] ONNX decoded {} frames",
-                g1_frames.len()
-            );
-            return g1_frames
-                .iter()
-                .map(|g1| asset::compute_skin_matrices(g1, &mesh))
-                .collect();
+    // Only try ONNX pipeline if ORT_DYLIB_PATH is set (prevents hang without it)
+    if std::env::var("ORT_DYLIB_PATH").is_ok() {
+        if let Ok(mut pipe) = motion::MotionPipeline::new(&assets) {
+            let t = 40usize;
+            let enc_in = pipe.build_idle_encoder_input(t);
+            if let Ok(g1_frames) = pipe.decode_encoder_input(&enc_in, t) {
+                eprintln!("[MotionBricks] ONNX decoded {} frames", g1_frames.len());
+                return g1_frames
+                    .iter()
+                    .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+                    .collect();
+            }
+            eprintln!("[MotionBricks] ONNX decode failed, falling back to procedural");
+        } else {
+            eprintln!("[MotionBricks] ONNX init failed, falling back to procedural");
         }
-        eprintln!("[MotionBricks] ONNX decode failed, falling back to procedural");
-    } else {
-        eprintln!("[MotionBricks] ONNX init failed, falling back to procedural");
     }
-
     // Fallback: procedural G1 frames (no ONNX dependency)
     let frame_count = 60usize;
     let g1_frames =
