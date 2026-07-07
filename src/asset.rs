@@ -292,15 +292,14 @@ pub fn compute_skin_matrices(
     g1_world: &[glam::Mat4; 34],
     mesh: &SkinnedMeshData,
 ) -> [glam::Mat4; 24] {
-    // align: map G1 pelvis world -> mannequin Hips bind world.
-    let g1_pelvis = g1_world[0];
-    let hips_bind = mesh.bones[0].inverse_bind.inverse(); // Hips bind world (mesh space)
-    let align = hips_bind * g1_pelvis.inverse();
     let mut out = [glam::Mat4::IDENTITY; 24];
     for i in 0..24 {
-        let src = G1_TO_MANNEQUIN[i];
-        let g1_in_mesh = align * g1_world[src];
-        out[i] = g1_in_mesh * mesh.bones[i].inverse_bind;
+        let src = G1_TO_MANNEQUIN[i] as usize;
+        // Each bone uses its own bind world for alignment:
+        // skin[i] = bind_world[i] * g1_world[src] * inv_bind[i]
+        // For identity G1: bind_world[i] * I * inv_bind[i] = I (correct bind pose)
+        let bind_world = mesh.bones[i].inverse_bind.inverse();
+        out[i] = bind_world * g1_world[src] * mesh.bones[i].inverse_bind;
     }
     out
 }

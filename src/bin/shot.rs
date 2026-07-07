@@ -145,11 +145,9 @@ async fn run() {
         },
     ];
 
-    // Corrective transform: scale(0.22) * rot_x(pi/2) to stand the mannequin upright.
-    // Applied via joint matrices so normals are also transformed correctly.
-    let correct = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
-    renderer.update_skin_joints(&queue, &[correct; 24]);
+    // Corrective transform is baked into the renderer's model matrix.
+    // Bind-pose views use identity joint matrices.
+    renderer.update_skin_joints(&queue, &[Mat4::IDENTITY; 24]);
 
     for view in &views {
         let view_mat = Mat4::look_at_lh(view.eye, view.target, view.up);
