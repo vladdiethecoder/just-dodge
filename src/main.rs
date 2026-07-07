@@ -62,8 +62,9 @@ struct App {
     camera: Camera,
     start_time: Instant,
     input: input::InputState,
-    // MotionBricks-driven skinning clip (24 joint matrices per frame)
-    clip_frames: Vec<[Mat4; 24]>,
+    // Per-actor MotionBricks-driven skinning clips.
+    // actor_clips[0] = player, actor_clips[1] = opponent.
+    actor_clips: Vec<Vec<[Mat4; 24]>>,
     clip_fps: f32,
     clip_rx: Option<Receiver<Vec<[Mat4; 24]>>>,
     // Staged startup: present a clear frame before loading the heavy scene
@@ -147,7 +148,8 @@ impl ApplicationHandler for App {
                 Ok(clip) => {
                     if !clip.is_empty() {
                         eprintln!("main: MotionBricks clip received: {} frames", clip.len());
-                        self.clip_frames = clip;
+                        // Both actors share the idle clip; phase shift applied at render time.
+                        self.actor_clips = vec![clip.clone(), clip];
                     }
                     self.clip_rx = None;
                     if let Some(w) = self.window.as_ref() {
@@ -305,26 +307,44 @@ impl ApplicationHandler for App {
                     if self.input.back { self.player_pos.z += speed * dt; }
                     if self.input.left { self.player_pos.x -= speed * dt; }
                     if self.input.right { self.player_pos.x += speed * dt; }
-                    // Write per-actor MVPs
-                    let player_mvp = proj_view * Mat4::from_translation(self.player_pos);
-                    queue.write_buffer(&renderer.skinned[0].uniform_buffer, 0, bytemuck::bytes_of(&[player_mvp]));
-                    // Opponent: static position at z=-1
-                    let opp_mvp = proj_view * renderer.skinned[1].model;
-                    queue.write_buffer(&renderer.skinned[1].uniform_buffer, 0, bytemuck::bytes_of(&[opp_mvp]));
+                    // Recompute from canonical correct_model each frame to avoid transform drift.
+                    let correct_model = renderer::skinned_correct_model();
 
-                    if !self.clip_frames.is_empty() {
+                    let player_model = Mat4::from_translation(self.player_pos) * correct_model;
+                    renderer.skinned[0].model = player_model;
+                    let player_mvp = proj_view * player_model;
+                    queue.write_buffer(
+                        &renderer.skinned[0].uniform_buffer,
+                        0,
+                        bytemuck::bytes_of(&[player_mvp]),
+                    );
+
+                    // Opponent: static position at z=-1 using same verified male rig.
+                    let opp_model = Mat4::from_translation(glam::vec3(0.0, 0.0, -1.0)) * correct_model;
+                    renderer.skinned[1].model = opp_model;
+                    let opp_mvp = proj_view * opp_model;
+                    queue.write_buffer(
+                        &renderer.skinned[1].uniform_buffer,
+                        0,
+                        bytemuck::bytes_of(&[opp_mvp]),
+                    );
+
+                    if self.actor_clips.len() >= 2
+                        && !self.actor_clips[0].is_empty()
+                        && !self.actor_clips[1].is_empty()
+                    {
                         let elapsed = self.start_time.elapsed().as_secs_f32();
-                        let fc = self.clip_frames.len();
-                        let fi = (elapsed * self.clip_fps) as usize % fc;
-                        // Player: current frame
-                        renderer.update_skin_joints_indexed(queue, 0, &self.clip_frames[fi]);
-                        // Opponent: half-cycle phase shift for visual distinction
-                        let opp_fi = (fi + fc / 2) % fc;
-                        renderer.update_skin_joints_indexed(queue, 1, &self.clip_frames[opp_fi]);
+                        let player_fc = self.actor_clips[0].len();
+                        let opponent_fc = self.actor_clips[1].len();
+                        let tick = (elapsed * self.clip_fps) as usize;
+                        let player_fi = tick % player_fc;
+                        let opp_fi = (tick + opponent_fc / 2) % opponent_fc;
 
-                        // Debug bone overlay (F1 toggle)
+                        renderer.update_skin_joints_indexed(queue, 0, &self.actor_clips[0][player_fi]);
+                        renderer.update_skin_joints_indexed(queue, 1, &self.actor_clips[1][opp_fi]);
+
                         if self.show_debug_bones {
-                            renderer.update_debug_bones(device, queue, &self.clip_frames[fi]);
+                            renderer.update_debug_bones(device, queue, &self.actor_clips[0][player_fi]);
                         }
 
                         // Combat intent log
@@ -370,7 +390,7 @@ impl ApplicationHandler for App {
                             player_intent: format!("{:?}", intent),
                             opponent_phase: phase.to_string(),
                             combat_result: combat,
-                            clip_frame: fi,
+                            clip_frame: player_fi,
                         });
                     }
 
@@ -542,7 +562,7 @@ fn main() {
         camera: Camera::new(),
         start_time: Instant::now(),
         input: input::InputState::default(),
-        clip_frames: vec![[Mat4::IDENTITY; 24]],
+        actor_clips: vec![vec![[Mat4::IDENTITY; 24]], vec![[Mat4::IDENTITY; 24]]],
         clip_fps: 30.0,
         clip_rx: None,
         first_frame_presented: false,
@@ -560,8 +580,7 @@ fn main() {
     if telemetry_enabled {
         eprintln!("telemetry: writing to /tmp/just_dodge_tlm.jsonl");
     }
-    // Initial clip: bind pose (identity skinning matrices).
-    // MotionBricks will replace this with animated frames when ready.
-    app.clip_frames = vec![[Mat4::IDENTITY; 24]];
+    // Initial clips: bind pose identity for both actors.
+    // MotionBricks worker will replace these with animated frames when ready.
     event_loop.run_app(&mut app).unwrap();
 }

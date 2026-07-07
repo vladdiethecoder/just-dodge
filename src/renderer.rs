@@ -6,6 +6,13 @@ use crate::asset;
 use glam::Mat4;
 use wgpu::util::DeviceExt;
 
+/// Canonical corrective transform applied to all skinned mannequin models
+/// (scale-down from SKM1 native units and rotate from Z-up to Y-up).
+pub fn skinned_correct_model() -> Mat4 {
+    Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
+        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2)
+}
+
 pub struct MeshObject {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
@@ -661,12 +668,11 @@ impl Renderer {
         let mut skinned: Vec<SkinnedObject> = Vec::new();
 
         let mut bone_parents: Vec<i32> = Vec::new();
-        let correct_model = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-            * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+        let correct_model = skinned_correct_model();
 
         for (bin_name, tex_name, pos) in [
             ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
-            ("mannequin_female.bin", "mannequin_female_0.png", glam::vec3(0.0, 0.0, -1.0)),
+            ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, -1.0)),
         ] {
             let skin_path = format!("{}/characters/{}", assets, bin_name);
             if let Ok(mesh) = asset::load_skinned(&skin_path) {

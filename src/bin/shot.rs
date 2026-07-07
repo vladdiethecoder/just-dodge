@@ -328,8 +328,12 @@ async fn run() {
         return;
     }
 
-    // Front camera for animation sequence
-    let view_mat = Mat4::look_at_lh(vec3(0.0, 1.0, 4.0), vec3(0.0, 1.0, 0.0), Vec3::Y);
+    // Oblique camera for two-actor animation QA — front view overlaps z=+1/-1 actors.
+    let view_mat = Mat4::look_at_lh(
+        vec3(4.0, 2.0, 5.0),
+        vec3(0.0, 0.8, 0.0),
+        Vec3::Y,
+    );
     let proj = Mat4::perspective_lh(
         std::f32::consts::FRAC_PI_4,
         w as f32 / h as f32,
@@ -339,12 +343,15 @@ async fn run() {
     let proj_view = proj * view_mat;
     renderer.update_camera(&queue, &proj_view);
 
-    // Render 8 evenly-spaced frames from the 40-frame clip
+    // Render 8 evenly-spaced frames. Update each actor independently with phase shift.
     let sample_count = 8usize;
     let step = (clip.len() / sample_count).max(1);
     for si in 0..sample_count {
         let fi = (si * step) % clip.len();
-        renderer.update_skin_joints(&queue, &clip[fi]);
+        let opp_fi = (fi + clip.len() / 2) % clip.len();
+
+        renderer.update_skin_joints_indexed(&queue, 0, &clip[fi]);
+        renderer.update_skin_joints_indexed(&queue, 1, &clip[opp_fi]);
 
         let color_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("anim color"),
