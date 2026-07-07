@@ -640,8 +640,7 @@ impl Renderer {
                 texture_bind_group: stbg,
                 joint_buffer,
                 joint_bind_group,
-                model: Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-                    * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2),
+                model: Mat4::IDENTITY,
             });
         }
 

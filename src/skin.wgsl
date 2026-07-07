@@ -56,9 +56,11 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let tex_color = textureSample(base_color, base_sampler, input.frag_uv);
-    let light_dir = normalize(vec3<f32>(0.6, -1.0, 0.0));
+    // Bright ambient + mild diffuse: compensates for rough Meshy AI texture
+    // until a proper PBR pipeline replaces this basic shader.
+    let light_dir = normalize(vec3<f32>(0.4, 1.0, 0.3));
     let diff = max(dot(input.world_normal, light_dir), 0.0);
-    let ambient = 0.35;
-    let intensity = ambient + diff * 0.65;
+    let ambient = 0.75;
+    let intensity = ambient + diff * 0.25;
     return vec4<f32>(tex_color.rgb * intensity, 1.0);
 }

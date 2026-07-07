@@ -139,8 +139,11 @@ async fn run() {
         },
     ];
 
-    // Identity joints → bind pose
-    renderer.update_skin_joints(&queue, &[Mat4::IDENTITY; 24]);
+    // Corrective transform: scale(0.22) * rot_x(pi/2) to stand the mannequin upright.
+    // Applied via joint matrices so normals are also transformed correctly.
+    let correct = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
+        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+    renderer.update_skin_joints(&queue, &[correct; 24]);
 
     for view in &views {
         let view_mat = Mat4::look_at_lh(view.eye, view.target, view.up);
@@ -258,6 +261,102 @@ async fn run() {
         let path = format!("/tmp/jd_bind_{}.png", view.name);
         img.save(&path).expect("save png");
         println!("shot: wrote {}", path);
+    }
+
+    // ─── Gate 2: Procedural sine-wave arm animation ─────────────────
+    // Front camera, 6 frames, right-shoulder rotation about X axis.
+    let view_mat = Mat4::look_at_lh(vec3(0.0, 1.0, 4.0), vec3(0.0, 1.0, 0.0), Vec3::Y);
+    let proj = Mat4::perspective_lh(
+        std::f32::consts::FRAC_PI_4,
+        w as f32 / h as f32,
+        0.1,
+        100.0,
+    );
+    let proj_view = proj * view_mat;
+    renderer.update_camera(&queue, &proj_view);
+
+    let total_frames = 6usize;
+    for fi in 0..total_frames {
+        let t = fi as f32 / (total_frames - 1) as f32;
+        let angle = (t * std::f32::consts::TAU).sin() * std::f32::consts::FRAC_PI_4;
+        let mut joints = [correct; 24];
+        // Apply the world-Z rotation to the entire right-arm chain so the
+        // arm swings as a rigid unit (shoulder, arm, forearm, hand).
+        for bi in [16, 17, 18, 19] {
+            joints[bi] = Mat4::from_rotation_z(angle) * correct;
+        }
+
+        renderer.update_skin_joints(&queue, &joints);
+
+        let color_tex = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("anim color"),
+            size: wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let color_view = color_tex.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("anim pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &color_view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.55, g: 0.70, b: 0.92, a: 1.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &renderer.depth_view,
+                    depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                multiview_mask: None,
+                occlusion_query_set: None,
+            });
+            renderer.render(&mut rpass);
+            renderer.render_skinned(&mut rpass);
+        }
+        queue.submit(std::iter::once(encoder.finish()));
+
+        let bytes_per_row = (w * 4).next_multiple_of(256);
+        let buf_size = bytes_per_row * h;
+        let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("anim readback"),
+            size: buf_size as u64,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut copy = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        copy.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo { texture: &color_tex, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+            wgpu::TexelCopyBufferInfo { buffer: &read_buf, layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(bytes_per_row), rows_per_image: Some(h) } },
+            wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+        );
+        queue.submit(std::iter::once(copy.finish()));
+        let slice = read_buf.slice(..);
+        slice.map_async(wgpu::MapMode::Read, |_| {});
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        let data = slice.get_mapped_range().unwrap();
+        let mut img = image::ImageBuffer::<image::Rgba<u8>, Vec<u8>>::new(w, h);
+        for y in 0..h {
+            for x in 0..w {
+                let src = (y * bytes_per_row + x * 4) as usize;
+                img.put_pixel(x, y, image::Rgba([data[src], data[src+1], data[src+2], data[src+3]]));
+            }
+        }
+        drop(data);
+        read_buf.unmap();
+        let path = format!("/tmp/jd_anim_{:02}.png", fi);
+        img.save(&path).expect("save png");
+        println!("anim: wrote {}", path);
     }
 }
 
