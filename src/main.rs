@@ -19,6 +19,7 @@ mod motion;
 mod renderer;
 mod retarget;
 mod skeleton;
+mod telemetry;
 
 struct Camera {
     theta: f32,
@@ -75,6 +76,9 @@ struct App {
     opponent_attack_duration: f32,
     player_distance: f32,
     combat_log: Vec<String>,
+    // Telemetry + locomotion
+    telemetry: telemetry::Telemetry,
+    player_pos: Vec3,
 }
 
 impl ApplicationHandler for App {
@@ -293,10 +297,19 @@ impl ApplicationHandler for App {
                         let mvp = proj_view * obj.model;
                         queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
                     }
-                    for s in renderer.skinned.iter() {
-                        let mvp = proj_view * s.model;
-                        queue.write_buffer(&s.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
-                    }
+                    // Player locomotion from WASD input
+                    let speed = 1.5; // m/s
+                    let dt = 1.0 / self.clip_fps;
+                    if self.input.forward { self.player_pos.z -= speed * dt; }
+                    if self.input.back { self.player_pos.z += speed * dt; }
+                    if self.input.left { self.player_pos.x -= speed * dt; }
+                    if self.input.right { self.player_pos.x += speed * dt; }
+                    // Write per-actor MVPs
+                    let player_mvp = proj_view * Mat4::from_translation(self.player_pos);
+                    queue.write_buffer(&renderer.skinned[0].uniform_buffer, 0, bytemuck::bytes_of(&[player_mvp]));
+                    // Opponent: static position at z=-1
+                    let opp_mvp = proj_view * renderer.skinned[1].model;
+                    queue.write_buffer(&renderer.skinned[1].uniform_buffer, 0, bytemuck::bytes_of(&[opp_mvp]));
 
                     if !self.clip_frames.is_empty() {
                         let elapsed = self.start_time.elapsed().as_secs_f32();
@@ -340,6 +353,19 @@ impl ApplicationHandler for App {
                                 self.opponent_attack_active = false;
                             }
                         }
+                        // Emit telemetry
+                        let phase = if self.opponent_attack_active {
+                            if elapsed < self.opponent_attack_windup_end { "Telegraph" } else { "Active" }
+                        } else { "Idle" };
+                        let combat = self.combat_log.last().cloned();
+                        self.telemetry.emit(&telemetry::TelemetryFrame {
+                            t: elapsed,
+                            player_pos: self.player_pos.to_array(),
+                            player_intent: format!("{:?}", intent),
+                            opponent_phase: phase.to_string(),
+                            combat_result: combat,
+                            clip_frame: fi,
+                        });
                     }
 
                     let mut encoder =
@@ -493,6 +519,8 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
 }
 
 fn main() {
+    let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
+
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
         window: None,
@@ -515,7 +543,12 @@ fn main() {
         opponent_attack_duration: 1.5,
         player_distance: 2.0,
         combat_log: Vec::new(),
+        telemetry: telemetry::Telemetry::new(telemetry_enabled),
+        player_pos: vec3(0.0, 0.0, 1.0),
     };
+    if telemetry_enabled {
+        eprintln!("telemetry: writing to /tmp/just_dodge_tlm.jsonl");
+    }
     // Initial clip: bind pose (identity skinning matrices).
     // MotionBricks will replace this with animated frames when ready.
     app.clip_frames = vec![[Mat4::IDENTITY; 24]];
