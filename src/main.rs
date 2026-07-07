@@ -79,6 +79,7 @@ struct App {
     // Telemetry + locomotion
     telemetry: telemetry::Telemetry,
     player_pos: Vec3,
+    show_debug_bones: bool,
 }
 
 impl ApplicationHandler for App {
@@ -288,7 +289,7 @@ impl ApplicationHandler for App {
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
-                if let Some(renderer) = self.renderer.as_ref() {
+                if let Some(renderer) = self.renderer.as_mut() {
                     // --- Full render pass (arena + skinned mannequin) ---
                     let aspect = config.width as f32 / config.height as f32;
                     let proj_view = self.camera.proj_view(aspect);
@@ -320,6 +321,11 @@ impl ApplicationHandler for App {
                         // Opponent: half-cycle phase shift for visual distinction
                         let opp_fi = (fi + fc / 2) % fc;
                         renderer.update_skin_joints_indexed(queue, 1, &self.clip_frames[opp_fi]);
+
+                        // Debug bone overlay (F1 toggle)
+                        if self.show_debug_bones {
+                            renderer.update_debug_bones(device, queue, &self.clip_frames[fi]);
+                        }
 
                         // Combat intent log
                         let intent = self.input.intent();
@@ -403,6 +409,9 @@ impl ApplicationHandler for App {
                         });
                         renderer.render(&mut rpass);
                         renderer.render_skinned(&mut rpass);
+                        if self.show_debug_bones {
+                            renderer.render_debug_overlay(&mut rpass);
+                        }
                     }
                     queue.submit(std::iter::once(encoder.finish()));
                 } else {
@@ -451,6 +460,10 @@ impl ApplicationHandler for App {
                         if c.as_str() == "r" {
                             self.camera = Camera::new();
                             eprintln!("Camera reset");
+                        }
+                        if c.as_str() == "f1" {
+                            self.show_debug_bones = !self.show_debug_bones;
+                            eprintln!("debug bones: {}", self.show_debug_bones);
                         }
                     }
                 }
@@ -545,6 +558,7 @@ fn main() {
         combat_log: Vec::new(),
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
         player_pos: vec3(0.0, 0.0, 1.0),
+        show_debug_bones: false,
     };
     if telemetry_enabled {
         eprintln!("telemetry: writing to /tmp/just_dodge_tlm.jsonl");

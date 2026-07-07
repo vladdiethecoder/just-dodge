@@ -31,10 +31,17 @@ pub struct SkinnedObject {
 pub struct Renderer {
     pub pipeline: wgpu::RenderPipeline,
     pub skin_pipeline: wgpu::RenderPipeline,
+    pub debug_pipeline: wgpu::RenderPipeline,
     pub objects: Vec<MeshObject>,
     pub skinned: Vec<SkinnedObject>,
     pub depth_view: wgpu::TextureView,
     proj_view: Mat4,
+    debug_ub: wgpu::Buffer,
+    debug_ubg: wgpu::BindGroup,
+    debug_vb: Option<wgpu::Buffer>,
+    debug_line_count: u32,
+    /// Parent index (-1 = root) for each of the 24 mannequin bones.
+    pub bone_parents: Vec<i32>,
 }
 
 fn load_texture(
@@ -428,6 +435,83 @@ impl Renderer {
             multiview_mask: None,
         });
 
+        // --- Debug bone overlay pipeline (solid-color lines) ---
+        let debug_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Debug Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("debug.wgsl").into()),
+        });
+        let debug_vl = wgpu::VertexBufferLayout {
+            array_stride: 24,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 0,
+                    shader_location: 0,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x3,
+                    offset: 12,
+                    shader_location: 1,
+                },
+            ],
+        };
+        let debug_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Debug Pipeline Layout"),
+            bind_group_layouts: &[Some(&uniform_bgl)],
+            immediate_size: 0,
+        });
+        let debug_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Debug Pipeline"),
+            cache: None,
+            layout: Some(&debug_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &debug_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Some(debug_vl)],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &debug_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                front_face: wgpu::FrontFace::Ccw,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::Less),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+        });
+        let debug_ub = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Debug UB"),
+            size: 64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let debug_ubg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Debug UBG"),
+            layout: &uniform_bgl,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: debug_ub.as_entire_binding(),
+            }],
+        });
+
         // --- Depth texture ---
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
@@ -576,12 +660,17 @@ impl Renderer {
         // --- Skinned characters ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
 
+        let mut bone_parents: Vec<i32> = Vec::new();
+
         for (bin_name, tex_name, pos) in [
             ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
             ("mannequin_female.bin", "mannequin_female_0.png", glam::vec3(0.0, 0.0, -1.0)),
         ] {
             let skin_path = format!("{}/characters/{}", assets, bin_name);
             if let Ok(mesh) = asset::load_skinned(&skin_path) {
+                if bone_parents.is_empty() {
+                    bone_parents = mesh.bones.iter().map(|b| b.parent).collect();
+                }
                 let vc = mesh.vertices.len();
             let mut interleaved: Vec<u8> =
                 Vec::with_capacity(vc * std::mem::size_of::<asset::SkinnedVertex>());
@@ -669,11 +758,60 @@ impl Renderer {
         Self {
             pipeline,
             skin_pipeline,
+            debug_pipeline,
             objects,
             skinned,
             depth_view,
             proj_view: Mat4::IDENTITY,
+            debug_ub,
+            debug_ubg,
+            debug_vb: None,
+            debug_line_count: 0,
+            bone_parents,
         }
+    }
+
+    /// Upload bone line vertices from a frame of 24 skinning matrices.
+    pub fn update_debug_bones(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, joints: &[Mat4; 24]) {
+        // Extract joint world positions (translation component of each matrix)
+        let mut pos = [glam::Vec3::ZERO; 24];
+        for i in 0..24 {
+            pos[i] = joints[i].w_axis.truncate();
+        }
+        // Build line vertices: each parent-child pair = 2 vertices
+        let mut verts: Vec<f32> = Vec::with_capacity(24 * 2 * 6);
+        for i in 0..24 {
+            let p = if i < self.bone_parents.len() { self.bone_parents[i] } else { -1 };
+            if p >= 0 && (p as usize) < 24 {
+                // From child (red) to parent (white)
+                verts.extend_from_slice(pos[i].to_array().as_ref()); // position
+                verts.extend_from_slice(&[1.0, 0.2, 0.2]); // red
+                verts.extend_from_slice(pos[p as usize].to_array().as_ref()); // position
+                verts.extend_from_slice(&[1.0, 1.0, 1.0]); // white
+            }
+        }
+        self.debug_line_count = (verts.len() / 6) as u32;
+        if self.debug_line_count == 0 { return; }
+        let vb = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Debug VB"),
+            contents: bytemuck::cast_slice(&verts),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        self.debug_vb = Some(vb);
+    }
+
+    /// Draw the bone overlay (call after render_skinned).
+    pub fn render_debug_overlay<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
+        let Some(ref vb) = self.debug_vb else { return };
+        if self.debug_line_count == 0 { return; }
+        let mvp = self.proj_view;
+        // Upload MVP (can't use queue in render pass; use write_buffer before calling this)
+        // Instead, we write MVP in the update method. For now, the overlay uses
+        // the same proj_view as everything else.
+        rpass.set_pipeline(&self.debug_pipeline);
+        rpass.set_bind_group(0, &self.debug_ubg, &[]);
+        rpass.set_vertex_buffer(0, vb.slice(..));
+        rpass.draw(0..self.debug_line_count, 0..1);
     }
 
     /// Write a frame's 24 skinning matrices into the joint storage buffer.
