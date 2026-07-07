@@ -513,7 +513,11 @@ impl MotionPipeline {
 /// Uses mannequin mesh rest-pose positions with subtle idle motion
 /// (breathing, knee bend, arm sway). Returns Vec<[Mat4; 34]> ready for
 /// compute_skin_matrices.
-pub fn build_procedural_g1_clip(frame_count: usize, mesh: &SkinnedMeshData, g1_to_mannequin: &[usize; 24]) -> Vec<[Mat4; 34]> {
+pub fn build_procedural_g1_clip(
+    frame_count: usize,
+    mesh: &SkinnedMeshData,
+    g1_to_mannequin: &[usize; 24],
+) -> Vec<[Mat4; 34]> {
     // Compute G1 bone rest-pose world positions from mannequin inverse_bind
     let nb = 34usize;
     let parents = MotionPipeline::G1_PARENTS;
@@ -585,6 +589,25 @@ pub fn build_procedural_g1_clip(frame_count: usize, mesh: &SkinnedMeshData, g1_t
         frames.push(frame);
     }
     frames
+}
+
+/// Load G1 frames from a binary file exported by the MotionBricks Python pipeline.
+/// Format: raw float32 data, each frame = 413 floats (same as parse_g1_frame layout).
+/// Returns Vec<[Mat4; 34]> ready for compute_skin_matrices.
+pub fn load_g1_frames(path: &str) -> Result<Vec<[Mat4; 34]>> {
+    let data = std::fs::read(path).map_err(|e| anyhow::anyhow!("Failed to read {path}: {e}"))?;
+    if data.len() % (413 * 4) != 0 {
+        anyhow::bail!("G1 file size {} not a multiple of frame size {}", data.len(), 413 * 4);
+    }
+    let frame_count = data.len() / (413 * 4);
+    let bytes = bytemuck::cast_slice::<u8, f32>(&data);
+    let mut frames = Vec::with_capacity(frame_count);
+    for f in 0..frame_count {
+        let base = f * 413;
+        frames.push(MotionPipeline::parse_g1_frame(&bytes[base..base + 413]));
+    }
+    eprintln!("[load_g1] loaded {} frames from {}", frame_count, path);
+    Ok(frames)
 }
 
 #[cfg(test)]

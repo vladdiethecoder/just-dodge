@@ -526,6 +526,17 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
             eprintln!("[MotionBricks] ONNX init failed, falling back to procedural");
         }
     }
+
+    // Try loading MotionBricks-exported G1 frames from file
+    let g1_path = std::env::var("MB_CLIP").unwrap_or_else(|_| format!("{}/mb_idle.g1", assets));
+    if let Ok(g1_frames) = motion::load_g1_frames(&g1_path) {
+        eprintln!("[MotionBricks] loaded {} frames from {}", g1_frames.len(), g1_path);
+        return g1_frames
+            .iter()
+            .map(|g1| asset::compute_skin_matrices(g1, &mesh))
+            .collect();
+    }
+
     // Fallback: procedural G1 frames (no ONNX dependency)
     let frame_count = 60usize;
     let g1_frames =
