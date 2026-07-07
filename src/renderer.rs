@@ -661,6 +661,8 @@ impl Renderer {
         let mut skinned: Vec<SkinnedObject> = Vec::new();
 
         let mut bone_parents: Vec<i32> = Vec::new();
+        let correct_model = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
+            * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
 
         for (bin_name, tex_name, pos) in [
             ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
@@ -750,7 +752,7 @@ impl Renderer {
                 texture_bind_group: stbg,
                 joint_buffer,
                 joint_bind_group,
-                model: Mat4::from_translation(pos),
+                model: Mat4::from_translation(pos) * correct_model,
             });
             }
         }

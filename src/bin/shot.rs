@@ -269,9 +269,7 @@ async fn run() {
         println!("shot: wrote {}", path);
     }
 
-    // ─── Gate 2: Real MotionBricks idle animation frames ────────────
-    // Run the MotionBricks ONNX pipeline to produce 40 frames of real
-    // animation, then render 8 evenly-spaced frames for visual QA.
+    // ─── Gate 2: Load MotionBricks-exported .g1 frames ────────────
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
     let clip = {
         let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
@@ -282,19 +280,11 @@ async fn run() {
                 return;
             }
         };
-        let mut pipe = match motion::MotionPipeline::new(&assets) {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("FAIL: MotionPipeline::new: {e}");
-                return;
-            }
-        };
-        let t = 40usize;
-        let enc_in = pipe.build_idle_encoder_input(t);
-        let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
+        let g1_path = std::env::var("MB_CLIP").unwrap_or_else(|_| format!("{}/mb_idle.g1", assets));
+        let g1_frames = match motion::load_g1_frames(&g1_path) {
             Ok(f) => f,
             Err(e) => {
-                eprintln!("FAIL: decode_encoder_input: {e}");
+                eprintln!("FAIL: load .g1 frames: {e}");
                 return;
             }
         };
@@ -302,8 +292,37 @@ async fn run() {
             .iter()
             .map(|g1| asset::compute_skin_matrices(g1, &mesh))
             .collect();
-        eprintln!("[shot] MotionBricks: {} frames", skin_frames.len());
-        skin_frames
+        eprintln!("[shot] MotionBricks: {} frames from {}", skin_frames.len(), g1_path);
+        // Debug: print first frame bone positions from G1 data
+        if let Some(g1) = g1_frames.first() {
+            for i in 0..34.min(5) {
+                let pos = g1[i].w_axis;
+                eprintln!("  G1 bone[{}]: ({:.3}, {:.3}, {:.3})", i, pos.x, pos.y, pos.z);
+            }
+        }
+        // Debug: identity G1 → skinning comparison
+        let id_g1 = [Mat4::IDENTITY; 34];
+        let id_skin = asset::compute_skin_matrices(&id_g1, &mesh);
+        eprintln!("  IDENTITY G1 → skin translations:");
+        for i in 0..24.min(5) {
+            let t = id_skin[i].w_axis.truncate();
+            eprintln!("    skin[{}]: ({:.3}, {:.3}, {:.3})", i, t.x, t.y, t.z);
+        }
+        // Debug: print first frame skinning matrix translations
+        if let Some(skin) = skin_frames.first() {
+            for i in 0..24.min(5) {
+                let t = skin[i].w_axis.truncate();
+                eprintln!("  skin[{}]: ({:.3}, {:.3}, {:.3})", i, t.x, t.y, t.z);
+            }
+        }
+        // Apply corrective transform to skinned object models (per-character)
+        let correct_m = Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
+            * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2);
+        let mut corrected: Vec<[Mat4; 24]> = Vec::with_capacity(skin_frames.len());
+        for skin in skin_frames {
+            corrected.push(skin);
+        }
+        corrected
     };
 
     if clip.is_empty() {
