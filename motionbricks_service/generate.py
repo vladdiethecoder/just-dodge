@@ -17,13 +17,22 @@ import torch
 _SERVICE: dict | None = None
 
 # Paths to the GR00T MotionBricks checkout and its trained checkpoints.
-MB_DIR = "/run/media/vdubrov/Bulk-SSD/gr00t/motionbricks"
-CHECKPOINT_DIR = "/run/media/vdubrov/Bulk-SSD/gr00t/motionbricks/out"
-PRIMITIVES_RON = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "assets", "data", "primitives.ron"
+# All paths can be overridden via environment variables (see README.md).
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_MB_DIR_DEFAULT = os.path.abspath(
+    os.path.join(_PROJECT_ROOT, "..", "gr00t", "motionbricks")
 )
-SKELETON_XML = os.path.join(MB_DIR, "assets", "skeletons", "g1", "g1.xml")
-CLIP_CKPT = os.path.join(CHECKPOINT_DIR, "G1-clip.ckpt")
+_CHECKPOINT_DIR_DEFAULT = os.path.abspath(
+    os.path.join(_PROJECT_ROOT, "..", "gr00t", "motionbricks", "out")
+)
+
+MB_DIR = os.getenv("MB_DIR", _MB_DIR_DEFAULT)
+CHECKPOINT_DIR = os.getenv("CHECKPOINT_DIR", _CHECKPOINT_DIR_DEFAULT)
+PRIMITIVES_RON = os.path.join(_PROJECT_ROOT, "assets", "data", "primitives.ron")
+SKELETON_XML = os.getenv(
+    "SKELETON_XML", os.path.join(MB_DIR, "assets", "skeletons", "g1", "g1.xml")
+)
+CLIP_CKPT = os.getenv("CLIP_CKPT", os.path.join(CHECKPOINT_DIR, "G1-clip.ckpt"))
 
 
 class DictNamespace(dict):
