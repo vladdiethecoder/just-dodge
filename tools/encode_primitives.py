@@ -8,6 +8,37 @@ import re
 import textwrap
 
 import numpy as np
+import torch
+
+
+def _build_motion_rep():
+    """Build the MotionBricks GlobalRootGlobalJoints representation for normalization."""
+    from motionbricks.motionlib.core.motion_reps.dual_root_global_joints import (
+        GlobalRootGlobalJoints,
+    )
+    from motionbricks.motionlib.core.skeletons.g1 import G1Skeleton34
+    from motionbricks.motionlib.core.utils.stats import Stats
+
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    mb_dir = os.path.abspath(os.path.join(project_root, "..", "gr00t", "motionbricks"))
+    checkpoint_dir = os.path.join(mb_dir, "out")
+
+    mb_dir = os.getenv("MB_DIR", mb_dir)
+    checkpoint_dir = os.getenv("CHECKPOINT_DIR", checkpoint_dir)
+
+    skeleton = G1Skeleton34(
+        folder=os.path.join(checkpoint_dir, "motionbricks_pose", "version_1", "skeleton"),
+        t_pose="capture",
+    )
+    stats = Stats(
+        folder=os.path.join(checkpoint_dir, "motionbricks_pose", "version_1", "stats", "motion")
+    )
+    return GlobalRootGlobalJoints(
+        name="g1skel34_dual_root_global_joints",
+        stats=stats,
+        skeleton=skeleton,
+        fps=30,
+    )
 
 
 def encode_primitive(
@@ -17,7 +48,6 @@ def encode_primitive(
     source_id,
     features: np.ndarray,
     peak_idx: int,
-    synthetic: bool = False,
 ):
     """Extract 4-frame peak window from features and emit a RON primitive snippet."""
     assert features.shape[1] == 414, features.shape
@@ -25,8 +55,7 @@ def encode_primitive(
     assert window.shape[0] == 4
     root = window[-1, :3]
     heading = np.arctan2(window[-1, 5], window[-1, 4])
-    fixture_comment = " // TEST_FIXTURE_DO_NOT_SHIP" if synthetic else ""
-    ron = f"""({fixture_comment}
+    ron = f"""(
     action: {action},
     weapon: {weapon},
     stance: {stance},
@@ -74,13 +103,58 @@ def _append_primitive(primitive_ron: str, out_path: str) -> None:
         _create_library(primitive_ron, out_path)
         return
 
-    indented = textwrap.indent(primitive_ron, "        ")
+    indented = textwrap.indent(primitive_ron, "    ")
     if not indented.endswith("\n"):
         indented += "\n"
     lines.insert(insert_idx, indented)
 
     with open(out_path, "w") as f:
         f.writelines(lines)
+
+
+def _replace_existing_primitive(primitive_ron: str, out_path: str, action: str, weapon: str, stance: str) -> bool:
+    """Replace an existing primitive with the same action/weapon/stance.
+
+    Returns True if a replacement occurred.
+    """
+    with open(out_path, "r") as f:
+        text = f.read()
+
+    # Find the primitive block matching action/weapon/stance.
+    # The opening paren may be followed by an optional comment line.
+    pattern = re.compile(
+        rf"\(\s*(?://[^\n]*)?\n\s*action:\s*{action},\s*\n\s*weapon:\s*{weapon},\s*\n\s*stance:\s*{stance},",
+        re.MULTILINE,
+    )
+    match = pattern.search(text)
+    if not match:
+        return False
+
+    # Find the closing ")," of this primitive block.
+    start = match.start()
+    depth = 0
+    end = None
+    for i in range(start, len(text)):
+        if text[i] == "(":
+            depth += 1
+        elif text[i] == ")":
+            depth -= 1
+            if depth == 0:
+                # Include the trailing comma if present.
+                end = i + 1
+                if end < len(text) and text[end] == ",":
+                    end += 1
+                break
+    if end is None:
+        return False
+
+    indented = textwrap.indent(primitive_ron, "    ")
+    if not indented.endswith("\n"):
+        indented += "\n"
+    new_text = text[:start] + indented + text[end:]
+    with open(out_path, "w") as f:
+        f.write(new_text)
+    return True
 
 
 def main():
@@ -92,13 +166,12 @@ def main():
     parser.add_argument("--features", help="Path to .npy features file ([T, 414])")
     parser.add_argument("--peak", type=int, default=15, help="Frame index of the peak 4-frame window")
     parser.add_argument("--out", default="assets/data/primitives.ron", help="Output RON library path")
-    parser.add_argument("--synthetic", action="store_true", help="Mark the primitive as a test fixture")
     parser.add_argument("--smoke-test", action="store_true", help="Print a dummy primitive to stdout")
     args = parser.parse_args()
 
     if args.smoke_test:
         dummy = np.zeros((30, 414), dtype=np.float32)
-        print(encode_primitive("Strike", "Longsword", "Top", "test", dummy, 10, synthetic=args.synthetic))
+        print(encode_primitive("Strike", "Longsword", "Top", "test", dummy, 10))
         return
 
     required = ["action", "weapon", "stance", "source_id", "features"]
@@ -115,18 +188,23 @@ def main():
             f"peak window [{args.peak}, {args.peak + 4}) exceeds feature bounds (T={features.shape[0]})"
         )
 
+    # Normalize features to the MotionBricks representation before storing.
+    motion_rep = _build_motion_rep()
+    features_t = torch.from_numpy(features)
+    features_norm = motion_rep.normalize(features_t).numpy()
+
     primitive = encode_primitive(
         args.action,
         args.weapon,
         args.stance,
         args.source_id,
-        features,
+        features_norm,
         args.peak,
-        synthetic=args.synthetic,
     )
 
     if os.path.exists(args.out):
-        _append_primitive(primitive, args.out)
+        if not _replace_existing_primitive(primitive, args.out, args.action, args.weapon, args.stance):
+            _append_primitive(primitive, args.out)
     else:
         _create_library(primitive, args.out)
 
