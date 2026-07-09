@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 """Smoke-test exported MotionBrains ONNX artifacts."""
 import os
+import sys
 import numpy as np
 import onnxruntime as ort
 
 ASSETS = "assets"
 
 
+def check_external_data(onnx_path):
+    """Warn if the external-data file that ONNX Runtime needs is missing."""
+    data_path = onnx_path + ".data"
+    if not os.path.isfile(data_path):
+        print(f"WARNING: external data file missing: {data_path}", file=sys.stderr)
+        print("         Regenerate ONNX artifacts with tools/export_motionbricks_onnx.py", file=sys.stderr)
+
+
 def run_pose_backbone():
-    sess = ort.InferenceSession(os.path.join(ASSETS, "motionbricks_pose_backbone.onnx"))
+    onnx_path = os.path.join(ASSETS, "motionbricks_pose_backbone.onnx")
+    check_external_data(onnx_path)
+    sess = ort.InferenceSession(onnx_path)
     n_tokens = 8
     pose_tokens = np.random.randint(0, 11, (1, n_tokens, 8), dtype=np.int64)
     local_root = np.random.randn(1, n_tokens * 4, 4).astype(np.float32)
@@ -30,7 +41,9 @@ def run_pose_backbone():
 
 
 def run_root_backbone():
-    sess = ort.InferenceSession(os.path.join(ASSETS, "motionbricks_root_backbone.onnx"))
+    onnx_path = os.path.join(ASSETS, "motionbricks_root_backbone.onnx")
+    check_external_data(onnx_path)
+    sess = ort.InferenceSession(onnx_path)
     n = 8
     g = np.random.randn(1, n, 5).astype(np.float32)
     hg = np.ones((1, n), dtype=np.bool_)
