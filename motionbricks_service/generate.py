@@ -7,7 +7,7 @@ context_frames, seed)` which returns deterministic float32 bytes of shape
 """
 import math
 import os
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pyron
@@ -316,16 +316,16 @@ def _context_to_transforms(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Convert incoming [N, 34, 4, 4] world matrices to global positions/rotations.
 
-    If the context is empty or degenerate (all identity), fall back to the
-    neutral idle pose from the clip holder.
+    If the context is None, empty, or degenerate (all identity), fall back to
+    the neutral idle pose from the clip holder.
     """
     converter = svc["converter"]
     clip_holder = svc["clip_holder"]
     device = svc["device"]
     NUM_F = svc["num_frames_per_token"]
 
-    ctx = np.asarray(context_frames, dtype=np.float32)
-    use_neutral = ctx.size == 0
+    ctx = None if context_frames is None else np.asarray(context_frames, dtype=np.float32)
+    use_neutral = ctx is None or ctx.size == 0
     if not use_neutral and ctx.ndim == 4 and ctx.shape[1:] == (34, 4, 4):
         # Degenerate pose detection: all matrices are identity.
         eye = np.eye(4, dtype=np.float32)
@@ -502,7 +502,7 @@ def generate_clip(
     action: str,
     weapon: str,
     stance: str,
-    context_frames: list,  # list of [34, 4, 4] world matrices
+    context_frames: Optional[list] = None,  # list of [34, 4, 4] world matrices
     seed: int = 0,
 ) -> bytes:
     """Generate a deterministic combat clip and return raw float32 bytes of [N, 413]."""

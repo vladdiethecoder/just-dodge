@@ -36,7 +36,9 @@ pub enum Stance {
 pub struct ActionCondition {
     pub action: Action,
     pub stance: Stance,
-    pub from_pose: [Mat4; 34],
+    /// Optional seed pose. When `None`, the MotionBrains service supplies its
+    /// own neutral idle pose instead of the Rust side generating a fallback.
+    pub from_pose: Option<[Mat4; 34]>,
 }
 
 /// Full MotionBricks inference pipeline
@@ -614,12 +616,15 @@ fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec
     let mut buf = vec![0f32; 1 * 304 * frames];
 
     // Pre-compute base rotations and positions from the current pose.
+    // The ONNX test path uses this directly; an identity fallback is acceptable
+    // only because this function is #[cfg(test)]-only.
+    let pose = condition.from_pose.unwrap_or([Mat4::IDENTITY; 34]);
     let mut base_rot6d = [[0f32; 6]; 34];
     let mut base_pos = [glam::Vec3::ZERO; 34];
-    let root_pos = condition.from_pose[0].w_axis.truncate();
+    let root_pos = pose[0].w_axis.truncate();
     for j in 0..34 {
-        base_rot6d[j] = matrix_to_cont6d(condition.from_pose[j]);
-        base_pos[j] = condition.from_pose[j].w_axis.truncate();
+        base_rot6d[j] = matrix_to_cont6d(pose[j]);
+        base_pos[j] = pose[j].w_axis.truncate();
     }
 
     for f in 0..frames {
@@ -783,7 +788,12 @@ pub fn generate_action_clip(
     let action_name = format!("{:?}", condition.action);
     let stance_name = format!("{:?}", condition.stance);
     // Weapon is not part of ActionCondition yet; default to Longsword for Phase 2.
-    service.generate_clip(&action_name, "Longsword", &stance_name, &[condition.from_pose], 0)
+    if let Some(pose) = condition.from_pose {
+        let context = [pose];
+        service.generate_clip(&action_name, "Longsword", &stance_name, Some(&context), 0)
+    } else {
+        service.generate_clip(&action_name, "Longsword", &stance_name, None, 0)
+    }
 }
 
 #[cfg(test)]
@@ -868,7 +878,7 @@ mod tests {
             let condition = ActionCondition {
                 action,
                 stance,
-                from_pose: pose,
+                from_pose: Some(pose),
             };
             let clip = generate_action_clip_legacy(&condition, &mut pipeline)
                 .expect("generate_action_clip should succeed when artifacts are present");
@@ -894,7 +904,7 @@ mod tests {
             let condition = ActionCondition {
                 action,
                 stance: Stance::Top,
-                from_pose: pose,
+                from_pose: Some(pose),
             };
             let clip = generate_action_clip_legacy(&condition, &mut pipeline)
                 .expect("generate_action_clip should succeed when artifacts are present");
@@ -921,7 +931,7 @@ mod tests {
         let condition = ActionCondition {
             action: Action::Grab,
             stance: Stance::Left,
-            from_pose: pose,
+            from_pose: Some(pose),
         };
 
         let first = generate_action_clip_legacy(&condition, &mut pipeline)
@@ -952,7 +962,7 @@ mod tests {
         let condition = ActionCondition {
             action: Action::Strike,
             stance: Stance::Right,
-            from_pose: pose,
+            from_pose: Some(pose),
         };
 
         let result = generate_action_clip_legacy(&condition, &mut pipeline);

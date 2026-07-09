@@ -1,15 +1,13 @@
 use just_dodge::motion::{Action, ActionCondition, Stance};
 use just_dodge::motion_service::MotionService;
-use glam::Mat4;
 
 #[test]
 fn strike_generates_finite_frames() {
     let svc = MotionService::new().expect("Python service must initialize");
-    let pose = [Mat4::IDENTITY; 34];
     let condition = ActionCondition {
         action: Action::Strike,
         stance: Stance::Top,
-        from_pose: pose,
+        from_pose: None,
     };
     let clip = just_dodge::motion::generate_action_clip(&condition, &svc)
         .expect("service should return a clip");
@@ -24,11 +22,10 @@ fn strike_generates_finite_frames() {
 #[test]
 fn strike_is_deterministic() {
     let svc = MotionService::new().expect("Python service must initialize");
-    let pose = [Mat4::IDENTITY; 34];
     let condition = ActionCondition {
         action: Action::Strike,
         stance: Stance::Top,
-        from_pose: pose,
+        from_pose: None,
     };
     let a = just_dodge::motion::generate_action_clip(&condition, &svc).unwrap();
     let b = just_dodge::motion::generate_action_clip(&condition, &svc).unwrap();

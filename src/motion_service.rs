@@ -30,8 +30,11 @@ impl MotionService {
 
     fn build_context_array<'py>(
         py: Python<'py>,
-        context: &[[Mat4; 34]],
-    ) -> Result<Bound<'py, numpy::PyArray4<f32>>> {
+        context: Option<&[[Mat4; 34]]>,
+    ) -> Result<Option<Bound<'py, numpy::PyArray4<f32>>>> {
+        let Some(context) = context else {
+            return Ok(None);
+        };
         let frames = context.len().max(1);
         let mut data = vec![0.0f32; frames * 34 * 4 * 4];
         for (f, frame) in context.iter().enumerate() {
@@ -52,7 +55,7 @@ impl MotionService {
         }
         let array = Array4::from_shape_vec((frames, 34, 4, 4), data)
             .map_err(|e| anyhow::anyhow!("failed to build context array: {e}"))?;
-        Ok(numpy::PyArray4::from_owned_array(py, array))
+        Ok(Some(numpy::PyArray4::from_owned_array(py, array)))
     }
 
     pub fn generate_clip(
@@ -60,7 +63,7 @@ impl MotionService {
         action: &str,
         weapon: &str,
         stance: &str,
-        context: &[[Mat4; 34]],
+        context: Option<&[[Mat4; 34]]>,
         seed: u64,
     ) -> Result<Vec<[Mat4; 34]>> {
         Python::with_gil(|py| {
