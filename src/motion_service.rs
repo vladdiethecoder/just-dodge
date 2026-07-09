@@ -45,7 +45,8 @@ impl MotionService {
                 }
             }
         }
-        // If no context was provided, use a single identity frame.
+        // If an empty context slice was provided, send a single identity frame
+        // so the Python service falls back to its internal idle clip.
         if context.is_empty() {
             for j in 0..34 {
                 for k in 0..4 {
