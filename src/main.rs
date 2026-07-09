@@ -36,6 +36,16 @@ mod ui;
 /// failed.
 type CombatClipResult = (Option<Vec<[Mat4; 24]>>, Option<Vec<[Mat4; 24]>>);
 
+/// Result delivered by the idle clip worker: raw G1 frames and skinning matrices
+/// for the player and opponent. Idle clips are generated once at startup and
+/// loop whenever combat is not active.
+type IdleClipResult = (
+    Option<Vec<[Mat4; 34]>>,
+    Option<Vec<[Mat4; 24]>>,
+    Option<Vec<[Mat4; 34]>>,
+    Option<Vec<[Mat4; 24]>>,
+);
+
 struct Camera {
     theta: f32,
     phi: f32,
@@ -84,10 +94,19 @@ struct App {
     // Python MotionBrains bridge.
     motion_service: Arc<motion_service::MotionService>,
     skinned_mesh: Arc<asset::SkinnedMeshData>,
-    neutral_g1_pose: [Mat4; 34],
+    // Idle clips are generated once at startup and loop outside combat.
+    player_idle_clip: Option<Vec<[Mat4; 24]>>,
+    opponent_idle_clip: Option<Vec<[Mat4; 24]>>,
+    // Raw G1 idle clips are kept as the from_pose context for combat actions.
+    player_idle_g1_clip: Option<Vec<[Mat4; 34]>>,
+    opponent_idle_g1_clip: Option<Vec<[Mat4; 34]>>,
+    // Combat clips play during Reveal.
     player_clip: Option<Vec<[Mat4; 24]>>,
     opponent_clip: Option<Vec<[Mat4; 24]>>,
     combat_clip_rx: Option<Receiver<CombatClipResult>>,
+    // Last valid displayed pose; used only if both idle and combat clips are unavailable.
+    last_player_pose: [Mat4; 24],
+    last_opponent_pose: [Mat4; 24],
     // Combat systems
     truth: truth::CombatTruth,
     ai: ai::AiController,
@@ -298,15 +317,25 @@ impl App {
         eprintln!("main: spawning combat clip worker");
         let service = Arc::clone(&self.motion_service);
         let mesh = Arc::clone(&self.skinned_mesh);
+        let player_from_pose = self
+            .player_idle_g1_clip
+            .as_ref()
+            .and_then(|c| c.first().copied())
+            .unwrap_or([Mat4::IDENTITY; 34]);
+        let opponent_from_pose = self
+            .opponent_idle_g1_clip
+            .as_ref()
+            .and_then(|c| c.first().copied())
+            .unwrap_or([Mat4::IDENTITY; 34]);
         let player_condition = motion::ActionCondition {
             action: map_truth_action(player_action),
             stance: map_truth_stance(snapshot.player.stance),
-            from_pose: self.neutral_g1_pose,
+            from_pose: player_from_pose,
         };
         let opponent_condition = motion::ActionCondition {
             action: map_truth_action(opponent_action),
             stance: map_truth_stance(snapshot.opponent.stance),
-            from_pose: self.neutral_g1_pose,
+            from_pose: opponent_from_pose,
         };
         let (tx, rx) = mpsc::channel();
         self.combat_clip_rx = Some(rx);
@@ -612,36 +641,43 @@ impl App {
         queue.present(surface_texture);
     }
 
-    fn current_pose(&self) -> ([Mat4; 24], [Mat4; 24]) {
+    fn current_pose(&mut self) -> ([Mat4; 24], [Mat4; 24]) {
         let elapsed = self.start_time.elapsed().as_secs_f32();
         let tick = (elapsed * self.clip_fps) as usize;
 
-        // TODO: This is a temporary procedural neutral/rest pose fallback.
-        // It is derived from the mannequin mesh bind pose and keeps the game
-        // from panicking when no combat clip is active (i.e. outside Reveal,
-        // or before the async worker has finished). Once an Idle primitive
-        // exists in the MotionBricks library, replace this fallback with a
-        // MotionBricks-generated idle clip.
-        let neutral_skin = || asset::compute_skin_matrices(&self.neutral_g1_pose, &self.skinned_mesh);
+        // During Reveal, prefer the combat clip if it has arrived; otherwise
+        // fall back to the looping idle clip. Outside Reveal, always use idle.
+        // If neither source has a frame yet, hold the last valid pose. Idle
+        // clips are generated before the event loop starts, so the last-pose
+        // fallback is only a safety net.
+        let in_reveal = self.truth.phase() == truth::Phase::Reveal;
 
-        let player = self
-            .player_clip
-            .as_ref()
-            .and_then(|clip| {
-                let fc = clip.len();
-                if fc == 0 { None } else { Some(clip[tick % fc]) }
-            })
-            .unwrap_or_else(neutral_skin);
+        let player = if in_reveal {
+            self.player_clip
+                .as_ref()
+                .and_then(|clip| clip_frame(clip, tick))
+                .or_else(|| self.player_idle_clip.as_ref().and_then(|clip| clip_frame(clip, tick)))
+        } else {
+            self.player_idle_clip
+                .as_ref()
+                .and_then(|clip| clip_frame(clip, tick))
+        }
+        .unwrap_or(self.last_player_pose);
 
-        let opponent = self
-            .opponent_clip
-            .as_ref()
-            .and_then(|clip| {
-                let fc = clip.len();
-                if fc == 0 { None } else { Some(clip[tick % fc]) }
-            })
-            .unwrap_or_else(neutral_skin);
+        let opponent = if in_reveal {
+            self.opponent_clip
+                .as_ref()
+                .and_then(|clip| clip_frame(clip, tick))
+                .or_else(|| self.opponent_idle_clip.as_ref().and_then(|clip| clip_frame(clip, tick)))
+        } else {
+            self.opponent_idle_clip
+                .as_ref()
+                .and_then(|clip| clip_frame(clip, tick))
+        }
+        .unwrap_or(self.last_opponent_pose);
 
+        self.last_player_pose = player;
+        self.last_opponent_pose = opponent;
         (player, opponent)
     }
 
@@ -672,6 +708,50 @@ fn map_truth_stance(stance: truth::Stance) -> motion::Stance {
         truth::Stance::Left => motion::Stance::Left,
         truth::Stance::Right => motion::Stance::Right,
     }
+}
+
+/// Return frame `tick` from `clip` if it is non-empty.
+fn clip_frame(clip: &[[Mat4; 24]], tick: usize) -> Option<[Mat4; 24]> {
+    let fc = clip.len();
+    if fc == 0 { None } else { Some(clip[tick % fc]) }
+}
+
+/// Generate the Idle/Longsword/Top clip for both sides and convert each to
+/// skinning matrices. The raw G1 frames are kept so they can seed combat actions.
+fn generate_idle_clips(
+    service: &motion_service::MotionService,
+    mesh: &asset::SkinnedMeshData,
+) -> IdleClipResult {
+    // Identity context lets the Python service fall back to its trained
+    // neutral standing pose as the generation seed.
+    let identity_context = [Mat4::IDENTITY; 34];
+    let condition = motion::ActionCondition {
+        action: motion::Action::Idle,
+        stance: motion::Stance::Top,
+        from_pose: identity_context,
+    };
+
+    let player_g1 = motion::generate_action_clip(&condition, service);
+    let opponent_g1 = motion::generate_action_clip(&condition, service);
+
+    let player_skin = player_g1.as_ref().ok().map(|clip| {
+        clip.iter()
+            .map(|g1| asset::compute_skin_matrices(g1, mesh))
+            .collect::<Vec<_>>()
+    });
+    let opponent_skin = opponent_g1.as_ref().ok().map(|clip| {
+        clip.iter()
+            .map(|g1| asset::compute_skin_matrices(g1, mesh))
+            .collect::<Vec<_>>()
+    });
+
+    eprintln!(
+        "[idle clip worker] player: {} frames, opponent: {} frames",
+        player_skin.as_ref().map(|c| c.len()).unwrap_or(0),
+        opponent_skin.as_ref().map(|c| c.len()).unwrap_or(0)
+    );
+
+    (player_g1.ok(), player_skin, opponent_g1.ok(), opponent_skin)
 }
 
 /// Generate a combat clip on the worker thread and convert it to skinning matrices.
@@ -734,12 +814,38 @@ fn main() {
         asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
             .expect("required skinned mesh missing"),
     );
-    let neutral_g1_pose = {
-        let clip = motion::build_procedural_g1_clip(1, &skinned_mesh, &asset::G1_TO_MANNEQUIN);
-        clip.into_iter()
-            .next()
-            .expect("failed to build neutral pose from mesh bind pose")
+    // Generate idle clips up front so there is never a procedural bind-pose
+    // fallback. This runs on a worker thread but is awaited before the event
+    // loop starts, guaranteeing valid idle motion from the first rendered frame.
+    let (player_idle_g1_clip, player_idle_clip, opponent_idle_g1_clip, opponent_idle_clip) = {
+        let service = Arc::clone(&motion_service);
+        let mesh = Arc::clone(&skinned_mesh);
+        let (tx, rx) = mpsc::channel();
+        thread::spawn(move || {
+            let result = generate_idle_clips(&service, &mesh);
+            let _ = tx.send(result);
+        });
+        rx.recv()
+            .expect("idle clip worker disconnected")
     };
+
+    let player_idle_g1_clip = player_idle_g1_clip
+        .expect("Idle clip generation failed for player; no procedural fallback available");
+    let opponent_idle_g1_clip = opponent_idle_g1_clip
+        .expect("Idle clip generation failed for opponent; no procedural fallback available");
+    let player_idle_clip = player_idle_clip
+        .expect("Idle clip generation failed for player; no procedural fallback available");
+    let opponent_idle_clip = opponent_idle_clip
+        .expect("Idle clip generation failed for opponent; no procedural fallback available");
+
+    let last_player_pose = player_idle_clip
+        .first()
+        .copied()
+        .expect("player idle clip must not be empty");
+    let last_opponent_pose = opponent_idle_clip
+        .first()
+        .copied()
+        .expect("opponent idle clip must not be empty");
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -758,10 +864,15 @@ fn main() {
         first_frame_presented: false,
         motion_service,
         skinned_mesh,
-        neutral_g1_pose,
+        player_idle_clip: Some(player_idle_clip),
+        opponent_idle_clip: Some(opponent_idle_clip),
+        player_idle_g1_clip: Some(player_idle_g1_clip),
+        opponent_idle_g1_clip: Some(opponent_idle_g1_clip),
         player_clip: None,
         opponent_clip: None,
         combat_clip_rx: None,
+        last_player_pose,
+        last_opponent_pose,
         truth: truth::CombatTruth::new(),
         ai: ai::AiController::new(
             truth::Side::Opponent,
