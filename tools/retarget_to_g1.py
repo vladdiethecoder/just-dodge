@@ -29,14 +29,26 @@ def generate_synthetic_clip(frames: int = 60, joint_count: int = 34, seed: int =
 def retarget(source_path: str, source_format: str, out_path: str, synthetic: bool = False):
     """Retarget a source clip to G1Skeleton34.
 
-    Real retargeting is not yet implemented; use --synthetic to generate a
-    deterministic test fixture for pipeline validation only.
+    Real retargeting requires a source-specific bone map (source skeleton ->
+    G1Skeleton34) plus a forward-kinematics / inverse-kinematics (FK/IK) solver
+    to align joint positions, root trajectory, and end-effector contacts in a
+    consistent world frame.
+
+    Until mocap is acquired and that solver is implemented, use --synthetic to
+    generate a deterministic test fixture for pipeline validation only.
     """
     if synthetic:
         clip = generate_synthetic_clip()
         np.save(out_path, clip)
         return
-    raise NotImplementedError("retargeting implementation follows mocap acquisition")
+
+    # TODO(Data Phase 2): implement source-specific bone map + FK/IK solver once
+    # mocap sources are available (see docs/plans/mocap-pipeline.md).
+    raise NotImplementedError(
+        f"Retargeting from {source_format} is not implemented. "
+        "Use --synthetic to generate a test fixture, or implement the "
+        "source-specific bone map and FK/IK solver (TODO: Data Phase 2)."
+    )
 
 
 def main():
