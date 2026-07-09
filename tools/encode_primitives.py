@@ -77,7 +77,7 @@ def _create_library(primitive_ron: str, out_path: str) -> None:
     feature_dim: 414,
     frames_per_token: 4,
     primitives: [
-{textwrap.indent(primitive_ron, "        ").rstrip()}
+{textwrap.indent(primitive_ron, "    ").rstrip()}
     ],
 )
 """
