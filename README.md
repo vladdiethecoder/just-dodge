@@ -44,3 +44,19 @@ A first-person duel game where you and your opponent each commit to one hidden a
 This repo is documentation-gated and evidence-gated. Code and assets exist, but no feature should be accepted until the corresponding playable prototype, replay/truth-hash test, visual QA pass, and playtest evidence pass.
 
 Do not advance production scope until the corresponding prototype report says CONTINUE and the evidence gate in `docs/PHASED-PRODUCTION-PLAN.md` passes.
+
+## Setup
+
+```bash
+# Rust/wgpu game code
+cargo build
+
+# Python motion service dependencies
+python3 -m pip install -r motionbricks_service/requirements.txt
+```
+
+Note: `kimodo` is installed from the upstream GitHub repository. Kimodo's wheel builds a small C++ extension, so `cmake` must be available. On this machine the install succeeded with `--no-build-isolation` because the isolated build environment could not see the `cmake` Python package.
+
+Running Kimodo generation requires:
+- A writable Hugging Face cache directory. The environment default may point to a non-writable path; override it if needed: `HF_HOME=/tmp/hf_cache`.
+- Access to the gated `meta-llama/Meta-Llama-3-8B-Instruct` model used by Kimodo's local text encoder. Set a Hugging Face token with Llama access: `HF_TOKEN=...`.

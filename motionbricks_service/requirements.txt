@@ -4,3 +4,4 @@ python-ron
 # MotionBricks must be installed from your local GR00T checkout.
 # Example: pip install /path/to/gr00t/motionbricks
 # The path can also be set via the MB_DIR environment variable at runtime.
+kimodo @ git+https://github.com/nv-tlabs/kimodo.git
