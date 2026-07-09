@@ -1,0 +1,47 @@
+{
+  "version": "2026-07-09",
+  "sources": [
+    {
+      "id": "cmu_boxing",
+      "name": "CMU MoCap Boxing and Kicking",
+      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=13",
+      "license": "CC-BY-4.0",
+      "license_url": "http://mocap.cs.cmu.edu/",
+      "redistributable": true,
+      "raw_format": "c3d",
+      "local_path": "",
+      "actions": ["Strike", "DodgeAttack", "Bash"],
+      "weapons": ["Longsword"],
+      "retargeted": false,
+      "retargeted_path": ""
+    },
+    {
+      "id": "mixamo_sword",
+      "name": "Mixamo Sword/Shield Pack",
+      "url": "https://www.mixamo.com/",
+      "license": "Adobe Standard EULA (embedded use permitted, raw redistribution prohibited)",
+      "license_url": "https://helpx.adobe.com/manage-account/using/profile-terms.html",
+      "redistributable": false,
+      "raw_format": "fbx",
+      "local_path": "",
+      "actions": ["Strike", "Block", "Thrust", "Lunge", "DodgeAttack"],
+      "weapons": ["Longsword", "Spear", "Dagger", "Mace"],
+      "retargeted": false,
+      "retargeted_path": ""
+    },
+    {
+      "id": "mocaponline_ninja",
+      "name": "MoCap Online Ninja Sword Pack",
+      "url": "https://mocaponline.com/",
+      "license": "Commercial (purchased seat)",
+      "license_url": "",
+      "redistributable": false,
+      "raw_format": "fbx",
+      "local_path": "",
+      "actions": ["Strike", "Block", "Thrust", "Feint", "DodgeAttack", "Lunge", "Riposte"],
+      "weapons": ["Longsword", "Dagger"],
+      "retargeted": false,
+      "retargeted_path": ""
+    }
+  ]
+}
