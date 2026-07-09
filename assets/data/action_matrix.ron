@@ -3,31 +3,74 @@
         (Strike, (startup: 8, active: 4, recovery: 12)),
         (Block, (startup: 4, active: 8, recovery: 8)),
         (Grab, (startup: 6, active: 6, recovery: 10)),
+        (Thrust, (startup: 6, active: 4, recovery: 10)),
+        (Dodge, (startup: 2, active: 6, recovery: 8)),
     ],
     rules: [
-        // Same-stance fundamentals
+        // Same-stance fundamentals: identical actions clash or tech.
         (a: Strike, b: Strike, stance: Same, contact: Clash, initiative: A, force: 0.5, hit_location: Head),
         (a: Block, b: Block, stance: Same, contact: Clash, initiative: A, force: 0.2, hit_location: Arms),
         (a: Grab, b: Grab, stance: Same, contact: GrabTech, initiative: A, force: 0.3, hit_location: Torso),
+        (a: Thrust, b: Thrust, stance: Same, contact: Clash, initiative: A, force: 0.4, hit_location: Torso),
+        (a: Dodge, b: Dodge, stance: Same, contact: Clash, initiative: A, force: 0.2, hit_location: Legs),
 
-        // Counter relationships (same stance)
-        (a: Strike, b: Grab, stance: Same, contact: Hit, initiative: A, force: 1.0, hit_location: Torso),
+        // Same-stance dominance (forward direction): Block > Strike > Dodge > Thrust > Grab > Block.
         (a: Block, b: Strike, stance: Same, contact: Beat, initiative: A, force: 0.5, hit_location: Arms),
+        (a: Block, b: Dodge, stance: Same, contact: Beat, initiative: A, force: 0.4, hit_location: Arms),
+        (a: Block, b: Thrust, stance: Same, contact: Beat, initiative: A, force: 0.5, hit_location: Arms),
+        (a: Strike, b: Dodge, stance: Same, contact: Hit, initiative: A, force: 0.8, hit_location: Torso),
+        (a: Strike, b: Thrust, stance: Same, contact: Beat, initiative: A, force: 0.6, hit_location: Arms),
+        (a: Strike, b: Grab, stance: Same, contact: Hit, initiative: A, force: 1.0, hit_location: Torso),
+        (a: Dodge, b: Thrust, stance: Same, contact: Whiff, initiative: A, force: 0.0, hit_location: Torso),
+        (a: Dodge, b: Grab, stance: Same, contact: Whiff, initiative: A, force: 0.0, hit_location: Torso),
+        (a: Thrust, b: Grab, stance: Same, contact: Hit, initiative: A, force: 0.9, hit_location: Torso),
+        (a: Thrust, b: Block, stance: Same, contact: Hit, initiative: A, force: 0.7, hit_location: Torso),
         (a: Grab, b: Block, stance: Same, contact: GrabSuccess, initiative: A, force: 0.8, hit_location: Torso),
 
-        // Counter relationships (different stance) — less clean, often whiffs
-        (a: Strike, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
-        (a: Grab, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
-        (a: Block, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
-
-        // Reverse counter relationships (same stance)
-        (a: Grab, b: Strike, stance: Same, contact: Hit, initiative: B, force: 1.0, hit_location: Torso),
+        // Same-stance dominance (reverse direction).
         (a: Strike, b: Block, stance: Same, contact: Beat, initiative: B, force: 0.5, hit_location: Arms),
+        (a: Dodge, b: Block, stance: Same, contact: Beat, initiative: B, force: 0.4, hit_location: Arms),
+        (a: Thrust, b: Block, stance: Same, contact: Beat, initiative: B, force: 0.5, hit_location: Arms),
+        (a: Dodge, b: Strike, stance: Same, contact: Hit, initiative: B, force: 0.8, hit_location: Torso),
+        (a: Thrust, b: Strike, stance: Same, contact: Beat, initiative: B, force: 0.6, hit_location: Arms),
+        (a: Grab, b: Strike, stance: Same, contact: Hit, initiative: B, force: 1.0, hit_location: Torso),
+        (a: Thrust, b: Dodge, stance: Same, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Dodge, stance: Same, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Thrust, stance: Same, contact: Hit, initiative: B, force: 0.9, hit_location: Torso),
+        (a: Block, b: Thrust, stance: Same, contact: Hit, initiative: B, force: 0.7, hit_location: Torso),
         (a: Block, b: Grab, stance: Same, contact: GrabSuccess, initiative: B, force: 0.8, hit_location: Torso),
 
-        // Any-stance safety net for mismatched same-action pairs
+        // Cross-stance (different stance): mismatched timing mostly whiffs.
+        (a: Strike, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Block, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Strike, b: Thrust, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Strike, b: Dodge, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Strike, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Block, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Block, b: Thrust, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Block, b: Dodge, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Thrust, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Dodge, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Thrust, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Thrust, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Thrust, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Thrust, b: Dodge, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Dodge, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Dodge, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Dodge, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Dodge, b: Thrust, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+
+        // Any-stance safety net for mismatched pairs.
         (a: Strike, b: Block, stance: Any, contact: Beat, initiative: B, force: 0.3, hit_location: Arms),
         (a: Block, b: Grab, stance: Any, contact: GrabSuccess, initiative: B, force: 0.6, hit_location: Torso),
         (a: Grab, b: Strike, stance: Any, contact: Hit, initiative: B, force: 0.9, hit_location: Torso),
+        (a: Thrust, b: Block, stance: Any, contact: Hit, initiative: A, force: 0.5, hit_location: Torso),
+        (a: Thrust, b: Grab, stance: Any, contact: Hit, initiative: A, force: 0.6, hit_location: Torso),
+        (a: Dodge, b: Thrust, stance: Any, contact: Whiff, initiative: A, force: 0.0, hit_location: Torso),
+        (a: Strike, b: Dodge, stance: Any, contact: Hit, initiative: A, force: 0.5, hit_location: Torso),
+        (a: Grab, b: Dodge, stance: Any, contact: GrabSuccess, initiative: A, force: 0.5, hit_location: Torso),
+        (a: Block, b: Dodge, stance: Any, contact: Beat, initiative: A, force: 0.3, hit_location: Arms),
     ],
 )

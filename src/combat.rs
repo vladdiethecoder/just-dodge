@@ -53,6 +53,8 @@ pub enum Action {
     Strike,
     Block,
     Grab,
+    Thrust,
+    Dodge,
 }
 
 /// The profile that defines what an action looks like in constraint space
@@ -79,6 +81,8 @@ impl Action {
             Action::Strike => strike_profile(),
             Action::Block => block_profile(),
             Action::Grab => grab_profile(),
+            Action::Thrust => thrust_profile(),
+            Action::Dodge => dodge_profile(),
         }
     }
 }
@@ -170,6 +174,42 @@ fn grab_profile() -> ActionProfile {
         root_displacement: Vec3::new(0.0, 0.0, 1.0), // 1m lunge
         heading_delta: 0.0,
         speed_multiplier: 1.5,
+    }
+}
+
+fn thrust_profile() -> ActionProfile {
+    // Thrust: forward lunge with a single arm extended, like a piercing stab.
+    let mut kf = neutral_keyframe();
+    kf.local_root = LocalRootConstraint {
+        rot_vel: 0.0,
+        lin_vel_xz: [0.9, 0.0], // committed forward drive
+        root_y: -0.04,          // lower crouch than Strike
+    };
+    ActionProfile {
+        action: Action::Thrust,
+        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
+        duration_tokens: 7,                          // 28 frames ≈ 0.93s
+        root_displacement: Vec3::new(0.0, 0.0, 0.6), // 0.6m forward lunge
+        heading_delta: 0.0,
+        speed_multiplier: 1.1,
+    }
+}
+
+fn dodge_profile() -> ActionProfile {
+    // Dodge: quick backward/sideways lean with a lowered root.
+    let mut kf = neutral_keyframe();
+    kf.local_root = LocalRootConstraint {
+        rot_vel: 0.0,
+        lin_vel_xz: [-0.6, 0.4], // back and slightly sideways
+        root_y: -0.12,           // low evasive crouch
+    };
+    ActionProfile {
+        action: Action::Dodge,
+        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
+        duration_tokens: 4,                           // 16 frames ≈ 0.53s
+        root_displacement: Vec3::new(0.15, 0.0, -0.3), // small backstep with lateral shift
+        heading_delta: 0.0,
+        speed_multiplier: 1.3,
     }
 }
 

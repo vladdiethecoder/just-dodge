@@ -126,19 +126,23 @@ impl AiController {
             }
         }
 
-        // Base weights: 40% Strike, 30% Block, 30% Grab.
-        let mut weights = [0.4f32, 0.3f32, 0.3f32];
+        // Base weights: Strike, Block, Grab, Thrust, Dodge.
+        let mut weights = [0.25f32, 0.25f32, 0.15f32, 0.20f32, 0.15f32];
 
         // Health-driven biases.
         if snapshot.opponent_health < 0.30 {
-            weights[0] += 0.2; // bias toward Strike
-            weights[1] -= 0.1;
-            weights[2] -= 0.1;
+            weights[0] += 0.15; // bias toward Strike
+            weights[3] += 0.10; // bias toward Thrust
+            weights[1] -= 0.10;
+            weights[2] -= 0.08;
+            weights[4] -= 0.07;
         }
         if snapshot.my_health < 0.30 {
-            weights[1] += 0.2; // bias toward Block
-            weights[0] -= 0.1;
-            weights[2] -= 0.1;
+            weights[1] += 0.15; // bias toward Block
+            weights[4] += 0.10; // bias toward Dodge
+            weights[0] -= 0.10;
+            weights[2] -= 0.08;
+            weights[3] -= 0.07;
         }
 
         // Clamp and renormalize so probabilities stay valid even when both
@@ -155,13 +159,21 @@ impl AiController {
         }
 
         let r = self.rng.next_f32();
-        if r < weights[0] {
-            Action::Strike
-        } else if r < weights[0] + weights[1] {
-            Action::Block
-        } else {
-            Action::Grab
+        let mut cumulative = 0.0f32;
+        for (i, w) in weights.iter().enumerate() {
+            cumulative += *w;
+            if r < cumulative {
+                return match i {
+                    0 => Action::Strike,
+                    1 => Action::Block,
+                    2 => Action::Grab,
+                    3 => Action::Thrust,
+                    4 => Action::Dodge,
+                    _ => unreachable!(),
+                };
+            }
         }
+        Action::Strike
     }
 
     fn pick_stance(&mut self, snapshot: &AiSnapshot) -> Stance {
@@ -184,12 +196,16 @@ impl AiController {
     }
 }
 
-/// Counter relationship: Strike beats Grab, Block beats Strike, Grab beats Block.
+/// Counter relationship: return the action that beats `action`.
+/// Block beats Strike, Grab beats Block, Strike beats Grab,
+/// Dodge beats Thrust, Strike beats Dodge.
 fn counter(action: Action) -> Action {
     match action {
         Action::Strike => Action::Block,
         Action::Block => Action::Grab,
         Action::Grab => Action::Strike,
+        Action::Thrust => Action::Dodge,
+        Action::Dodge => Action::Strike,
     }
 }
 
@@ -238,9 +254,15 @@ mod tests {
             for _ in 0..200 {
                 let commit = ai.select_action(&snap);
                 // Stance is always one of the three valid variants.
-                assert!(matches!(commit.stance, Stance::Top | Stance::Left | Stance::Right));
-                // Action is always one of the three valid variants.
-                assert!(matches!(commit.action, Action::Strike | Action::Block | Action::Grab));
+                assert!(matches!(
+                    commit.stance,
+                    Stance::Top | Stance::Left | Stance::Right
+                ));
+                // Action is always one of the five valid variants.
+                assert!(matches!(
+                    commit.action,
+                    Action::Strike | Action::Block | Action::Grab | Action::Thrust | Action::Dodge
+                ));
             }
         }
     }

@@ -19,8 +19,8 @@ mod armor;
 mod asset;
 mod combat;
 mod hitbox;
-mod input;
 mod injury;
+mod input;
 mod motion;
 mod motion_service;
 mod renderer;
@@ -186,7 +186,7 @@ impl ApplicationHandler for App {
                 self.config.as_ref(),
             ) {
                 eprintln!("main: starting renderer init after first present");
-                self.renderer = Some(renderer::Renderer::new(device, queue, config));
+                self.renderer = Some(renderer::Renderer::new(device, queue, config, false));
                 self.ui_renderer = Some(ui::UiRenderer::new(device, queue, config));
                 eprintln!("main: renderer + UI init done");
             }
@@ -311,8 +311,12 @@ impl App {
         if self.player_clip.is_some() && self.opponent_clip.is_some() {
             return;
         }
-        let Some(player_action) = snapshot.player.action else { return; };
-        let Some(opponent_action) = snapshot.opponent.action else { return; };
+        let Some(player_action) = snapshot.player.action else {
+            return;
+        };
+        let Some(opponent_action) = snapshot.opponent.action else {
+            return;
+        };
 
         eprintln!("main: spawning combat clip worker");
         let service = Arc::clone(&self.motion_service);
@@ -395,7 +399,8 @@ impl App {
                     );
                 }
                 if plan.confirmed {
-                    self.truth.apply_input(truth::Side::Player, truth::PlayerInput::Commit);
+                    self.truth
+                        .apply_input(truth::Side::Player, truth::PlayerInput::Commit);
                 }
             }
             if !snap.opponent.committed {
@@ -409,7 +414,8 @@ impl App {
                     truth::Side::Opponent,
                     truth::PlayerInput::SelectStance(commit.stance),
                 );
-                self.truth.apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
+                self.truth
+                    .apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
             }
         }
         self.input.reset_plan();
@@ -463,22 +469,38 @@ impl App {
         });
         self.input.reset_deltas();
 
-        Some((snapshot, plan, player_joints, opponent_joints, elapsed, intent))
+        Some((
+            snapshot,
+            plan,
+            player_joints,
+            opponent_joints,
+            elapsed,
+            intent,
+        ))
     }
 
     fn render_frame(&mut self) {
         let combat = self.combat_update();
-        let Some(surface) = self.surface.as_ref() else { return };
-        let Some(device) = self.device.as_ref() else { return };
-        let Some(queue) = self.queue.as_ref() else { return };
-        let Some(config) = self.config.as_ref() else { return };
+        let Some(surface) = self.surface.as_ref() else {
+            return;
+        };
+        let Some(device) = self.device.as_ref() else {
+            return;
+        };
+        let Some(queue) = self.queue.as_ref() else {
+            return;
+        };
+        let Some(config) = self.config.as_ref() else {
+            return;
+        };
 
         let frame = surface.get_current_texture();
         let Ok(surface_texture) = (|| match frame {
             wgpu::CurrentSurfaceTexture::Success(t) => Ok(t),
             wgpu::CurrentSurfaceTexture::Suboptimal(t) => Ok(t),
-            wgpu::CurrentSurfaceTexture::Occluded
-            | wgpu::CurrentSurfaceTexture::Timeout => Err("occluded"),
+            wgpu::CurrentSurfaceTexture::Occluded | wgpu::CurrentSurfaceTexture::Timeout => {
+                Err("occluded")
+            }
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
                 surface.configure(device, config);
                 Err("outdated")
@@ -537,7 +559,8 @@ impl App {
             }
 
             // --- Render ---
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: None,
@@ -606,7 +629,8 @@ impl App {
             queue.submit(std::iter::once(encoder.finish()));
         } else {
             // Fallback clear frame.
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let _rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("initial clear"),
@@ -656,7 +680,11 @@ impl App {
             self.player_clip
                 .as_ref()
                 .and_then(|clip| clip_frame(clip, tick))
-                .or_else(|| self.player_idle_clip.as_ref().and_then(|clip| clip_frame(clip, tick)))
+                .or_else(|| {
+                    self.player_idle_clip
+                        .as_ref()
+                        .and_then(|clip| clip_frame(clip, tick))
+                })
         } else {
             self.player_idle_clip
                 .as_ref()
@@ -668,7 +696,11 @@ impl App {
             self.opponent_clip
                 .as_ref()
                 .and_then(|clip| clip_frame(clip, tick))
-                .or_else(|| self.opponent_idle_clip.as_ref().and_then(|clip| clip_frame(clip, tick)))
+                .or_else(|| {
+                    self.opponent_idle_clip
+                        .as_ref()
+                        .and_then(|clip| clip_frame(clip, tick))
+                })
         } else {
             self.opponent_idle_clip
                 .as_ref()
@@ -699,6 +731,8 @@ fn map_truth_action(action: truth::Action) -> motion::Action {
         truth::Action::Strike => motion::Action::Strike,
         truth::Action::Block => motion::Action::Block,
         truth::Action::Grab => motion::Action::Grab,
+        truth::Action::Thrust => motion::Action::Thrust,
+        truth::Action::Dodge => motion::Action::Dodge,
     }
 }
 
@@ -767,7 +801,9 @@ fn generate_skin_clip(
                 .collect();
             eprintln!(
                 "[combat clip worker] generated {:?}/{:?}: {} frames",
-                condition.action, condition.stance, clip.len()
+                condition.action,
+                condition.stance,
+                clip.len()
             );
             Some(clip)
         }
@@ -796,8 +832,16 @@ fn ai_snapshot_from_truth(snapshot: &truth::TruthSnapshot, side: truth::Side) ->
 
 fn last_result_text(snapshot: &truth::TruthSnapshot) -> Option<String> {
     snapshot.last_contact.map(|_| {
-        let pa = snapshot.player.action.map(|a| format!("{:?}", a)).unwrap_or_default();
-        let oa = snapshot.opponent.action.map(|a| format!("{:?}", a)).unwrap_or_default();
+        let pa = snapshot
+            .player
+            .action
+            .map(|a| format!("{:?}", a))
+            .unwrap_or_default();
+        let oa = snapshot
+            .opponent
+            .action
+            .map(|a| format!("{:?}", a))
+            .unwrap_or_default();
         format!("{} vs {}", pa, oa)
     })
 }
@@ -806,9 +850,8 @@ fn main() {
     let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
-    let motion_service = Arc::new(
-        motion_service::MotionService::new().expect("MotionBrains service required"),
-    );
+    let motion_service =
+        Arc::new(motion_service::MotionService::new().expect("MotionBrains service required"));
     let skinned_mesh = Arc::new(
         asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
             .expect("required skinned mesh missing"),
@@ -824,8 +867,7 @@ fn main() {
             let result = generate_idle_clips(&service, &mesh);
             let _ = tx.send(result);
         });
-        rx.recv()
-            .expect("idle clip worker disconnected")
+        rx.recv().expect("idle clip worker disconnected")
     };
 
     let player_idle_g1_clip = player_idle_g1_clip

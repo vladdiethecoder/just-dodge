@@ -55,7 +55,7 @@ def encode_primitive(
     window = features[peak_idx : peak_idx + 4]
     assert window.shape[0] == 4
     root = window[-1, :3]
-    heading = np.arctan2(window[-1, 5], window[-1, 4])
+    heading = np.arctan2(window[-1, 4], window[-1, 3])
     return {
         "action": action,
         "weapon": weapon,

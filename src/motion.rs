@@ -20,6 +20,8 @@ pub enum Action {
     Strike,
     Block,
     Grab,
+    Thrust,
+    Dodge,
     Idle,
 }
 
@@ -79,37 +81,53 @@ impl MotionPipeline {
         let encoder = b
             .commit_from_file(base.join("motionbricks_vqvae_encoder.onnx"))
             .context("Failed to load VQVAE encoder")?;
-        eprintln!("[MotionPipeline] encoder loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] encoder loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         let t0 = std::time::Instant::now();
         let mut b = Session::builder()?;
         let decoder = b
             .commit_from_file(base.join("motionbricks_vqvae_decoder.fixed.onnx"))
             .context("Failed to load VQVAE decoder")?;
-        eprintln!("[MotionPipeline] decoder loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] decoder loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         let mut b = Session::builder()?;
         let t0 = std::time::Instant::now();
         let pose_transformer = b
             .commit_from_file(base.join("motionbricks_pose_transformer.onnx"))
             .context("Failed to load pose transformer")?;
-        eprintln!("[MotionPipeline] pose_transformer loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] pose_transformer loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         let mut b = Session::builder()?;
         let t0 = std::time::Instant::now();
         let root_shared = b
             .commit_from_file(base.join("motionbricks_root_shared.onnx"))
             .context("Failed to load root shared transformer")?;
-        eprintln!("[MotionPipeline] root_shared loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] root_shared loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         let root_token = {
             let p = base.join("motionbricks_root_token.onnx");
             if p.exists() {
                 let t0 = std::time::Instant::now();
                 let mut b = Session::builder()?;
-                let rt = b.commit_from_file(p)
+                let rt = b
+                    .commit_from_file(p)
                     .context("Failed to load root token transformer")?;
-                eprintln!("[MotionPipeline] root_token loaded in {:.2}s", t0.elapsed().as_secs_f32());
+                eprintln!(
+                    "[MotionPipeline] root_token loaded in {:.2}s",
+                    t0.elapsed().as_secs_f32()
+                );
                 Some(rt)
             } else {
                 None
@@ -121,11 +139,17 @@ impl MotionPipeline {
         let root_conv = b
             .commit_from_file(base.join("motionbricks_root_conv.onnx"))
             .context("Failed to load root conv decoder")?;
-        eprintln!("[MotionPipeline] root_conv loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] root_conv loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         let t0 = std::time::Instant::now();
         let codebook = Self::load_npy(&base.join("motionbricks_codebook.npy"), &[8, 10, 32])?;
-        eprintln!("[MotionPipeline] codebook loaded in {:.2}s", t0.elapsed().as_secs_f32());
+        eprintln!(
+            "[MotionPipeline] codebook loaded in {:.2}s",
+            t0.elapsed().as_secs_f32()
+        );
 
         Ok(Self {
             encoder,
@@ -360,8 +384,8 @@ impl MotionPipeline {
                 }
             }
         }
-        let q_arr = ArrayD::from_shape_vec(IxDyn(&[1, cd, tt]), feats)
-            .context("quantized dequantized")?;
+        let q_arr =
+            ArrayD::from_shape_vec(IxDyn(&[1, cd, tt]), feats).context("quantized dequantized")?;
         let rec = self.decode_frames(&q_arr)?; // [1, out_frames, 413]
         let rec_data = rec.as_standard_layout();
         let data = rec_data.as_slice().unwrap();
@@ -390,7 +414,12 @@ impl MotionPipeline {
     /// Uses actual bone world positions from the SKM1 inverse_bind matrices,
     /// producing a much more realistic seed for the VQVAE encoder+decoder.
     /// Channels-first layout matching build_idle_encoder_input.
-    pub fn build_mesh_rest_input(&self, t: usize, g1_to_mannequin: &[usize; 24], mesh_bone_ib: &[Mat4]) -> Vec<f32> {
+    pub fn build_mesh_rest_input(
+        &self,
+        t: usize,
+        g1_to_mannequin: &[usize; 24],
+        mesh_bone_ib: &[Mat4],
+    ) -> Vec<f32> {
         // Compute mannequin bone world positions from inverse_bind
         let mut mann_world = vec![glam::Vec3::ZERO; mesh_bone_ib.len()];
         for i in 0..mesh_bone_ib.len() {
@@ -451,7 +480,8 @@ impl MotionPipeline {
                 // Subtle breathing: Y oscillation
                 p.y += breathe;
                 // Subtle sway: X oscillation for upper body
-                if j >= 15 && j <= 17 { // spine bones
+                if j >= 15 && j <= 17 {
+                    // spine bones
                     p.x += sway;
                 }
                 let ric = if j == 0 {
@@ -565,7 +595,6 @@ pub fn load_g1_frames(path: &str) -> Result<Vec<[Mat4; 34]>> {
     let data = std::fs::read(path).map_err(|e| anyhow::anyhow!("Failed to read {path}: {e}"))?;
     load_g1_frames_from_bytes(&data)
 }
-
 
 // ---------------------------------------------------------------------------
 // Action-conditioned MotionBricks generation
@@ -691,8 +720,20 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
         Action::Block => {
             // Both arms raised in front of the torso, stable lower body.
             for (side, shoulder_idx, upper_arm_idx, elbow_idx, wrist_idx) in [
-                (-1.0f32, LEFT_SHOULDER, LEFT_UPPER_ARM, LEFT_ELBOW, LEFT_WRIST),
-                (1.0f32, RIGHT_SHOULDER, RIGHT_UPPER_ARM, RIGHT_ELBOW, RIGHT_WRIST),
+                (
+                    -1.0f32,
+                    LEFT_SHOULDER,
+                    LEFT_UPPER_ARM,
+                    LEFT_ELBOW,
+                    LEFT_WRIST,
+                ),
+                (
+                    1.0f32,
+                    RIGHT_SHOULDER,
+                    RIGHT_UPPER_ARM,
+                    RIGHT_ELBOW,
+                    RIGHT_WRIST,
+                ),
             ] {
                 let shoulder = arm_forward(side, 0.5);
                 let elbow = shoulder * Mat4::from_rotation_x(-0.9); // forearm up
@@ -707,8 +748,20 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
         Action::Grab => {
             // Both arms reaching straight forward, body lunging.
             for (side, shoulder_idx, upper_arm_idx, elbow_idx, wrist_idx) in [
-                (-1.0f32, LEFT_SHOULDER, LEFT_UPPER_ARM, LEFT_ELBOW, LEFT_WRIST),
-                (1.0f32, RIGHT_SHOULDER, RIGHT_UPPER_ARM, RIGHT_ELBOW, RIGHT_WRIST),
+                (
+                    -1.0f32,
+                    LEFT_SHOULDER,
+                    LEFT_UPPER_ARM,
+                    LEFT_ELBOW,
+                    LEFT_WRIST,
+                ),
+                (
+                    1.0f32,
+                    RIGHT_SHOULDER,
+                    RIGHT_UPPER_ARM,
+                    RIGHT_ELBOW,
+                    RIGHT_WRIST,
+                ),
             ] {
                 let shoulder = arm_forward(side, 0.1);
                 let elbow = shoulder; // straight
@@ -722,6 +775,41 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
             write_rot6d(frame, WAIST_YAW, Mat4::from_rotation_y(0.05));
             // Drop the pelvis slightly to suggest a lunge.
             frame[303] -= 0.08;
+        }
+        Action::Thrust => {
+            // Forward stab: dominant arm fully extended, aggressive waist lean.
+            let (side, raise) = match condition.stance {
+                Stance::Left => (-1.0f32, 0.05f32),
+                Stance::Right => (1.0f32, 0.05f32),
+                Stance::Top => (1.0f32, 0.15f32),
+            };
+            let shoulder = arm_forward(side, raise);
+            let elbow = shoulder;
+            let wrist = shoulder;
+            if side < 0.0 {
+                write_rot6d(frame, LEFT_SHOULDER, shoulder);
+                write_rot6d(frame, LEFT_UPPER_ARM, shoulder);
+                write_rot6d(frame, LEFT_ELBOW, elbow);
+                write_rot6d(frame, LEFT_WRIST, wrist);
+            } else {
+                write_rot6d(frame, RIGHT_SHOULDER, shoulder);
+                write_rot6d(frame, RIGHT_UPPER_ARM, shoulder);
+                write_rot6d(frame, RIGHT_ELBOW, elbow);
+                write_rot6d(frame, RIGHT_WRIST, wrist);
+            }
+            write_rot6d(frame, WAIST_PITCH, Mat4::from_rotation_x(0.25));
+            frame[303] -= 0.06;
+        }
+        Action::Dodge => {
+            // Quick evasive lean: drop low and rotate torso away from the stance side.
+            let side = match condition.stance {
+                Stance::Left => -1.0f32,
+                Stance::Right => 1.0f32,
+                Stance::Top => 1.0f32,
+            };
+            write_rot6d(frame, WAIST_PITCH, Mat4::from_rotation_x(-0.2));
+            write_rot6d(frame, WAIST_YAW, Mat4::from_rotation_y(side * 0.25));
+            frame[303] -= 0.12;
         }
         Action::Idle => {
             // Neutral standing pose: keep the incoming from_pose as-is.
@@ -739,6 +827,8 @@ fn action_frame_count(action: Action) -> usize {
         Action::Strike => 28,
         Action::Block => 44,
         Action::Grab => 32,
+        Action::Thrust => 28,
+        Action::Dodge => 16,
         Action::Idle => 60,
     }
 }
@@ -863,7 +953,9 @@ mod tests {
             eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
             return;
         }
-        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let Some(mut pipeline) = try_load_pipeline() else {
+            return;
+        };
         let pose = neutral_g1_pose();
 
         let cases = [
@@ -897,7 +989,9 @@ mod tests {
             eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
             return;
         }
-        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let Some(mut pipeline) = try_load_pipeline() else {
+            return;
+        };
         let pose = neutral_g1_pose();
 
         for action in [Action::Strike, Action::Block, Action::Grab] {
@@ -925,7 +1019,9 @@ mod tests {
             eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
             return;
         }
-        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let Some(mut pipeline) = try_load_pipeline() else {
+            return;
+        };
         let pose = neutral_g1_pose();
 
         let condition = ActionCondition {
@@ -951,7 +1047,9 @@ mod tests {
             eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
             return;
         }
-        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let Some(mut pipeline) = try_load_pipeline() else {
+            return;
+        };
 
         // Point the pipeline at an empty directory so the artifact check fails.
         let empty_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/test_missing_onnx");

@@ -67,12 +67,14 @@ impl Phase {
     }
 }
 
-/// The three actions of the prototype.
+/// The five actions of the Kimodo primitive library.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
 pub enum Action {
     Strike,
     Block,
     Grab,
+    Thrust,
+    Dodge,
 }
 
 /// The three stances / guard heights.
