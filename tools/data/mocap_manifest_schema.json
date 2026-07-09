@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JustDodgeMocapManifest",
+  "type": "object",
+  "properties": {
+    "version": { "type": "string" },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "url": { "type": "string" },
+          "license": { "type": "string" },
+          "license_url": { "type": "string" },
+          "redistributable": { "type": "boolean" },
+          "raw_format": { "enum": ["bvh", "fbx", "c3d"] },
+          "local_path": { "type": "string" },
+          "actions": {
+            "type": "array",
+            "items": { "enum": ["Strike", "Block", "Grab", "Thrust", "Feint", "DodgeAttack", "Bash", "Riposte", "Lunge"] }
+          },
+          "weapons": {
+            "type": "array",
+            "items": { "enum": ["Longsword", "Spear", "Dagger", "Mace"] }
+          },
+          "retargeted": { "type": "boolean" },
+          "retargeted_path": { "type": "string" }
+        },
+        "required": ["id", "name", "license", "redistributable", "raw_format", "actions", "retargeted"]
+      }
+    }
+  },
+  "required": ["version", "sources"]
+}
