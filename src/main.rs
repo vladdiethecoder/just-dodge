@@ -80,6 +80,12 @@ struct App {
     clip_rx: Option<Receiver<Vec<[Mat4; 24]>>>,
     first_frame_presented: bool,
     motion_started: bool,
+    // Python MotionBrains bridge.
+    motion_service: motion_service::MotionService,
+    skinned_mesh: asset::SkinnedMeshData,
+    neutral_g1_pose: [Mat4; 34],
+    player_clip: Option<Vec<[Mat4; 24]>>,
+    opponent_clip: Option<Vec<[Mat4; 24]>>,
     // Combat systems
     truth: truth::CombatTruth,
     ai: ai::AiController,
@@ -398,6 +404,60 @@ impl App {
                 self.replay_saved = true;
             }
 
+            // Generate MotionBrains clips once both sides are committed and truth reveals.
+            if snapshot.phase == truth::Phase::Reveal {
+                if self.player_clip.is_none() {
+                    if let Some(action) = snapshot.player.action {
+                        let condition = motion::ActionCondition {
+                            action: map_truth_action(action),
+                            stance: map_truth_stance(snapshot.player.stance),
+                            from_pose: self.neutral_g1_pose,
+                        };
+                        match motion::generate_action_clip(&condition, &self.motion_service) {
+                            Ok(g1_clip) => {
+                                self.player_clip = Some(
+                                    g1_clip
+                                        .iter()
+                                        .map(|g1| asset::compute_skin_matrices(g1, &self.skinned_mesh))
+                                        .collect(),
+                                );
+                                eprintln!("main: generated player Strike clip: {} frames", g1_clip.len());
+                            }
+                            Err(e) => {
+                                eprintln!("main: failed to generate player clip: {e}");
+                            }
+                        }
+                    }
+                }
+                if self.opponent_clip.is_none() {
+                    if let Some(action) = snapshot.opponent.action {
+                        let condition = motion::ActionCondition {
+                            action: map_truth_action(action),
+                            stance: map_truth_stance(snapshot.opponent.stance),
+                            from_pose: self.neutral_g1_pose,
+                        };
+                        match motion::generate_action_clip(&condition, &self.motion_service) {
+                            Ok(g1_clip) => {
+                                self.opponent_clip = Some(
+                                    g1_clip
+                                        .iter()
+                                        .map(|g1| asset::compute_skin_matrices(g1, &self.skinned_mesh))
+                                        .collect(),
+                                );
+                                eprintln!("main: generated opponent clip: {} frames", g1_clip.len());
+                            }
+                            Err(e) => {
+                                eprintln!("main: failed to generate opponent clip: {e}");
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Clear combat clips when the exchange resolves so the next exchange regenerates.
+                self.player_clip = None;
+                self.opponent_clip = None;
+            }
+
             let (player_joints, opponent_joints) = self.current_pose();
             let aspect = config.width as f32 / config.height as f32;
             let proj_view = self.camera.proj_view(aspect);
@@ -562,20 +622,44 @@ impl App {
 
     fn current_pose(&self) -> ([Mat4; 24], [Mat4; 24]) {
         let identity = [Mat4::IDENTITY; 24];
-        if self.actor_clips.len() >= 2
-            && !self.actor_clips[0].is_empty()
-            && !self.actor_clips[1].is_empty()
-        {
-            let elapsed = self.start_time.elapsed().as_secs_f32();
-            let player_fc = self.actor_clips[0].len();
-            let opponent_fc = self.actor_clips[1].len();
-            let tick = (elapsed * self.clip_fps) as usize;
-            let player_fi = tick % player_fc;
-            let opp_fi = (tick + opponent_fc / 2) % opponent_fc;
-            (self.actor_clips[0][player_fi], self.actor_clips[1][opp_fi])
-        } else {
-            (identity, identity)
-        }
+        let elapsed = self.start_time.elapsed().as_secs_f32();
+        let tick = (elapsed * self.clip_fps) as usize;
+
+        // Prefer generated combat clips; fall back to idle clip (also MotionBrains-generated).
+        let player = self
+            .player_clip
+            .as_ref()
+            .and_then(|clip| {
+                let fc = clip.len();
+                if fc == 0 { None } else { Some(clip[tick % fc]) }
+            })
+            .or_else(|| {
+                if self.actor_clips.len() >= 2 && !self.actor_clips[0].is_empty() {
+                    Some(self.actor_clips[0][tick % self.actor_clips[0].len()])
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(identity);
+
+        let opponent = self
+            .opponent_clip
+            .as_ref()
+            .and_then(|clip| {
+                let fc = clip.len();
+                if fc == 0 { None } else { Some(clip[tick % fc]) }
+            })
+            .or_else(|| {
+                if self.actor_clips.len() >= 2 && !self.actor_clips[1].is_empty() {
+                    let fc = self.actor_clips[1].len();
+                    Some(self.actor_clips[1][(tick + fc / 2) % fc])
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(identity);
+
+        (player, opponent)
     }
 
     fn save_replay(&self) {
@@ -588,6 +672,22 @@ impl App {
             Ok(_) => eprintln!("Replay saved to {}", path.display()),
             Err(e) => eprintln!("Failed to save replay: {}", e),
         }
+    }
+}
+
+fn map_truth_action(action: truth::Action) -> motion::Action {
+    match action {
+        truth::Action::Strike => motion::Action::Strike,
+        truth::Action::Block => motion::Action::Block,
+        truth::Action::Grab => motion::Action::Grab,
+    }
+}
+
+fn map_truth_stance(stance: truth::Stance) -> motion::Stance {
+    match stance {
+        truth::Stance::Top => motion::Stance::Top,
+        truth::Stance::Left => motion::Stance::Left,
+        truth::Stance::Right => motion::Stance::Right,
     }
 }
 
@@ -648,6 +748,14 @@ fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
 
 fn main() {
     let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
+    let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
+
+    let motion_service = motion_service::MotionService::new().expect("MotionBrains service required");
+    let skinned_mesh = asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
+        .expect("required skinned mesh missing");
+    let neutral_g1_pose = motion::load_g1_frames(&format!("{}/mb_idle.g1", assets))
+        .map(|frames| frames[0])
+        .unwrap_or([Mat4::IDENTITY; 34]);
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -667,6 +775,11 @@ fn main() {
         clip_rx: None,
         first_frame_presented: false,
         motion_started: false,
+        motion_service,
+        skinned_mesh,
+        neutral_g1_pose,
+        player_clip: None,
+        opponent_clip: None,
         truth: truth::CombatTruth::new(),
         ai: ai::AiController::new(
             truth::Side::Opponent,
