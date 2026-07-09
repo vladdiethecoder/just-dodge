@@ -1,6 +1,7 @@
 // Deterministic bridge to the Python MotionBricks inference service.
 use anyhow::{Context, Result};
 use glam::Mat4;
+use ndarray::Array4;
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 
@@ -27,6 +28,33 @@ impl MotionService {
         })
     }
 
+    fn build_context_array<'py>(
+        py: Python<'py>,
+        context: &[[Mat4; 34]],
+    ) -> Result<Bound<'py, numpy::PyArray4<f32>>> {
+        let frames = context.len().max(1);
+        let mut data = vec![0.0f32; frames * 34 * 4 * 4];
+        for (f, frame) in context.iter().enumerate() {
+            for (j, m) in frame.iter().enumerate() {
+                let cols = m.to_cols_array();
+                for (c, &v) in cols.iter().enumerate() {
+                    data[((f * 34 + j) * 4 + c / 4) * 4 + c % 4] = v;
+                }
+            }
+        }
+        // If no context was provided, use a single identity frame.
+        if context.is_empty() {
+            for j in 0..34 {
+                for k in 0..4 {
+                    data[(j * 4 + k) * 4 + k] = 1.0;
+                }
+            }
+        }
+        let array = Array4::from_shape_vec((frames, 34, 4, 4), data)
+            .map_err(|e| anyhow::anyhow!("failed to build context array: {e}"))?;
+        Ok(numpy::PyArray4::from_owned_array(py, array))
+    }
+
     pub fn generate_clip(
         &self,
         action: &str,
@@ -37,16 +65,11 @@ impl MotionService {
     ) -> Result<Vec<[Mat4; 34]>> {
         Python::with_gil(|py| {
             let svc = py.import("motionbricks_service").map_err(py_err)?;
-            let ctx_list = PyList::empty(py);
-            for frame in context {
-                let flat: Vec<f32> = frame.iter().flat_map(|m| m.to_cols_array()).collect();
-                let arr = numpy::PyArray1::from_vec(py, flat);
-                ctx_list.append(arr).map_err(py_err)?;
-            }
+            let ctx_array = Self::build_context_array(py, context)?;
             let bytes: Vec<u8> = svc
                 .getattr("generate_clip")
                 .map_err(py_err)?
-                .call1((action, weapon, stance, ctx_list, seed))
+                .call1((action, weapon, stance, ctx_array, seed))
                 .map_err(py_err)?
                 .extract()
                 .map_err(py_err)?;

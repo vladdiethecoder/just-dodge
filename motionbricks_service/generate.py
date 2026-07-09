@@ -39,13 +39,17 @@ def init_service(
     return _SERVICE
 
 
-def _context_to_features(context_frames: list) -> np.ndarray:
-    """Convert incoming [34, 4x4] world matrices to a [frames, 34, 4, 4] float array."""
-    if not context_frames:
+def _context_to_features(context_frames) -> np.ndarray:
+    """Normalize incoming context to a [frames, 34, 4, 4] float32 array."""
+    ctx = np.asarray(context_frames, dtype=np.float32)
+    if ctx.size == 0:
         ctx = np.zeros((1, 34, 4, 4), dtype=np.float32)
         for j in range(34):
             ctx[0, j] = np.eye(4, dtype=np.float32)
         return ctx
+    if ctx.ndim == 4 and ctx.shape[1:] == (34, 4, 4):
+        return ctx
+    # Fallback for list-of-matrices input.
     return np.stack(context_frames, axis=0).astype(np.float32)
 
 
