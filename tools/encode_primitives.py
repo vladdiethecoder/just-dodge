@@ -2,6 +2,7 @@
 """Encode retargeted G1 clips into the primitive library."""
 import argparse
 import datetime
+import glob
 import json
 import os
 import textwrap
@@ -123,6 +124,57 @@ def _identifier_name(value) -> str:
     return name.lower()
 
 
+def _encode_kimodo_dir(args) -> None:
+    """Batch-encode Kimodo *_features.npy files into the primitive library."""
+    valid_actions = {"Strike", "Block", "Thrust", "Grab", "Dodge", "Idle"}
+    feature_paths = sorted(glob.glob(os.path.join(args.kimodo_dir, "*_features.npy")))
+    if not feature_paths:
+        print(f"[encode] no *_features.npy files found in {args.kimodo_dir}")
+        return
+
+    motion_rep = _build_motion_rep()
+    out_path = args.out
+
+    for path in feature_paths:
+        basename = os.path.basename(path)
+        stem = basename[: -len("_features.npy")]
+        action_name = stem.split("_")[0].capitalize()
+
+        if action_name not in valid_actions:
+            print(f"[encode] skipping {basename}: unrecognized action '{action_name}'")
+            continue
+
+        features = np.load(path)
+        if features.ndim != 2 or features.shape[1] != 414:
+            print(f"[encode] skipping {basename}: expected shape [T, 414], got {features.shape}")
+            continue
+
+        T = features.shape[0]
+        if T < 4:
+            print(f"[encode] skipping {basename}: not enough frames (T={T})")
+            continue
+
+        peak_idx = min(args.peak, T - 4)
+        features_t = torch.from_numpy(features)
+        features_norm = motion_rep.normalize(features_t).numpy()
+
+        primitive = encode_primitive(
+            action_name,
+            args.weapon,
+            args.stance,
+            f"kimodo_{stem}",
+            features_norm,
+            peak_idx,
+        )
+
+        if os.path.exists(out_path):
+            _update_library(primitive, out_path, action_name, args.weapon, args.stance)
+        else:
+            _create_library(primitive, out_path)
+
+        print(f"[encode] added {action_name} from {stem}")
+
+
 def _update_library(
     primitive: dict,
     out_path: str,
@@ -168,13 +220,14 @@ def _update_library(
 def main():
     parser = argparse.ArgumentParser(description="Encode a G1 motion clip into the primitive library")
     parser.add_argument("--action", help="Action name")
-    parser.add_argument("--weapon", help="Weapon name")
-    parser.add_argument("--stance", help="Stance name")
+    parser.add_argument("--weapon", default="Longsword", help="Weapon name")
+    parser.add_argument("--stance", default="Top", help="Stance name")
     parser.add_argument("--source-id", help="Source clip identifier")
     parser.add_argument("--features", help="Path to .npy features file ([T, 414])")
     parser.add_argument("--peak", type=int, default=15, help="Frame index of the peak 4-frame window")
     parser.add_argument("--out", default="assets/data/primitives.ron", help="Output RON library path")
     parser.add_argument("--smoke-test", action="store_true", help="Print a dummy primitive to stdout")
+    parser.add_argument("--kimodo-dir", help="Directory containing Kimodo *_features.npy files to batch encode")
     args = parser.parse_args()
 
     if args.smoke_test:
@@ -182,6 +235,10 @@ def main():
         print(_format_primitive(
             encode_primitive("Strike", "Longsword", "Top", "test", dummy, 10)
         ))
+        return
+
+    if args.kimodo_dir is not None:
+        _encode_kimodo_dir(args)
         return
 
     required = ["action", "weapon", "stance", "source_id", "features"]
