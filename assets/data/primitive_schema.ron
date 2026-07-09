@@ -1,0 +1,18 @@
+// Primitive library schema for MotionBrains condition-to-pose generation.
+// Each primitive is a 4-frame target constraint, NOT a final animation clip.
+(
+    version: "2026-07-09",
+    skeleton: G1Skeleton34,
+    feature_dim: 414,
+    frames_per_token: 4,
+    primitives: [
+        (
+            action: Strike,
+            weapon: Longsword,
+            stance: Top,
+            source_id: "cmu_boxing_01",
+            feature_window: [[0.0; 414], [0.0; 414], [0.0; 414], [0.0; 414]],
+            root_target: (position: [0.0, 0.0, 0.3], heading: 0.0),
+        ),
+    ],
+)
