@@ -1,7 +1,28 @@
 #!/usr/bin/env python3
 """Extract MotionBricks GlobalRootGlobalJoints features from retargeted G1 poses."""
 import argparse
+
 import numpy as np
+
+
+def rot6d_from_matrix(rot_mats: np.ndarray) -> np.ndarray:
+    """Convert [T, J, 3, 3] rotation matrices to [T, J, 6] continuous 6D rotations.
+
+    Uses the first two columns orthonormalized with Gram-Schmidt.
+    """
+    T, J = rot_mats.shape[:2]
+    out = np.zeros((T, J, 6), dtype=rot_mats.dtype)
+    for j in range(J):
+        v0 = rot_mats[:, j, :, 0]
+        v1 = rot_mats[:, j, :, 1]
+        norm0 = np.linalg.norm(v0, axis=1, keepdims=True) + 1e-8
+        v0n = v0 / norm0
+        v1p = v1 - v0n * np.sum(v0n * v1, axis=1, keepdims=True)
+        norm1 = np.linalg.norm(v1p, axis=1, keepdims=True) + 1e-8
+        v1n = v1p / norm1
+        out[:, j, :3] = v0n
+        out[:, j, 3:] = v1n
+    return out
 
 
 def extract_features(joint_positions: np.ndarray, joint_rotations: np.ndarray, fps: int = 30) -> np.ndarray:
@@ -13,15 +34,20 @@ def extract_features(joint_positions: np.ndarray, joint_rotations: np.ndarray, f
     T = joint_positions.shape[0]
     root_pos = joint_positions[:, 0, :]  # [T, 3]
     root_heading = np.arctan2(joint_rotations[:, 0, 0, 2], joint_rotations[:, 0, 2, 2])
-    root_heading_cs = np.stack([np.cos(root_heading), np.sin(root_heading)], axis=-1)
-    joint_pos_flat = joint_positions[:, 1:, :].reshape(T, -1)  # [T, 99]
-    # Placeholder: real implementation computes ric_data, global_rot_data (6D), local_vel, foot_contacts.
-    # Stub pads the remaining channels with zeros so downstream tools can validate shape.
-    global_rot6d = np.zeros((T, 34 * 6), dtype=joint_positions.dtype)
-    local_vel = np.zeros((T, 34 * 3), dtype=joint_positions.dtype)
-    foot_contacts = np.zeros((T, 4), dtype=joint_positions.dtype)
+    root_heading_cs = np.stack([np.cos(root_heading), np.sin(root_heading)], axis=-1)  # [T, 2]
+
+    # ric_data: root-relative positions for joints 1..33.
+    ric_data = (joint_positions[:, 1:, :] - root_pos[:, None, :]).reshape(T, -1)  # [T, 99]
+
+    # global_rot_data: 34 * 6D continuous rotations.
+    rot6d = rot6d_from_matrix(joint_rotations).reshape(T, -1)  # [T, 204]
+
+    # local_vel and foot_contacts are unused by the current pipeline; zero them.
+    local_vel = np.zeros((T, 34 * 3), dtype=joint_positions.dtype)  # [T, 102]
+    foot_contacts = np.zeros((T, 4), dtype=joint_positions.dtype)  # [T, 4]
+
     features = np.concatenate(
-        [root_pos, root_heading_cs, joint_pos_flat, global_rot6d, local_vel, foot_contacts],
+        [root_pos, root_heading_cs, ric_data, rot6d, local_vel, foot_contacts],
         axis=-1,
     )
     assert features.shape[-1] == 414, features.shape
@@ -41,7 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description="Extract MotionBricks features from retargeted G1 clip")
     parser.add_argument("source", nargs="?", help="Input .npy containing 'joint_positions' and 'joint_rotations'")
     parser.add_argument("--out", help="Output .npy path")
-    parser.add_argument("--fps", type=int, default=30, help="Clip frame rate")
+    parser.add_argument("--fps", type=int, default=30, help="Clip frame rate (informational only)")
     args = parser.parse_args()
 
     if args.source is None and args.out is None:
