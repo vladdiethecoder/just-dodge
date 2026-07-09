@@ -14,9 +14,17 @@ def extract_features(joint_positions: np.ndarray, joint_rotations: np.ndarray, f
     root_pos = joint_positions[:, 0, :]  # [T, 3]
     root_heading = np.arctan2(joint_rotations[:, 0, 0, 2], joint_rotations[:, 0, 2, 2])
     root_heading_cs = np.stack([np.cos(root_heading), np.sin(root_heading)], axis=-1)
+    joint_pos_flat = joint_positions[:, 1:, :].reshape(T, -1)  # [T, 99]
     # Placeholder: real implementation computes ric_data, global_rot_data (6D), local_vel, foot_contacts.
-    # Stub uses root + root heading + 33 root-relative joints to match the expected smoke-test shape.
-    features = np.concatenate([root_pos, root_heading_cs, joint_positions[:, 1:, :].reshape(T, -1)], axis=-1)
+    # Stub pads the remaining channels with zeros so downstream tools can validate shape.
+    global_rot6d = np.zeros((T, 34 * 6), dtype=joint_positions.dtype)
+    local_vel = np.zeros((T, 34 * 3), dtype=joint_positions.dtype)
+    foot_contacts = np.zeros((T, 4), dtype=joint_positions.dtype)
+    features = np.concatenate(
+        [root_pos, root_heading_cs, joint_pos_flat, global_rot6d, local_vel, foot_contacts],
+        axis=-1,
+    )
+    assert features.shape[-1] == 414, features.shape
     return features
 
 
@@ -25,6 +33,7 @@ def run_smoke_test():
     dummy[:, 0, 1] = 0.9
     rots = np.tile(np.eye(3), (30, 34, 1, 1))
     f = extract_features(dummy, rots)
+    assert f.shape == (30, 414), f.shape
     print("feature shape:", f.shape)
 
 
