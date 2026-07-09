@@ -370,7 +370,7 @@ def export_pose_backbone(pose_model):
     dummy_tokens = torch.randint(0, num_codes, (batch, N, num_pose_heads)).long()
     dummy_root = torch.randn(batch, N * num_frames_per_token, local_root_dim).float()
     dummy_pose_cond = torch.zeros(batch, N * num_frames_per_token, backbone._args['local_pose_dim']).float()
-    dummy_has_pose = torch.zeros(batch, N * num_frames_per_token).float()
+    dummy_has_pose = torch.zeros(batch, N * num_frames_per_token).bool()
     dummy_num_tokens = torch.tensor([[N]]).long()
     
     wrapper = PoseBackboneExportWrapper(backbone)
@@ -416,11 +416,11 @@ def export_root_backbone(root_model):
     print(f"Root backbone: max_tokens={max_tokens}, frames_per_token={num_frames_per_token}")
     
     dummy_global_root = torch.randn(batch, num_frames, 5).float()
-    dummy_has_global = torch.ones(batch, num_frames).float()
+    dummy_has_global = torch.ones(batch, num_frames).bool()
     dummy_local_root = torch.randn(batch, num_frames, 4).float()
-    dummy_has_local = torch.ones(batch, num_frames).float()
+    dummy_has_local = torch.ones(batch, num_frames).bool()
     dummy_poses = torch.randn(batch, num_frames, local_pose_dim).float()
-    dummy_has_poses = torch.ones(batch, num_frames).float()
+    dummy_has_poses = torch.ones(batch, num_frames).bool()
     dummy_num_tokens = torch.tensor([[8]]).long()
     
     wrapper = RootBackboneExportWrapper(backbone)
