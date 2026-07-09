@@ -1,19 +1,73 @@
 {
   "version": "2026-07-09",
+  "comment": "CMU motion capture data used in this project is redistributable under the CMU mocap license (http://mocap.cs.cmu.edu/).",
   "sources": [
     {
       "id": "cmu_boxing",
       "name": "CMU MoCap Boxing and Kicking",
       "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=13",
-      "license": "CC-BY-4.0",
+      "license": "CMU Mocap License (redistributable for research/educational use)",
       "license_url": "http://mocap.cs.cmu.edu/",
       "redistributable": true,
-      "raw_format": "c3d",
-      "local_path": "",
+      "raw_format": "bvh",
+      "local_path": "data/cmu",
       "actions": ["Strike", "DodgeAttack", "Bash"],
       "weapons": ["Longsword"],
-      "retargeted": false,
-      "retargeted_path": ""
+      "retargeted": true,
+      "retargeted_path": "data/cmu",
+      "clips": [
+        {
+          "clip_id": "14_01",
+          "description": "Boxing punches",
+          "raw_path": "data/cmu/14_01.bvh",
+          "retargeted": true,
+          "retargeted_path": "data/cmu/14_01_retargeted.npy"
+        },
+        {
+          "clip_id": "14_02",
+          "description": "Boxing punches",
+          "raw_path": "data/cmu/14_02.bvh",
+          "retargeted": false,
+          "retargeted_path": ""
+        },
+        {
+          "clip_id": "14_03",
+          "description": "Boxing punches",
+          "raw_path": "data/cmu/14_03.bvh",
+          "retargeted": false,
+          "retargeted_path": ""
+        }
+      ]
+    },
+    {
+      "id": "cmu_idle",
+      "name": "CMU MoCap Idle/Neutral Standing",
+      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=140",
+      "license": "CMU Mocap License (redistributable for research/educational use)",
+      "license_url": "http://mocap.cs.cmu.edu/",
+      "redistributable": true,
+      "raw_format": "bvh",
+      "local_path": "data/cmu",
+      "actions": ["Idle"],
+      "weapons": ["Longsword"],
+      "retargeted": true,
+      "retargeted_path": "data/cmu",
+      "clips": [
+        {
+          "clip_id": "140_06",
+          "description": "Idle neutral standing",
+          "raw_path": "data/cmu/140_06.bvh",
+          "retargeted": true,
+          "retargeted_path": "data/cmu/140_06_retargeted.npy"
+        },
+        {
+          "clip_id": "140_07",
+          "description": "Idle neutral standing",
+          "raw_path": "data/cmu/140_07.bvh",
+          "retargeted": false,
+          "retargeted_path": ""
+        }
+      ]
     },
     {
       "id": "mixamo_sword",
