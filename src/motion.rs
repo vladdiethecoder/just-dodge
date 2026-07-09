@@ -13,7 +13,31 @@ use glam::Mat4;
 use ndarray::{Array, Array2, ArrayD, IxDyn};
 use ort::session::Session;
 use ort::value::{DynValue, Tensor};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Combat action used to condition MotionBricks generation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Action {
+    Strike,
+    Block,
+    Grab,
+}
+
+/// High-level stance/side for the action.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Stance {
+    Top,
+    Left,
+    Right,
+}
+
+/// Full condition describing the desired action clip.
+#[derive(Debug, Clone)]
+pub struct ActionCondition {
+    pub action: Action,
+    pub stance: Stance,
+    pub from_pose: [Mat4; 34],
+}
 
 /// Full MotionBricks inference pipeline
 pub struct MotionPipeline {
@@ -26,6 +50,9 @@ pub struct MotionPipeline {
     /// Codebook: [num_heads=8, num_codes=10, code_dim=32]
     codebook: ArrayD<f32>,
     pub meta: MotionMeta,
+    /// Directory from which the ONNX/NPY artifacts were loaded.
+    /// Used to give clear error messages if artifacts are missing at runtime.
+    assets_path: Option<PathBuf>,
 }
 
 /// Metadata describing model dimensions
@@ -116,6 +143,7 @@ impl MotionPipeline {
                 encoder_in_channels: 304,
                 decoder_out_channels: 413,
             },
+            assets_path: Some(base.to_path_buf()),
         })
     }
 
@@ -610,23 +638,358 @@ pub fn load_g1_frames(path: &str) -> Result<Vec<[Mat4; 34]>> {
     Ok(frames)
 }
 
+// ---------------------------------------------------------------------------
+// Action-conditioned MotionBricks generation
+// ---------------------------------------------------------------------------
+
+/// G1Skeleton34 joint indices used for action seed authoring.
+const LEFT_SHOULDER: usize = 18;
+const LEFT_UPPER_ARM: usize = 19;
+const LEFT_ELBOW: usize = 21;
+const LEFT_WRIST: usize = 23;
+const RIGHT_SHOULDER: usize = 26;
+const RIGHT_UPPER_ARM: usize = 27;
+const RIGHT_ELBOW: usize = 29;
+const RIGHT_WRIST: usize = 31;
+const WAIST_YAW: usize = 15;
+const WAIST_PITCH: usize = 17;
+
+/// Inverse of `MotionPipeline::cont6d_to_matrix`: extract the first two
+/// orthonormal columns of a rotation matrix as a 6D continuous rotation.
+fn matrix_to_cont6d(m: Mat4) -> [f32; 6] {
+    let mut a = m.x_axis.truncate();
+    let mut b = m.y_axis.truncate();
+    if a.length_squared() < 1e-6 {
+        a = glam::Vec3::X;
+    } else {
+        a = a.normalize();
+    }
+    b = b - a * a.dot(b);
+    if b.length_squared() < 1e-6 {
+        b = glam::Vec3::Y;
+    } else {
+        b = b.normalize();
+    }
+    [a.x, a.y, a.z, b.x, b.y, b.z]
+}
+
+/// Write a 6D global rotation for `joint` into a single encoder-input frame.
+fn write_rot6d(frame: &mut [f32], joint: usize, rot: Mat4) {
+    let gr = matrix_to_cont6d(rot);
+    let base = joint * 6;
+    frame[base..base + 6].copy_from_slice(&gr);
+}
+
+/// Build the encoder input [1, 304, T] for an action condition.
+/// Uses `from_pose` as the base and overwrites key joint rotations to encode
+/// the desired action intent.
+fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec<f32> {
+    let mut buf = vec![0f32; 1 * 304 * frames];
+
+    // Pre-compute base rotations and positions from the current pose.
+    let mut base_rot6d = [[0f32; 6]; 34];
+    let mut base_pos = [glam::Vec3::ZERO; 34];
+    let root_pos = condition.from_pose[0].w_axis.truncate();
+    for j in 0..34 {
+        base_rot6d[j] = matrix_to_cont6d(condition.from_pose[j]);
+        base_pos[j] = condition.from_pose[j].w_axis.truncate();
+    }
+
+    for f in 0..frames {
+        let frame_base = f * 304;
+        let frame = &mut buf[frame_base..frame_base + 304];
+
+        // Global 6D rotations (channels [0, 204)).
+        for j in 0..34 {
+            let base_idx = j * 6;
+            frame[base_idx..base_idx + 6].copy_from_slice(&base_rot6d[j]);
+        }
+
+        // Root-relative joint positions (channels [204, 303)).
+        for j in 1..34 {
+            let ric = base_pos[j] - root_pos;
+            let ric_base = 204 + (j - 1) * 3;
+            frame[ric_base..ric_base + 3].copy_from_slice(&[ric.x, ric.y, ric.z]);
+        }
+
+        // Pelvis height (channel 303).
+        frame[303] = root_pos.y;
+
+        // Overwrite key joint rotations with the action/stance seed.
+        apply_action_seed(frame, condition);
+    }
+
+    buf
+}
+
+/// Forward-pointing arm orientation used for strikes, blocks, and grabs.
+/// `side` is -1.0 for left, 1.0 for right. `raise` tilts the arm upward/outward.
+fn arm_forward(side: f32, raise: f32) -> Mat4 {
+    Mat4::from_rotation_z(side * raise) * Mat4::from_rotation_x(-std::f32::consts::FRAC_PI_2)
+}
+
+/// Overwrite encoder-input frame rotations to encode the action intent.
+fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
+    match condition.action {
+        Action::Strike => {
+            // Dominant side: Left/Right stance uses that arm; Top defaults to right
+            // with a slightly raised arm (like an overhead/chop strike).
+            let (side, raise) = match condition.stance {
+                Stance::Left => (-1.0f32, 0.2f32),
+                Stance::Right => (1.0f32, 0.2f32),
+                Stance::Top => (1.0f32, 0.6f32),
+            };
+            let shoulder = arm_forward(side, raise);
+            let elbow = shoulder; // extended arm
+            let wrist = shoulder;
+            if side < 0.0 {
+                write_rot6d(frame, LEFT_SHOULDER, shoulder);
+                write_rot6d(frame, LEFT_UPPER_ARM, shoulder);
+                write_rot6d(frame, LEFT_ELBOW, elbow);
+                write_rot6d(frame, LEFT_WRIST, wrist);
+            } else {
+                write_rot6d(frame, RIGHT_SHOULDER, shoulder);
+                write_rot6d(frame, RIGHT_UPPER_ARM, shoulder);
+                write_rot6d(frame, RIGHT_ELBOW, elbow);
+                write_rot6d(frame, RIGHT_WRIST, wrist);
+            }
+            // Slight forward commitment.
+            write_rot6d(frame, WAIST_PITCH, Mat4::from_rotation_x(0.15));
+        }
+        Action::Block => {
+            // Both arms raised in front of the torso, stable lower body.
+            for (side, shoulder_idx, upper_arm_idx, elbow_idx, wrist_idx) in [
+                (-1.0f32, LEFT_SHOULDER, LEFT_UPPER_ARM, LEFT_ELBOW, LEFT_WRIST),
+                (1.0f32, RIGHT_SHOULDER, RIGHT_UPPER_ARM, RIGHT_ELBOW, RIGHT_WRIST),
+            ] {
+                let shoulder = arm_forward(side, 0.5);
+                let elbow = shoulder * Mat4::from_rotation_x(-0.9); // forearm up
+                let wrist = elbow;
+                write_rot6d(frame, shoulder_idx, shoulder);
+                write_rot6d(frame, upper_arm_idx, shoulder);
+                write_rot6d(frame, elbow_idx, elbow);
+                write_rot6d(frame, wrist_idx, wrist);
+            }
+            write_rot6d(frame, WAIST_PITCH, Mat4::from_rotation_x(0.05));
+        }
+        Action::Grab => {
+            // Both arms reaching straight forward, body lunging.
+            for (side, shoulder_idx, upper_arm_idx, elbow_idx, wrist_idx) in [
+                (-1.0f32, LEFT_SHOULDER, LEFT_UPPER_ARM, LEFT_ELBOW, LEFT_WRIST),
+                (1.0f32, RIGHT_SHOULDER, RIGHT_UPPER_ARM, RIGHT_ELBOW, RIGHT_WRIST),
+            ] {
+                let shoulder = arm_forward(side, 0.1);
+                let elbow = shoulder; // straight
+                let wrist = shoulder;
+                write_rot6d(frame, shoulder_idx, shoulder);
+                write_rot6d(frame, upper_arm_idx, shoulder);
+                write_rot6d(frame, elbow_idx, elbow);
+                write_rot6d(frame, wrist_idx, wrist);
+            }
+            write_rot6d(frame, WAIST_PITCH, Mat4::from_rotation_x(0.25));
+            write_rot6d(frame, WAIST_YAW, Mat4::from_rotation_y(0.05));
+            // Drop the pelvis slightly to suggest a lunge.
+            frame[303] -= 0.08;
+        }
+    }
+}
+
+/// Return the authored frame count for each action.
+fn action_frame_count(action: Action) -> usize {
+    match action {
+        Action::Strike => 30,
+        Action::Block => 45,
+        Action::Grab => 33,
+    }
+}
+
+/// Generate a deterministic MotionBricks-decoded action clip for `condition`.
+///
+/// This is the runtime path: it builds an encoder input seed from the current
+/// pose, runs it through the real VQVAE encoder/decoder, and returns 34-joint
+/// world-space matrices. There is no procedural fallback.
+pub fn generate_action_clip(
+    condition: &ActionCondition,
+    pipeline: &mut MotionPipeline,
+) -> Result<Vec<[Mat4; 34]>, anyhow::Error> {
+    // Verify the ONNX/NPY artifacts are present so the failure mode is explicit.
+    if let Some(base) = pipeline.assets_path.as_ref() {
+        let required = [
+            "motionbricks_vqvae_encoder.onnx",
+            "motionbricks_vqvae_decoder.fixed.onnx",
+            "motionbricks_pose_transformer.onnx",
+            "motionbricks_root_shared.onnx",
+            "motionbricks_root_conv.onnx",
+            "motionbricks_codebook.npy",
+        ];
+        for name in &required {
+            let p = base.join(name);
+            if !p.exists() {
+                anyhow::bail!(
+                    "Missing MotionBricks artifact '{}'. \
+                     Export it from the GR00T repo with tools/export_motionbricks_onnx.py \
+                     and place it under {}.",
+                    p.display(),
+                    base.display()
+                );
+            }
+        }
+    }
+
+    let frames = action_frame_count(condition.action);
+    let input = build_action_encoder_input(condition, frames);
+    pipeline.decode_encoder_input(&input, frames)
+}
+
+#[cfg(test)]
+impl MotionPipeline {
+    /// Test-only hook to override the artifact directory for error-path tests.
+    fn set_assets_path_for_test(&mut self, path: PathBuf) {
+        self.assets_path = Some(path);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn assets_dir() -> &'static str {
+        concat!(env!("CARGO_MANIFEST_DIR"), "/assets")
+    }
+
+    fn try_load_pipeline() -> Option<MotionPipeline> {
+        let assets = assets_dir();
+        match MotionPipeline::new(assets) {
+            Ok(p) => Some(p),
+            Err(e) => {
+                eprintln!("MotionBricks artifacts not available, skipping test: {e}");
+                None
+            }
+        }
+    }
+
+    fn neutral_g1_pose() -> [Mat4; 34] {
+        let path = format!("{}/mb_idle.g1", assets_dir());
+        let frames = load_g1_frames(&path).expect("mb_idle.g1 should exist in test assets");
+        assert!(!frames.is_empty(), "mb_idle.g1 should contain at least one frame");
+        frames[0]
+    }
+
     #[test]
     fn test_load_pipeline() {
-        let assets = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
-        let pipe = MotionPipeline::new(assets);
+        let pipe = MotionPipeline::new(assets_dir());
         assert!(pipe.is_ok(), "Failed to load pipeline: {:?}", pipe.err());
     }
 
     #[test]
     fn test_codebook() {
-        let assets = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
-        let pipe = MotionPipeline::new(assets).unwrap();
+        let pipe = MotionPipeline::new(assets_dir()).unwrap();
         assert_eq!(pipe.codebook.shape(), &[8, 10, 32]);
         assert_eq!(pipe.meta.num_pose_heads, 8);
         assert_eq!(pipe.meta.code_dim, 256);
+    }
+
+    #[test]
+    fn test_generate_action_clip_lengths() {
+        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let pose = neutral_g1_pose();
+
+        let cases = [
+            (Action::Strike, Stance::Left, 30),
+            (Action::Strike, Stance::Top, 30),
+            (Action::Strike, Stance::Right, 30),
+            (Action::Block, Stance::Top, 45),
+            (Action::Grab, Stance::Right, 33),
+        ];
+
+        for (action, stance, expected) in cases {
+            let condition = ActionCondition {
+                action,
+                stance,
+                from_pose: pose,
+            };
+            let clip = generate_action_clip(&condition, &mut pipeline)
+                .expect("generate_action_clip should succeed when artifacts are present");
+            assert_eq!(
+                clip.len(),
+                expected,
+                "{action:?}/{stance:?} should produce {expected} frames"
+            );
+            assert!(!clip.is_empty(), "clip should not be empty");
+        }
+    }
+
+    #[test]
+    fn test_generate_action_clip_finite() {
+        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let pose = neutral_g1_pose();
+
+        for action in [Action::Strike, Action::Block, Action::Grab] {
+            let condition = ActionCondition {
+                action,
+                stance: Stance::Top,
+                from_pose: pose,
+            };
+            let clip = generate_action_clip(&condition, &mut pipeline)
+                .expect("generate_action_clip should succeed when artifacts are present");
+            for (fi, frame) in clip.iter().enumerate() {
+                for (ji, m) in frame.iter().enumerate() {
+                    assert!(
+                        m.is_finite(),
+                        "non-finite matrix at frame {fi} joint {ji} for {action:?}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_generate_action_clip_deterministic() {
+        let Some(mut pipeline) = try_load_pipeline() else { return };
+        let pose = neutral_g1_pose();
+
+        let condition = ActionCondition {
+            action: Action::Grab,
+            stance: Stance::Left,
+            from_pose: pose,
+        };
+
+        let first = generate_action_clip(&condition, &mut pipeline)
+            .expect("generate_action_clip should succeed when artifacts are present");
+        let second = generate_action_clip(&condition, &mut pipeline)
+            .expect("generate_action_clip should be repeatable");
+
+        assert_eq!(first.len(), second.len());
+        for (a, b) in first.iter().zip(second.iter()) {
+            assert_eq!(a, b, "identical inputs produced different frames");
+        }
+    }
+
+    #[test]
+    fn test_generate_action_clip_missing_onnx_returns_error() {
+        let Some(mut pipeline) = try_load_pipeline() else { return };
+
+        // Point the pipeline at an empty directory so the artifact check fails.
+        let empty_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/test_missing_onnx");
+        std::fs::create_dir_all(empty_dir).expect("failed to create test dir");
+        pipeline.set_assets_path_for_test(PathBuf::from(empty_dir));
+
+        let pose = neutral_g1_pose();
+        let condition = ActionCondition {
+            action: Action::Strike,
+            stance: Stance::Right,
+            from_pose: pose,
+        };
+
+        let result = generate_action_clip(&condition, &mut pipeline);
+        assert!(
+            result.is_err(),
+            "missing ONNX artifacts must produce an error, not an empty clip"
+        );
+        let msg = result.unwrap_err().to_string();
+        assert!(
+            msg.contains("Missing MotionBricks artifact"),
+            "error should name the missing artifact: {msg}"
+        );
     }
 }

@@ -187,14 +187,14 @@ mod tests {
     use crate::skeleton::BONE_COUNT;
 
     fn minimal_mesh() -> SkinnedMeshData {
-        let bones = vec![
-            Bone {
-                name: "Hips".into(),
-                parent: -1,
+        let bones = (0..24)
+            .map(|i| Bone {
+                name: format!("Bone{i}"),
+                parent: if i == 0 { -1 } else { i as i32 - 1 },
                 rest_local: Mat4::IDENTITY,
                 inverse_bind: Mat4::IDENTITY,
-            },
-        ];
+            })
+            .collect();
         SkinnedMeshData {
             vertices: vec![],
             indices: vec![],
@@ -239,7 +239,11 @@ mod tests {
         for i in 0..24 {
             assert!(skin[i].is_finite(), "bone {i} has non-finite matrix");
             // Check no zero-scale (which would cause shearing)
-            let (s, _, _) = skin[i].to_scale();
+            let s = glam::vec3(
+                skin[i].x_axis.truncate().length(),
+                skin[i].y_axis.truncate().length(),
+                skin[i].z_axis.truncate().length(),
+            );
             assert!(s.x > 0.01 && s.y > 0.01 && s.z > 0.01,
                 "bone {i} has zero scale: {:?}", s);
         }

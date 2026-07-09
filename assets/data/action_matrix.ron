@@ -1,0 +1,33 @@
+(
+    timing: [
+        (Strike, (startup: 8, active: 4, recovery: 12)),
+        (Block, (startup: 4, active: 8, recovery: 8)),
+        (Grab, (startup: 6, active: 6, recovery: 10)),
+    ],
+    rules: [
+        // Same-stance fundamentals
+        (a: Strike, b: Strike, stance: Same, contact: Clash, initiative: A, force: 0.5, hit_location: Head),
+        (a: Block, b: Block, stance: Same, contact: Clash, initiative: A, force: 0.2, hit_location: Arms),
+        (a: Grab, b: Grab, stance: Same, contact: GrabTech, initiative: A, force: 0.3, hit_location: Torso),
+
+        // Counter relationships (same stance)
+        (a: Strike, b: Grab, stance: Same, contact: Hit, initiative: A, force: 1.0, hit_location: Torso),
+        (a: Block, b: Strike, stance: Same, contact: Beat, initiative: A, force: 0.5, hit_location: Arms),
+        (a: Grab, b: Block, stance: Same, contact: GrabSuccess, initiative: A, force: 0.8, hit_location: Torso),
+
+        // Counter relationships (different stance) — less clean, often whiffs
+        (a: Strike, b: Block, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Grab, b: Strike, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+        (a: Block, b: Grab, stance: Different, contact: Whiff, initiative: B, force: 0.0, hit_location: Torso),
+
+        // Reverse counter relationships (same stance)
+        (a: Grab, b: Strike, stance: Same, contact: Hit, initiative: B, force: 1.0, hit_location: Torso),
+        (a: Strike, b: Block, stance: Same, contact: Beat, initiative: B, force: 0.5, hit_location: Arms),
+        (a: Block, b: Grab, stance: Same, contact: GrabSuccess, initiative: B, force: 0.8, hit_location: Torso),
+
+        // Any-stance safety net for mismatched same-action pairs
+        (a: Strike, b: Block, stance: Any, contact: Beat, initiative: B, force: 0.3, hit_location: Arms),
+        (a: Block, b: Grab, stance: Any, contact: GrabSuccess, initiative: B, force: 0.6, hit_location: Torso),
+        (a: Grab, b: Strike, stance: Any, contact: Hit, initiative: B, force: 0.9, hit_location: Torso),
+    ],
+)

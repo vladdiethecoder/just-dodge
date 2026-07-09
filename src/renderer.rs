@@ -47,6 +47,8 @@ pub struct Renderer {
     debug_ubg: wgpu::BindGroup,
     debug_vb: Option<wgpu::Buffer>,
     debug_line_count: u32,
+    hitbox_vb: Option<wgpu::Buffer>,
+    hitbox_line_count: u32,
     /// Parent index (-1 = root) for each of the 24 mannequin bones.
     pub bone_parents: Vec<i32>,
 }
@@ -775,6 +777,8 @@ impl Renderer {
             debug_ubg,
             debug_vb: None,
             debug_line_count: 0,
+            hitbox_vb: None,
+            hitbox_line_count: 0,
             bone_parents,
         }
     }
@@ -808,18 +812,53 @@ impl Renderer {
         self.debug_vb = Some(vb);
     }
 
+    /// Upload the MVP used by all debug line overlays.
+    pub fn upload_debug_mvp(&self, queue: &wgpu::Queue, proj_view: &Mat4) {
+        queue.write_buffer(&self.debug_ub, 0, bytemuck::bytes_of(&[*proj_view]));
+    }
+
     /// Draw the bone overlay (call after render_skinned).
     pub fn render_debug_overlay<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
         let Some(ref vb) = self.debug_vb else { return };
-        if self.debug_line_count == 0 { return; }
-        let mvp = self.proj_view;
-        // Upload MVP (can't use queue in render pass; use write_buffer before calling this)
-        // Instead, we write MVP in the update method. For now, the overlay uses
-        // the same proj_view as everything else.
+        if self.debug_line_count == 0 { return };
         rpass.set_pipeline(&self.debug_pipeline);
         rpass.set_bind_group(0, &self.debug_ubg, &[]);
         rpass.set_vertex_buffer(0, vb.slice(..));
         rpass.draw(0..self.debug_line_count, 0..1);
+    }
+
+    /// Upload hitbox debug line vertices.
+    pub fn update_hitbox_debug(&mut self, device: &wgpu::Device, lines: &[(glam::Vec3, glam::Vec3)]) {
+        if lines.is_empty() {
+            self.hitbox_vb = None;
+            self.hitbox_line_count = 0;
+            return;
+        }
+        let mut verts: Vec<f32> = Vec::with_capacity(lines.len() * 2 * 6);
+        for (a, b) in lines {
+            // a: yellow, b: cyan
+            verts.extend_from_slice(a.to_array().as_ref());
+            verts.extend_from_slice(&[1.0, 1.0, 0.0]);
+            verts.extend_from_slice(b.to_array().as_ref());
+            verts.extend_from_slice(&[0.0, 1.0, 1.0]);
+        }
+        self.hitbox_line_count = (verts.len() / 6) as u32;
+        let vb = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Hitbox Debug VB"),
+            contents: bytemuck::cast_slice(&verts),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        self.hitbox_vb = Some(vb);
+    }
+
+    /// Draw hitbox debug lines.
+    pub fn render_hitbox_debug<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
+        let Some(ref vb) = self.hitbox_vb else { return };
+        if self.hitbox_line_count == 0 { return };
+        rpass.set_pipeline(&self.debug_pipeline);
+        rpass.set_bind_group(0, &self.debug_ubg, &[]);
+        rpass.set_vertex_buffer(0, vb.slice(..));
+        rpass.draw(0..self.hitbox_line_count, 0..1);
     }
 
     /// Write a frame's 24 skinning matrices into the joint storage buffer.
