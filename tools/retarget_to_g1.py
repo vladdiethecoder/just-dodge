@@ -41,11 +41,16 @@ def retarget(source_path: str, source_format: str, out_path: str, synthetic: boo
 
 def main():
     parser = argparse.ArgumentParser(description="Retarget mocap to G1Skeleton34")
-    parser.add_argument("--source", required=True, help="Source clip path")
-    parser.add_argument("--format", required=True, choices=["bvh", "fbx", "c3d"], help="Source format")
-    parser.add_argument("--out", required=True, help="Output .npy path")
+    parser.add_argument("--source", help="Source clip path")
+    parser.add_argument("--format", choices=["bvh", "fbx", "c3d"], help="Source format")
+    parser.add_argument("--out", help="Output .npy path")
     parser.add_argument("--synthetic", action="store_true", help="Generate a deterministic test fixture instead of retargeting")
     args = parser.parse_args()
+    if args.source is None and args.format is None and args.out is None:
+        print("Retarget map loaded:", load_retarget_map()["g1_skeleton"]["joint_count"], "joints")
+        return
+    if not args.source or not args.format or not args.out:
+        parser.error("--source, --format, and --out are required together")
     retarget(args.source, args.format, args.out, synthetic=args.synthetic)
     print(f"Wrote {args.out}")
 

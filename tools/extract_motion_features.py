@@ -20,12 +20,26 @@ def extract_features(joint_positions: np.ndarray, joint_rotations: np.ndarray, f
     return features
 
 
+def run_smoke_test():
+    dummy = np.zeros((30, 34, 3))
+    dummy[:, 0, 1] = 0.9
+    rots = np.tile(np.eye(3), (30, 34, 1, 1))
+    f = extract_features(dummy, rots)
+    print("feature shape:", f.shape)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract MotionBricks features from retargeted G1 clip")
-    parser.add_argument("source", help="Input .npy containing 'joint_positions' and 'joint_rotations'")
-    parser.add_argument("--out", required=True, help="Output .npy path")
+    parser.add_argument("source", nargs="?", help="Input .npy containing 'joint_positions' and 'joint_rotations'")
+    parser.add_argument("--out", help="Output .npy path")
     parser.add_argument("--fps", type=int, default=30, help="Clip frame rate")
     args = parser.parse_args()
+
+    if args.source is None and args.out is None:
+        run_smoke_test()
+        return
+    if not args.source or not args.out:
+        parser.error("source and --out are required together")
 
     data = np.load(args.source, allow_pickle=True).item()
     features = extract_features(data["joint_positions"], data["joint_rotations"], fps=args.fps)
