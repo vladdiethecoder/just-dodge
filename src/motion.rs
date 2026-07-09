@@ -803,11 +803,14 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
 }
 
 /// Return the authored frame count for each action.
+///
+/// These values are multiples of the VQVAE token stride (4 frames) so the
+/// decoder outputs the requested number of frames without truncation.
 fn action_frame_count(action: Action) -> usize {
     match action {
-        Action::Strike => 30,
-        Action::Block => 45,
-        Action::Grab => 33,
+        Action::Strike => 28,
+        Action::Block => 44,
+        Action::Grab => 32,
     }
 }
 
@@ -929,11 +932,11 @@ mod tests {
         let pose = neutral_g1_pose();
 
         let cases = [
-            (Action::Strike, Stance::Left, 30),
-            (Action::Strike, Stance::Top, 30),
-            (Action::Strike, Stance::Right, 30),
-            (Action::Block, Stance::Top, 45),
-            (Action::Grab, Stance::Right, 33),
+            (Action::Strike, Stance::Left, 28),
+            (Action::Strike, Stance::Top, 28),
+            (Action::Strike, Stance::Right, 28),
+            (Action::Block, Stance::Top, 44),
+            (Action::Grab, Stance::Right, 32),
         ];
 
         for (action, stance, expected) in cases {
