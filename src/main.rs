@@ -79,12 +79,8 @@ struct App {
     start_time: Instant,
     last_frame_time: Instant,
     input: input::InputState,
-    // Per-actor MotionBricks-driven skinning clips.
-    actor_clips: Vec<Vec<[Mat4; 24]>>,
     clip_fps: f32,
-    clip_rx: Option<Receiver<Vec<[Mat4; 24]>>>,
     first_frame_presented: bool,
-    motion_started: bool,
     // Python MotionBrains bridge.
     motion_service: Arc<motion_service::MotionService>,
     skinned_mesh: Arc<asset::SkinnedMeshData>,
@@ -161,28 +157,6 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
-        // Poll MotionBricks result if a worker thread is active.
-        if let Some(rx) = &self.clip_rx {
-            match rx.try_recv() {
-                Ok(clip) => {
-                    if !clip.is_empty() {
-                        eprintln!("main: MotionBricks clip received: {} frames", clip.len());
-                        // Both actors share the idle clip; phase shift applied at render time.
-                        self.actor_clips = vec![clip.clone(), clip];
-                    }
-                    self.clip_rx = None;
-                    if let Some(w) = self.window.as_ref() {
-                        w.request_redraw();
-                    }
-                }
-                Err(TryRecvError::Empty) => { /* keep polling */ }
-                Err(TryRecvError::Disconnected) => {
-                    eprintln!("main: MotionBricks worker disconnected");
-                    self.clip_rx = None;
-                }
-            }
-        }
-
         // Defer heavy Renderer::new() until after the first clear frame was
         // actually presented — this is what lets the Wayland compositor map the
         // window before the app loads 209K+ verts.
@@ -200,11 +174,6 @@ impl ApplicationHandler for App {
 
             if let Some(w) = self.window.as_ref() {
                 w.request_redraw();
-            }
-
-            // Spawn MotionBricks after renderer is ready.
-            if self.renderer.is_some() {
-                self.spawn_motion_worker();
             }
         }
 
@@ -316,27 +285,6 @@ impl ApplicationHandler for App {
 }
 
 impl App {
-    fn spawn_motion_worker(&mut self) {
-        if self.motion_started {
-            return;
-        }
-        self.motion_started = true;
-        eprintln!("main: spawning MotionBricks worker");
-        let (tx, rx) = mpsc::channel();
-        self.clip_rx = Some(rx);
-        thread::spawn(move || {
-            eprintln!("[MotionBricks worker] start");
-            let started = Instant::now();
-            let clip = build_motionbricks_clip();
-            eprintln!(
-                "[MotionBricks worker] done: {} frames in {:.2}s",
-                clip.len(),
-                started.elapsed().as_secs_f32()
-            );
-            let _ = tx.send(clip);
-        });
-    }
-
     fn spawn_combat_clip_worker(&mut self, snapshot: &truth::TruthSnapshot) {
         if self.combat_clip_rx.is_some() {
             return;
@@ -665,11 +613,12 @@ impl App {
     }
 
     fn current_pose(&self) -> ([Mat4; 24], [Mat4; 24]) {
-        let identity = [Mat4::IDENTITY; 24];
         let elapsed = self.start_time.elapsed().as_secs_f32();
         let tick = (elapsed * self.clip_fps) as usize;
 
-        // Prefer generated combat clips; fall back to idle clip (also MotionBrains-generated).
+        // Combat clips are generated asynchronously by the worker. There is no
+        // idle clip/fallback for the first vertical slice — fail loudly if none
+        // is available yet.
         let player = self
             .player_clip
             .as_ref()
@@ -677,14 +626,7 @@ impl App {
                 let fc = clip.len();
                 if fc == 0 { None } else { Some(clip[tick % fc]) }
             })
-            .or_else(|| {
-                if self.actor_clips.len() >= 2 && !self.actor_clips[0].is_empty() {
-                    Some(self.actor_clips[0][tick % self.actor_clips[0].len()])
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(identity);
+            .expect("no player animation clip available (idle primitive is not defined for the first vertical slice)");
 
         let opponent = self
             .opponent_clip
@@ -693,15 +635,7 @@ impl App {
                 let fc = clip.len();
                 if fc == 0 { None } else { Some(clip[tick % fc]) }
             })
-            .or_else(|| {
-                if self.actor_clips.len() >= 2 && !self.actor_clips[1].is_empty() {
-                    let fc = self.actor_clips[1].len();
-                    Some(self.actor_clips[1][(tick + fc / 2) % fc])
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(identity);
+            .expect("no opponent animation clip available (idle primitive is not defined for the first vertical slice)");
 
         (player, opponent)
     }
@@ -784,37 +718,6 @@ fn last_result_text(snapshot: &truth::TruthSnapshot) -> Option<String> {
     })
 }
 
-/// Load MotionBricks-exported G1 frames from MB_CLIP env or assets/mb_idle.g1.
-/// No fallbacks — game requires real motion data.
-fn build_motionbricks_clip() -> Vec<[Mat4; 24]> {
-    let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
-    let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets)) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("FATAL: Skinned mesh load failed: {e}");
-            return Vec::new();
-        }
-    };
-
-    let g1_path = std::env::var("MB_CLIP").unwrap_or_else(|_| format!("{}/mb_idle.g1", assets));
-    match motion::load_g1_frames(&g1_path) {
-        Ok(frames) => {
-            eprintln!("[MotionBricks] loaded {} frames from {}", frames.len(), g1_path);
-            frames.iter().map(|g1| asset::compute_skin_matrices(g1, &mesh)).collect()
-        }
-        Err(e) => {
-            eprintln!(
-                "FATAL: No animation clip found. Export from GR00T repo:\n  \
-                 cd /run/media/vdubrov/Bulk-SSD/GR00T-WholeBodyControl/motionbricks && \\\n  \
-                 DISPLAY=:0 python3 scripts/export_motion.py --style idle --output {}\n  \
-                 Error: {e}",
-                g1_path
-            );
-            Vec::new()
-        }
-    }
-}
-
 fn main() {
     let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
@@ -826,9 +729,12 @@ fn main() {
         asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
             .expect("required skinned mesh missing"),
     );
-    let neutral_g1_pose = motion::load_g1_frames(&format!("{}/mb_idle.g1", assets))
-        .map(|frames| frames[0])
-        .unwrap_or([Mat4::IDENTITY; 34]);
+    let neutral_g1_pose = {
+        let clip = motion::build_procedural_g1_clip(1, &skinned_mesh, &asset::G1_TO_MANNEQUIN);
+        clip.into_iter()
+            .next()
+            .expect("failed to build neutral pose from mesh bind pose")
+    };
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -843,11 +749,8 @@ fn main() {
         start_time: Instant::now(),
         last_frame_time: Instant::now(),
         input: input::InputState::default(),
-        actor_clips: vec![vec![[Mat4::IDENTITY; 24]], vec![[Mat4::IDENTITY; 24]]],
         clip_fps: 30.0,
-        clip_rx: None,
         first_frame_presented: false,
-        motion_started: false,
         motion_service,
         skinned_mesh,
         neutral_g1_pose,

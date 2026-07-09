@@ -894,10 +894,15 @@ mod tests {
     }
 
     fn neutral_g1_pose() -> [Mat4; 34] {
-        let path = format!("{}/mb_idle.g1", assets_dir());
-        let frames = load_g1_frames(&path).expect("mb_idle.g1 should exist in test assets");
-        assert!(!frames.is_empty(), "mb_idle.g1 should contain at least one frame");
-        frames[0]
+        let mesh = crate::asset::load_skinned(&format!(
+            "{}/characters/mannequin_male.bin",
+            assets_dir()
+        ))
+        .expect("mannequin mesh must load for neutral pose");
+        let clip = build_procedural_g1_clip(1, &mesh, &crate::asset::G1_TO_MANNEQUIN);
+        clip.into_iter()
+            .next()
+            .expect("procedural neutral clip must contain at least one frame")
     }
 
     #[test]
