@@ -5,13 +5,12 @@ The service loads the GR00T MotionBricks pose/root/VQVAE checkpoints once in
 context_frames, seed)` which returns deterministic float32 bytes of shape
 `[N, 413]` (the same layout as `motion::parse_g1_frame`).
 """
-import ast
 import math
 import os
-import re
 from typing import Any
 
 import numpy as np
+import pyron
 import torch
 
 _SERVICE: dict | None = None
@@ -262,38 +261,54 @@ def init_service(
     return _SERVICE
 
 
-def _load_primitive(action: str, weapon: str, stance: str) -> dict:
-    """Read the RON primitive library and return the matching entry."""
+def _load_primitives() -> list[dict]:
+    """Parse the RON primitive library into a list of primitive dicts.
+
+    Each dict contains the keys: action, weapon, stance, source_id,
+    feature_window, root_target.
+    """
     if not os.path.exists(PRIMITIVES_RON):
         raise FileNotFoundError(f"Primitive library not found: {PRIMITIVES_RON}")
     with open(PRIMITIVES_RON, "r", encoding="utf-8") as f:
         text = f.read()
 
-    # Match a primitive block with the requested action/weapon/stance.
-    pattern = (
-        r"action:\s*" + re.escape(action) + r"\s*,\s*"
-        r"weapon:\s*" + re.escape(weapon) + r"\s*,\s*"
-        r"stance:\s*" + re.escape(stance) + r"\s*,\s*"
-        r"[^)]*?"
-        r"feature_window:\s*(\[\[.*?\]\])\s*,\s*"
-        r"root_target:\s*\(\s*position:\s*(\[[^\]]+\])\s*,\s*heading:\s*([\d\.\-eE]+)\s*\)"
-    )
-    m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-    if not m:
-        raise ValueError(
-            f"No primitive found for {action}/{weapon}/{stance} in {PRIMITIVES_RON}"
-        )
+    data = pyron.loads(text, preserve_class_names=True)
+    primitives = data.get("primitives", [])
 
-    feature_window = ast.literal_eval(m.group(1))
-    position = ast.literal_eval(m.group(2))
-    heading = float(m.group(3))
-    return {
-        "action": action,
-        "weapon": weapon,
-        "stance": stance,
-        "feature_window": feature_window,
-        "root_target": {"position": position, "heading": heading},
-    }
+    def _normalize(value: Any) -> Any:
+        """Convert pyron unit-enum markers to plain strings recursively."""
+        if isinstance(value, dict):
+            if len(value) == 1 and "!__name__" in value:
+                return value["!__name__"]
+            return {k: _normalize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [_normalize(v) for v in value]
+        return value
+
+    return [_normalize(p) for p in primitives]
+
+
+def _load_primitive(action: str, weapon: str, stance: str) -> np.ndarray:
+    """Read the RON primitive library and return the matching feature window.
+
+    Returns the primitive's `feature_window` as a float32 NumPy array.
+    Raises ValueError if no matching primitive exists.
+    """
+    action = action.lower()
+    weapon = weapon.lower()
+    stance = stance.lower()
+
+    for primitive in _load_primitives():
+        if (
+            str(primitive.get("action")).lower() == action
+            and str(primitive.get("weapon")).lower() == weapon
+            and str(primitive.get("stance")).lower() == stance
+        ):
+            return np.array(primitive["feature_window"], dtype=np.float32)
+
+    raise ValueError(
+        f"No primitive found for {action}/{weapon}/{stance} in {PRIMITIVES_RON}"
+    )
 
 
 def _context_to_transforms(
@@ -504,8 +519,7 @@ def generate_clip(
     device = svc["device"]
     motion_rep = svc["motion_rep"]
 
-    primitive = _load_primitive(action, weapon, stance)
-    feature_window = np.array(primitive["feature_window"], dtype=np.float32)
+    feature_window = _load_primitive(action, weapon, stance)
     fw_t = torch.from_numpy(feature_window[None]).to(device)
     # The primitive library stores normalized MotionBricks features.
     tgt_out = motion_rep.inverse(
