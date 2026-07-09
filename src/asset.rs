@@ -60,7 +60,7 @@ pub fn load_binary(path: &str) -> std::io::Result<MeshData> {
 }
 
 // ---------------------------------------------------------------------------
-// Skinned mesh (SKM1) + baked animation (ANM1)
+// Skinned mesh (SKM1)
 // ---------------------------------------------------------------------------
 
 /// Interleaved vertex for the skinning pipeline. 64 bytes stride.
@@ -87,14 +87,6 @@ pub struct SkinnedMeshData {
     pub bones: Vec<Bone>,
     /// Minimum vertex Y (feet), used to seat the model on the ground.
     pub feet_y: f32,
-}
-
-pub struct AnimData {
-    pub bone_count: u32,
-    pub fps: u16,
-    pub frame_count: u32,
-    /// frames[f][bone] = parent-relative local matrix (column-major Mat4)
-    pub frames: Vec<Vec<Mat4>>,
 }
 
 fn rd_u8(r: &mut BufReader<File>) -> std::io::Result<u8> {
@@ -221,34 +213,6 @@ pub fn load_skinned(path: &str) -> std::io::Result<SkinnedMeshData> {
         indices,
         bones,
         feet_y,
-    })
-}
-
-pub fn load_anim(path: &str) -> std::io::Result<AnimData> {
-    let f = File::open(path)?;
-    let mut r = BufReader::new(f);
-
-    let mut magic = [0u8; 4];
-    r.read_exact(&mut magic)?;
-    assert_eq!(&magic, b"ANM1", "not an ANM1 animation");
-    let bone_count = rd_u32(&mut r)?;
-    let fps = rd_u16(&mut r)?;
-    let frame_count = rd_u32(&mut r)?;
-
-    let mut frames = Vec::with_capacity(frame_count as usize);
-    for _ in 0..frame_count {
-        let mut fm = Vec::with_capacity(bone_count as usize);
-        for _ in 0..bone_count {
-            fm.push(rd_mat4(&mut r)?);
-        }
-        frames.push(fm);
-    }
-
-    Ok(AnimData {
-        bone_count,
-        fps,
-        frame_count,
-        frames,
     })
 }
 

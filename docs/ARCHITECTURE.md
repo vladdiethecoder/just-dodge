@@ -26,7 +26,7 @@ Current source/code baseline:
 - `Cargo.toml`: Rust 2024 project using `winit 0.30`, `wgpu 30.0`, `glam 0.28`, `image 0.25`, `fbxcel 0.9`, `ort 2.0.0-rc.12` with `load-dynamic` and `cuda`, `ndarray`, `anyhow`.
 - `src/main.rs`: winit 0.30 `ApplicationHandler` event loop, forced Vulkan backend, orbital camera, render loop, MotionBricks clip generation path, current input print path.
 - `src/renderer.rs`: multi-object wgpu renderer with textured static meshes, procedural checkerboard ground, depth buffer, skinned mannequin render pipeline, per-frame joint-matrix storage buffer.
-- `src/asset.rs`: static mesh `.bin` loader, SKM1 skinned mesh loader, ANM1 animation loader, G1-to-mannequin retarget map, skin-matrix computation.
+- `src/asset.rs`: static mesh `.bin` loader, SKM1 skinned mesh loader, G1-to-mannequin retarget map, skin-matrix computation.
 - `src/motion.rs`: ONNX Runtime MotionBricks VQVAE pipeline, NPY codebook loader, quantize/dequantize helpers, decoded G1 frame parsing, synthetic idle encoder seed, 34-joint world matrix reconstruction.
 - `src/combat.rs`: 3-action Strike/Block/Grab action profiles mapped to MotionBricks-style local/global root constraints and replanning logic.
 - `src/input.rs`: key mapping Z/X/C to Strike/Block/Grab.

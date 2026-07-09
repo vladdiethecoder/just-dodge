@@ -8,7 +8,6 @@
 //   5. Root: conditions -> pred_global_root[B, T, 5]
 
 use anyhow::{Context, Result};
-use crate::asset::SkinnedMeshData;
 use glam::Mat4;
 use ndarray::{Array, Array2, ArrayD, IxDyn};
 use ort::session::Session;
@@ -538,87 +537,6 @@ impl MotionPipeline {
     }
 }
 
-/// Build procedural G1 frames directly (no ONNX VQVAE dependency).
-/// Uses mannequin mesh rest-pose positions with subtle idle motion
-/// (breathing, knee bend, arm sway). Returns Vec<[Mat4; 34]> ready for
-/// compute_skin_matrices.
-pub fn build_procedural_g1_clip(
-    frame_count: usize,
-    mesh: &SkinnedMeshData,
-    g1_to_mannequin: &[usize; 24],
-) -> Vec<[Mat4; 34]> {
-    // Compute G1 bone rest-pose world positions from mannequin inverse_bind
-    let nb = 34usize;
-    let parents = MotionPipeline::G1_PARENTS;
-    let mut g1_world = [glam::Vec3::ZERO; 34];
-    for i in 0..nb {
-        let mut found = false;
-        for mi in 0..24.min(g1_to_mannequin.len()) {
-            if g1_to_mannequin[mi] == i && mi < mesh.bones.len() {
-                let w = mesh.bones[mi].inverse_bind.inverse();
-                g1_world[i] = w.w_axis.truncate();
-                found = true;
-                break;
-            }
-        }
-        if !found {
-            let p = parents[i] as usize;
-            if p < i && p != usize::MAX {
-                g1_world[i] = g1_world[p] + glam::vec3(0.0, 0.12, 0.0);
-            } else {
-                g1_world[i] = g1_world[0].max(g1_world[0] + glam::vec3(0.0, 0.02, 0.0));
-            }
-        }
-    }
-
-    let mut frames = Vec::with_capacity(frame_count);
-    for f in 0..frame_count {
-        let phase = 2.0 * std::f32::consts::PI * (f as f32) / (frame_count as f32);
-        let breathe = (phase * 0.5).sin() * 0.015;
-        let knee_angle = phase.sin() * 0.15;
-        let elbow_angle = (phase * 0.5).sin() * 0.1;
-        let hip_sway = phase.sin() * 0.05;
-
-        let mut frame = [Mat4::IDENTITY; 34];
-
-        // Root (pelvis): translate with breathing
-        frame[0] = Mat4::from_translation(g1_world[0] + glam::vec3(0.0, breathe, 0.0));
-
-        for i in 1..nb {
-            let pos = g1_world[i];
-            let p = parents[i] as usize;
-
-            // Determine rotation based on bone type
-            let bend = match i {
-                // Left knee
-                4 => Mat4::from_rotation_x(knee_angle),
-                // Right knee
-                11 => Mat4::from_rotation_x(knee_angle),
-                // Left/right elbow
-                21 | 29 => Mat4::from_rotation_x(elbow_angle),
-                // Left hip
-                1 => Mat4::from_rotation_z(hip_sway * 0.5),
-                // Right hip
-                8 => Mat4::from_rotation_z(-hip_sway * 0.5),
-                // Spine: waist_yaw, waist_roll, waist_pitch - slight torso sway
-                15 => Mat4::from_rotation_z(hip_sway * 0.3),
-                16 => Mat4::IDENTITY,
-                17 => Mat4::from_rotation_x(hip_sway * 0.2),
-                // Shoulders follow spine
-                _ => Mat4::IDENTITY,
-            };
-
-            // World matrix = parent_world * local_matrix
-            // local_matrix = bend * translation_to_parent
-            let parent_pos = g1_world[p];
-            let to_parent = pos - parent_pos;
-            frame[i] = frame[p] * bend * Mat4::from_translation(to_parent);
-        }
-        frames.push(frame);
-    }
-    frames
-}
-
 /// Parse G1 frames from raw float32 bytes (same layout as .g1 files).
 pub fn load_g1_frames_from_bytes(data: &[u8]) -> Result<Vec<[Mat4; 34]>> {
     if data.len() % (413 * 4) != 0 {
@@ -900,15 +818,11 @@ mod tests {
     }
 
     fn neutral_g1_pose() -> [Mat4; 34] {
-        let mesh = crate::asset::load_skinned(&format!(
-            "{}/characters/mannequin_male.bin",
-            assets_dir()
-        ))
-        .expect("mannequin mesh must load for neutral pose");
-        let clip = build_procedural_g1_clip(1, &mesh, &crate::asset::G1_TO_MANNEQUIN);
+        let clip = load_g1_frames(&format!("{}/mb_idle.g1", assets_dir()))
+            .expect("mb_idle.g1 must be present for neutral pose tests");
         clip.into_iter()
             .next()
-            .expect("procedural neutral clip must contain at least one frame")
+            .expect("mb_idle.g1 must contain at least one frame")
     }
 
     #[test]

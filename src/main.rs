@@ -321,12 +321,12 @@ impl App {
             .player_idle_g1_clip
             .as_ref()
             .and_then(|c| c.first().copied())
-            .unwrap_or([Mat4::IDENTITY; 34]);
+            .expect("idle clip must be ready before combat clip generation");
         let opponent_from_pose = self
             .opponent_idle_g1_clip
             .as_ref()
             .and_then(|c| c.first().copied())
-            .unwrap_or([Mat4::IDENTITY; 34]);
+            .expect("idle clip must be ready before combat clip generation");
         let player_condition = motion::ActionCondition {
             action: map_truth_action(player_action),
             stance: map_truth_stance(snapshot.player.stance),
@@ -716,19 +716,58 @@ fn clip_frame(clip: &[[Mat4; 24]], tick: usize) -> Option<[Mat4; 24]> {
     if fc == 0 { None } else { Some(clip[tick % fc]) }
 }
 
+/// Derive a neutral standing G1 pose from the mannequin mesh bind pose.
+///
+/// Maps each G1Skeleton34 joint to a mannequin bone via `asset::G1_TO_MANNEQUIN`
+/// and uses the mesh inverse_bind matrices to recover bone world positions.
+/// Unmapped joints interpolate a short offset from their parent so every G1
+/// joint has a valid starting transform. This replaces the old identity-matrix
+/// seed so idle generation starts from a plausible bind pose.
+fn build_neutral_g1_pose_from_mesh(mesh: &asset::SkinnedMeshData) -> [Mat4; 34] {
+    let parents = motion::MotionPipeline::G1_PARENTS;
+    let mut g1_world = [glam::Vec3::ZERO; 34];
+
+    for i in 0..34 {
+        let mut found = false;
+        for mi in 0..24.min(asset::G1_TO_MANNEQUIN.len()) {
+            if asset::G1_TO_MANNEQUIN[mi] == i && mi < mesh.bones.len() {
+                let w = mesh.bones[mi].inverse_bind.inverse();
+                g1_world[i] = w.w_axis.truncate();
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            let p = parents[i] as usize;
+            if p < i && p != usize::MAX {
+                g1_world[i] = g1_world[p] + glam::vec3(0.0, 0.12, 0.0);
+            } else {
+                g1_world[i] = g1_world[0] + glam::vec3(0.0, 0.02, 0.0);
+            }
+        }
+    }
+
+    let mut pose = [Mat4::IDENTITY; 34];
+    for i in 0..34 {
+        pose[i] = Mat4::from_translation(g1_world[i]);
+    }
+    pose
+}
+
 /// Generate the Idle/Longsword/Top clip for both sides and convert each to
 /// skinning matrices. The raw G1 frames are kept so they can seed combat actions.
 fn generate_idle_clips(
     service: &motion_service::MotionService,
     mesh: &asset::SkinnedMeshData,
 ) -> IdleClipResult {
-    // Identity context lets the Python service fall back to its trained
-    // neutral standing pose as the generation seed.
-    let identity_context = [Mat4::IDENTITY; 34];
+    // Seed idle generation from the mannequin bind pose instead of an identity
+    // matrix fallback. The Python service still drives the actual motion; this
+    // just gives it a plausible neutral starting pose.
+    let from_pose = build_neutral_g1_pose_from_mesh(mesh);
     let condition = motion::ActionCondition {
         action: motion::Action::Idle,
         stance: motion::Stance::Top,
-        from_pose: identity_context,
+        from_pose,
     };
 
     let player_g1 = motion::generate_action_clip(&condition, service);
