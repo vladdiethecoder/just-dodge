@@ -616,9 +616,14 @@ impl App {
         let elapsed = self.start_time.elapsed().as_secs_f32();
         let tick = (elapsed * self.clip_fps) as usize;
 
-        // Combat clips are generated asynchronously by the worker. There is no
-        // idle clip/fallback for the first vertical slice — fail loudly if none
-        // is available yet.
+        // TODO: This is a temporary procedural neutral/rest pose fallback.
+        // It is derived from the mannequin mesh bind pose and keeps the game
+        // from panicking when no combat clip is active (i.e. outside Reveal,
+        // or before the async worker has finished). Once an Idle primitive
+        // exists in the MotionBricks library, replace this fallback with a
+        // MotionBricks-generated idle clip.
+        let neutral_skin = || asset::compute_skin_matrices(&self.neutral_g1_pose, &self.skinned_mesh);
+
         let player = self
             .player_clip
             .as_ref()
@@ -626,7 +631,7 @@ impl App {
                 let fc = clip.len();
                 if fc == 0 { None } else { Some(clip[tick % fc]) }
             })
-            .expect("no player animation clip available (idle primitive is not defined for the first vertical slice)");
+            .unwrap_or_else(neutral_skin);
 
         let opponent = self
             .opponent_clip
@@ -635,7 +640,7 @@ impl App {
                 let fc = clip.len();
                 if fc == 0 { None } else { Some(clip[tick % fc]) }
             })
-            .expect("no opponent animation clip available (idle primitive is not defined for the first vertical slice)");
+            .unwrap_or_else(neutral_skin);
 
         (player, opponent)
     }
