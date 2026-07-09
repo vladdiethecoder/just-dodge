@@ -1,0 +1,5 @@
+numpy
+scipy
+torch
+# MotionBricks must be installed from your local GR00T checkout.
+# Example: pip install /path/to/gr00t/motionbricks
