@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Extract MotionBricks GlobalRootGlobalJoints features from retargeted G1 poses."""
+import argparse
 import numpy as np
 
 
@@ -19,9 +20,18 @@ def extract_features(joint_positions: np.ndarray, joint_rotations: np.ndarray, f
     return features
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Extract MotionBricks features from retargeted G1 clip")
+    parser.add_argument("source", help="Input .npy containing 'joint_positions' and 'joint_rotations'")
+    parser.add_argument("--out", required=True, help="Output .npy path")
+    parser.add_argument("--fps", type=int, default=30, help="Clip frame rate")
+    args = parser.parse_args()
+
+    data = np.load(args.source, allow_pickle=True).item()
+    features = extract_features(data["joint_positions"], data["joint_rotations"], fps=args.fps)
+    np.save(args.out, features)
+    print("feature shape:", features.shape)
+
+
 if __name__ == "__main__":
-    dummy = np.zeros((30, 34, 3))
-    dummy[:, 0, 1] = 0.9
-    rots = np.tile(np.eye(3), (30, 34, 1, 1))
-    f = extract_features(dummy, rots)
-    print("feature shape:", f.shape)
+    main()
