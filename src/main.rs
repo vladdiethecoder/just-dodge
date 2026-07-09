@@ -22,6 +22,7 @@ mod hitbox;
 mod input;
 mod injury;
 mod motion;
+mod motion_service;
 mod renderer;
 mod replay;
 mod retarget;

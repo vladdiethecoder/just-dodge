@@ -613,10 +613,28 @@ pub fn build_procedural_g1_clip(
             let to_parent = pos - parent_pos;
             frame[i] = frame[p] * bend * Mat4::from_translation(to_parent);
         }
-
         frames.push(frame);
     }
     frames
+}
+
+/// Parse G1 frames from raw float32 bytes (same layout as .g1 files).
+pub fn load_g1_frames_from_bytes(data: &[u8]) -> Result<Vec<[Mat4; 34]>> {
+    if data.len() % (413 * 4) != 0 {
+        anyhow::bail!(
+            "G1 byte length {} not a multiple of frame size {}",
+            data.len(),
+            413 * 4
+        );
+    }
+    let frame_count = data.len() / (413 * 4);
+    let floats = bytemuck::cast_slice::<u8, f32>(data);
+    let mut frames = Vec::with_capacity(frame_count);
+    for f in 0..frame_count {
+        let base = f * 413;
+        frames.push(MotionPipeline::parse_g1_frame(&floats[base..base + 413]));
+    }
+    Ok(frames)
 }
 
 /// Load G1 frames from a binary file exported by the MotionBricks Python pipeline.
@@ -624,19 +642,9 @@ pub fn build_procedural_g1_clip(
 /// Returns Vec<[Mat4; 34]> ready for compute_skin_matrices.
 pub fn load_g1_frames(path: &str) -> Result<Vec<[Mat4; 34]>> {
     let data = std::fs::read(path).map_err(|e| anyhow::anyhow!("Failed to read {path}: {e}"))?;
-    if data.len() % (413 * 4) != 0 {
-        anyhow::bail!("G1 file size {} not a multiple of frame size {}", data.len(), 413 * 4);
-    }
-    let frame_count = data.len() / (413 * 4);
-    let bytes = bytemuck::cast_slice::<u8, f32>(&data);
-    let mut frames = Vec::with_capacity(frame_count);
-    for f in 0..frame_count {
-        let base = f * 413;
-        frames.push(MotionPipeline::parse_g1_frame(&bytes[base..base + 413]));
-    }
-    eprintln!("[load_g1] loaded {} frames from {}", frame_count, path);
-    Ok(frames)
+    load_g1_frames_from_bytes(&data)
 }
+
 
 // ---------------------------------------------------------------------------
 // Action-conditioned MotionBricks generation
