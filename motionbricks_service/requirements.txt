@@ -1,0 +1,3 @@
+torch>=2.0
+numpy
+motionbricks @ file:///run/media/vdubrov/Bulk-SSD/gr00t/motionbricks
