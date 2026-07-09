@@ -21,6 +21,7 @@ This project uses the following subsystem PRDs. Each PRD contains its own Agent 
 - [PRD_INPUT.md](PRD_INPUT.md)
 - [PRD_COMBAT_TRUTH.md](PRD_COMBAT_TRUTH.md)
 - [PRD_ACTION_MATRIX.md](PRD_ACTION_MATRIX.md)
+- [PRD_ACTION_MATRIX_V2.md](PRD_ACTION_MATRIX_V2.md) — 9-action MotionBricks-only expansion
 - [PRD_STANCE_TEMPO.md](PRD_STANCE_TEMPO.md)
 - [PRD_INJURY.md](PRD_INJURY.md)
 - [PRD_ARMOR.md](PRD_ARMOR.md)
@@ -51,6 +52,12 @@ This project uses the following subsystem PRDs. Each PRD contains its own Agent 
 - **Blocker:** Scope and determinism are now much harder; solo-developer feasibility depends on disciplined phase gates.
 - **Status:** ACTIVE.
 - **Next:** Prototype one deep system at a time (hitbox parity, then one material solver, then one tissue layer) before scaling.
+
+### 2026-07-09 — @kimi
+- **Decision:** Expand the action matrix to 9 universal actions (Strike, Block, Grab, Thrust, Feint, DodgeAttack, Bash, Riposte, Lunge) before returning to the full 13-action canon.
+- **Rationale:** User approval: validate the MotionBricks real-time loop on a tight matrix, then scale. Character identity comes from weapon + armor loadouts, not unique moves.
+- **Status:** ACTIVE.
+- **Next:** Write implementation plan and dispatch Phase 0/1 agents for combat mocap acquisition, primitive extraction, and full root/pose/VQVAE inference in Rust.
 
 ### 2026-07-09 — @kimi
 - **Decision:** Hitbox proxies must match visual geometry exactly. No oversized hitboxes, no ghost hits, no phantom range.
