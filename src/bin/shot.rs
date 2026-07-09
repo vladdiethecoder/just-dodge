@@ -9,6 +9,8 @@ use glam::{Mat4, Vec3, vec3};
 mod asset;
 #[path = "../motion.rs"]
 mod motion;
+#[path = "../motion_service.rs"]
+mod motion_service;
 #[path = "../renderer.rs"]
 mod renderer;
 #[path = "../retarget.rs"]

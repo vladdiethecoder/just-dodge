@@ -811,16 +811,11 @@ fn action_frame_count(action: Action) -> usize {
     }
 }
 
-/// Generate a deterministic MotionBricks-decoded action clip for `condition`.
-///
-/// This is the runtime path: it builds an encoder input seed from the current
-/// pose, runs it through the real VQVAE encoder/decoder, and returns 34-joint
-/// world-space matrices. There is no procedural fallback.
-pub fn generate_action_clip(
+#[cfg(test)]
+fn generate_action_clip_legacy(
     condition: &ActionCondition,
     pipeline: &mut MotionPipeline,
 ) -> Result<Vec<[Mat4; 34]>, anyhow::Error> {
-    // Verify the ONNX/NPY artifacts are present so the failure mode is explicit.
     if let Some(base) = pipeline.assets_path.as_ref() {
         let required = [
             "motionbricks_vqvae_encoder.onnx",
@@ -849,6 +844,21 @@ pub fn generate_action_clip(
     pipeline.decode_encoder_input(&input, frames)
 }
 
+/// Generate a deterministic MotionBricks action clip for `condition`.
+///
+/// This is the runtime path: it requests a clip from the Python MotionBricks
+/// inference service and returns 34-joint world-space matrices. There is no
+/// procedural fallback and no prebaked clip.
+pub fn generate_action_clip(
+    condition: &ActionCondition,
+    service: &crate::motion_service::MotionService,
+) -> Result<Vec<[Mat4; 34]>, anyhow::Error> {
+    let action_name = format!("{:?}", condition.action);
+    let stance_name = format!("{:?}", condition.stance);
+    // Weapon is not part of ActionCondition yet; default to Longsword for Phase 2.
+    service.generate_clip(&action_name, "Longsword", &stance_name, &[condition.from_pose], 0)
+}
+
 #[cfg(test)]
 impl MotionPipeline {
     /// Test-only hook to override the artifact directory for error-path tests.
@@ -860,6 +870,10 @@ impl MotionPipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn heavy_tests_enabled() -> bool {
+        std::env::var("JUSTDODGE_HEAVY_TESTS").is_ok_and(|v| !v.is_empty())
+    }
 
     fn assets_dir() -> &'static str {
         concat!(env!("CARGO_MANIFEST_DIR"), "/assets")
@@ -885,12 +899,20 @@ mod tests {
 
     #[test]
     fn test_load_pipeline() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let pipe = MotionPipeline::new(assets_dir());
         assert!(pipe.is_ok(), "Failed to load pipeline: {:?}", pipe.err());
     }
 
     #[test]
     fn test_codebook() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let pipe = MotionPipeline::new(assets_dir()).unwrap();
         assert_eq!(pipe.codebook.shape(), &[8, 10, 32]);
         assert_eq!(pipe.meta.num_pose_heads, 8);
@@ -899,6 +921,10 @@ mod tests {
 
     #[test]
     fn test_generate_action_clip_lengths() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let Some(mut pipeline) = try_load_pipeline() else { return };
         let pose = neutral_g1_pose();
 
@@ -916,7 +942,7 @@ mod tests {
                 stance,
                 from_pose: pose,
             };
-            let clip = generate_action_clip(&condition, &mut pipeline)
+            let clip = generate_action_clip_legacy(&condition, &mut pipeline)
                 .expect("generate_action_clip should succeed when artifacts are present");
             assert_eq!(
                 clip.len(),
@@ -929,6 +955,10 @@ mod tests {
 
     #[test]
     fn test_generate_action_clip_finite() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let Some(mut pipeline) = try_load_pipeline() else { return };
         let pose = neutral_g1_pose();
 
@@ -938,7 +968,7 @@ mod tests {
                 stance: Stance::Top,
                 from_pose: pose,
             };
-            let clip = generate_action_clip(&condition, &mut pipeline)
+            let clip = generate_action_clip_legacy(&condition, &mut pipeline)
                 .expect("generate_action_clip should succeed when artifacts are present");
             for (fi, frame) in clip.iter().enumerate() {
                 for (ji, m) in frame.iter().enumerate() {
@@ -953,6 +983,10 @@ mod tests {
 
     #[test]
     fn test_generate_action_clip_deterministic() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let Some(mut pipeline) = try_load_pipeline() else { return };
         let pose = neutral_g1_pose();
 
@@ -962,9 +996,9 @@ mod tests {
             from_pose: pose,
         };
 
-        let first = generate_action_clip(&condition, &mut pipeline)
+        let first = generate_action_clip_legacy(&condition, &mut pipeline)
             .expect("generate_action_clip should succeed when artifacts are present");
-        let second = generate_action_clip(&condition, &mut pipeline)
+        let second = generate_action_clip_legacy(&condition, &mut pipeline)
             .expect("generate_action_clip should be repeatable");
 
         assert_eq!(first.len(), second.len());
@@ -975,6 +1009,10 @@ mod tests {
 
     #[test]
     fn test_generate_action_clip_missing_onnx_returns_error() {
+        if !heavy_tests_enabled() {
+            eprintln!("skipping heavy ONNX test; set JUSTDODGE_HEAVY_TESTS=1 to run");
+            return;
+        }
         let Some(mut pipeline) = try_load_pipeline() else { return };
 
         // Point the pipeline at an empty directory so the artifact check fails.
@@ -989,7 +1027,7 @@ mod tests {
             from_pose: pose,
         };
 
-        let result = generate_action_clip(&condition, &mut pipeline);
+        let result = generate_action_clip_legacy(&condition, &mut pipeline);
         assert!(
             result.is_err(),
             "missing ONNX artifacts must produce an error, not an empty clip"

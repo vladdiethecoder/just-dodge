@@ -7,6 +7,8 @@ use std::time::Instant;
 mod asset;
 #[path = "../motion.rs"]
 mod motion;
+#[path = "../motion_service.rs"]
+mod motion_service;
 #[path = "../retarget.rs"]
 mod retarget;
 #[path = "../skeleton.rs"]
