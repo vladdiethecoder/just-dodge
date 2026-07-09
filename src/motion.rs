@@ -21,6 +21,7 @@ pub enum Action {
     Strike,
     Block,
     Grab,
+    Idle,
 }
 
 /// High-level stance/side for the action.
@@ -799,6 +800,10 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
             // Drop the pelvis slightly to suggest a lunge.
             frame[303] -= 0.08;
         }
+        Action::Idle => {
+            // Neutral standing pose: keep the incoming from_pose as-is.
+            // No action-specific joint overrides are needed for a rest idle.
+        }
     }
 }
 
@@ -811,6 +816,7 @@ fn action_frame_count(action: Action) -> usize {
         Action::Strike => 28,
         Action::Block => 44,
         Action::Grab => 32,
+        Action::Idle => 60,
     }
 }
 
