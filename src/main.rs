@@ -31,6 +31,11 @@ mod telemetry;
 mod truth;
 mod ui;
 
+/// Result delivered by the combat clip worker: generated skinning matrices for
+/// the player and opponent. `None` means the side had no action or generation
+/// failed.
+type CombatClipResult = (Option<Vec<[Mat4; 24]>>, Option<Vec<[Mat4; 24]>>);
+
 struct Camera {
     theta: f32,
     phi: f32,
@@ -81,11 +86,12 @@ struct App {
     first_frame_presented: bool,
     motion_started: bool,
     // Python MotionBrains bridge.
-    motion_service: motion_service::MotionService,
-    skinned_mesh: asset::SkinnedMeshData,
+    motion_service: Arc<motion_service::MotionService>,
+    skinned_mesh: Arc<asset::SkinnedMeshData>,
     neutral_g1_pose: [Mat4; 34],
     player_clip: Option<Vec<[Mat4; 24]>>,
     opponent_clip: Option<Vec<[Mat4; 24]>>,
+    combat_clip_rx: Option<Receiver<CombatClipResult>>,
     // Combat systems
     truth: truth::CombatTruth,
     ai: ai::AiController,
@@ -202,6 +208,28 @@ impl ApplicationHandler for App {
             }
         }
 
+        // Poll combat clip worker result.
+        if let Some(rx) = &self.combat_clip_rx {
+            match rx.try_recv() {
+                Ok((player, opponent)) => {
+                    if player.is_some() || opponent.is_some() {
+                        eprintln!("main: combat clip received");
+                        self.player_clip = player;
+                        self.opponent_clip = opponent;
+                        if let Some(w) = self.window.as_ref() {
+                            w.request_redraw();
+                        }
+                    }
+                    self.combat_clip_rx = None;
+                }
+                Err(TryRecvError::Empty) => { /* keep polling */ }
+                Err(TryRecvError::Disconnected) => {
+                    eprintln!("main: combat clip worker disconnected");
+                    self.combat_clip_rx = None;
+                }
+            }
+        }
+
         // Keep animation ticking.
         if let Some(w) = self.window.as_ref() {
             w.request_redraw();
@@ -309,7 +337,160 @@ impl App {
         });
     }
 
+    fn spawn_combat_clip_worker(&mut self, snapshot: &truth::TruthSnapshot) {
+        if self.combat_clip_rx.is_some() {
+            return;
+        }
+        if self.player_clip.is_some() && self.opponent_clip.is_some() {
+            return;
+        }
+        let Some(player_action) = snapshot.player.action else { return; };
+        let Some(opponent_action) = snapshot.opponent.action else { return; };
+
+        eprintln!("main: spawning combat clip worker");
+        let service = Arc::clone(&self.motion_service);
+        let mesh = Arc::clone(&self.skinned_mesh);
+        let player_condition = motion::ActionCondition {
+            action: map_truth_action(player_action),
+            stance: map_truth_stance(snapshot.player.stance),
+            from_pose: self.neutral_g1_pose,
+        };
+        let opponent_condition = motion::ActionCondition {
+            action: map_truth_action(opponent_action),
+            stance: map_truth_stance(snapshot.opponent.stance),
+            from_pose: self.neutral_g1_pose,
+        };
+        let (tx, rx) = mpsc::channel();
+        self.combat_clip_rx = Some(rx);
+        thread::spawn(move || {
+            eprintln!("[combat clip worker] start");
+            let started = Instant::now();
+            let player = generate_skin_clip(&service, &mesh, &player_condition);
+            let opponent = generate_skin_clip(&service, &mesh, &opponent_condition);
+            let result: CombatClipResult = (player, opponent);
+            eprintln!(
+                "[combat clip worker] done in {:.2}s",
+                started.elapsed().as_secs_f32()
+            );
+            let _ = tx.send(result);
+        });
+    }
+
+    fn combat_update(
+        &mut self,
+    ) -> Option<(
+        truth::TruthSnapshot,
+        input::PlanInput,
+        [Mat4; 24],
+        [Mat4; 24],
+        f32,
+        input::PlayerIntent,
+    )> {
+        if self.renderer.is_none() {
+            return None;
+        }
+
+        // --- Fixed-step combat update (before borrowing renderer) ---
+        let now = Instant::now();
+        let real_dt = now.duration_since(self.last_frame_time).as_secs_f32();
+        self.last_frame_time = now;
+
+        // Presentation never mutates truth: read snapshot, apply inputs through truth API.
+        let plan = self.input.plan_input();
+        if plan.toggle_debug {
+            self.show_debug = !self.show_debug;
+            eprintln!("debug overlay: {}", self.show_debug);
+        }
+
+        if self.truth.phase() == truth::Phase::Plan {
+            let snap = self.truth.snapshot().clone();
+            if !snap.player.committed {
+                if let Some(action) = plan.selected_action {
+                    self.truth.apply_input(
+                        truth::Side::Player,
+                        truth::PlayerInput::SelectAction(action),
+                    );
+                }
+                if let Some(stance) = plan.selected_stance {
+                    self.truth.apply_input(
+                        truth::Side::Player,
+                        truth::PlayerInput::SelectStance(stance),
+                    );
+                }
+                if plan.confirmed {
+                    self.truth.apply_input(truth::Side::Player, truth::PlayerInput::Commit);
+                }
+            }
+            if !snap.opponent.committed {
+                let ai_snap = ai_snapshot_from_truth(&snap, self.ai.side);
+                let commit = self.ai.select_action(&ai_snap);
+                self.truth.apply_input(
+                    truth::Side::Opponent,
+                    truth::PlayerInput::SelectAction(commit.action),
+                );
+                self.truth.apply_input(
+                    truth::Side::Opponent,
+                    truth::PlayerInput::SelectStance(commit.stance),
+                );
+                self.truth.apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
+            }
+        }
+        self.input.reset_plan();
+
+        // Step the authoritative truth at 60 Hz.
+        self.truth.fixed_tick(real_dt);
+
+        // Record snapshot and events for replay.
+        let snapshot = self.truth.snapshot().clone();
+        let replay_snap = replay::ReplaySnapshot {
+            frame: snapshot.frame,
+            phase: snapshot.phase.name().to_string(),
+            player_health: (snapshot.player.health * 10.0).max(0.0) as u32,
+            opponent_health: (snapshot.opponent.health * 10.0).max(0.0) as u32,
+            player_stamina: (snapshot.player.stamina * 10.0).max(0.0) as u32,
+            opponent_stamina: (snapshot.opponent.stamina * 10.0).max(0.0) as u32,
+        };
+        self.replay
+            .record_frame(snapshot.frame, self.truth.truth_hash(), &replay_snap);
+
+        // Save replay once on match end.
+        if snapshot.match_over && !self.replay_saved {
+            self.save_replay();
+            self.replay_saved = true;
+        }
+
+        // Spawn a worker to generate action clips once the truth reveals.
+        // The actual inference runs on a background thread so the render loop
+        // does not stall every frame.
+        if snapshot.phase == truth::Phase::Reveal {
+            self.spawn_combat_clip_worker(&snapshot);
+        } else {
+            // Clear combat clips when the exchange resolves so the next exchange regenerates.
+            self.player_clip = None;
+            self.opponent_clip = None;
+            self.combat_clip_rx = None;
+        }
+
+        let (player_joints, opponent_joints) = self.current_pose();
+        let elapsed = self.start_time.elapsed().as_secs_f32();
+        let intent = self.input.intent();
+
+        // --- Telemetry ---
+        self.telemetry.emit(&telemetry::TelemetryFrame {
+            t: elapsed,
+            player_pos: self.player_pos.to_array(),
+            player_intent: format!("{:?}", intent),
+            opponent_phase: snapshot.phase.name().to_string(),
+            combat_result: last_result_text(&snapshot),
+            clip_frame: 0,
+        });
+        self.input.reset_deltas();
+
+        Some((snapshot, plan, player_joints, opponent_joints, elapsed, intent))
+    }
+
     fn render_frame(&mut self) {
+        let combat = self.combat_update();
         let Some(surface) = self.surface.as_ref() else { return };
         let Some(device) = self.device.as_ref() else { return };
         let Some(queue) = self.queue.as_ref() else { return };
@@ -335,134 +516,11 @@ impl App {
             .create_view(&wgpu::TextureViewDescriptor::default());
 
         if self.renderer.is_some() {
-            // --- Fixed-step combat update (before borrowing renderer) ---
-            let now = Instant::now();
-            let real_dt = now.duration_since(self.last_frame_time).as_secs_f32();
-            self.last_frame_time = now;
+            let (snapshot, plan, player_joints, opponent_joints, _elapsed, _intent) =
+                combat.unwrap();
 
-            // Presentation never mutates truth: read snapshot, apply inputs through truth API.
-            let plan = self.input.plan_input();
-            if plan.toggle_debug {
-                self.show_debug = !self.show_debug;
-                eprintln!("debug overlay: {}", self.show_debug);
-            }
-
-            if self.truth.phase() == truth::Phase::Plan {
-                let snap = self.truth.snapshot().clone();
-                if !snap.player.committed {
-                    if let Some(action) = plan.selected_action {
-                        self.truth.apply_input(
-                            truth::Side::Player,
-                            truth::PlayerInput::SelectAction(action),
-                        );
-                    }
-                    if let Some(stance) = plan.selected_stance {
-                        self.truth.apply_input(
-                            truth::Side::Player,
-                            truth::PlayerInput::SelectStance(stance),
-                        );
-                    }
-                    if plan.confirmed {
-                        self.truth.apply_input(truth::Side::Player, truth::PlayerInput::Commit);
-                    }
-                }
-                if !snap.opponent.committed {
-                    let ai_snap = ai_snapshot_from_truth(&snap, self.ai.side);
-                    let commit = self.ai.select_action(&ai_snap);
-                    self.truth.apply_input(
-                        truth::Side::Opponent,
-                        truth::PlayerInput::SelectAction(commit.action),
-                    );
-                    self.truth.apply_input(
-                        truth::Side::Opponent,
-                        truth::PlayerInput::SelectStance(commit.stance),
-                    );
-                    self.truth.apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
-                }
-            }
-            self.input.reset_plan();
-
-            // Step the authoritative truth at 60 Hz.
-            self.truth.fixed_tick(real_dt);
-
-            // Record snapshot and events for replay.
-            let snapshot = self.truth.snapshot().clone();
-            let replay_snap = replay::ReplaySnapshot {
-                frame: snapshot.frame,
-                phase: snapshot.phase.name().to_string(),
-                player_health: (snapshot.player.health * 10.0).max(0.0) as u32,
-                opponent_health: (snapshot.opponent.health * 10.0).max(0.0) as u32,
-                player_stamina: (snapshot.player.stamina * 10.0).max(0.0) as u32,
-                opponent_stamina: (snapshot.opponent.stamina * 10.0).max(0.0) as u32,
-            };
-            self.replay
-                .record_frame(snapshot.frame, self.truth.truth_hash(), &replay_snap);
-
-            // Save replay once on match end.
-            if snapshot.match_over && !self.replay_saved {
-                self.save_replay();
-                self.replay_saved = true;
-            }
-
-            // Generate MotionBrains clips once both sides are committed and truth reveals.
-            if snapshot.phase == truth::Phase::Reveal {
-                if self.player_clip.is_none() {
-                    if let Some(action) = snapshot.player.action {
-                        let condition = motion::ActionCondition {
-                            action: map_truth_action(action),
-                            stance: map_truth_stance(snapshot.player.stance),
-                            from_pose: self.neutral_g1_pose,
-                        };
-                        match motion::generate_action_clip(&condition, &self.motion_service) {
-                            Ok(g1_clip) => {
-                                self.player_clip = Some(
-                                    g1_clip
-                                        .iter()
-                                        .map(|g1| asset::compute_skin_matrices(g1, &self.skinned_mesh))
-                                        .collect(),
-                                );
-                                eprintln!("main: generated player Strike clip: {} frames", g1_clip.len());
-                            }
-                            Err(e) => {
-                                eprintln!("main: failed to generate player clip: {e}");
-                            }
-                        }
-                    }
-                }
-                if self.opponent_clip.is_none() {
-                    if let Some(action) = snapshot.opponent.action {
-                        let condition = motion::ActionCondition {
-                            action: map_truth_action(action),
-                            stance: map_truth_stance(snapshot.opponent.stance),
-                            from_pose: self.neutral_g1_pose,
-                        };
-                        match motion::generate_action_clip(&condition, &self.motion_service) {
-                            Ok(g1_clip) => {
-                                self.opponent_clip = Some(
-                                    g1_clip
-                                        .iter()
-                                        .map(|g1| asset::compute_skin_matrices(g1, &self.skinned_mesh))
-                                        .collect(),
-                                );
-                                eprintln!("main: generated opponent clip: {} frames", g1_clip.len());
-                            }
-                            Err(e) => {
-                                eprintln!("main: failed to generate opponent clip: {e}");
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Clear combat clips when the exchange resolves so the next exchange regenerates.
-                self.player_clip = None;
-                self.opponent_clip = None;
-            }
-
-            let (player_joints, opponent_joints) = self.current_pose();
             let aspect = config.width as f32 / config.height as f32;
             let proj_view = self.camera.proj_view(aspect);
-            let elapsed = self.start_time.elapsed().as_secs_f32();
-            let intent = self.input.intent();
 
             // --- Now borrow renderer and queue for GPU work ---
             let renderer = self.renderer.as_mut().unwrap();
@@ -491,8 +549,6 @@ impl App {
             );
 
             // --- Animation pose ---
-            // For the prototype, action clips from Agent 2 are not yet wired.
-            // Render the idle clip for all phases (or bind pose if clip absent).
             renderer.update_skin_joints_indexed(queue, 0, &player_joints);
             renderer.update_skin_joints_indexed(queue, 1, &opponent_joints);
 
@@ -502,17 +558,6 @@ impl App {
                 let lines = hitbox::debug_lines(&proxies);
                 renderer.update_hitbox_debug(device, &lines);
             }
-
-            // --- Telemetry ---
-            self.telemetry.emit(&telemetry::TelemetryFrame {
-                t: elapsed,
-                player_pos: self.player_pos.to_array(),
-                player_intent: format!("{:?}", intent),
-                opponent_phase: snapshot.phase.name().to_string(),
-                combat_result: last_result_text(&snapshot),
-                clip_frame: 0,
-            });
-            self.input.reset_deltas();
 
             // --- Render ---
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -555,7 +600,6 @@ impl App {
 
             // UI pass: separate render pass so it draws over everything without depth.
             if let Some(ui_renderer) = self.ui_renderer.as_mut() {
-                let plan = self.input.plan_input();
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("ui pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -691,6 +735,31 @@ fn map_truth_stance(stance: truth::Stance) -> motion::Stance {
     }
 }
 
+/// Generate a combat clip on the worker thread and convert it to skinning matrices.
+fn generate_skin_clip(
+    service: &motion_service::MotionService,
+    mesh: &asset::SkinnedMeshData,
+    condition: &motion::ActionCondition,
+) -> Option<Vec<[Mat4; 24]>> {
+    match motion::generate_action_clip(condition, service) {
+        Ok(g1_clip) => {
+            let clip: Vec<[Mat4; 24]> = g1_clip
+                .iter()
+                .map(|g1| asset::compute_skin_matrices(g1, mesh))
+                .collect();
+            eprintln!(
+                "[combat clip worker] generated {:?}/{:?}: {} frames",
+                condition.action, condition.stance, clip.len()
+            );
+            Some(clip)
+        }
+        Err(e) => {
+            eprintln!("[combat clip worker] failed to generate clip: {e}");
+            None
+        }
+    }
+}
+
 fn ai_snapshot_from_truth(snapshot: &truth::TruthSnapshot, side: truth::Side) -> ai::AiSnapshot {
     let (mine, theirs) = match side {
         truth::Side::Player => (&snapshot.player, &snapshot.opponent),
@@ -750,9 +819,13 @@ fn main() {
     let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
-    let motion_service = motion_service::MotionService::new().expect("MotionBrains service required");
-    let skinned_mesh = asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
-        .expect("required skinned mesh missing");
+    let motion_service = Arc::new(
+        motion_service::MotionService::new().expect("MotionBrains service required"),
+    );
+    let skinned_mesh = Arc::new(
+        asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
+            .expect("required skinned mesh missing"),
+    );
     let neutral_g1_pose = motion::load_g1_frames(&format!("{}/mb_idle.g1", assets))
         .map(|frames| frames[0])
         .unwrap_or([Mat4::IDENTITY; 34]);
@@ -780,6 +853,7 @@ fn main() {
         neutral_g1_pose,
         player_clip: None,
         opponent_clip: None,
+        combat_clip_rx: None,
         truth: truth::CombatTruth::new(),
         ai: ai::AiController::new(
             truth::Side::Opponent,
