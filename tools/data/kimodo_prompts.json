@@ -1,0 +1,45 @@
+{
+  "version": "2026-07-09",
+  "model": "Kimodo-G1-SEED-v1",
+  "duration": 1.2,
+  "num_samples": 4,
+  "seed": 20260709,
+  "actions": {
+    "Strike": {
+      "prompts": [
+        "two handed overhead longsword strike downward, planted feet",
+        "powerful downward sword cut with longsword, two hands"
+      ]
+    },
+    "Block": {
+      "prompts": [
+        "high sword block with longsword, two handed guard, brace",
+        "parry an overhead strike, longsword raised"
+      ]
+    },
+    "Thrust": {
+      "prompts": [
+        "forward longsword thrust, two handed, lunge step",
+        "sword stab straight ahead with longsword"
+      ]
+    },
+    "Grab": {
+      "prompts": [
+        "close quarters grapple, step in and grab torso",
+        "unarmed tackle entry, arms wrapping around"
+      ]
+    },
+    "Dodge": {
+      "prompts": [
+        "side step evasion, sword guard, lean away from attack",
+        "dodge backward while holding longsword"
+      ]
+    },
+    "Idle": {
+      "prompts": [
+        "standing guard with longsword, relaxed ready pose, breathing",
+        "calm idle holding a longsword in both hands"
+      ]
+    }
+  }
+}
