@@ -74,5 +74,6 @@
 
 ## Remaining evidence boundary
 
-- Current visual media from a display-capable capture environment remains unavailable: the active Wayland CUA driver environment has neither `$DISPLAY` nor `$WAYLAND_DISPLAY`, cannot enumerate the winit surface, and cannot capture it. This does not invalidate the package launch / renderer initialization / replay evidence above; it prevents an honest screenshot claim.
-- Local and remote commit SHA(s) follow after a scoped working-tree ownership check.
+- Offscreen visual QA artifact: `qa_runs/bind_pose_1783905204/jd_bind_first_person_duel.png`. Inspection observed the W0 first-person sword and one opponent C0 carrier; no mesh explosion, missing texture, or camera-self-occlusion artifact is visible. The opponent is visibly in a T-pose, so this image is asset/skinning evidence—not proof of an animated combat response.
+- Live-window screenshot capture remains unavailable: the active Wayland CUA driver environment has neither `$DISPLAY` nor `$WAYLAND_DISPLAY`, cannot enumerate the winit surface, and cannot capture the runtime UI. This does not invalidate the package launch / renderer initialization / replay evidence above.
+- Remote source branch: `origin/milestone3-first-playable-terra`, initial commit `a32efabba7ba3a414d7ff69861e71798ee58001f`.
