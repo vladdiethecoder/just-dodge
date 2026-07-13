@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::milestone3 as m3;
+use just_dodge::{m3_cleanbox, milestone3 as m3};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -138,6 +138,7 @@ struct App {
     dodge_presentation: Option<dodge_presentation::DodgePresentation>,
     // Canonical Milestone 3 simulation; rendering only consumes snapshots.
     session: m3::Session,
+    cleanbox_world: m3_cleanbox::M3CleanboxWorld,
     ai: m3::SeededAi,
     replay_saved: bool,
     /// QA-only deterministic driver. It uses the same input/session path as
@@ -379,6 +380,9 @@ impl App {
         // A redraw can run zero or multiple ticks; fractional time is retained.
         let ticks = self.fixed_step_clock.push_elapsed(real_dt);
         for _ in 0..ticks {
+            self.cleanbox_world
+                .submit_resolve_packet(&mut self.session, self.player_pos, vec3(0.0, 0.0, -1.0))
+                .expect("M3 Resolve cleanbox packet must be valid");
             self.session.tick();
         }
 
@@ -876,28 +880,15 @@ fn main() {
     let autoplay = arguments.iter().any(|argument| argument == "--autoplay");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
-    let c0_root = format!("{assets}/source/meshy/c0_base_fighter/pose_carrier_001/cooked");
-    let c0_mesh = asset::load_skinned(&format!("{c0_root}/c0_pose_carrier.bin"))
-        .expect("C0 pose carrier required");
-    let c0_reference = asset::load_skeletal_animation(&format!("{c0_root}/c0_reference.anim"))
-        .expect("C0 reference action required");
-    assert_eq!(c0_mesh.bones.len(), 163, "C0 carrier bone contract");
-    assert_eq!(
-        c0_reference.bone_count,
-        c0_mesh.bones.len(),
-        "C0 reference hierarchy"
-    );
-    let c0_reference_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference.frames[0])
-        .expect("C0 reference pose must produce valid skinning matrices");
-    let dodge_presentation = std::env::var_os("JUST_DODGE_DODGE_F413").map(|path| {
-        let path = PathBuf::from(path);
-        eprintln!(
-            "presentation: loading local Dodge source {}",
-            path.display()
-        );
-        dodge_presentation::DodgePresentation::load(&path, &c0_mesh, &c0_reference.frames[0])
-            .expect("JUST_DODGE_DODGE_F413 must be a validated local [N,413] source stream")
+    let c0_skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
+        format!("{assets}/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
     });
+    let c0_mesh = asset::load_skinned(&c0_skin_path).expect("C0 armored duelist required");
+    assert_eq!(c0_mesh.bones.len(), 24, "C0 armored duelist bone contract");
+    let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
+    let c0_reference_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
+        .expect("C0 armored duelist bind pose must produce valid skinning matrices");
+    let dodge_presentation = None;
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -918,6 +909,7 @@ fn main() {
         c0_reference_skin,
         dodge_presentation,
         session: m3::Session::new(0x4D33_0000_0000_0000),
+        cleanbox_world: m3_cleanbox::M3CleanboxWorld::new(),
         ai: m3::SeededAi::new(0x4D33_0000_0000_0000),
         replay_saved: false,
         autoplay,

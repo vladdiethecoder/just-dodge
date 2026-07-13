@@ -58,6 +58,28 @@ pub fn submit_resolve_packet(
     Ok(Some(tick))
 }
 
+/// Produce one measured 60 Hz packet from exactly two 120 Hz cleanbox targets
+/// without submitting it to a particular combat authority.
+pub fn step_actions(
+    world: &mut DuelWorld,
+    truth_frame: u32,
+    player_action: Action,
+    opponent_action: Action,
+    player_root: Vec3,
+    opponent_root: Vec3,
+) -> Result<DuelWorldTruthTick, DuelWorldError> {
+    let first = CleanboxTargetFrame {
+        player: fighter_frame(Fighter::Player, player_action, player_root, 0),
+        opponent: fighter_frame(Fighter::Opponent, opponent_action, opponent_root, 0),
+    };
+    let second = CleanboxTargetFrame {
+        player: fighter_frame(Fighter::Player, player_action, player_root, 1),
+        opponent: fighter_frame(Fighter::Opponent, opponent_action, opponent_root, 1),
+    };
+    world.clear_weapon_history();
+    world.step_truth_tick(truth_frame, first.as_target(), second.as_target())
+}
+
 #[derive(Debug)]
 struct CleanboxTargetFrame {
     player: FighterFrame,

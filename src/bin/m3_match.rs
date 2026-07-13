@@ -5,7 +5,11 @@
 //! terminal keyboard interface: `1` Strike, `2` Block, `3` Grab, `space`
 //! commit, `r` restart after a result, `q` quit.
 
-use just_dodge::milestone3::{self as m3, Action, Input, Phase, SeededAi, Side};
+use glam::vec3;
+use just_dodge::{
+    m3_cleanbox,
+    milestone3::{self as m3, Action, Input, Phase, SeededAi, Side},
+};
 use std::io::{self, BufRead, Write};
 use std::path::Path;
 
@@ -38,6 +42,7 @@ fn print_state(session: &m3::Session) {
 }
 
 fn advance_until_input(session: &mut m3::Session, ai: SeededAi) {
+    let mut world = m3_cleanbox::M3CleanboxWorld::new();
     loop {
         match session.game.snapshot().phase {
             Phase::Plan if !session.game.snapshot().opponent.committed => {
@@ -54,7 +59,12 @@ fn advance_until_input(session: &mut m3::Session, ai: SeededAi) {
                 session.tick();
             }
             Phase::Plan | Phase::MatchResult => return,
-            _ => session.tick(),
+            _ => {
+                world
+                    .submit_resolve_packet(session, vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0))
+                    .unwrap();
+                session.tick();
+            }
         }
     }
 }

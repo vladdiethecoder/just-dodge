@@ -43,28 +43,12 @@ enum StanceCondition {
     Any,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-enum RelativeSide {
-    A,
-    B,
-}
-
-impl RelativeSide {
-    fn to_side(self) -> Side {
-        match self {
-            RelativeSide::A => Side::Player,
-            RelativeSide::B => Side::Opponent,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Deserialize)]
 struct Rule {
     a: Action,
     b: Action,
     stance: StanceCondition,
     contact: ContactType,
-    initiative: RelativeSide,
     force: f32,
     hit_location: HitLocation,
 }

@@ -1,0 +1,11 @@
+08:20:12 | INFO: Data are loaded, start creating Blender stuff
+08:20:12 | INFO: Blender create Mesh node char1
+08:20:12 | INFO: glTF import finished in 0.44s
+
+FBX export starting... '/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/c0_armored_duelist_001/model.fbx'
+(bpy.data.armatures['Armature'], 'POSE')
+export finished in 0.2825 sec.
+EXPORTED /run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/c0_armored_duelist_001/model.fbx
+Blender 4.3.2 (hash 32f5fdce0a0a built 2024-12-17 01:31:14)
+
+Blender quit

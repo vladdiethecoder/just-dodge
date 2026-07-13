@@ -1,9 +1,9 @@
-// Headless offscreen screenshot harness: renders a SINGLE mannequin in bind pose
+// Headless offscreen screenshot harness: renders a SINGLE armored duelist in bind pose
 // into an offscreen texture for high-contrast visual QA. Removes all arena clutter,
 // keeps one model, and writes PNGs to qa_runs/ for deformity/artifact inspection.
 // Run: cargo run --bin shot
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::{asset, dodge_presentation, renderer};
+use just_dodge::{asset, renderer};
 
 struct View {
     name: &'static str,
@@ -51,44 +51,22 @@ async fn run() {
     let mut renderer = renderer::Renderer::new(&device, &queue, &config, false);
     let assets_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
 
-    // ─── C0 contract diagnostics ────────────────────────────────────
-    let c0_root = format!("{assets_dir}/source/meshy/c0_base_fighter/pose_carrier_001/cooked");
-    let c0_mesh = asset::load_skinned(&format!("{c0_root}/c0_pose_carrier.bin"))
-        .expect("load C0 pose carrier");
-    let c0_reference = asset::load_skeletal_animation(&format!("{c0_root}/c0_reference.anim"))
-        .expect("load C0 reference action");
-    assert_eq!(c0_mesh.bones.len(), 163);
-    let c0_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference.frames[0])
-        .expect("C0 reference skinning");
+    // ─── C0 armored-duelist contract diagnostics ─────────────────────
+    let c0_root = format!("{assets_dir}/source/meshy/c0_armored_duelist_001/cooked");
+    let c0_mesh = asset::load_skinned(&format!("{c0_root}/c0_armored_duelist.bin"))
+        .expect("load C0 armored duelist");
+    assert_eq!(c0_mesh.bones.len(), 24);
+    let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
+    let c0_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
+        .expect("C0 armored-duelist reference skinning");
     assert_eq!(c0_skin.len(), c0_mesh.bones.len());
     println!(
-        "C0 CONTRACT: {} verts, {} indices, {} bones, {} reference matrices",
+        "C0 ARMORED-DUELIST CONTRACT: {} verts, {} indices, {} bones, {} reference matrices",
         c0_mesh.vertices.len(),
         c0_mesh.indices.len(),
         c0_mesh.bones.len(),
         c0_skin.len()
     );
-    let dodge_presentation = std::env::var_os("JUST_DODGE_DODGE_F413").map(|path| {
-        println!("shot: loading Dodge source {}", path.to_string_lossy());
-        dodge_presentation::DodgePresentation::load(
-            std::path::Path::new(&path),
-            &c0_mesh,
-            &c0_reference.frames[0],
-        )
-        .expect("JUST_DODGE_DODGE_F413 must be a validated local [N,413] source stream")
-    });
-    let dodge_tick = std::env::var("JUST_DODGE_DODGE_TICK").ok().map(|value| {
-        value
-            .parse::<u32>()
-            .expect("JUST_DODGE_DODGE_TICK must be an unsigned presentation tick")
-    });
-    let full_body_dodge_skin = dodge_tick.map(|tick| {
-        println!("shot: rendering full-body Dodge presentation tick {tick}");
-        dodge_presentation
-            .as_ref()
-            .expect("JUST_DODGE_DODGE_TICK requires JUST_DODGE_DODGE_F413")
-            .skin_for_tick(tick)
-    });
 
     // ─── Three orthogonal close-up views of one C0 carrier ────
     // Center the camera on the first skinned model's bind-pose root.
@@ -127,15 +105,8 @@ async fn run() {
     ];
 
     for view in &views {
-        let primary_skin = full_body_dodge_skin.unwrap_or(&c0_skin);
-        renderer.update_skin_joints_indexed(&queue, 0, primary_skin);
-        let opponent_skin = full_body_dodge_skin.unwrap_or_else(|| {
-            dodge_presentation
-                .as_ref()
-                .map(|presentation| presentation.skin_for_tick(20))
-                .unwrap_or(&c0_skin)
-        });
-        renderer.update_skin_joints_indexed(&queue, 1, opponent_skin);
+        renderer.update_skin_joints_indexed(&queue, 0, &c0_skin);
+        renderer.update_skin_joints_indexed(&queue, 1, &c0_skin);
         let view_mat = Mat4::look_at_lh(view.eye, view.target, view.up);
         let fov = if view.name == "first_person_duel" {
             70.0_f32.to_radians()
@@ -275,9 +246,7 @@ async fn run() {
             .as_secs();
         let out_dir = format!("{}/qa_runs/bind_pose_{}", env!("CARGO_MANIFEST_DIR"), stamp);
         std::fs::create_dir_all(&out_dir).expect("create qa dir");
-        let label = dodge_tick
-            .map(|tick| format!("jd_dodge_tick_{tick}"))
-            .unwrap_or_else(|| "jd_bind".to_string());
+        let label = "jd_armored_duelist_bind";
         let path = format!("{out_dir}/{label}_{}.png", view.name);
         img.save(&path).expect("save png");
         println!("shot: wrote {}", path);

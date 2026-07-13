@@ -6,8 +6,8 @@ use crate::asset;
 use glam::{Mat4, Vec3};
 use wgpu::util::DeviceExt;
 
-/// Canonical model transform for C0-POSE-CARRIER-001. The cooked carrier is
-/// already Y-up; its reference-pose authority supplies this uniform scale.
+/// Canonical model transform for the accepted cooked C0 carrier. Cooked assets
+/// are already Y-up; their reference-pose authority supplies this uniform scale.
 pub fn skinned_correct_model() -> Mat4 {
     Mat4::from_scale(glam::Vec3::splat(0.918_949_97))
 }
@@ -804,17 +804,18 @@ impl Renderer {
             }
         }
 
-        // --- Skinned C0 pose carriers ---
+        // --- Skinned C0 armored-duelist carriers ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
-        let skin_path = format!(
-            "{assets}/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_pose_carrier.bin"
-        );
-        let mesh = asset::load_skinned(&skin_path)
-            .unwrap_or_else(|error| panic!("failed to load C0 pose carrier {skin_path}: {error}"));
+        let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
+            format!("{assets}/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+        });
+        let mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
+            panic!("failed to load C0 armored duelist {skin_path}: {error}")
+        });
         assert_eq!(
             mesh.bones.len(),
-            163,
-            "C0-POSE-CARRIER-001 must preserve its 163-bone contract"
+            24,
+            "C0 armored duelist must preserve the accepted 24-bone humanoid contract"
         );
         let bone_parents = mesh.bones.iter().map(|bone| bone.parent).collect();
         let positions: Vec<glam::Vec3> = if minimal_scene {
@@ -857,9 +858,22 @@ impl Renderer {
                     resource: sub.as_entire_binding(),
                 }],
             });
-            let (stv, sts) = build_solid_texture(device, queue, [176, 163, 154, 255]);
+            // The generated base-color map carries PBR-specific baked values.
+            // This renderer currently has no roughness/metallic/normal path, so
+            // its direct use produces unstable dark/bright patching. Keep the
+            // armor readable with a deliberately light neutral-bronze material
+            // until the complete PBR contract is implemented; QA can opt into
+            // the raw map.
+            let (stv, sts) =
+                if let Some(texture_path) = std::env::var_os("JUST_DODGE_C0_BASE_COLOR") {
+                    let (_texture, view, sampler) =
+                        load_texture(device, queue, texture_path.to_string_lossy().as_ref());
+                    (view, sampler)
+                } else {
+                    build_solid_texture(device, queue, [185, 132, 76, 255])
+                };
             let stbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("C0 carrier fallback TBG"),
+                label: Some("C0 armored-duelist TBG"),
                 layout: &texture_bgl,
                 entries: &[
                     wgpu::BindGroupEntry {
@@ -900,7 +914,7 @@ impl Renderer {
             });
         }
         println!(
-            "  C0 pose carrier: {} verts, {} idxs, {} bones",
+            "  C0 armored duelist: {} verts, {} idxs, {} bones",
             vc,
             mesh.indices.len(),
             mesh.bones.len()
