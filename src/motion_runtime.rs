@@ -159,8 +159,10 @@ fn segment_length(frame: &[Mat4; 34], joint: usize) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::asset;
     use crate::milestone3 as m3;
     use crate::motion_request::motion_request_from_snapshot;
+    use crate::motion_retarget;
 
     #[test]
     fn missing_artifacts_fail_closed_before_motion_service_startup() {
@@ -207,6 +209,41 @@ mod tests {
             unsupported.contains("refusing bind-pose fallback"),
             "{unsupported}"
         );
+
+        let mesh = asset::load_skinned(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin"
+        ))
+        .unwrap();
+        for action in M3_ACTIONS {
+            let frames = runtime.frames_for_action(action).unwrap();
+            let source_reference = &frames[0];
+            let first_receipts: Vec<u64> = frames
+                .iter()
+                .map(|frame| {
+                    let skin = motion_retarget::retarget_g1_frame_to_armored_skin(
+                        &mesh,
+                        source_reference,
+                        frame,
+                    )
+                    .unwrap();
+                    motion_retarget::armored_pose_receipt(&skin)
+                })
+                .collect();
+            let second_receipts: Vec<u64> = frames
+                .iter()
+                .map(|frame| {
+                    let skin = motion_retarget::retarget_g1_frame_to_armored_skin(
+                        &mesh,
+                        source_reference,
+                        frame,
+                    )
+                    .unwrap();
+                    motion_retarget::armored_pose_receipt(&skin)
+                })
+                .collect();
+            assert_eq!(first_receipts, second_receipts, "{action:?} pose receipts");
+        }
 
         let mut game = m3::Match::new(99);
         while game.snapshot().phase != m3::Phase::Plan {

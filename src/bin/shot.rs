@@ -3,13 +3,28 @@
 // keeps one model, and writes PNGs to qa_runs/ for deformity/artifact inspection.
 // Run: cargo run --bin shot
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::{asset, renderer};
+use just_dodge::{asset, motion::Action, motion_retarget, motion_runtime::MotionRuntime, renderer};
 
 struct View {
     name: &'static str,
     eye: Vec3,
     target: Vec3,
     up: Vec3,
+}
+
+fn qa_action() -> Option<Action> {
+    match std::env::var("JUSTDODGE_QA_ACTION")
+        .ok()?
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "strike" => Some(Action::Strike),
+        "block" => Some(Action::Block),
+        "grab" => Some(Action::Grab),
+        unsupported => {
+            panic!("JUSTDODGE_QA_ACTION must be strike, block, or grab; got {unsupported:?}")
+        }
+    }
 }
 
 async fn run() {
@@ -57,8 +72,33 @@ async fn run() {
         .expect("load C0 armored duelist");
     assert_eq!(c0_mesh.bones.len(), 24);
     let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
-    let c0_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
-        .expect("C0 armored-duelist reference skinning");
+    let c0_skin = if let Some(action) = qa_action() {
+        let runtime =
+            MotionRuntime::load(assets_dir).expect("M3 motion cache required for action QA");
+        let frames = runtime
+            .frames_for_action(action)
+            .expect("M3 action must have a cached G1 clip");
+        let requested_frame = std::env::var("JUSTDODGE_QA_FRAME")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(frames.len() / 2);
+        let frame_index = requested_frame.min(frames.len() - 1);
+        let skin = motion_retarget::retarget_g1_frame_to_armored_skin(
+            &c0_mesh,
+            &frames[0],
+            &frames[frame_index],
+        )
+        .expect("M3 G1 frame must retarget into the armored duelist");
+        println!(
+            "C0 ACTION-QA: {action:?} source_frame={frame_index}/{} pose_receipt={:016x}",
+            frames.len(),
+            motion_retarget::armored_pose_receipt(&skin),
+        );
+        skin
+    } else {
+        asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
+            .expect("C0 armored-duelist reference skinning")
+    };
     assert_eq!(c0_skin.len(), c0_mesh.bones.len());
     println!(
         "C0 ARMORED-DUELIST CONTRACT: {} verts, {} indices, {} bones, {} reference matrices",

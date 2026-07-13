@@ -314,37 +314,62 @@ pub fn calibrated_g1_target_locals(
             reference_world[bone.parent as usize] * target_reference_local[index]
         };
     }
-    let chains: &[(usize, &[(&str, f32)])] = &[
-        (0, &[("root", 1.0)]),
-        (3, &[("upperleg01.L", 0.5), ("upperleg02.L", 1.0)]),
-        (4, &[("lowerleg01.L", 0.5), ("lowerleg02.L", 1.0)]),
-        (6, &[("foot.L", 1.0)]),
-        (7, &[("toe1-1.L", 1.0)]),
-        (10, &[("upperleg01.R", 0.5), ("upperleg02.R", 1.0)]),
-        (11, &[("lowerleg01.R", 0.5), ("lowerleg02.R", 1.0)]),
-        (13, &[("foot.R", 1.0)]),
-        (14, &[("toe1-1.R", 1.0)]),
-        (15, &[("spine05", 1.0)]),
-        (16, &[("spine04", 1.0)]),
-        (
-            17,
-            &[
-                ("spine03", 1.0 / 3.0),
-                ("spine02", 2.0 / 3.0),
-                ("spine01", 1.0),
-            ],
-        ),
-        (18, &[("clavicle.L", 1.0)]),
-        (19, &[("shoulder01.L", 1.0)]),
-        (20, &[("upperarm01.L", 0.5), ("upperarm02.L", 1.0)]),
-        (21, &[("lowerarm01.L", 0.5), ("lowerarm02.L", 1.0)]),
-        (24, &[("wrist.L", 1.0)]),
-        (26, &[("clavicle.R", 1.0)]),
-        (27, &[("shoulder01.R", 1.0)]),
-        (28, &[("upperarm01.R", 0.5), ("upperarm02.R", 1.0)]),
-        (29, &[("lowerarm01.R", 0.5), ("lowerarm02.R", 1.0)]),
-        (32, &[("wrist.R", 1.0)]),
-    ];
+    let chains: &[(usize, &[(&str, f32)])] = if mesh.bones.iter().any(|bone| bone.name == "Hips") {
+        &[
+            (0, &[("Hips", 1.0)]),
+            (3, &[("LeftUpLeg", 1.0)]),
+            (4, &[("LeftLeg", 1.0)]),
+            (6, &[("LeftFoot", 1.0)]),
+            (7, &[("LeftToeBase", 1.0)]),
+            (10, &[("RightUpLeg", 1.0)]),
+            (11, &[("RightLeg", 1.0)]),
+            (13, &[("RightFoot", 1.0)]),
+            (14, &[("RightToeBase", 1.0)]),
+            (15, &[("Spine", 1.0)]),
+            (16, &[("Spine01", 1.0)]),
+            (17, &[("Spine02", 1.0)]),
+            (18, &[("LeftShoulder", 1.0)]),
+            (19, &[("LeftArm", 1.0)]),
+            (21, &[("LeftForeArm", 1.0)]),
+            (24, &[("LeftHand", 1.0)]),
+            (26, &[("RightShoulder", 1.0)]),
+            (27, &[("RightArm", 1.0)]),
+            (29, &[("RightForeArm", 1.0)]),
+            (32, &[("RightHand", 1.0)]),
+        ]
+    } else {
+        &[
+            (0, &[("root", 1.0)]),
+            (3, &[("upperleg01.L", 0.5), ("upperleg02.L", 1.0)]),
+            (4, &[("lowerleg01.L", 0.5), ("lowerleg02.L", 1.0)]),
+            (6, &[("foot.L", 1.0)]),
+            (7, &[("toe1-1.L", 1.0)]),
+            (10, &[("upperleg01.R", 0.5), ("upperleg02.R", 1.0)]),
+            (11, &[("lowerleg01.R", 0.5), ("lowerleg02.R", 1.0)]),
+            (13, &[("foot.R", 1.0)]),
+            (14, &[("toe1-1.R", 1.0)]),
+            (15, &[("spine05", 1.0)]),
+            (16, &[("spine04", 1.0)]),
+            (
+                17,
+                &[
+                    ("spine03", 1.0 / 3.0),
+                    ("spine02", 2.0 / 3.0),
+                    ("spine01", 1.0),
+                ],
+            ),
+            (18, &[("clavicle.L", 1.0)]),
+            (19, &[("shoulder01.L", 1.0)]),
+            (20, &[("upperarm01.L", 0.5), ("upperarm02.L", 1.0)]),
+            (21, &[("lowerarm01.L", 0.5), ("lowerarm02.L", 1.0)]),
+            (24, &[("wrist.L", 1.0)]),
+            (26, &[("clavicle.R", 1.0)]),
+            (27, &[("shoulder01.R", 1.0)]),
+            (28, &[("upperarm01.R", 0.5), ("upperarm02.R", 1.0)]),
+            (29, &[("lowerarm01.R", 0.5), ("lowerarm02.R", 1.0)]),
+            (32, &[("wrist.R", 1.0)]),
+        ]
+    };
     let mut desired_world_rotation = vec![None; mesh.bones.len()];
     for (source, targets) in chains {
         let (_, source_rotation, _) = source_world[*source].to_scale_rotation_translation();
@@ -352,16 +377,17 @@ pub fn calibrated_g1_target_locals(
             source_reference_world[*source].to_scale_rotation_translation();
         let delta = (source_rotation * source_reference_rotation.conjugate()).normalize();
         for (name, fraction) in *targets {
-            let index = mesh
-                .bones
-                .iter()
-                .position(|bone| bone.name == *name)
-                .ok_or_else(|| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        format!("C0 calibration target bone {name} is missing"),
-                    )
-                })?;
+            let index = calibration_target_index(mesh, name).ok_or_else(|| {
+                let expected = if *name == "root" {
+                    "root or Hips"
+                } else {
+                    name
+                };
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("C0 calibration target bone {expected} is missing"),
+                )
+            })?;
             let (_, target_reference_rotation, _) =
                 reference_world[index].to_scale_rotation_translation();
             desired_world_rotation[index] =
@@ -402,6 +428,17 @@ pub fn calibrated_g1_target_locals(
         };
     }
     Ok(target_local)
+}
+
+fn calibration_target_index(mesh: &SkinnedMeshData, name: &str) -> Option<usize> {
+    mesh.bones
+        .iter()
+        .position(|bone| bone.name == name)
+        .or_else(|| {
+            (name == "root")
+                .then(|| mesh.bones.iter().position(|bone| bone.name == "Hips"))
+                .flatten()
+        })
 }
 
 pub fn calibrated_g1_skin_matrices(
