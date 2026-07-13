@@ -5,9 +5,9 @@
 //! frame from colored rectangles and textured glyph quads.
 
 use crate::input::{Action, PlanInput};
-use crate::truth::{Phase, Side, Stance, TruthSnapshot};
 use bytemuck::{Pod, Zeroable};
 use glam::Vec2;
+use just_dodge::milestone3::{Phase, Side, Snapshot};
 
 const GLYPH_W: f32 = 5.0;
 const GLYPH_H: f32 = 7.0;
@@ -447,19 +447,10 @@ impl UiRenderer {
         }
     }
 
-    fn triangle(&mut self, center: Vec2, radius: f32, color: [f32; 4]) {
-        let a = center + Vec2::new(0.0, -radius);
-        let b = center + Vec2::new(-radius * 0.866, radius * 0.5);
-        let c = center + Vec2::new(radius * 0.866, radius * 0.5);
-        self.vertices.push(UiVertex::new(a, Vec2::ZERO, color, 0));
-        self.vertices.push(UiVertex::new(b, Vec2::ZERO, color, 0));
-        self.vertices.push(UiVertex::new(c, Vec2::ZERO, color, 0));
-    }
-
     pub fn render(
         &mut self,
         rpass: &mut wgpu::RenderPass,
-        snapshot: &TruthSnapshot,
+        snapshot: &Snapshot,
         plan: &PlanInput,
         queue: &wgpu::Queue,
         width: u32,
@@ -484,12 +475,14 @@ impl UiRenderer {
             Phase::Plan => [0.2, 0.5, 0.9, 1.0],
             Phase::Reveal => [0.9, 0.6, 0.2, 1.0],
             Phase::Resolve => [0.9, 0.2, 0.2, 1.0],
+            Phase::MatchResult => [0.25, 0.15, 0.05, 1.0],
             _ => [0.2, 0.2, 0.2, 0.9],
         };
         self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, 28.0), phase_color);
         let phase_duration = phase_duration_frames(snapshot.phase);
-        let remaining = (phase_duration.saturating_sub(snapshot.phase_frame)) as f32 / 60.0;
-        let phase_label = format!("{}  {:.1}s", snapshot.phase.name(), remaining);
+        let remaining =
+            (phase_duration.saturating_sub(u32::from(snapshot.phase_frame))) as f32 / 60.0;
+        let phase_label = format!("{:?}  {:.1}s", snapshot.phase, remaining);
         let label_w = phase_label.len() as f32 * GLYPH_ADV * 2.0;
         self.text(
             Vec2::new((w - label_w) / 2.0, 8.0),
@@ -498,51 +491,51 @@ impl UiRenderer {
             [1.0, 1.0, 1.0, 1.0],
         );
 
-        // --- Health / stamina bars ---
+        // --- Localized-injury bars ---
         let bar_w = 180.0;
         let bar_h = 16.0;
         // Player (left)
-        self.text(Vec2::new(pad, 40.0), "HP", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        self.text(Vec2::new(pad, 40.0), "OK", 1.5, [1.0, 1.0, 1.0, 1.0]);
         self.bar(
             Vec2::new(pad + 30.0, 40.0),
             Vec2::new(bar_w, bar_h),
-            snapshot.player.health / 100.0,
+            1.0 - snapshot.player.total_injury() as f32 / 5.0,
             [0.2, 0.1, 0.1, 1.0],
             [0.9, 0.2, 0.2, 1.0],
         );
-        self.text(Vec2::new(pad, 62.0), "STA", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        self.text(Vec2::new(pad, 62.0), "INJ", 1.5, [1.0, 1.0, 1.0, 1.0]);
         self.bar(
             Vec2::new(pad + 30.0, 62.0),
             Vec2::new(bar_w, bar_h),
-            snapshot.player.stamina / 100.0,
+            snapshot.player.total_injury() as f32 / 5.0,
             [0.1, 0.2, 0.1, 1.0],
             [0.2, 0.8, 0.2, 1.0],
         );
 
         // Opponent (right)
         let opp_x = w - pad - bar_w - 30.0;
-        self.text(Vec2::new(opp_x, 40.0), "HP", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        self.text(Vec2::new(opp_x, 40.0), "OK", 1.5, [1.0, 1.0, 1.0, 1.0]);
         self.bar(
             Vec2::new(opp_x + 30.0, 40.0),
             Vec2::new(bar_w, bar_h),
-            snapshot.opponent.health / 100.0,
+            1.0 - snapshot.opponent.total_injury() as f32 / 5.0,
             [0.2, 0.1, 0.1, 1.0],
             [0.9, 0.2, 0.2, 1.0],
         );
-        self.text(Vec2::new(opp_x, 62.0), "STA", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        self.text(Vec2::new(opp_x, 62.0), "INJ", 1.5, [1.0, 1.0, 1.0, 1.0]);
         self.bar(
             Vec2::new(opp_x + 30.0, 62.0),
             Vec2::new(bar_w, bar_h),
-            snapshot.opponent.stamina / 100.0,
+            snapshot.opponent.total_injury() as f32 / 5.0,
             [0.1, 0.2, 0.1, 1.0],
             [0.2, 0.8, 0.2, 1.0],
         );
 
         // --- Action menu (bottom) ---
         let actions = [
-            ("1 Thrust", Action::Thrust, [0.9, 0.2, 0.2, 0.9]),
+            ("1 Strike", Action::Strike, [0.9, 0.2, 0.2, 0.9]),
             ("2 Block", Action::Block, [0.2, 0.6, 0.9, 0.9]),
-            ("3 Dodge", Action::Dodge, [0.3, 0.9, 0.5, 0.9]),
+            ("3 Grab", Action::Grab, [0.3, 0.9, 0.5, 0.9]),
         ];
         let btn_w = 140.0;
         let btn_h = 36.0;
@@ -566,33 +559,10 @@ impl UiRenderer {
             self.text(Vec2::new(tx, y + 10.0), label, 1.5, [1.0, 1.0, 1.0, 1.0]);
         }
 
-        // --- Stance indicator (center-bottom) ---
-        let stance_y = h - 130.0;
-        self.text(
-            Vec2::new(w / 2.0 - 40.0, stance_y - 18.0),
-            "Stance",
-            1.5,
-            [1.0; 4],
-        );
-        let tri_center = Vec2::new(w / 2.0, stance_y + 12.0);
-        match plan.selected_stance.unwrap_or(Stance::Top) {
-            Stance::Left => self.triangle(
-                tri_center + Vec2::new(-24.0, 0.0),
-                14.0,
-                [0.9, 0.9, 0.2, 1.0],
-            ),
-            Stance::Top => self.triangle(tri_center, 14.0, [0.9, 0.9, 0.2, 1.0]),
-            Stance::Right => self.triangle(
-                tri_center + Vec2::new(24.0, 0.0),
-                14.0,
-                [0.9, 0.9, 0.2, 1.0],
-            ),
-        }
-
         // --- Plan / commit prompts ---
         if snapshot.phase == Phase::Plan {
             if !snapshot.player.committed {
-                let prompt = "Top stance   Space/Enter confirm";
+                let prompt = "Choose 1 Strike 2 Block 3 Grab  Space/Enter confirm";
                 let pw = prompt.len() as f32 * GLYPH_ADV * 1.5;
                 self.text(
                     Vec2::new((w - pw) / 2.0, h - 28.0),
@@ -613,12 +583,8 @@ impl UiRenderer {
         }
 
         // --- Result text (during Reveal/Resolve/Consequence) ---
-        if snapshot.last_contact.is_some() {
-            let result = format!(
-                "{:?} vs {:?}",
-                snapshot.player.action.unwrap_or(Action::Block),
-                snapshot.opponent.action.unwrap_or(Action::Block)
-            );
+        if let Some((player_action, opponent_action)) = snapshot.revealed {
+            let result = format!("{:?} vs {:?}", player_action, opponent_action);
             let rw = result.len() as f32 * GLYPH_ADV * 3.0;
             self.text(
                 Vec2::new((w - rw) / 2.0, h / 2.0 - 20.0),
@@ -629,7 +595,7 @@ impl UiRenderer {
         }
 
         // --- Match over overlay ---
-        if snapshot.match_over {
+        if snapshot.phase == Phase::MatchResult {
             self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.75]);
             let winner = snapshot
                 .winner
@@ -637,7 +603,7 @@ impl UiRenderer {
                     Side::Player => "You Win!",
                     Side::Opponent => "Opponent Wins",
                 })
-                .unwrap_or("Match Over");
+                .unwrap_or("Match Result");
             let mw = winner.len() as f32 * GLYPH_ADV * 4.0;
             self.text(
                 Vec2::new((w - mw) / 2.0, h / 2.0 - 20.0),
@@ -665,12 +631,12 @@ impl UiRenderer {
 
 fn phase_duration_frames(phase: Phase) -> u32 {
     match phase {
-        Phase::Observe => 30,
-        Phase::Plan => 60,
-        Phase::Commit => 5,
-        Phase::Reveal => 15,
-        Phase::Resolve => 30,
-        Phase::Consequence => 30,
+        Phase::Observe => 6,
+        Phase::Plan | Phase::MatchResult => 0,
+        Phase::Commit => 2,
+        Phase::Reveal => 12,
+        Phase::Resolve => 1,
+        Phase::Consequence => 18,
     }
 }
 

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use glam::{Mat4, Vec3, vec3};
+use just_dodge::milestone3 as m3;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -135,12 +136,13 @@ struct App {
     c0_reference_skin: Vec<Mat4>,
     /// Optional local-only C0 Dodge presentation. It cannot affect truth.
     dodge_presentation: Option<dodge_presentation::DodgePresentation>,
-    // Combat systems
-    truth: truth::CombatTruth,
-    duel_world: duel_world::DuelWorld,
-    ai: ai::AiController,
-    replay: replay::ReplayRecorder,
+    // Canonical Milestone 3 simulation; rendering only consumes snapshots.
+    session: m3::Session,
+    ai: m3::SeededAi,
     replay_saved: bool,
+    /// QA-only deterministic driver. It uses the same input/session path as
+    /// keyboard selection; it is never the default launch mode.
+    autoplay: bool,
     // Telemetry + locomotion
     telemetry: telemetry::Telemetry,
     player_pos: Vec3,
@@ -292,7 +294,17 @@ impl ApplicationHandler for App {
                     if let Key::Character(c) = &event.logical_key {
                         if c.as_str() == "r" {
                             self.camera.reset();
-                            eprintln!("First-person camera reset");
+                            if self.session.game.snapshot().phase == m3::Phase::MatchResult {
+                                let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
+                                self.session
+                                    .apply(m3::Side::Player, m3::Input::Restart { seed: next_seed })
+                                    .expect("restart is valid from MatchResult");
+                                self.replay_saved = false;
+                                self.input.reset_plan();
+                                eprintln!("Milestone 3 match restarted with seed {next_seed}");
+                            } else {
+                                eprintln!("First-person camera reset");
+                            }
                         }
                     }
                 }
@@ -307,7 +319,7 @@ impl App {
     fn combat_update(
         &mut self,
     ) -> Option<(
-        truth::TruthSnapshot,
+        m3::Snapshot,
         input::PlanInput,
         Vec<Mat4>,
         Vec<Mat4>,
@@ -323,85 +335,57 @@ impl App {
         let real_dt = now.duration_since(self.last_frame_time);
         self.last_frame_time = now;
 
-        // Presentation never mutates truth: read snapshot, apply inputs through truth API.
+        // Presentation only creates canonical inputs; it never mutates game state directly.
         let plan = self.input.plan_input();
         if plan.toggle_debug {
             self.show_debug = !self.show_debug;
             eprintln!("debug overlay: {}", self.show_debug);
         }
 
-        if self.truth.phase() == truth::Phase::Plan {
-            let snap = self.truth.snapshot().clone();
+        if self.session.game.snapshot().phase == m3::Phase::Plan {
+            let snap = self.session.game.snapshot().clone();
             if !snap.player.committed {
-                if let Some(action) = plan.selected_action {
-                    self.truth.apply_input(
-                        truth::Side::Player,
-                        truth::PlayerInput::SelectAction(action),
-                    );
+                let player_action = if self.autoplay {
+                    Some(counter_action(self.ai.choose(snap.exchange)))
+                } else {
+                    plan.selected_action
+                };
+                if let Some(action) = player_action {
+                    self.session
+                        .apply(m3::Side::Player, m3::Input::Select(action))
+                        .expect("Plan accepts one player action selection");
                 }
-                if let Some(stance) = plan.selected_stance {
-                    self.truth.apply_input(
-                        truth::Side::Player,
-                        truth::PlayerInput::SelectStance(stance),
-                    );
-                }
-                if plan.confirmed {
-                    self.truth
-                        .apply_input(truth::Side::Player, truth::PlayerInput::Commit);
+                if (self.autoplay || plan.confirmed) && player_action.is_some() {
+                    self.session
+                        .apply(m3::Side::Player, m3::Input::Commit)
+                        .expect("selected player action commits exactly once");
+                } else if plan.confirmed {
+                    eprintln!("select Strike, Block, or Grab before committing");
                 }
             }
             if !snap.opponent.committed {
-                let ai_snap = ai_snapshot_from_truth(&snap, self.ai.side);
-                let commit = self.ai.select_action(&ai_snap);
-                self.truth.apply_input(
-                    truth::Side::Opponent,
-                    truth::PlayerInput::SelectAction(commit.action),
-                );
-                self.truth.apply_input(
-                    truth::Side::Opponent,
-                    truth::PlayerInput::SelectStance(commit.stance),
-                );
-                self.truth
-                    .apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
+                let action = self.ai.choose(snap.exchange);
+                self.session
+                    .apply(m3::Side::Opponent, m3::Input::Select(action))
+                    .expect("seeded AI Plan selection is valid");
+                self.session
+                    .apply(m3::Side::Opponent, m3::Input::Commit)
+                    .expect("seeded AI commits exactly once");
             }
         }
         self.input.reset_plan();
 
-        // Advance and record exactly once per authoritative 60 Hz tick. A
-        // redraw can run zero or multiple ticks; fractional time is retained.
+        // Advance and hash-record exactly once per authoritative 60 Hz tick.
+        // A redraw can run zero or multiple ticks; fractional time is retained.
         let ticks = self.fixed_step_clock.push_elapsed(real_dt);
         for _ in 0..ticks {
-            let before_tick = self.truth.snapshot().clone();
-            let resolve_packet = cleanbox::submit_resolve_packet(
-                &mut self.truth,
-                &mut self.duel_world,
-                self.player_pos,
-                vec3(0.0, 0.0, -1.0),
-            )
-            .expect("locked cleanbox targets must submit one valid Resolve packet");
-            self.truth.tick();
-            let tick_snapshot = self.truth.snapshot();
-            let truth_hash = self.truth.truth_hash();
-            if let Some(packet) = resolve_packet {
-                self.replay
-                    .record_resolve_packet(&before_tick, tick_snapshot, &packet, truth_hash);
-            }
-            let replay_snap = replay::ReplaySnapshot {
-                frame: tick_snapshot.frame,
-                phase: tick_snapshot.phase.name().to_string(),
-                player_health: (tick_snapshot.player.health * 10.0).max(0.0) as u32,
-                opponent_health: (tick_snapshot.opponent.health * 10.0).max(0.0) as u32,
-                player_stamina: (tick_snapshot.player.stamina * 10.0).max(0.0) as u32,
-                opponent_stamina: (tick_snapshot.opponent.stamina * 10.0).max(0.0) as u32,
-            };
-            self.replay
-                .record_frame(tick_snapshot.frame, truth_hash, &replay_snap);
+            self.session.tick();
         }
 
-        let snapshot = self.truth.snapshot().clone();
+        let snapshot = self.session.game.snapshot().clone();
 
         // Save replay once on match end.
-        if snapshot.match_over && !self.replay_saved {
+        if snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
             self.save_replay();
             self.replay_saved = true;
         }
@@ -415,9 +399,11 @@ impl App {
             t: elapsed,
             player_pos: self.player_pos.to_array(),
             player_intent: format!("{:?}", intent),
-            opponent_phase: snapshot.phase.name().to_string(),
-            combat_result: last_result_text(&snapshot),
-            clip_frame: 0,
+            opponent_phase: format!("{:?}", snapshot.phase),
+            combat_result: snapshot
+                .last_outcome
+                .map(|outcome| format!("{:?}", outcome)),
+            clip_frame: snapshot.frame as usize,
         });
         self.input.reset_deltas();
 
@@ -494,7 +480,7 @@ impl App {
             let weapon_model = renderer::first_person_weapon_model(
                 self.camera.eye(self.player_pos),
                 self.camera.forward(),
-            );
+            ) * action_weapon_presentation(&snapshot);
             renderer.update_first_person_weapon(queue, &proj_view, weapon_model);
 
             let opp_model = Mat4::from_translation(vec3(0.0, 0.0, -1.0)) * correct_model;
@@ -621,7 +607,7 @@ impl App {
         queue.present(surface_texture);
     }
 
-    fn current_pose(&self, _snapshot: &truth::TruthSnapshot) -> (Vec<Mat4>, Vec<Mat4>) {
+    fn current_pose(&self, _snapshot: &m3::Snapshot) -> (Vec<Mat4>, Vec<Mat4>) {
         // The admitted source clip failed the ordered raw-source and C0 human
         // visual gates. Keep its optional local loader available for QA, but do
         // not promote any source-derived pose into the runtime until a source
@@ -637,8 +623,8 @@ impl App {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let path = PathBuf::from(format!("/tmp/just_dodge_replay_{}.jdrp", ts));
-        match self.replay.save(&path) {
+        let path = PathBuf::from(format!("/tmp/just_dodge_m3_replay_{}.ron", ts));
+        match self.session.replay.save(&path) {
             Ok(_) => eprintln!("Replay saved to {}", path.display()),
             Err(e) => eprintln!("Failed to save replay: {}", e),
         }
@@ -661,6 +647,43 @@ fn dodge_phase_tick(phase: truth::Phase, phase_frame: u32) -> Option<u32> {
         truth::Phase::Observe | truth::Phase::Plan => return None,
     };
     Some((offset + phase_frame).min(dodge_presentation::DODGE_PRESENTATION_TICKS - 1))
+}
+
+const fn counter_action(action: m3::Action) -> m3::Action {
+    match action {
+        m3::Action::Strike => m3::Action::Block,
+        m3::Action::Block => m3::Action::Grab,
+        m3::Action::Grab => m3::Action::Strike,
+    }
+}
+
+/// Visual-only first-person weapon response. The simulation never reads this
+/// transform: it is driven from a read-only canonical snapshot after replay
+/// input and truth advancement have already happened.
+fn action_weapon_presentation(snapshot: &m3::Snapshot) -> Mat4 {
+    let action = snapshot
+        .revealed
+        .map(|(player, _)| player)
+        .or(snapshot.player.planned);
+    let active = matches!(
+        snapshot.phase,
+        m3::Phase::Commit | m3::Phase::Reveal | m3::Phase::Resolve
+    );
+    if !active {
+        return Mat4::IDENTITY;
+    }
+    match action {
+        Some(m3::Action::Strike) => {
+            Mat4::from_translation(vec3(0.0, 0.06, -0.42)) * Mat4::from_rotation_x(-0.28)
+        }
+        Some(m3::Action::Block) => {
+            Mat4::from_translation(vec3(-0.10, 0.24, -0.12)) * Mat4::from_rotation_z(0.35)
+        }
+        Some(m3::Action::Grab) => {
+            Mat4::from_translation(vec3(-0.16, -0.10, -0.20)) * Mat4::from_rotation_y(-0.32)
+        }
+        None => Mat4::IDENTITY,
+    }
 }
 
 #[cfg(test)]
@@ -850,6 +873,7 @@ fn main() {
     }
 
     let telemetry_enabled = arguments.iter().any(|argument| argument == "--telemetry");
+    let autoplay = arguments.iter().any(|argument| argument == "--autoplay");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
     let c0_root = format!("{assets}/source/meshy/c0_base_fighter/pose_carrier_001/cooked");
@@ -893,15 +917,10 @@ fn main() {
         first_frame_presented: false,
         c0_reference_skin,
         dodge_presentation,
-        truth: truth::CombatTruth::new(),
-        duel_world: duel_world::DuelWorld::new(),
-        ai: ai::AiController::new(
-            truth::Side::Opponent,
-            ai::AiPersonality::default(),
-            0x3A_C1_00_00_00_00_00_01,
-        ),
-        replay: replay::ReplayRecorder::new(0xDEAD_BEEF_CAFE_BABE),
+        session: m3::Session::new(0x4D33_0000_0000_0000),
+        ai: m3::SeededAi::new(0x4D33_0000_0000_0000),
         replay_saved: false,
+        autoplay,
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
         player_pos: vec3(0.0, 0.0, 1.0),
         show_debug: false,

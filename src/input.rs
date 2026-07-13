@@ -1,11 +1,11 @@
 //! Keyboard/mouse → combat intent mapping.
 //!
-//! Uses truth::Action and truth::Stance directly — no duplicate enums.
+//! Uses milestone3::Action directly — no duplicate action enum.
 
 use winit::event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta};
 use winit::keyboard::Key;
 
-pub use crate::truth::{Action, Stance};
+pub use just_dodge::milestone3::Action;
 
 /// High-level player intent derived from input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,14 +16,13 @@ pub enum PlayerIntent {
     MoveLeft,
     MoveRight,
     Action(Action),
-    Dodge,
 }
 
 /// Plan-phase input derived from the current keyboard state.
 #[derive(Debug, Clone, Default)]
 pub struct PlanInput {
     pub selected_action: Option<Action>,
-    pub selected_stance: Option<Stance>,
+
     pub confirmed: bool,
     pub toggle_debug: bool,
 }
@@ -40,7 +39,7 @@ pub struct InputState {
     pub mouse_delta: (f32, f32),
     pub scroll: f32,
     selected_action: Option<Action>,
-    selected_stance: Option<Stance>,
+
     confirmed: bool,
     toggle_debug: bool,
 }
@@ -53,12 +52,7 @@ impl InputState {
             Key::Character(c) => {
                 let s = c.as_str();
                 match s {
-                    "w" => {
-                        self.forward = pressed;
-                        if pressed {
-                            self.selected_stance = Some(Stance::Top);
-                        }
-                    }
+                    "w" => self.forward = pressed,
                     "s" => self.back = pressed,
                     "a" => self.left = pressed,
                     "d" => self.right = pressed,
@@ -69,7 +63,7 @@ impl InputState {
                     }
                     "1" => {
                         if pressed {
-                            self.selected_action = Some(Action::Thrust);
+                            self.selected_action = Some(Action::Strike);
                         }
                     }
                     "2" => {
@@ -79,7 +73,7 @@ impl InputState {
                     }
                     "3" => {
                         if pressed {
-                            self.selected_action = Some(Action::Dodge);
+                            self.selected_action = Some(Action::Grab);
                         }
                     }
 
@@ -106,7 +100,7 @@ impl InputState {
     /// Process a mouse button event.
     pub fn handle_mouse_button(&mut self, button: MouseButton, pressed: bool) {
         if button == MouseButton::Left && pressed {
-            self.fire_action = Some(Action::Thrust);
+            self.fire_action = Some(Action::Strike);
         }
     }
 
@@ -133,9 +127,7 @@ impl InputState {
         if let Some(action) = self.fire_action {
             return PlayerIntent::Action(action);
         }
-        if self.dodge {
-            return PlayerIntent::Dodge;
-        }
+
         if self.forward {
             return PlayerIntent::MoveForward;
         }
@@ -162,7 +154,7 @@ impl InputState {
     pub fn plan_input(&self) -> PlanInput {
         PlanInput {
             selected_action: self.selected_action,
-            selected_stance: self.selected_stance,
+
             confirmed: self.confirmed,
             toggle_debug: self.toggle_debug,
         }
@@ -182,14 +174,12 @@ mod tests {
     #[test]
     fn plan_input_reflects_selection() {
         let mut input = InputState::default();
-        input.selected_action = Some(Action::Thrust);
-        input.selected_stance = Some(Stance::Top);
+        input.selected_action = Some(Action::Strike);
         input.confirmed = true;
         input.toggle_debug = true;
 
         let plan = input.plan_input();
-        assert_eq!(plan.selected_action, Some(Action::Thrust));
-        assert_eq!(plan.selected_stance, Some(Stance::Top));
+        assert_eq!(plan.selected_action, Some(Action::Strike));
         assert!(plan.confirmed);
         assert!(plan.toggle_debug);
     }
@@ -215,7 +205,7 @@ mod tests {
         };
         let plan = input.plan_input();
         assert!(plan.selected_action.is_none());
-        assert!(plan.selected_stance.is_none());
+
         assert!(!plan.confirmed);
     }
 }
