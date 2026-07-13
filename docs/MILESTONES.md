@@ -35,7 +35,7 @@
 ## Milestone 3: First Playable
 
 **Definition:** Complete single-exchange duel, ugly but functional.
-**Current status:** BLOCKED. Deterministic core, replay, package launch, and compiler/test gates are verified; real Wayland input/video evidence and runtime-asset distribution rights are not. See `docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md`.
+**Current status:** BLOCKED. Packet-driven deterministic core, replay verification, 120 Hz cleanbox reduction, and static armored-duelist import are verified. Runtime action motion, pose-derived contact, five human packaged matches, canonical media, and redistribution-rights evidence are not. See `docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md` and `docs/reports/DEVELOPMENT_TASKLIST.md`.
 **Acceptance Criteria:**
 - [ ] Full match loop: menu → setup → observe → plan → commit → reveal → resolve → consequence → match result.
 - [ ] 3 actions with injury and win/loss.

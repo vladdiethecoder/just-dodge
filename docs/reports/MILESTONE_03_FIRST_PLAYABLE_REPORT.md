@@ -1,35 +1,36 @@
 # Milestone 3 First Playable Report
 
 - Decision: **BLOCKED**
-- Evaluated source commit: `0dd1e398a28d85654d46b3859a476b694d8272e2`
-- Starting commit: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`
+- Evaluated revision: `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`
+- Starting revision: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`
 - Branch: `milestone3-first-playable-terra`
 
 ## Verified engineering evidence
 
 | Requirement | Evidence | Result |
 |---|---|---|
-| Deterministic Strike/Block/Grab resolver | `milestone3::tests::resolver_is_exhaustive_and_has_the_required_triangle` | Pass |
-| Both actors commit before reveal and AI cannot inspect hidden intent | `milestone3::tests::reveal_requires_both_commits_and_ai_cannot_read_hidden_player_action` | Pass |
-| Terminal injury and restart | `milestone3::tests::localized_injury_ends_match_and_restart_is_terminal_only` | Pass |
-| Replay reconstruction | `m3_match --verify` reproduced 143 hash states, final `c52988e98614420e` | Pass |
-| Determinism soak | `milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash` | Pass |
-| Warning-clean project gates | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` and `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | Pass |
-| Clean copied package launch | `/tmp/just-dodge-package-TYNqHo/package/run.sh --telemetry` created the winit surface, presented a frame, and initialized arena, C0, renderer, and UI | Pass |
+| Canonical Strike/Block/Grab truth state | `src/milestone3.rs` with 79 library tests | Pass |
+| Hidden intent stays hidden until Reveal | M3 hidden-intent regression | Pass |
+| Resolve requires a physical packet | `resolve_holds_without_a_measured_packet` | Pass |
+| Two physics substeps reduce to one Resolve packet | `m3_cleanbox` regression | Pass |
+| Guard/body/whiff semantics derive from contact role | M3 body/guard regression | Pass |
+| Replay reconstruction | Fresh autoplay receipt hashes to `d1a3cc1bfb9c2f67`; verifier reproduces 343 states | Pass |
+| Warning-clean source | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` | Pass |
+| Test coverage | repeated `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | 179 Rust unit/integration tests passed |
+| Runtime C0 asset | 24-bone armored duelist, 82,928 vertices, 309,864 indices; cooked-mesh verifier and fresh offscreen bind frames | Pass for static asset integrity |
 
-## Non-advanceable requirements
+## Evidence still required
 
-| Required evidence | Observed result | Consequence |
+| Required evidence | Current state | Consequence |
 |---|---|---|
-| Five actual keyboard/mouse matches in the packaged build | CUA cannot target the KDE Wayland winit surface. `ydotoold` injection did not change telemetry; `xdotool search --pid 3621880` returned no X11 window. | Not demonstrated |
-| Continuous packaged-gameplay video | Driver desktop capture cannot see the Wayland display/input surface. | `docs/media/latest/gameplay-demo.mp4` is correctly absent |
-| Canonical media manifest and rendering overview | `python3 tools/verify_latest_media.py` fails closed: missing `rendering-overview.png`, `gameplay-demo.mp4`, and `manifest.json`. | Not demonstrated |
-| Distribution rights for runtime assets | `docs/reports/ASSET_PROVENANCE_M3.md` identifies incomplete/unknown rights records for every shipped Meshy-derived/arena runtime payload. | Engineering package only, no distributable claim |
-
-## Root cause and smallest recovery
-
-`hermes computer-use doctor` confirms the installed `cua-driver 0.7.1` can inspect and capture X11. With `CUA_DRIVER_RS_ENABLE_WAYLAND=1`, it reports that KDE lacks a virtual-pointer protocol and the installed driver was built without `portal-libei`. A portal-enabled cua-driver build (or an equivalent Wayland input/capture backend) is required before real input/video evidence can be obtained.
+| Action-conditioned MotionBricks runtime poses | `App::current_pose()` remains bind-pose matrices | No motion-readable action proof; pose-contact parity is not established |
+| Five real packaged keyboard/mouse matches | Not recorded | Player-loop criterion is unproven |
+| Continuous packaged gameplay video | Missing by design; canonical media verifier remains fail-closed | No gameplay-media claim |
+| Distribution rights for all package payloads | New C0 task/hash record is technical provenance only; legacy arena/weapon records also remain incomplete | No distributable-build claim |
+| Full PBR/lighting contract | Light-bronze fallback is structural/readability mitigation only | Generated PBR maps are not runtime-integrated |
 
 ## Decision
 
-Do not advance Milestone 3. The deterministic simulation, replay, renderer bridge, package launch, and project gates are evidence-backed, but the required real interactive play/video and asset-rights gates remain unproven. This report is deliberately **BLOCKED**, not PASS, CONTINUE, or a distribution claim.
+The committed M3 core is mechanically stronger than the former action-table path: outcomes require a typed physical packet and the packet is replayed and hashed. The armored runtime opponent is now structurally valid and visible in static QA frames. These facts do not prove an independently playable, action-readable, distributable first playable.
+
+Do not advance Milestone 3. Execute the dependency chain in `docs/reports/DEVELOPMENT_TASKLIST.md`, beginning with `B.1.1` (public deterministic motion request contract), then use real player matches and canonical media as the final M3 evidence gate.

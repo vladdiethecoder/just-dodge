@@ -7,8 +7,9 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 ## Project Status
 
 - Stage: Milestone 3 engineering candidate; not a distributable build.
-- Current baseline: deterministic three-action combat, replay/truth-hash verification, and a Rust/wgpu presentation bridge. The required live Wayland input/video evidence remains blocked by the current automation environment.
-- Distribution boundary: packaged runtime assets lack complete redistribution-rights records; see the asset audit before any release claim.
+- Current baseline: packet-driven deterministic three-action combat, replay/truth-hash verification, 120 Hz cleanbox reduction, and a Rust/wgpu bridge using a 24-bone armored runtime opponent.
+- Open M3 critical path: MotionBricks action conditioning and retargeting, pose-derived contact, player-loop evidence, canonical gameplay media, and asset-rights closure.
+- Distribution boundary: runtime asset source identity is recorded, but complete redistribution-rights records are not; see the asset audit before any release claim.
 
 ## Quick Links
 
@@ -29,6 +30,7 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 - [Milestone 3 Build Record](docs/reports/TERRA_AGENTIC_BUILD.md)
 - [Milestone 3 First Playable Report](docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md)
 - [Milestone 3 Asset Provenance Audit](docs/reports/ASSET_PROVENANCE_M3.md)
+- [Development Task List](docs/reports/DEVELOPMENT_TASKLIST.md)
 - [Changelog](CHANGELOG.md)
 
 ## One-Line Pitch

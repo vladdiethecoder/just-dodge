@@ -4,6 +4,8 @@ Branch: `milestone3-first-playable-terra`
 Last updated: 2026-07-13
 Current blockers: real-match video evidence, asset-rights provenance, no action-conditioned motion.
 
+Phase A status: A.0 complete at `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`; A.1 and A.2 complete with final verifier log SHA-256 `21088f7e33bb54b6e9fc3f110c050c1de9dd8256a52d5f387aa410bec75feebb`. Current implementation unit: B.1.1.
+
 ---
 
 ## Phase A — Hygiene (stabilize the branch before new work)
@@ -116,6 +118,7 @@ Current blockers: real-match video evidence, asset-rights provenance, no action-
 | E.5 | QA-PLATFORM — Cross-platform smoke | CI, package scripts | Linux packaged smoke now. Windows/macOS smoke once packaging is portable. | Package launches outside repo on target OS. | C.7, C.10 |
 | E.6 | QA-RIGHTS — Distribution-rights closure | asset manifests, `docs/reports/ASSET_PROVENANCE_M3.md`, package manifest | Every shipped asset maps to license/terms, source, task ID, hash. Replace or exclude assets without adequate rights. | Package can truthfully be described as distributable. | — (parallel) |
 | E.7 | CI — Maintain warning-clean deterministic CI | `.github/workflows/ci.yml` | Formatting, warning-denying all-target build/tests, replay soak, cooked-asset validation, media-manifest verification. | CI fails on any warning, replay regression, invalid cooked asset, or stale/invalid media manifest. | — (ongoing) |
+| E.8 | QA-MOTION-FLAKE — Stabilize primitive rigidity gate | `tests/motion_service_integration.rs`, `motionbricks_service/` | Reproduce and eliminate the transient `all_top_primitives_are_present_and_rigid` segment-length failure without weakening geometry tolerance. Persist per-action/frame/joint diagnostics and isolate any Python-service state leakage. | Ten consecutive full integration runs pass; diagnostic receipt identifies exact action/frame/joint if a regression occurs. | — (parallel) |
 
 ---
 

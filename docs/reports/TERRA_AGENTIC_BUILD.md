@@ -1,91 +1,42 @@
-# gpt-5.6-terra Agentic Build Record — Just Dodge Milestone 3
+# gpt-5.6-terra Build Record — Just Dodge M3
 
-## Identity and scope
+## Scope
 
-- Acting implementation model: `gpt-5.6-terra` via `openai-codex`.
-- Session goal: verified independently playable Just Dodge Milestone 3 First Playable candidate.
-- Implementation-author rule: this record covers implementation authored only by gpt-5.6-terra. No auxiliary model has written code or patches for this goal.
-- Starting SHA: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`.
-- Dedicated reversible branch: `milestone3-first-playable-terra`, created from the starting SHA. Public history was not rewritten.
+- Branch: `milestone3-first-playable-terra`
+- Starting revision: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`
+- Current implementation revision: `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`
+- Authored implementation: deterministic M3 truth integration, cleanbox adapter, armored-duelist import, renderer bridge, headless verification, and status/evidence documents.
 
-## Baseline evidence
+## Current verified mechanics
 
-| UTC | Command / action | Observed result |
+| Capability | Evidence | Result |
 |---|---|---|
-| 2026-07-12 | `cargo fmt --check` | PASS before this implementation unit. |
-| 2026-07-12 | `cargo test --all-targets --locked` | PASS: 77 tests before this implementation unit. |
-| 2026-07-12 | `cargo build --locked` | PASS before this implementation unit. |
-| 2026-07-12 | `./target/debug/just-dodge --telemetry` | winit window, Vulkan surface, clear frame, arena assets, and telemetry were live. The legacy route did not prove a player-controlled complete match. |
-| 2026-07-12 | CUA/X11/AT-SPI discovery | No discoverable game window despite live Wayland process. This is a capture limitation, not gameplay proof. |
+| 60 Hz M3 phases and hidden simultaneous commitment | `milestone3::tests::reveal_requires_both_commits_and_ai_cannot_read_hidden_player_action` | Pass |
+| Resolve waits for measured geometry | `milestone3::tests::resolve_holds_without_a_measured_packet` | Pass |
+| 120 Hz cleanbox → one 60 Hz packet | `m3_cleanbox::tests::resolve_submission_advances_exactly_two_physics_substeps` | Pass |
+| Body/guard/whiff consequences | `milestone3::tests::body_packet_overrides_action_labels_and_guard_packet_causes_no_injury` | Pass |
+| Replay reconstruction | `m3_match --autoplay 1` then `m3_match --verify` | Frame 342, `Player`, hash `d1a3cc1bfb9c2f67` |
+| Warning-clean project | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` | Pass |
+| Full test surface | repeated `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | 79 library + 93 game-binary + 1 official-motion + 6 motion-service tests passed |
 
-## Milestone units
+## Runtime asset integration
 
-### M3-AUDIT-001 — Current-state audit
+- Runtime now loads `assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin`, not the old nude C0 carrier.
+- The cooked asset has 82,928 vertices, 309,864 indices, and 24 bones; `tools/verify_skinned_bin.py` passed.
+- `assets/source/meshy/c0_armored_duelist_001/manifest.json` records source Meshy task IDs, conversion chain, tool version, and SHA-256 identities.
+- Current renderer uses a deliberately light bronze fallback rather than the raw generated base-color map, because metallic/roughness/normal maps are not yet supported. This preserved silhouette readability in current bind and first-person QA frames; it is not a PBR implementation.
+- Fresh visual evidence is local/ignored: front `0159157db730b19e35fb37ed12240b76c7d4aa9f413e6d56e59b708496917a72`, first-person `159aad28e5e85ed1794f942270c33ae9f0a056a8917d01fcc0d591cf0f05dd0b`.
 
-- Files authored: `docs/reports/CURRENT_STATE_AUDIT.md`, this build record.
-- Acceptance: baseline compile/test/runtime reproduced; observed and inferred status separated; smallest executable path identified.
-- Status: PASS.
+## Truth/presentation boundary
 
-### M3-SIM-001 — Canonical deterministic three-action core
+- `milestone3::Session` owns inputs, phase advancement, physical contact admission, injury, replay, and truth hashes.
+- `M3CleanboxWorld` supplies measured packets from two physics substeps; it does not choose outcomes from action labels.
+- Renderer, camera, and weapon response consume snapshots after truth advancement. They do not mutate M3 state.
+- `App::current_pose()` still returns bind matrices. MotionBricks action conditioning and retargeted runtime pose are not implemented; see `B.1.1`–`B.1.6` in `DEVELOPMENT_TASKLIST.md`.
 
-- Files authored: `src/milestone3.rs`, `src/bin/m3_match.rs`; `src/lib.rs` exports the core.
-- Contract: a single `milestone3::Action` drives terminal input, seeded AI, an exhaustive data-defined 3×3 resolver, replay events, canonical hash, and snapshot presentation boundary.
-- Safety: reveal requires both commits; opponent AI is called from public exchange state only; restart is accepted only from `MatchResult`.
-- State: 60 Hz phases `Observe → Plan → Commit → Reveal → Resolve → Consequence`; terminal localized head/torso injury; explicit winner.
-- Replay: RON serialized event stream plus one canonical hash per initial/ticked state; `replay()` independently reconstructs and rejects hash mismatch.
-- Focused verification: `cargo test --locked milestone3 -- --nocapture` passed 5/5 tests. Log: `qa_runs/milestone3_sim_001/focused_tests_after_presentation.log`.
-- Five replay reconstructions: `cargo run --locked --bin m3_match -- --autoplay 5 qa_runs/milestone3_sim_001/replays` passed. Final hashes:
-  - `c52988e98614420e`
-  - `fd263c569179e7e7`
-  - `6d66b13377e82d52`
-  - `28955fa576102879`
-  - `460720a18a53b8b6`
+## Boundaries retained
 
-### M3-PRESENT-001 — Existing wgpu renderer bridge
-
-- Files changed: `src/main.rs`, `src/input.rs`, `src/ui.rs`.
-- Runtime path: window input maps `1/2/3` to canonical `Strike/Block/Grab`, then `Space/Enter` commits through `Session::apply`; seeded AI commits through the same method; the renderer consumes only the resulting read-only snapshot.
-- UI: lists exactly Strike/Block/Grab, shows phase, action reveal, localized injury, and terminal overlay. `R` from `MatchResult` calls canonical restart.
-- Visual response: canonical action/phase snapshots drive a visual-only first-person W0 longsword transform. It cannot mutate combat state, replay, or hash.
-- Compile: `cargo check --locked --bin just-dodge` passed. Logs: `qa_runs/milestone3_sim_001/presentation_check_attempt_2.log` and `qa_runs/milestone3_sim_001/presentation_check_autoplay.log`.
-- Runtime: `cargo run --locked --bin just-dodge -- --telemetry --autoplay` loaded arena + C0 + W0, completed a match at frame 142, and saved `/tmp/just_dodge_m3_replay_1783906109.ron`.
-- Runtime replay verification: `m3_match --verify` independently reproduced the saved renderer-run replay: 143 hash states, `winner=Some(Player)`, final hash `c52988e98614420e`. Log: `qa_runs/milestone3_sim_001/live_renderer_replay_verify.log`.
-
-## Failures, exact causes, and corrections
-
-1. `m3_match --autoplay` initially failed with `AlreadyCommitted`. Cause: the runner returned at Plan after both fighters committed, then tried to select another player action. Correction: tick fully committed Plan into Commit before accepting new input. The five-replay rerun passed.
-2. Initial renderer-bridge compile exposed stale legacy UI types (`Thrust`, `Dodge`, stance fields) after the canonical input type changed. Correction: UI now consumes only `milestone3::Snapshot` and canonical action labels. `cargo check --bin just-dodge` passed.
-3. Current Linux Wayland CUA cannot enumerate or screenshot the game window. Evidence: no window returned for the live PID; desktop capture reports no `$DISPLAY`/`$WAYLAND_DISPLAY` in the driver environment. No fabricated visual capture is used.
-
-## Known limitations retained honestly
-
-- The opponent still uses the accepted C0 carrier reference pose; the player is intentionally omitted from first-person body rendering to avoid self-occlusion. The W0 longsword now has action-specific presentation response, but full-body authored motion clips and sound effects are still separate work.
-- Legacy `truth`, cleanbox, and MotionBricks modules remain compiled for their existing test evidence but are no longer the gameplay authority in `src/main.rs`; the new M3 route is `milestone3::Session`.
-- QA-only `--autoplay` is not the default launch path. It is a deterministic integration driver used because the Wayland background automation backend cannot target this winit window.
-
-## Package evidence
-
-- Archive: `dist/just-dodge-m3-first-playable.tar.zst` (109 MiB), SHA-256 `08b6a82ae25b9b806a458aab73e84a86379acabb7b30561ae166f8ac7bdab3ae`.
-- Clean extraction root: `/tmp/just-dodge-m3-package-verify/just-dodge-m3-first-playable`.
-- Manifest: all 13 packaged payload entries verified with `sha256sum -c SHA256SUMS`.
-- The extracted `./bin/m3_match --autoplay 5 replays` completed five matches at frame 142 and wrote five replay files.
-- The extracted `./run.sh --telemetry --autoplay` created the winit window/Vulkan surface, initialized arena + C0 + W0, and saved a replay. The QA timeout returned 124 because the interactive window intentionally stays open; its replay had already been saved and independently verified.
-- `cargo test --all-targets --locked`: PASS. This suite includes 18 library, 93 game-binary, 11 screenshot-harness, 7/13 probes, 1 official MotionBricks, and 6 motion-service tests. Existing warnings remain in legacy motion/probe code; this unit did not add warning diagnostics.
-
-## Remaining evidence boundary
-
-- Offscreen visual QA artifact: `qa_runs/bind_pose_1783905204/jd_bind_first_person_duel.png`. Inspection observed the W0 first-person sword and one opponent C0 carrier; no mesh explosion, missing texture, or camera-self-occlusion artifact is visible. The opponent is visibly in a T-pose, so this image is asset/skinning evidence—not proof of an animated combat response.
-- Live-window screenshot capture remains unavailable: the active Wayland CUA driver environment has neither `$DISPLAY` nor `$WAYLAND_DISPLAY`, cannot enumerate the winit surface, and cannot capture the runtime UI. This does not invalidate the package launch / renderer initialization / replay evidence above.
-- Remote source branch: `origin/milestone3-first-playable-terra`, initial commit `a32efabba7ba3a414d7ff69861e71798ee58001f`.
-
-## Post-M3 warning gate and package re-exercise
-
-- `src/lib.rs` exposes reusable asset, renderer, retarget, skeleton, and presentation modules; QA probes now import them instead of compiling disconnected `#[path]` copies.
-- `src/motion.rs` confines legacy direct-decoder helpers to tests and removes one unused encoder helper; `src/retarget.rs` is warning-clean.
-- `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` passed.
-- `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passed: 30 library, 93 game-binary, 1 official MotionBricks, and 6 motion-service tests.
-- CI: `.github/workflows/ci.yml` pins Rust `1.96.0` and runs formatter, warning-denying all-target check/test, and the 100-replay regression. Ruby stdlib YAML parsing passed.
-- Fresh verifier: `qa_runs/milestone3_sim_001/ad_hoc_ci_all_targets_verify.log`, SHA-256 `1540703c2178d4e71419b24241008240a9b0aa3eb87a323698c6d1dfea47a34d`.
-- Fresh clean package: `/tmp/just-dodge-package-TYNqHo/package`; all 11 payload hashes passed, five frame-142 matches completed, and all five replays independently verified. Release hashes: `just-dodge` `e1d2c3bb18598539fc3bf43ee268a0ead69221be9acbcda0624b893505bc7917`; `m3_match` `f7ee58af15c7502cb47181c8e6b00d9b919e510938621576424ac0203333936f`.
-- Interactive packaged-window attempt: `run.sh --telemetry` initialized the window, surface, arena, C0, and UI. CUA could not enumerate the Wayland surface; its desktop endpoint had no display variables. A local `ydotoold` fallback started, but injected documented `1`/`Space` keys did not alter telemetry (`phase=Plan`, `intent=Idle`), proving the game window did not own input focus. `xdotool search --pid 3621880` returned exit 1 because there is no X11 window. The game and temporary daemon were terminated after the probe; no interactive-match/video claim is made.
-- CUA root cause reproduced: `hermes computer-use doctor` reports X11 inspection/capture healthy but native Wayland disabled. With `CUA_DRIVER_RS_ENABLE_WAYLAND=1`, the same driver reports that KDE exposes no virtual-pointer protocol and this installed `cua-driver 0.7.1` was compiled without `portal-libei`; clicks and key presses cannot be delivered. `cua-driver 0.7.1` is current. A portal-enabled driver build is required for the remaining live-input/capture proof.
+- Five human packaged matches and canonical gameplay media are not demonstrated.
+- Current Wayland automation/capture evidence is insufficient for a real-match video claim. X11 probing showed injected input can reach the app, but it is not a five-match human-playtest substitute.
+- The new armored-duelist manifest records technical provenance only; redistribution rights remain unverified. The build must not be described as distributable.
+- One first all-target run transiently failed `all_top_primitives_are_present_and_rigid`; three focused reruns and a later full all-target rerun passed. Stabilizing that test is a tracked QA item, not evidence of a resolved source defect.

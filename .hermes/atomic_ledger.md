@@ -44,21 +44,21 @@
 ---
 
 ## Active Unit
-M3-HYGIENE-ARMOR-005 — close the packet-truth + armored-duelist integration as one reviewable revision.
+M3-MOTION-CONTRACT-007 — define the public, deterministic presentation request boundary.
 
 Mode: Implementation.
 
-Goal: remove superseded frame-dump clutter, retain the current evidence bundle, commit the packet-driven M3 and armored-duelist integration, and preserve an exact verification record before the MotionBricks contract unit.
+Goal: derive a typed MotionBricks request from public `m3::Snapshot` data without exposing Plan-phase intent or mutating combat truth.
 
-Expected behavior: the reviewed source, cooked armored-duelist asset, task list, and reproducible QA record form one coherent commit; stale bind-pose output is not versioned.
+Expected behavior: request identity is deterministic from snapshot fields, carries only public side/action/phase/phase-frame/injury state, and returns no action-bearing request during Observe/Plan.
 
-Files: `.hermes/atomic_ledger.md`, `src/{milestone3,m3_cleanbox,cleanbox,main,renderer,lib}.rs`, `src/bin/{m3_match,shot}.rs`, `src/action_matrix.rs`, `assets/source/meshy/c0_armored_duelist_001/`, `docs/reports/DEVELOPMENT_TASKLIST.md`, `qa_runs/`.
+Files: `.hermes/atomic_ledger.md`, `src/milestone3.rs`, `src/motion.rs`, `src/main.rs`, focused M3/motion tests.
 
-Baseline: 79 library tests and warning-denying all-target check passed; packet-driven autoplay completed at frame 342 with truth hash `d1a3cc1bfb9c2f67`; armored-duelist bind render passed visual inspection.
+Baseline: `App::current_pose()` returns reference matrices for both fighters. `m3::Snapshot` has public phase, frame, revealed action pair, public fighter injury, and no direct MotionBricks request type.
 
-Validation: warning-denying all-target check/test, deterministic autoplay + replay verification, fresh armored bind/first-person images with vision inspection, formatter, diff check, staged-diff review.
+Validation: RED tests for Plan isolation and request stability; same replay produces an identical request receipt; request creation leaves canonical M3 hash unchanged; warning-denying focused tests and all-target compilation.
 
-Rollback: revert the single integration commit; generated QA output remains untracked/ignored.
+Rollback: remove only the request type/converter/tests; keep static bind-pose rendering and packet-driven truth unchanged.
 
 Strike count: 0.
 Current status: In Progress.
@@ -165,6 +165,8 @@ MB-GENERATION-SOURCE-001 — Replace the hand-reconstructed MotionBricks inferen
 ---
 
 ## Recently Completed
+- **M3-REPORTS-006 — Status reconciliation and final phase-A verifier.** Rewrote the current-state audit, M3 report, build record, asset audit, README, milestone status, changelog, and task list against `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`; added `E.8 QA-MOTION-FLAKE` after one transient primitive-rigidity failure. The final temporary script `/tmp/hermes-verify-final-pm371l_i.sh` was removed after `AD_HOC_FINAL_PASS`; its retained local log SHA-256 is `21088f7e33bb54b6e9fc3f110c050c1de9dd8256a52d5f387aa410bec75feebb`. It passed warning-denying all-target compilation, 79 library tests, packet-driven autoplay/replay at `d1a3cc1bfb9c2f67`, fresh shot output, formatting, diff check, and report-receipt assertions. M3 remains blocked on action motion, pose-derived contact, real player evidence/media, PBR, and rights closure.
+- **M3-HYGIENE-ARMOR-005 — Packet-truth and armored-duelist integration commit.** Committed `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146` (`feat: integrate packet-driven M3 and armored duelist`). The active M3 resolver consumes one measured `PhysicalContactBatch` from `M3CleanboxWorld` per resolve frame, records it in replay v2, and reconstructs a headless match to frame 342 / truth hash `d1a3cc1bfb9c2f67`. Replaced the nude 163-bone carrier with the 24-bone cooked `c0_armored_duelist_001` (82,928 vertices, 309,864 indices); source/cook hashes and source Meshy task IDs are in its manifest. The light-bronze fallback was raised to restore silhouette contrast while PBR remains a separate task. Fresh evidence: `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets`; repeated `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passed 79 library + 93 game-binary + 1 official-motion + 6 motion-service tests; `m3_match --autoplay 1` plus `--verify`; cooked-mesh verifier; two fresh `shot` frame dumps inspected by vision. QA output is now ignored rather than staged. One initial all-target run had a transient `all_top_primitives_are_present_and_rigid` failure; three focused repetitions plus the final complete rerun passed, so the test remains a tracked flake-investigation item rather than a source regression.
 - **M3-CONTACT-CORE-002 — Packet-driven M3 resolution.** Removed the active M3 3×3 action lookup authority. Resolve now holds without a packet, consumes only an admitted packet, derives winner/injury from attacker/body evidence, and records last contact in the truth hash. Guard/whiff packets cause no injury. Replay schema v2 records submitted physical packets and replay refuses missing Resolve evidence. Validation executed: `RUSTFLAGS='-Dwarnings' cargo test --locked --lib milestone3::tests -- --nocapture` passed 8/8; log `qa_runs/m3_contact_truth_001/contact_core_tests.log`.
 - **M3-CONTACT-SCHEMA-001 — Physical packet admission boundary.** Added typed `PhysicalContactBatch` / `PhysicalContact` / `ContactSurface` evidence to the active M3 authority. `Match` now accepts exactly one batch for its next Resolve frame and rejects non-Resolve, stale, and duplicate submissions. The packet is deliberately not yet consumed by the existing tactical resolver; that migration is M3-CONTACT-CORE-002. Validation executed: `RUSTFLAGS='-Dwarnings' cargo test --locked --lib milestone3::tests::physical_packet_admission_is_frame_exact_and_single_use -- --nocapture` passed 1/1; log `qa_runs/m3_contact_truth_001/contact_schema_focus.log`.
 - **DODGE-PRESENTATION-RUNTIME-012 — Locked active source interval.** The admitted `ib_dodge_back_L_001__A437` stream now fails closed below 271 frames and maps the 80-tick Commit→Consequence timeline only over zero-based source frames `[137,271)`: tick 0 → 137 and terminal tick 79 → 270. Source evidence: 792-frame SHA-256 `d4a840f410d3dbd7db5486f453175eb34b8c7705498a777580d970b479f232b4`; source contact channels `[308:413]` are zero, dominant composite motion energy is at destination frames `138..=258`, and direct toe kinematics span left-airborne `[163,205)` / right-airborne `[191,262)`. Regressions prove exact endpoints, every tick in bounds, clamping, and short-stream rejection; Observe/Plan remain excluded by the existing phase mapper. Static scan confines interval symbols to `src/dodge_presentation.rs`; truth, cleanbox, duel physics/world, replay, and action choice are unchanged. Evidence: `cargo test --bin just-dodge dodge_presentation -- --nocapture` 4/4; `cargo test --bin just-dodge dodge_presentation_phase_tests -- --nocapture` 1/1; `rustfmt --edition 2024 --check src/dodge_presentation.rs`; `cargo fmt --check`; `git diff --check`; source-enabled `cargo run --bin shot` produced `qa_runs/bind_pose_1783858022/jd_bind_first_person_duel.png`. Vision: visible opponent mesh is connected with no skinning explosion or tear; first-person weapon composition partially limits lower-body inspection.
