@@ -1,14 +1,8 @@
 //! QA-only measured C0 world-frame retarget calibration probe.
+use just_dodge::{asset, motion_service};
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
-
-#[path = "../asset.rs"]
-mod asset;
-#[path = "../motion.rs"]
-mod motion;
-#[path = "../motion_service.rs"]
-mod motion_service;
 
 const C0_SCALE: f32 = 0.918_949_96;
 const G1_PARENTS: [i32; 34] = [

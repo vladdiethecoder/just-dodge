@@ -3,29 +3,13 @@
 // keeps one model, and writes PNGs to qa_runs/ for deformity/artifact inspection.
 // Run: cargo run --bin shot
 use glam::{Mat4, Vec3, vec3};
-
-#[path = "../asset.rs"]
-mod asset;
-#[path = "../dodge_presentation.rs"]
-mod dodge_presentation;
-#[path = "../renderer.rs"]
-mod renderer;
+use just_dodge::{asset, dodge_presentation, renderer};
 
 struct View {
     name: &'static str,
     eye: Vec3,
     target: Vec3,
     up: Vec3,
-}
-
-fn percentile(data: &[f32], p: f32) -> f32 {
-    if data.is_empty() {
-        return 0.0;
-    }
-    let mut sorted: Vec<f32> = data.iter().copied().collect();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let idx = ((sorted.len() - 1) as f32 * p).round() as usize;
-    sorted[idx.min(sorted.len() - 1)]
 }
 
 async fn run() {

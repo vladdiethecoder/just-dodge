@@ -683,6 +683,26 @@ mod tests {
     }
 
     #[test]
+    fn one_hundred_replay_reconstructions_keep_the_same_truth_hash() {
+        let mut session = Session::new(0x4d33_1000);
+        while session.game.snapshot().phase != Phase::MatchResult {
+            resolve_exchange(&mut session, Action::Strike, Action::Grab);
+            while session.game.snapshot().phase == Phase::Consequence
+                || session.game.snapshot().phase == Phase::Observe
+            {
+                session.tick();
+            }
+        }
+        let expected_snapshot = session.game.snapshot();
+        let expected_hash = session.game.truth_hash();
+        for _ in 0..100 {
+            let replayed = replay(&session.replay).unwrap();
+            assert_eq!(replayed.snapshot(), expected_snapshot);
+            assert_eq!(replayed.truth_hash(), expected_hash);
+        }
+    }
+
+    #[test]
     fn canonical_hash_is_not_affected_by_an_independent_snapshot_clone() {
         let match_a = Match::new(8);
         let match_b = match_a.clone();

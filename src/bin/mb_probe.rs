@@ -1,18 +1,8 @@
 // MotionBricks offline probe: loads the ONNX pipeline, decodes an idle clip,
 // and prints frame counts + duration at each step.  If it hangs, we know exactly
 // which step is stuck.  Run: cargo run --bin mb_probe
+use just_dodge::{asset, motion};
 use std::time::Instant;
-
-#[path = "../asset.rs"]
-mod asset;
-#[path = "../motion.rs"]
-mod motion;
-#[path = "../motion_service.rs"]
-mod motion_service;
-#[path = "../retarget.rs"]
-mod retarget;
-#[path = "../skeleton.rs"]
-mod skeleton;
 
 fn step(name: &str) -> Instant {
     eprintln!("[mb_probe] {}", name);

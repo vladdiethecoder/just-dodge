@@ -12,7 +12,9 @@ use glam::Mat4;
 use ndarray::{Array, Array2, ArrayD, IxDyn};
 use ort::session::Session;
 use ort::value::{DynValue, Tensor};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 
 /// Combat action used to condition MotionBricks generation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -54,8 +56,9 @@ pub struct MotionPipeline {
     /// Codebook: [num_heads=8, num_codes=10, code_dim=32]
     codebook: ArrayD<f32>,
     pub meta: MotionMeta,
-    /// Directory from which the ONNX/NPY artifacts were loaded.
-    /// Used to give clear error messages if artifacts are missing at runtime.
+    /// Directory from which the ONNX/NPY artifacts were loaded for legacy
+    /// direct-decoder test coverage.
+    #[cfg(test)]
     assets_path: Option<PathBuf>,
 }
 
@@ -169,6 +172,7 @@ impl MotionPipeline {
                 encoder_in_channels: 304,
                 decoder_out_channels: 413,
             },
+            #[cfg(test)]
             assets_path: Some(base.to_path_buf()),
         })
     }
@@ -367,7 +371,6 @@ impl MotionPipeline {
         let (idx_shape, idx_data) = indices_val.try_extract_tensor::<i64>()?;
         let idx_owned: Vec<i64> = idx_data.iter().copied().collect();
         let idx_shape_v: Vec<usize> = idx_shape.iter().map(|&d| d as usize).collect();
-        drop(idx_data);
         drop(indices_val);
         drop(enc_out);
         // Dequantize: for each head+time, look up codebook entry
@@ -397,17 +400,6 @@ impl MotionPipeline {
             frames.push(Self::parse_g1_frame(slice));
         }
         Ok(frames)
-    }
-
-    /// Run encoder on a tensor, return (shape, flat owned data) of quantized output.
-    fn encode_to_vec(encoder: &mut Session, tensor: Tensor<f32>) -> Result<(Vec<i64>, Vec<f32>)> {
-        let mut enc_out = encoder.run(ort::inputs!["input_frames" => tensor])?;
-        let quantized = enc_out
-            .remove("quantized")
-            .ok_or_else(|| anyhow::anyhow!("no quantized"))?;
-        let (shape, view) = quantized.try_extract_tensor::<f32>()?;
-        let data = view.to_vec();
-        Ok((shape.to_vec(), data))
     }
 
     /// Build a rest-pose encoder input from the mannequin mesh's bind data.
@@ -456,7 +448,6 @@ impl MotionPipeline {
             }
         }
 
-        let pelvis_y = g1_world[0].y;
         let mut buf = vec![0f32; 1 * 304 * t];
         for f in 0..t {
             let phase = 2.0 * std::f32::consts::PI * (f as f32) / (t as f32);
@@ -601,19 +592,30 @@ pub fn load_g1_frames(path: &str) -> Result<Vec<[Mat4; 34]>> {
 // ---------------------------------------------------------------------------
 
 /// G1Skeleton34 joint indices used for action seed authoring.
+#[cfg(test)]
 const LEFT_SHOULDER: usize = 18;
+#[cfg(test)]
 const LEFT_UPPER_ARM: usize = 19;
+#[cfg(test)]
 const LEFT_ELBOW: usize = 21;
+#[cfg(test)]
 const LEFT_WRIST: usize = 23;
+#[cfg(test)]
 const RIGHT_SHOULDER: usize = 26;
+#[cfg(test)]
 const RIGHT_UPPER_ARM: usize = 27;
+#[cfg(test)]
 const RIGHT_ELBOW: usize = 29;
+#[cfg(test)]
 const RIGHT_WRIST: usize = 31;
+#[cfg(test)]
 const WAIST_YAW: usize = 15;
+#[cfg(test)]
 const WAIST_PITCH: usize = 17;
 
 /// Inverse of `MotionPipeline::cont6d_to_matrix`: extract the first two
 /// orthonormal columns of a rotation matrix as a 6D continuous rotation.
+#[cfg(test)]
 fn matrix_to_cont6d(m: Mat4) -> [f32; 6] {
     let mut a = m.x_axis.truncate();
     let mut b = m.y_axis.truncate();
@@ -632,6 +634,7 @@ fn matrix_to_cont6d(m: Mat4) -> [f32; 6] {
 }
 
 /// Write a 6D global rotation for `joint` into a single encoder-input frame.
+#[cfg(test)]
 fn write_rot6d(frame: &mut [f32], joint: usize, rot: Mat4) {
     let gr = matrix_to_cont6d(rot);
     let base = joint * 6;
@@ -641,6 +644,7 @@ fn write_rot6d(frame: &mut [f32], joint: usize, rot: Mat4) {
 /// Build the encoder input [1, 304, T] for an action condition.
 /// Uses `from_pose` as the base and overwrites key joint rotations to encode
 /// the desired action intent.
+#[cfg(test)]
 fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec<f32> {
     let mut buf = vec![0f32; 1 * 304 * frames];
 
@@ -685,11 +689,13 @@ fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec
 
 /// Forward-pointing arm orientation used for strikes, blocks, and grabs.
 /// `side` is -1.0 for left, 1.0 for right. `raise` tilts the arm upward/outward.
+#[cfg(test)]
 fn arm_forward(side: f32, raise: f32) -> Mat4 {
     Mat4::from_rotation_z(side * raise) * Mat4::from_rotation_x(-std::f32::consts::FRAC_PI_2)
 }
 
 /// Overwrite encoder-input frame rotations to encode the action intent.
+#[cfg(test)]
 fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
     match condition.action {
         Action::Strike => {
@@ -822,6 +828,7 @@ fn apply_action_seed(frame: &mut [f32], condition: &ActionCondition) {
 ///
 /// These values are multiples of the VQVAE token stride (4 frames) so the
 /// decoder outputs the requested number of frames without truncation.
+#[cfg(test)]
 fn action_frame_count(action: Action) -> usize {
     match action {
         Action::Strike => 28,

@@ -9,9 +9,7 @@ use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 use glam::{Mat4, Vec3, Vec4};
-
-#[path = "../asset.rs"]
-mod asset;
+use just_dodge::asset;
 
 const C0_SCALE: f32 = 0.918_949_96;
 const FRAME_FLOATS: usize = 413;

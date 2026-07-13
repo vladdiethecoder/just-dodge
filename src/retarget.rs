@@ -12,20 +12,22 @@
 
 use crate::asset::SkinnedMeshData;
 use crate::skeleton::{self, BONE_COUNT, G1_MAP, SKIN_MAP};
-use glam::{Mat4, Quat, Vec3};
+use glam::Mat4;
+#[cfg(test)]
+use glam::Vec3;
 
 /// One frame of rich skeleton world-space transforms.
 pub type RichFrame = [Mat4; BONE_COUNT];
 
 /// Full pipeline: G1 frame → 24 skinning matrices (local-space FK).
 pub fn g1_to_skin(g1_world: &[Mat4; 34], mesh: &SkinnedMeshData) -> [Mat4; 24] {
-    let g1_local = world_to_local::<34>(g1_world, &MotionBricks_PARENTS);
+    let g1_local = world_to_local::<34>(g1_world, &MOTION_BRICKS_PARENTS);
 
     // Build rich rest-pose locals from mesh data (for bones without G1 data)
     let rest = skeleton::rest_pose_from_mesh(mesh);
 
     // Map G1 locals → rich locals, then FK → rich world
-    let mut rich_local = map_g1_locals(&g1_local, &rest);
+    let rich_local = map_g1_locals(&g1_local, &rest);
     let rich_world = fk_world(&rich_local);
 
     // Rich world → 24 skinning matrices
@@ -35,7 +37,7 @@ pub fn g1_to_skin(g1_world: &[Mat4; 34], mesh: &SkinnedMeshData) -> [Mat4; 24] {
 // ── Step 1: world → local ──────────────────────────────────────────────────
 
 /// G1 skeleton parent indices (from motionbricks G1Skeleton34).
-pub const MotionBricks_PARENTS: [i32; 34] = [
+pub const MOTION_BRICKS_PARENTS: [i32; 34] = [
     -1, 0, 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
     17, 26, 27, 28, 29, 30, 31, 32,
 ];
@@ -184,7 +186,6 @@ fn map_to_skin(rich_world: &[Mat4; BONE_COUNT], mesh: &SkinnedMeshData) -> [Mat4
 mod tests {
     use super::*;
     use crate::asset::Bone;
-    use crate::skeleton::BONE_COUNT;
 
     fn minimal_mesh() -> SkinnedMeshData {
         let bones = (0..24)
@@ -260,8 +261,8 @@ mod tests {
         g1[18] = Mat4::from_rotation_z(-0.8);
         g1[12] = Mat4::from_translation(Vec3::new(0.0, 0.5, 0.0));
 
-        let local = world_to_local(&g1, &MotionBricks_PARENTS);
-        let rebuilt = fk_world_sized::<34>(&local, &MotionBricks_PARENTS);
+        let local = world_to_local(&g1, &MOTION_BRICKS_PARENTS);
+        let rebuilt = fk_world_sized::<34>(&local, &MOTION_BRICKS_PARENTS);
 
         for i in 0..34 {
             let diff = g1[i] - rebuilt[i];

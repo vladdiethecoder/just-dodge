@@ -6,6 +6,7 @@
 
 use std::cmp::Ordering;
 
+#[cfg(test)]
 use glam::{Mat4, Vec3, vec3};
 
 use crate::hitbox::{ContactGeometry, HitboxProxy, ProxyRole, swept_contacts};

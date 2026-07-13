@@ -44,17 +44,17 @@
 ---
 
 ## Active Unit
-DODGE-SOURCE-EXTERNAL-002 — source research started 2026-07-12 after CMU 14_02 raw-source human rejection. Runtime remains C0-fallback.
+M3-CI-001 — minimal deterministic continuous-integration gate.
 
-Goal: identify one new non-BONES Dodge/evasion source with (1) a primary-source license/terms record, (2) a direct, reproducible skeleton-motion download path in BVH/AMC/FBX or a documented converter, and (3) explicit metadata supporting a combat dodge/evasion reading before any download.
+Goal: add a GitHub Actions workflow that executes formatter, warning-denying compilation, and all-target test gates on pull requests and branch pushes.
 
-Acceptance before acquisition: exact source identifier + official URL + official terms URL + format/converter path. No C0 work or runtime wiring during research.
+Acceptance: `.github/workflows/ci.yml` has pinned Rust setup, `cargo fmt --check`, `RUSTFLAGS=-Dwarnings cargo check --locked --all-targets`, and `cargo test --locked --all-targets`; YAML parses and its command strings are verified locally.
 
-Correction 2026-07-12: a static Dodge clip is only a motion prior. Dodge behavior is not admissible from source semantics alone: MotionBricks must dynamically condition its response on the opposing combat action and attack geometry/evidence, then produce a combat-relevant evasive trajectory. The native CMU video remains useful reference evidence, but it is not a final acceptance surface. No static-clip admission or C0-only gate can substitute for the interactive action-conditioned test.
+Files: `.github/workflows/ci.yml`, `.hermes/atomic_ledger.md`.
 
-Current probe: CMU subject 76 / trial 03, official description `avoid attacker`. Official metadata: `https://mocap.cs.cmu.edu/search.php?subjectnumber=76&motion=%25%25%25&maincat=%25&subcat=%25&subtext=yes`; official terms: `https://mocap.cs.cmu.edu/faqs.php`. Acquisition/rehost source: `https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/076/76_03.bvh`; original BVH SHA-256 `ee3c4f559ad2fde91b40b77b076d149c2269e33da4acd6c87bfa03d596f1104a`. Wireframe sheets are retained only as structural evidence and are inconclusive for human semantic acceptance. The raw gate is now the official source-native rendered `76_03.avi` plus a seekable review copy. Receipt: `bones-seed/derived/external_dodge_qa/cmu_76_03/76_03.receipt.json`. No C0 work or runtime wiring permitted yet.
+Rollback: remove only the workflow and restore this active-unit entry; no runtime behavior changes.
 
-Research-reserved next candidate if CMU 76_03 fails: CMU subject 127 / trial 13, official description `Run Side Step Left` in the Action Adventure category. Official metadata and direct BVH availability were independently verified at `https://mocap.cs.cmu.edu/search.php?subjectnumber=127&motion=%25%25%25&maincat=%25&subcat=%25&subtext=yes` and `https://raw.githubusercontent.com/una-dinosauria/cmu-mocap/master/data/127/127_13.bvh`. It is not acquired or evaluated yet.
+Strike count: 0.
 
 ### DODGE-SOURCE-EXTERNAL-001 closure record
 - Probe: CMU Graphics Lab Motion Capture Database, subject 14 / trial 02. Official FAQ (`https://mocap.cs.cmu.edu/faqs.php`) verified 2026-07-12: motion data may be copied, modified, or redistributed without permission.

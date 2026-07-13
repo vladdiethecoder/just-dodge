@@ -6,9 +6,9 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 
 ## Project Status
 
-- Stage: Custom Rust/wgpu prototype architecture + planning lock
-- Current baseline: textured arena renderer, orbital camera, static/skinned mannequin asset paths, MotionBricks ONNX integration work, and documentation-driven combat/armor/motion design
-- Next playable target: verified 3-action Strike/Block/Grab match loop with replay/truth-hash evidence
+- Stage: Milestone 3 engineering candidate; not a distributable build.
+- Current baseline: deterministic three-action combat, replay/truth-hash verification, and a Rust/wgpu presentation bridge. The required live Wayland input/video evidence remains blocked by the current automation environment.
+- Distribution boundary: packaged runtime assets lack complete redistribution-rights records; see the asset audit before any release claim.
 
 ## Quick Links
 
@@ -26,6 +26,9 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 - [Master Checklist](docs/CHECKLIST.md)
 - [Risk Register](docs/RISK-REGISTER.md)
 - [Lessons from OATHYARD](docs/LESSONS-FROM-OATHYARD.md)
+- [Milestone 3 Build Record](docs/reports/TERRA_AGENTIC_BUILD.md)
+- [Milestone 3 Asset Provenance Audit](docs/reports/ASSET_PROVENANCE_M3.md)
+- [Changelog](CHANGELOG.md)
 
 ## One-Line Pitch
 

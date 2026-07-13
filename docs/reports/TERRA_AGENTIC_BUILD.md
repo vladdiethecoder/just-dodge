@@ -77,3 +77,14 @@
 - Offscreen visual QA artifact: `qa_runs/bind_pose_1783905204/jd_bind_first_person_duel.png`. Inspection observed the W0 first-person sword and one opponent C0 carrier; no mesh explosion, missing texture, or camera-self-occlusion artifact is visible. The opponent is visibly in a T-pose, so this image is asset/skinning evidence—not proof of an animated combat response.
 - Live-window screenshot capture remains unavailable: the active Wayland CUA driver environment has neither `$DISPLAY` nor `$WAYLAND_DISPLAY`, cannot enumerate the winit surface, and cannot capture the runtime UI. This does not invalidate the package launch / renderer initialization / replay evidence above.
 - Remote source branch: `origin/milestone3-first-playable-terra`, initial commit `a32efabba7ba3a414d7ff69861e71798ee58001f`.
+
+## Post-M3 warning gate and package re-exercise
+
+- `src/lib.rs` exposes reusable asset, renderer, retarget, skeleton, and presentation modules; QA probes now import them instead of compiling disconnected `#[path]` copies.
+- `src/motion.rs` confines legacy direct-decoder helpers to tests and removes one unused encoder helper; `src/retarget.rs` is warning-clean.
+- `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` passed.
+- `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passed: 30 library, 93 game-binary, 1 official MotionBricks, and 6 motion-service tests.
+- CI: `.github/workflows/ci.yml` pins Rust `1.96.0` and runs formatter, warning-denying all-target check/test, and the 100-replay regression. Ruby stdlib YAML parsing passed.
+- Fresh verifier: `qa_runs/milestone3_sim_001/ad_hoc_ci_all_targets_verify.log`, SHA-256 `1540703c2178d4e71419b24241008240a9b0aa3eb87a323698c6d1dfea47a34d`.
+- Fresh clean package: `/tmp/just-dodge-package-TYNqHo/package`; all 11 payload hashes passed, five frame-142 matches completed, and all five replays independently verified. Release hashes: `just-dodge` `e1d2c3bb18598539fc3bf43ee268a0ead69221be9acbcda0624b893505bc7917`; `m3_match` `f7ee58af15c7502cb47181c8e6b00d9b919e510938621576424ac0203333936f`.
+- Interactive packaged-window attempt: `run.sh --telemetry` initialized the window, surface, arena, C0, and UI. CUA could not enumerate the Wayland surface; its desktop endpoint had no display variables. A local `ydotoold` fallback started, but injected documented `1`/`Space` keys did not alter telemetry (`phase=Plan`, `intent=Idle`), proving the game window did not own input focus. `xdotool search --pid 3621880` returned exit 1 because there is no X11 window. The game and temporary daemon were terminated after the probe; no interactive-match/video claim is made.
