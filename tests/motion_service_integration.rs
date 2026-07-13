@@ -21,7 +21,6 @@ fn finite_clip(condition: &ActionCondition, svc: &MotionService) -> Vec<[glam::M
     clip
 }
 
-#[test]
 fn strike_generates_finite_frames() {
     let _service_lock = motionbricks_service_lock();
     let svc = MotionService::new().expect("Python service must initialize");
@@ -33,7 +32,6 @@ fn strike_generates_finite_frames() {
     finite_clip(&condition, &svc);
 }
 
-#[test]
 fn strike_is_deterministic() {
     let _service_lock = motionbricks_service_lock();
     let svc = MotionService::new().expect("Python service must initialize");
@@ -48,7 +46,6 @@ fn strike_is_deterministic() {
     assert_eq!(a, b, "same seed must produce identical frames");
 }
 
-#[test]
 fn all_actions_generate_finite_frames() {
     let _service_lock = motionbricks_service_lock();
     let svc = MotionService::new().expect("Python service must initialize");
@@ -69,7 +66,6 @@ fn all_actions_generate_finite_frames() {
     }
 }
 
-#[test]
 fn all_actions_are_deterministic() {
     let _service_lock = motionbricks_service_lock();
     let svc = MotionService::new().expect("Python service must initialize");
@@ -93,7 +89,6 @@ fn all_actions_are_deterministic() {
     }
 }
 
-#[test]
 fn all_top_primitives_are_present_and_rigid() {
     let _service_lock = motionbricks_service_lock();
     const PARENTS: [i32; 34] = [
@@ -142,7 +137,6 @@ fn all_top_primitives_are_present_and_rigid() {
     }
 }
 
-#[test]
 fn official_navigation_adapter_is_finite_continuous_and_deterministic() {
     let _service_lock = motionbricks_service_lock();
     let svc = MotionService::new().expect("Python service must initialize");
@@ -169,4 +163,18 @@ fn official_navigation_adapter_is_finite_continuous_and_deterministic() {
         max_joint_step < 0.2,
         "official adapter discontinuity {max_joint_step:.3} m/frame"
     );
+}
+
+/// PyO3 owns one process-wide interpreter and CUDA context. Although each
+/// helper guards its service calls, the Rust test harness can schedule their
+/// setup/teardown concurrently. Run this suite as one ordered test to make the
+/// lifecycle deterministic without adding a serial-test dependency.
+#[test]
+fn motion_service_contracts_are_serial_and_complete() {
+    strike_generates_finite_frames();
+    strike_is_deterministic();
+    all_actions_generate_finite_frames();
+    all_actions_are_deterministic();
+    all_top_primitives_are_present_and_rigid();
+    official_navigation_adapter_is_finite_continuous_and_deterministic();
 }
