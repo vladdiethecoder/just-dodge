@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "slug": "c0_base_fighter_retopo_001",
+  "category": "fighter_body",
+  "status": "accepted_geometry",
+  "source": {
+    "reference_hashes": [
+      "9c4dd4a5bceb15490eac61dea62022daea4372299ea757218fa20bb18e479a35"
+    ],
+    "prompt": "Measured matched-cross-section exact-union retopology of accepted C0 assembly, preserving five digits and T-pose.",
+    "model": "meshy-6",
+    "pose_mode": "t-pose"
+  },
+  "tasks": [
+    {
+      "endpoint": "local-blender-retopology",
+      "task_id": "C0-RETOPO-003",
+      "parent_task_id": "C0-ASM-001",
+      "request": {
+        "source": "assets/source/meshy/c0_base_fighter/assembled_001/model.fbx",
+        "tool": "tools/retopologize_c0.py",
+        "max_faces": 300000,
+        "union": "exact",
+        "graft_measurements_m": {
+          "body_ankle_center_y": 0.072,
+          "pre_alignment_foot_ankle_center_y": -0.004,
+          "foot_translation_y": 0.076,
+          "body_forearm_center_y": 0.045,
+          "body_forearm_radius_y": 0.045,
+          "pre_taper_hand_radius_y": 0.015,
+          "hand_taper_band_x": [
+            0.705,
+            0.78
+          ]
+        },
+        "simplification": {
+          "BodyCore": {
+            "before": 80881,
+            "after": 80694,
+            "target": 80000
+          },
+          "Foot_Left": {
+            "before": 138297,
+            "after": 55228,
+            "target": 55000
+          },
+          "Foot_Right": {
+            "before": 138297,
+            "after": 55228,
+            "target": 55000
+          },
+          "Hand_Left": {
+            "before": 191792,
+            "after": 55000,
+            "target": 55000
+          },
+          "Hand_Right": {
+            "before": 191792,
+            "after": 55000,
+            "target": 55000
+          }
+        }
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 0
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/model.fbx",
+      "sha256": "fcd0fe6530facd305f20b4c265edd439accad70f58bcf21d5ef287c26e51ec6d",
+      "bytes": 9424348
+    },
+    "glb": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/model.glb",
+      "sha256": "050447efb8368432e347a179226b365e7103bd64983a5ba756b4bad7dc94ebb4",
+      "bytes": 8220868
+    },
+    "thumbnails": [
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/front.png",
+        "sha256": "ea6a030d4104ac6f66d529d2ffc62d738f19942403c1994fbfe7f601574a9b5c",
+        "bytes": 367003
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/right.png",
+        "sha256": "31db813eed102fa713390e0d92157e69ad88f80e0e953371c493f35f8c5660a4",
+        "bytes": 355883
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/back.png",
+        "sha256": "82acf44cda075849d82ce1bfc10e170cc020821bc9775c866e46860492bfafbf",
+        "bytes": 364161
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/left.png",
+        "sha256": "b06c3068892a8b7c39b712725b6b79e9525c54da380f7f3f781404af8203d790",
+        "bytes": 354519
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/contact.png",
+        "sha256": "907afc616e98077464fa8a738fcecd69cb3618f28ca6c134cf0c11256082b104",
+        "bytes": 110729
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/extremities.png",
+        "sha256": "f0b26abbd026742153c865747566e38f36a686b5d007a74fd761dc1478fb9bbf",
+        "bytes": 177724
+      }
+    ],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 146356,
+      "polygons": 290325,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0,
+      "connected_components": 1,
+      "bbox_size": [
+        1.789993166923523,
+        0.2940042018890381,
+        1.7999996154418625
+      ],
+      "digits": {
+        "left_hand": 5,
+        "right_hand": 5,
+        "left_foot": 5,
+        "right_foot": 5
+      },
+      "fbx_reimport": "PASS",
+      "glb_reimport_dimensions_materials": "PASS"
+    },
+    "materials": {
+      "status": "neutral placeholder only",
+      "slots": [
+        "OuterBodyNeutral"
+      ]
+    },
+    "rig": null,
+    "runtime": null,
+    "vision": [
+      {
+        "artifact": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/contact.png",
+        "verdict": "PASS",
+        "scope": "cardinal rig-ready outer-body geometry"
+      },
+      {
+        "artifact": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/qa/extremities.png",
+        "verdict": "PASS",
+        "scope": "close five-digit and matched-graft geometry"
+      }
+    ],
+    "accepted": true,
+    "rejection_reason": null,
+    "conditions": [
+      "Generate UVs/PBR without introducing baked lighting.",
+      "Rig and validate all finger/toe weights before runtime integration.",
+      "Run MotionBricks bind/animated full-rate deformation and per-bone displacement QA.",
+      "Outer body remains distinct from the authoritative internal anatomy atlas."
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="470" viewBox="0 0 1600 470">
+<rect width="100%" height="100%" fill="#0a101d"/>
+<text x="56" y="54" fill="#ffffff" font-family="monospace" font-size="30">JUST DODGE — RESOLVE PACKET CONTACT SHEET</text>
+<text x="56" y="88" fill="#aab9d6" font-family="monospace" font-size="18">seed=77 frames=1 packets=1 verdict=PASS</text>
+<line x1="56" y1="112" x2="1544" y2="112" stroke="#31425f" stroke-width="2"/>
+<rect x="48" y="140" width="1504" height="214" rx="16" fill="#111c30" stroke="#31425f" stroke-width="2"/>
+<text x="76" y="182" fill="#ffffff" font-family="monospace" font-size="24">FRAME 111  ACTION TICK 0</text>
+<text x="76" y="216" fill="#e8edf7" font-family="monospace" font-size="20">Some(Thrust)  vs  Some(Block)</text>
+<text x="76" y="250" fill="#49d17d" font-family="monospace" font-size="24">OUTCOME  GUARD</text>
+<text x="76" y="284" fill="#aab9d6" font-family="monospace" font-size="16">truth=0xb8c5eee08509d3cc  physics=0/1</text>
+<line x1="600" y1="272" x2="1460" y2="272" stroke="#6b7e9e" stroke-width="4"/>
+<text x="592" y="310" fill="#aab9d6" font-family="monospace" font-size="15">substep start</text>
+<text x="1368" y="310" fill="#aab9d6" font-family="monospace" font-size="15">substep end</text>
+<circle cx="761" cy="272" r="13" fill="#49d17d" stroke="#ffffff" stroke-width="3"/>
+<text x="600" y="338" fill="#dce6fb" font-family="monospace" font-size="15">toi=0.186667 tick=1 WeaponEdge -&gt; WeaponGuard</text>
+<circle cx="1087" cy="272" r="13" fill="#49d17d" stroke="#ffffff" stroke-width="3"/>
+<text x="600" y="358" fill="#dce6fb" font-family="monospace" font-size="15">toi=0.566667 tick=1 WeaponEdge -&gt; Body</text>
+</svg>

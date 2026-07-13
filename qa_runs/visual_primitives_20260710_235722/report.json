@@ -1,0 +1,119 @@
+{
+  "timestamp": "20260710_235722",
+  "actions": {
+    "Idle": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 0.9818,
+      "mean_joint_velocity_m_per_frame": 0.1383,
+      "bbox_min": [
+        -0.6311,
+        -0.6806,
+        -0.5412
+      ],
+      "bbox_max": [
+        0.7303,
+        0.6788,
+        0.5887
+      ],
+      "left_hand_range_m": 1.311,
+      "right_hand_range_m": 1.3334
+    },
+    "Strike": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 1.0258,
+      "mean_joint_velocity_m_per_frame": 0.1217,
+      "bbox_min": [
+        -0.6715,
+        -0.8278,
+        -0.7065
+      ],
+      "bbox_max": [
+        0.7582,
+        0.578,
+        0.5132
+      ],
+      "left_hand_range_m": 1.4358,
+      "right_hand_range_m": 1.0136
+    },
+    "Block": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 0.9723,
+      "mean_joint_velocity_m_per_frame": 0.0788,
+      "bbox_min": [
+        -0.5073,
+        -0.7902,
+        -0.7246
+      ],
+      "bbox_max": [
+        0.7685,
+        0.7817,
+        0.5485
+      ],
+      "left_hand_range_m": 1.4847,
+      "right_hand_range_m": 1.1211
+    },
+    "Thrust": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 0.6857,
+      "mean_joint_velocity_m_per_frame": 0.1247,
+      "bbox_min": [
+        -0.8096,
+        -0.7035,
+        -0.5364
+      ],
+      "bbox_max": [
+        0.7391,
+        0.6726,
+        0.7225
+      ],
+      "left_hand_range_m": 1.3905,
+      "right_hand_range_m": 1.1226
+    },
+    "Grab": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 0.9834,
+      "mean_joint_velocity_m_per_frame": 0.1113,
+      "bbox_min": [
+        -0.7324,
+        -0.8073,
+        -0.7923
+      ],
+      "bbox_max": [
+        0.6774,
+        0.7278,
+        0.5396
+      ],
+      "left_hand_range_m": 1.5949,
+      "right_hand_range_m": 1.0921
+    },
+    "Dodge": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 1.1404,
+      "mean_joint_velocity_m_per_frame": 0.15,
+      "bbox_min": [
+        -0.8022,
+        -0.7074,
+        -0.7398
+      ],
+      "bbox_max": [
+        0.8245,
+        0.5922,
+        0.5281
+      ],
+      "left_hand_range_m": 1.5137,
+      "right_hand_range_m": 1.1616
+    }
+  }
+}

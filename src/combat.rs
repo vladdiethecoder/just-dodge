@@ -1,268 +1,358 @@
-// Combat actions → MotionBricks primitives
-//
-// Per MotionBricks Section 3.1: constraint schema T = {T1, T2, T3}
-//   T1: local root constraints (velocity, angular velocity, height)
-//   T2: global root constraints (position, heading)
-//   T3: pose constraints (joint positions/rotations)
-//
-// Context keyframes (indices 0..3): current pose state, always present
-// Target keyframes (indices 4..7): desired end pose, vary by action
-//
-// Shape prototype: actions mapped to authored keyframe profiles.
-// Reference clips from MotionBricks dataset to be integrated later.
+//! Deterministic Stage-0 combat primitives for MotionBricks.
+//!
+//! A primitive is an intent contract, not a combat result or an animation clip.
+//! It feeds sparse T1/T2/T3 constraints to MotionBricks while preserving the
+//! truth-owned contact and deep-anatomy boundary.
 
-use glam::Vec3;
+use crate::truth::{Action, HitLocation, Stance};
 
-// ---------------------------------------------------------------------------
-// Keyframe constraint structures (matching T1/T2/T3 schema)
-// ---------------------------------------------------------------------------
+/// MotionBricks emits one motion frame every 1/30 second.
+pub const MOTIONBRICKS_FPS: u16 = 30;
+/// Combat truth advances at exactly 60 Hz.
+pub const TRUTH_FPS: u16 = 60;
+pub const TRUTH_TICKS_PER_MOTION_FRAME: u16 = TRUTH_FPS / MOTIONBRICKS_FPS;
+const MIN_MOTION_FRAMES: u16 = 12;
+const MAX_MOTION_FRAMES: u16 = 64;
+const TOKEN_FRAMES: u16 = 4;
 
-/// Local root constraint: root-relative motion features (4 dims)
-#[derive(Debug, Clone, Copy)]
-pub struct LocalRootConstraint {
-    pub rot_vel: f32,         // angular velocity around Y
-    pub lin_vel_xz: [f32; 2], // forward/lateral velocity
-    pub root_y: f32,          // height above ground
+/// The only selectable contract for the first playable cleanbox.
+///
+/// Broader action data remains admissible as source/training evidence, but it
+/// must not leak into player input, AI decisions, or truth commits until it
+/// has a matching physical-world and motion contract.
+pub const FIRST_PLAYABLE_WEAPON: &str = "Longsword";
+pub const FIRST_PLAYABLE_STANCE: Stance = Stance::Top;
+pub const FIRST_PLAYABLE_ACTIONS: [Action; 3] = [Action::Thrust, Action::Block, Action::Dodge];
+
+pub const fn is_first_playable_action(action: Action) -> bool {
+    matches!(action, Action::Thrust | Action::Block | Action::Dodge)
 }
 
-/// Global root constraint: world-frame root state (5 dims)
-#[derive(Debug, Clone, Copy)]
-pub struct GlobalRootConstraint {
-    pub pos_xz: [f32; 2],    // world X, Z
-    pub heading: (f32, f32), // (cos, sin)
-    pub pelvis_height: f32,
+pub const fn is_first_playable_choice(action: Action, stance: Stance) -> bool {
+    is_first_playable_action(action) && matches!(stance, FIRST_PLAYABLE_STANCE)
 }
 
-/// A keyframe set for one token (4 frames)
-#[derive(Debug, Clone)]
-pub struct Keyframe {
-    pub local_root: LocalRootConstraint,
-    pub global_root: GlobalRootConstraint,
-    /// Whether this keyframe is a hard constraint (tau=0) or soft (tau>0)
-    pub tau: u8, // 0 = hard, >0 = may advance early
-    pub drop_frame: bool,
-}
-
-// ---------------------------------------------------------------------------
-// Action definitions
-// ---------------------------------------------------------------------------
-
-/// Combat actions map to distinct keyframe profiles
+/// Millimetre coordinates avoid introducing presentation floats into a truth
+/// request. Conversion to normalized MotionBricks feature space is a one-way
+/// presentation bridge and is deliberately outside this module.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Action {
+pub struct Millimetres {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+/// Semantic anchors are mapped to G1 joints/sockets by the retarget contract.
+/// They are intentionally not raw renderer bone indices.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MotionAnchor {
+    Root,
+    Pelvis,
+    Chest,
+    Head,
+    LeadHand,
+    TrailHand,
+    LeadFoot,
+    TrailFoot,
+    WeaponGrip,
+    WeaponGuard,
+    WeaponEdge,
+    WeaponTip,
+}
+
+/// The role of a pose target inside an authored martial primitive.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PrimitivePhase {
+    Guard,
+    Windup,
+    Contact,
+    Recovery,
+}
+
+/// A hard constraint must be reached; a soft constraint may be left early.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ConstraintStrength {
+    Hard,
+    Soft { allow_early_motion_frames: u8 },
+}
+
+/// A root target supplies the MotionBricks T1/T2 portions of a keyframe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct RootConstraint {
+    pub motion_frame: u16,
+    pub local_linear_velocity_mm_per_s: [i16; 2],
+    pub local_yaw_millirad_per_s: i16,
+    pub root_height_mm: i16,
+    pub world_offset_mm: Millimetres,
+    pub heading_millirad: i16,
+}
+
+/// A T3 pose keyframe expressed relative to a truth-owned anchor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct PoseConstraint {
+    pub motion_frame: u16,
+    pub phase: PrimitivePhase,
+    pub anchor: MotionAnchor,
+    pub target_anchor: MotionAnchor,
+    pub target_offset_mm: Millimetres,
+    pub strength: ConstraintStrength,
+}
+
+/// The physical feature whose swept geometry may create a contact. This is a
+/// geometric request only; it cannot prescribe a hit, injury, or damage value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ContactEmitter {
+    WeaponEdge,
+    WeaponTip,
+    WeaponGuard,
+    ShieldFace,
+    Hand,
+    Foot,
+    Grapple,
+}
+
+/// Layers queried by the future 500–1,000-structure anatomy atlas. A broad
+/// hit location is an acceleration hint only; no layer/result is authoritative
+/// until deterministic geometry resolves concrete structure IDs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnatomyLayers(u16);
+
+impl AnatomyLayers {
+    pub const ARMOR: Self = Self(1 << 0);
+    pub const SKIN: Self = Self(1 << 1);
+    pub const FASCIA: Self = Self(1 << 2);
+    pub const MUSCLE: Self = Self(1 << 3);
+    pub const TENDON: Self = Self(1 << 4);
+    pub const LIGAMENT: Self = Self(1 << 5);
+    pub const BONE: Self = Self(1 << 6);
+    pub const VESSEL: Self = Self(1 << 7);
+    pub const NERVE: Self = Self(1 << 8);
+    pub const ORGAN: Self = Self(1 << 9);
+
+    pub const fn from_bits(bits: u16) -> Self {
+        Self(bits)
+    }
+
+    pub const fn bits(self) -> u16 {
+        self.0
+    }
+
+    pub const fn contains(self, layers: Self) -> bool {
+        self.0 & layers.0 == layers.0
+    }
+
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+}
+
+/// Candidate anatomy selected before exact continuous collision determines
+/// concrete stable structure IDs and causal propagation edges.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct AnatomyTarget {
+    pub acceleration_region: HitLocation,
+    pub candidate_layers: AnatomyLayers,
+}
+
+/// Inclusive/exclusive 60 Hz truth window for continuous contact testing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ContactWindow {
+    pub start_tick: u16,
+    pub end_tick_exclusive: u16,
+    pub emitter: ContactEmitter,
+    pub target: AnatomyTarget,
+}
+
+/// State label for future combat-conditioned training data. It describes a
+/// requested interaction, never the truth result of that interaction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InterAgentContactState {
+    Guard,
     Strike,
-    Block,
+    Parry,
     Grab,
-    Thrust,
-    Dodge,
+    Impact,
+    Knockdown,
 }
 
-/// The profile that defines what an action looks like in constraint space
-#[derive(Debug, Clone)]
-pub struct ActionProfile {
+/// Opponent root expressed in this fighter's local frame. This is the
+/// opponent-relative conditioning channel required for paired combat data.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct OpponentRelativeRoot {
+    pub offset_mm: Millimetres,
+    pub heading_millirad: i16,
+}
+
+/// Training/reaction label only. Truth calculates actual force from swept
+/// geometry and may reject this intent entirely.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ImpactIntent {
+    pub force_millinewtons: u32,
+    pub direction_milli: [i16; 3],
+}
+
+/// Paired keyframe metadata for independently inferred fighters. A hard frame
+/// may couple sockets visually but cannot resolve hit/parry/grab truth.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct InterAgentConstraint {
+    pub motion_frame: u16,
+    pub phase: PrimitivePhase,
+    pub state: InterAgentContactState,
+    pub self_anchor: MotionAnchor,
+    pub opponent_anchor: MotionAnchor,
+    pub opponent_relative_root: OpponentRelativeRoot,
+    pub target: AnatomyTarget,
+    pub strength: ConstraintStrength,
+    pub impact: Option<ImpactIntent>,
+}
+
+/// A complete intent contract. Its data can be serialized into a replay or an
+/// authored primitive asset. MotionBricks may vary kinematics inside the
+/// constraints, but cannot alter this contact schedule or anatomy query.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CombatPrimitive {
     pub action: Action,
-    /// Target keyframes: the desired end state (indices 4..7 in constraint T)
-    pub target_keyframes: [Keyframe; 4],
-    /// Number of tokens for this action (6..16 range, 4 frames each)
-    pub duration_tokens: u8,
-    /// Root trajectory: displacement over the action duration
-    pub root_displacement: Vec3, // world-space delta over the full motion
-    /// Heading change: delta in radians
-    pub heading_delta: f32,
-    /// Base movement speed multiplier
-    pub speed_multiplier: f32,
+    pub stance: Stance,
+    pub motion_frames: u16,
+    pub root_constraints: Vec<RootConstraint>,
+    pub pose_constraints: Vec<PoseConstraint>,
+    pub contact_windows: Vec<ContactWindow>,
+    pub inter_agent_constraints: Vec<InterAgentConstraint>,
 }
 
-impl Action {
-    /// Get the action profile for this action.
-    /// Shape prototype: authored keyframes; later replaced by reference clip extraction.
-    pub fn profile(&self) -> ActionProfile {
-        match self {
-            Action::Strike => strike_profile(),
-            Action::Block => block_profile(),
-            Action::Grab => grab_profile(),
-            Action::Thrust => thrust_profile(),
-            Action::Dodge => dodge_profile(),
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PrimitiveValidationError {
+    InvalidMotionFrameCount,
+    ConstraintFrameOutOfRange,
+    InvalidContactWindow,
+    EmptyAnatomyQuery,
+    MissingGuard,
+    MissingWindup,
+    MissingRecovery,
+    MissingHardContactConstraint,
+    InteractionFrameOutOfRange,
+    HardInteractionOutsideActiveWindow,
+    EmptyInteractionAnatomyQuery,
+    InvalidImpactIntent,
+}
+
+impl CombatPrimitive {
+    pub const fn truth_duration_ticks(&self) -> u16 {
+        self.motion_frames * TRUTH_TICKS_PER_MOTION_FRAME
+    }
+
+    /// Contact authority is evaluated against this window at 60 Hz; generated
+    /// animation samples never open or close it.
+    pub fn is_active_at(&self, truth_tick: u16) -> bool {
+        let mut index = 0;
+        while index < self.contact_windows.len() {
+            let window = self.contact_windows[index];
+            if truth_tick >= window.start_tick && truth_tick < window.end_tick_exclusive {
+                return true;
+            }
+            index += 1;
         }
+        false
     }
-}
 
-// ---------------------------------------------------------------------------
-// Action profiles — shape prototype authored keyframes
-//
-// These are rough estimates of what each action looks like in the
-// constraint space. Real data from reference clips replaces these later.
-// Values are in the normalized MotionBricks feature space (0-1 range
-// for most features after normalization).
-// ---------------------------------------------------------------------------
-
-fn neutral_local_root() -> LocalRootConstraint {
-    LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [0.0, 0.0],
-        root_y: 0.0, // neutral height
-    }
-}
-
-fn neutral_global_root() -> GlobalRootConstraint {
-    GlobalRootConstraint {
-        pos_xz: [0.0, 0.0],
-        heading: (1.0, 0.0), // facing +Z
-        pelvis_height: 0.0,
-    }
-}
-
-fn neutral_keyframe() -> Keyframe {
-    Keyframe {
-        local_root: neutral_local_root(),
-        global_root: neutral_global_root(),
-        tau: 0, // hard constraint
-        drop_frame: false,
-    }
-}
-
-fn strike_profile() -> ActionProfile {
-    // Strike: forward step + arm extension
-    // Root: move forward ~0.5m, slight heading rock
-    // Target state: aggressive forward lean, right arm forward
-    let mut kf = neutral_keyframe();
-    kf.local_root = LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [0.8, 0.0], // forward velocity
-        root_y: -0.02,          // slight crouch
-    };
-    ActionProfile {
-        action: Action::Strike,
-        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 8,                          // 32 frames ≈ 1.07s at 30fps
-        root_displacement: Vec3::new(0.0, 0.0, 0.5), // 0.5m forward
-        heading_delta: 0.0,
-        speed_multiplier: 1.0,
-    }
-}
-
-fn block_profile() -> ActionProfile {
-    // Block: hold ground, arms up, slight backward weight shift
-    let mut kf = neutral_keyframe();
-    kf.local_root = LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [0.0, 0.0], // stationary
-        root_y: -0.04,          // deeper crouch for stability
-    };
-    ActionProfile {
-        action: Action::Block,
-        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 6,                            // 24 frames ≈ 0.8s
-        root_displacement: Vec3::new(0.0, 0.0, -0.05), // slight backstep
-        heading_delta: 0.0,
-        speed_multiplier: 1.0,
-    }
-}
-
-fn grab_profile() -> ActionProfile {
-    // Grab: lunge forward, both arms extended, fast movement
-    let mut kf = neutral_keyframe();
-    kf.local_root = LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [1.2, 0.0], // fast forward
-        root_y: -0.03,
-    };
-    ActionProfile {
-        action: Action::Grab,
-        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 10,                         // 40 frames ≈ 1.33s
-        root_displacement: Vec3::new(0.0, 0.0, 1.0), // 1m lunge
-        heading_delta: 0.0,
-        speed_multiplier: 1.5,
-    }
-}
-
-fn thrust_profile() -> ActionProfile {
-    // Thrust: forward lunge with a single arm extended, like a piercing stab.
-    let mut kf = neutral_keyframe();
-    kf.local_root = LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [0.9, 0.0], // committed forward drive
-        root_y: -0.04,          // lower crouch than Strike
-    };
-    ActionProfile {
-        action: Action::Thrust,
-        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 7,                          // 28 frames ≈ 0.93s
-        root_displacement: Vec3::new(0.0, 0.0, 0.6), // 0.6m forward lunge
-        heading_delta: 0.0,
-        speed_multiplier: 1.1,
-    }
-}
-
-fn dodge_profile() -> ActionProfile {
-    // Dodge: quick backward/sideways lean with a lowered root.
-    let mut kf = neutral_keyframe();
-    kf.local_root = LocalRootConstraint {
-        rot_vel: 0.0,
-        lin_vel_xz: [-0.6, 0.4], // back and slightly sideways
-        root_y: -0.12,           // low evasive crouch
-    };
-    ActionProfile {
-        action: Action::Dodge,
-        target_keyframes: [kf.clone(), kf.clone(), kf.clone(), kf.clone()],
-        duration_tokens: 4,                           // 16 frames ≈ 0.53s
-        root_displacement: Vec3::new(0.15, 0.0, -0.3), // small backstep with lateral shift
-        heading_delta: 0.0,
-        speed_multiplier: 1.3,
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Replanning coordination
-//
-// Per Appendix C: replan every 3-9 frames, instantly on command change.
-// The combat module tracks the current action state.
-// ---------------------------------------------------------------------------
-
-/// Current state of an ongoing combat action
-pub struct ActionState {
-    pub action: Action,
-    pub elapsed_frames: u32,
-    pub total_frames: u32,
-    /// Buffer of generated frames remaining
-    pub frames_remaining: u32,
-    /// Whether the action has completed
-    pub complete: bool,
-}
-
-impl ActionState {
-    pub fn from_action(action: Action) -> Self {
-        let profile = action.profile();
-        let total_frames = profile.duration_tokens as u32 * 4;
-        Self {
-            action,
-            elapsed_frames: 0,
-            total_frames,
-            frames_remaining: total_frames,
-            complete: false,
+    /// Reject incomplete primitives before they can reach MotionBricks or the
+    /// truth bridge. This is deliberately structural, not a martial-quality
+    /// assessment; source-motion visual QA remains a separate gate.
+    pub fn validate(&self) -> Result<(), PrimitiveValidationError> {
+        if !(MIN_MOTION_FRAMES..=MAX_MOTION_FRAMES).contains(&self.motion_frames)
+            || self.motion_frames % TOKEN_FRAMES != 0
+        {
+            return Err(PrimitiveValidationError::InvalidMotionFrameCount);
         }
-    }
 
-    /// Advance one frame. Returns true if action just completed.
-    pub fn tick(&mut self) -> bool {
-        self.elapsed_frames += 1;
-        self.frames_remaining = self.frames_remaining.saturating_sub(1);
-        if self.elapsed_frames >= self.total_frames && !self.complete {
-            self.complete = true;
-            true
-        } else {
-            false
+        if self
+            .root_constraints
+            .iter()
+            .any(|constraint| constraint.motion_frame >= self.motion_frames)
+            || self
+                .pose_constraints
+                .iter()
+                .any(|constraint| constraint.motion_frame >= self.motion_frames)
+        {
+            return Err(PrimitiveValidationError::ConstraintFrameOutOfRange);
         }
-    }
+        if self
+            .inter_agent_constraints
+            .iter()
+            .any(|constraint| constraint.motion_frame >= self.motion_frames)
+        {
+            return Err(PrimitiveValidationError::InteractionFrameOutOfRange);
+        }
 
-    /// Check if replanning should trigger this frame.
-    /// Per Appendix C: every 3-9 frames or when command changes.
-    pub fn should_replan(&self, command_changed: bool) -> bool {
-        if command_changed {
-            return true;
+        let has_guard = self
+            .pose_constraints
+            .iter()
+            .any(|constraint| constraint.phase == PrimitivePhase::Guard);
+        if !has_guard {
+            return Err(PrimitiveValidationError::MissingGuard);
         }
-        self.frames_remaining <= 3 || self.elapsed_frames % 6 == 0
+        let has_windup = self
+            .pose_constraints
+            .iter()
+            .any(|constraint| constraint.phase == PrimitivePhase::Windup);
+        if !has_windup {
+            return Err(PrimitiveValidationError::MissingWindup);
+        }
+        let has_recovery = self
+            .pose_constraints
+            .iter()
+            .any(|constraint| constraint.phase == PrimitivePhase::Recovery);
+        if !has_recovery {
+            return Err(PrimitiveValidationError::MissingRecovery);
+        }
+
+        let duration = self.truth_duration_ticks();
+        for window in &self.contact_windows {
+            if window.start_tick >= window.end_tick_exclusive
+                || window.end_tick_exclusive > duration
+            {
+                return Err(PrimitiveValidationError::InvalidContactWindow);
+            }
+            if window.target.candidate_layers.is_empty() {
+                return Err(PrimitiveValidationError::EmptyAnatomyQuery);
+            }
+
+            let has_hard_contact = self.pose_constraints.iter().any(|constraint| {
+                constraint.phase == PrimitivePhase::Contact
+                    && constraint.strength == ConstraintStrength::Hard
+                    && constraint.motion_frame * TRUTH_TICKS_PER_MOTION_FRAME >= window.start_tick
+                    && constraint.motion_frame * TRUTH_TICKS_PER_MOTION_FRAME
+                        < window.end_tick_exclusive
+            });
+            if !has_hard_contact {
+                return Err(PrimitiveValidationError::MissingHardContactConstraint);
+            }
+        }
+
+        for constraint in &self.inter_agent_constraints {
+            if constraint.target.candidate_layers.is_empty() {
+                return Err(PrimitiveValidationError::EmptyInteractionAnatomyQuery);
+            }
+            if let Some(impact) = constraint.impact {
+                if impact.force_millinewtons == 0 || impact.direction_milli == [0, 0, 0] {
+                    return Err(PrimitiveValidationError::InvalidImpactIntent);
+                }
+            }
+            if constraint.strength == ConstraintStrength::Hard
+                && matches!(
+                    constraint.state,
+                    InterAgentContactState::Strike
+                        | InterAgentContactState::Parry
+                        | InterAgentContactState::Grab
+                        | InterAgentContactState::Impact
+                )
+                && !self.is_active_at(constraint.motion_frame * TRUTH_TICKS_PER_MOTION_FRAME)
+            {
+                return Err(PrimitiveValidationError::HardInteractionOutsideActiveWindow);
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -270,40 +360,208 @@ impl ActionState {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_action_profiles_exist() {
-        for action in &[Action::Strike, Action::Block, Action::Grab] {
-            let profile = action.profile();
-            assert_eq!(profile.action, *action);
-            assert!(profile.duration_tokens >= 6 && profile.duration_tokens <= 16);
+    fn valid_thrust() -> CombatPrimitive {
+        CombatPrimitive {
+            action: Action::Thrust,
+            stance: Stance::Top,
+            motion_frames: 16,
+            root_constraints: vec![
+                RootConstraint {
+                    motion_frame: 0,
+                    local_linear_velocity_mm_per_s: [0, 0],
+                    local_yaw_millirad_per_s: 0,
+                    root_height_mm: 0,
+                    world_offset_mm: Millimetres { x: 0, y: 0, z: 0 },
+                    heading_millirad: 0,
+                },
+                RootConstraint {
+                    motion_frame: 8,
+                    local_linear_velocity_mm_per_s: [1_200, 0],
+                    local_yaw_millirad_per_s: 0,
+                    root_height_mm: -40,
+                    world_offset_mm: Millimetres { x: 0, y: 0, z: 600 },
+                    heading_millirad: 0,
+                },
+            ],
+            pose_constraints: vec![
+                PoseConstraint {
+                    motion_frame: 0,
+                    phase: PrimitivePhase::Guard,
+                    anchor: MotionAnchor::WeaponTip,
+                    target_anchor: MotionAnchor::Chest,
+                    target_offset_mm: Millimetres { x: 0, y: 0, z: 650 },
+                    strength: ConstraintStrength::Soft {
+                        allow_early_motion_frames: 1,
+                    },
+                },
+                PoseConstraint {
+                    motion_frame: 4,
+                    phase: PrimitivePhase::Windup,
+                    anchor: MotionAnchor::WeaponTip,
+                    target_anchor: MotionAnchor::Chest,
+                    target_offset_mm: Millimetres {
+                        x: 0,
+                        y: 50,
+                        z: -250,
+                    },
+                    strength: ConstraintStrength::Soft {
+                        allow_early_motion_frames: 1,
+                    },
+                },
+                PoseConstraint {
+                    motion_frame: 8,
+                    phase: PrimitivePhase::Contact,
+                    anchor: MotionAnchor::WeaponTip,
+                    target_anchor: MotionAnchor::Chest,
+                    target_offset_mm: Millimetres { x: 0, y: 0, z: 900 },
+                    strength: ConstraintStrength::Hard,
+                },
+                PoseConstraint {
+                    motion_frame: 12,
+                    phase: PrimitivePhase::Recovery,
+                    anchor: MotionAnchor::WeaponTip,
+                    target_anchor: MotionAnchor::Chest,
+                    target_offset_mm: Millimetres { x: 0, y: 0, z: 700 },
+                    strength: ConstraintStrength::Soft {
+                        allow_early_motion_frames: 2,
+                    },
+                },
+            ],
+            contact_windows: vec![ContactWindow {
+                start_tick: 16,
+                end_tick_exclusive: 20,
+                emitter: ContactEmitter::WeaponTip,
+                target: AnatomyTarget {
+                    acceleration_region: HitLocation::Torso,
+                    candidate_layers: AnatomyLayers::from_bits(
+                        AnatomyLayers::ARMOR.bits()
+                            | AnatomyLayers::SKIN.bits()
+                            | AnatomyLayers::MUSCLE.bits()
+                            | AnatomyLayers::BONE.bits()
+                            | AnatomyLayers::VESSEL.bits()
+                            | AnatomyLayers::NERVE.bits()
+                            | AnatomyLayers::ORGAN.bits(),
+                    ),
+                },
+            }],
+            inter_agent_constraints: vec![InterAgentConstraint {
+                motion_frame: 8,
+                phase: PrimitivePhase::Contact,
+                state: InterAgentContactState::Impact,
+                self_anchor: MotionAnchor::WeaponTip,
+                opponent_anchor: MotionAnchor::Chest,
+                opponent_relative_root: OpponentRelativeRoot {
+                    offset_mm: Millimetres { x: 0, y: 0, z: 900 },
+                    heading_millirad: 0,
+                },
+                target: AnatomyTarget {
+                    acceleration_region: HitLocation::Torso,
+                    candidate_layers: AnatomyLayers::from_bits(
+                        AnatomyLayers::ARMOR.bits()
+                            | AnatomyLayers::SKIN.bits()
+                            | AnatomyLayers::BONE.bits(),
+                    ),
+                },
+                strength: ConstraintStrength::Hard,
+                impact: Some(ImpactIntent {
+                    force_millinewtons: 900_000,
+                    direction_milli: [0, 0, 1_000],
+                }),
+            }],
         }
     }
 
     #[test]
-    fn test_action_state_lifecycle() {
-        let mut state = ActionState::from_action(Action::Strike);
-        assert_eq!(state.total_frames, 32); // 8 tokens * 4
-        assert!(!state.complete);
-
-        // Tick through all frames
-        for i in 1..=32 {
-            let completed = state.tick();
-            if i < 32 {
-                assert!(!completed);
-            } else {
-                assert!(completed);
-            }
-        }
-        assert!(state.complete);
+    fn combat_primitive_validates_a_hard_contact_with_deep_anatomy_query() {
+        let primitive = valid_thrust();
+        assert_eq!(primitive.truth_duration_ticks(), 32);
+        assert!(primitive.validate().is_ok());
+        assert!(primitive.is_active_at(16));
+        assert!(primitive.is_active_at(19));
+        assert!(!primitive.is_active_at(20));
     }
 
     #[test]
-    fn test_replanning_triggers() {
-        let state = ActionState::from_action(Action::Block);
-        // Low buffer should trigger replan
-        assert!(state.should_replan(false)); // frames_remaining <= 3 triggers
+    fn contact_phase_requires_a_hard_pose_constraint_in_its_truth_window() {
+        let mut primitive = valid_thrust();
+        primitive.pose_constraints[2].strength = ConstraintStrength::Soft {
+            allow_early_motion_frames: 0,
+        };
+        assert_eq!(
+            primitive.validate(),
+            Err(PrimitiveValidationError::MissingHardContactConstraint)
+        );
+    }
 
-        let new_state = ActionState::from_action(Action::Block);
-        assert!(new_state.should_replan(true)); // command changed triggers
+    #[test]
+    fn primitive_supports_multiple_contact_windows_for_compound_martial_actions() {
+        let mut primitive = valid_thrust();
+        primitive.pose_constraints[3].motion_frame = 14;
+        primitive.pose_constraints.push(PoseConstraint {
+            motion_frame: 12,
+            phase: PrimitivePhase::Contact,
+            anchor: MotionAnchor::WeaponEdge,
+            target_anchor: MotionAnchor::Chest,
+            target_offset_mm: Millimetres {
+                x: 180,
+                y: 100,
+                z: 700,
+            },
+            strength: ConstraintStrength::Hard,
+        });
+        primitive.contact_windows.push(ContactWindow {
+            start_tick: 24,
+            end_tick_exclusive: 26,
+            emitter: ContactEmitter::WeaponEdge,
+            target: primitive.contact_windows[0].target,
+        });
+
+        assert!(primitive.validate().is_ok());
+        assert!(primitive.is_active_at(16));
+        assert!(primitive.is_active_at(24));
+        assert!(!primitive.is_active_at(26));
+    }
+
+    #[test]
+    fn primitive_rejects_a_contact_without_an_anatomical_layer_query() {
+        let mut primitive = valid_thrust();
+        primitive.contact_windows[0].target.candidate_layers = AnatomyLayers::from_bits(0);
+        assert_eq!(
+            primitive.validate(),
+            Err(PrimitiveValidationError::EmptyAnatomyQuery)
+        );
+    }
+
+    #[test]
+    fn primitive_rejects_a_non_token_aligned_motion_duration() {
+        let mut primitive = valid_thrust();
+        primitive.motion_frames = 14;
+        assert_eq!(
+            primitive.validate(),
+            Err(PrimitiveValidationError::InvalidMotionFrameCount)
+        );
+    }
+
+    #[test]
+    fn hard_paired_impact_must_be_scheduled_inside_truth_active_time() {
+        let mut primitive = valid_thrust();
+        primitive.inter_agent_constraints[0].motion_frame = 11;
+        assert_eq!(
+            primitive.validate(),
+            Err(PrimitiveValidationError::HardInteractionOutsideActiveWindow)
+        );
+    }
+
+    #[test]
+    fn first_playable_registry_is_exactly_longsword_top_thrust_block_dodge() {
+        assert_eq!(FIRST_PLAYABLE_WEAPON, "Longsword");
+        assert_eq!(FIRST_PLAYABLE_STANCE, Stance::Top);
+        assert_eq!(
+            FIRST_PLAYABLE_ACTIONS,
+            [Action::Thrust, Action::Block, Action::Dodge]
+        );
+        assert!(is_first_playable_choice(Action::Thrust, Stance::Top));
+        assert!(!is_first_playable_choice(Action::Strike, Stance::Top));
+        assert!(!is_first_playable_choice(Action::Thrust, Stance::Left));
     }
 }

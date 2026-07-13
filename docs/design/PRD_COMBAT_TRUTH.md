@@ -7,9 +7,9 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 ## 2. Invariants
 
 - Combat truth never depends on renderer, camera, sampled animation poses, audio, or frame time.
-- Action timing and pose profile data may be derived from MotionBricks output but are authored into deterministic constants before runtime.
-- Hitbox proxies must match visual geometry exactly; no oversized hitboxes or ghost hits are permitted.
-- Contact detection uses geometry-accurate proxies from PRD_MOTION.md, not abstract spheres/capsules unless they exactly match a visual object.
+- Motion synthesis supplies only target motion. It never supplies a contact, impulse, block, parry, injury, or outcome.
+- The shared physics world solves both fighters, weapons, armor, and arena together. Hitbox/mesh proxies are broad-phase or parity aids, never an action-matrix substitute.
+- Every same-substep injury is evaluated from the same pre-contact state and applied at the next substep boundary without actor-order bias.
 - The same initial seed + input stream always produces the same final state and truth hash.
 - Presentation may read snapshots; it may not write back into truth.
 - Match phases advance only on deterministic events.
@@ -20,8 +20,9 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 | Name | Type | Source | Description |
 |---|---|---|---|
 | input_event | InputEvent | PRD_INPUT.md | Committed action and stance per player |
-| hitbox_proxies | HitboxProxy[] | PRD_MOTION.md | Geometry-accurate collision proxies per fighter |
-| delta_time | fixed step | Platform shell | Fixed 60 Hz simulation step |
+| target_buffers | MotionTargetBuffer[2] | Motion Synthesis | Read-only desired motion for each fighter |
+| physical_contacts | BilateralContactPacket[] | Shared Duel Physics | Complete canonical 120 Hz manifold batch |
+| delta_time | fixed step | Platform shell | Fixed 120 Hz physics substep; exactly two per action tick |
 | ruleset | RulesetVersion | Static data | Matrix, timings, injury tables |
 
 ### Outputs
@@ -36,7 +37,7 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 | Event | Payload | When Fired |
 |---|---|---|
 | phase_changed | { old, new, frame_index } | Match phase transition |
-| contact_detected | { frame_index, proxy_pairs, contact_point, normal } | When geometry proxies intersect during active frames |
+| contact_detected | { physics_tick, packets } | Shared world returns a canonical manifold batch |
 | exchange_resolved | { exchange_index, outcome } | Resolver finishes an exchange |
 | match_ended | { winner_id, reason } | Incapacitation or time limit |
 
@@ -44,24 +45,24 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 
 1. Combat truth receives locked input events.
 2. State machine advances from Observe → Plan → Commit → Reveal → Resolve → Consequence.
-3. During Active frames, combat truth receives hitbox proxies from PRD_MOTION.md and performs geometry-accurate contact detection.
-4. On contact, PRD_ACTION_MATRIX.md is consulted for matchup outcome; PRD_ARMOR.md and PRD_INJURY.md apply deep material and tissue consequences.
-5. A truth snapshot is emitted every simulation frame.
+3. Shared Duel Physics samples both target buffers, applies capability-limited torques, and solves both fighters, weapons, armor, and arena in one world.
+4. Combat truth derives labels from the complete physical packet batch; PRD_ARMOR.md and PRD_INJURY.md apply bilateral material/tissue consequences.
+5. Capability deltas are merged and take effect at the next physics substep. A truth snapshot is emitted every 120 Hz substep.
 6. Match events are recorded by PRD_REPLAY.md.
 7. Parity report is generated for QA comparison of hitbox vs visual geometry.
 
 ## 5. Control Flow
 
 - **Who calls it:** Platform shell drives the fixed-step tick.
-- **Tick rate:** 60 Hz fixed step, independent of render frame rate.
+- **Tick rate:** 120 Hz fixed physics substep, exactly two per 60 Hz action tick, independent of render frame rate.
 - **Threading model:** Main thread; all presentation reads snapshots asynchronously but never writes.
 
 ## 6. Error Handling
 
 - **Fail-closed:** invalid state transitions are rejected and logged as deterministic errors.
 - **Fail-closed:** missing required input at Commit advances to a forfeit/Disengage outcome.
+- **Fail-closed:** a missing physical contact batch holds Resolve; it is never converted into a synthetic whiff, hit, clash, or reset.
 - **Fail-closed:** hitbox/visual parity mismatch blocks the build until fixed.
-- **Degradation:** if a resolver call returns unknown, combat truth falls back to "clash/reset" and emits a warning event.
 
 ## 7. Performance Budget
 
@@ -75,10 +76,11 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 ## 8. Dependencies
 
 - PRD_INPUT.md — receives committed actions.
-- PRD_ACTION_MATRIX.md — resolves exchanges.
+- PRD_SHARED_DUEL_PHYSICS.md — canonical clocks, physical ownership, bilateral packets, and label derivation.
+- PRD_ACTION_MATRIX.md — action intent/timing metadata; never manufactures a physical result.
 - PRD_INJURY.md — applies deep localized tissue injury.
 - PRD_ARMOR.md — applies deep armor/material consequences.
-- PRD_MOTION.md — provides geometry-accurate hitbox proxies.
+- PRD_MOTION.md — provides motion targets and visual parity data only.
 - PRD_AI.md — receives AI state and snapshot for decision-making.
 - PRD_REPLAY.md — records match events.
 
@@ -86,14 +88,12 @@ Own the authoritative, deterministic state machine for a duel: match phase, figh
 
 - Exact bit layout of truth hash.
 - Continuous distance/position versus discrete bands.
-- Handling of simultaneous incapacitation (double KO).
-- Hitbox proxy update frequency (per frame vs per sub-step).
+- Exact quantized bilateral packet layout and stable feature IDs.
+- Deterministic solver selection after 120 Hz CCD/impulse convergence gates.
 
 ## 10. Agent Notes
 
-### 2026-07-09 — @kimi
-- **Decision:** Combat truth uses geometry-accurate hitbox proxies from MotionBricks poses; perfect parity with visual geometry is mandatory.
-- **Rationale:** User canon amendment: no ghost hits or oversized hitboxes.
-- **Blocker:** Hitbox proxy extraction from skinned meshes must be deterministic and fast; deep material/injury solvers must remain deterministic.
-- **Status:** ACTIVE.
-- **Next:** Implement a per-frame hitbox proxy extractor and parity checker for one action before expanding to full combat.
+### 2026-07-11 — Shared-world correction
+- **Decision:** MotionBricks is an intent-to-target-motion planner. Shared physics is the only source of contact, impulse, injury, and outcome.
+- **Rationale:** Generated keyframe error and lack of physical feasibility make clip-based combat resolution invalid.
+- **Status:** ACTIVE. See PRD_SHARED_DUEL_PHYSICS.md for the ordering and acceptance gates.

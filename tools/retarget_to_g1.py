@@ -224,6 +224,25 @@ def _orthonormalize_rotations(rots: np.ndarray) -> np.ndarray:
     return out
 
 
+def _minimal_rotation(from_dir: np.ndarray, to_dir: np.ndarray) -> np.ndarray:
+    """Return the minimal rotation matrix that maps unit vector from_dir to to_dir."""
+    dot = float(np.dot(from_dir, to_dir))
+    if dot > 0.999999:
+        return np.eye(3, dtype=np.float32)
+    if dot < -0.999999:
+        # 180 degree rotation: pick any perpendicular axis.
+        axis = np.array([1.0, 0.0, 0.0], dtype=np.float32)
+        if abs(from_dir[0]) > 0.9:
+            axis = np.array([0.0, 1.0, 0.0], dtype=np.float32)
+        axis = np.cross(from_dir, axis)
+        axis /= np.linalg.norm(axis) + 1e-8
+        return Rotation.from_rotvec(axis * np.pi).as_matrix().astype(np.float32)
+    axis = np.cross(from_dir, to_dir)
+    axis /= np.linalg.norm(axis) + 1e-8
+    angle = np.arccos(dot)
+    return Rotation.from_rotvec(axis * angle).as_matrix().astype(np.float32)
+
+
 def _joint_by_name(root: Joint, name: str) -> Optional[Joint]:
     if root.name == name:
         return root
@@ -232,6 +251,20 @@ def _joint_by_name(root: Joint, name: str) -> Optional[Joint]:
         if found is not None:
             return found
     return None
+
+
+def _cmu_parent_map(root: Joint) -> Dict[str, str]:
+    """Return a mapping from each CMU joint name to its parent joint name."""
+    parents: Dict[str, str] = {}
+
+    def visit(joint: Joint, parent_name: Optional[str]):
+        if parent_name is not None:
+            parents[joint.name] = parent_name
+        for child in joint.children:
+            visit(child, joint.name)
+
+    visit(root, None)
+    return parents
 
 
 def _offset_chain_length(root: Joint, chain: List[str]) -> float:
@@ -283,29 +316,54 @@ def retarget(source_path: str, source_format: str, out_path: str, target_fps: fl
 
     T = motion.shape[0]
 
-    # Invert the map: G1 index -> CMU name
+    # Invert the map: G1 index -> CMU name.
     g1_to_cmu = {g1_idx: cmu_name for cmu_name, g1_idx in cmu_map.items()}
 
-    # Build G1 local rotations from mapped CMU world rotations.
+    # Pre-compute G1 bind bone directions (unit vectors in parent space).
+    g1_bind_dirs = np.zeros((34, 3), dtype=np.float32)
+    for j in range(34):
+        norm = np.linalg.norm(offsets[j])
+        if norm > 1e-8:
+            g1_bind_dirs[j] = offsets[j] / norm
+
+    # Pre-compute CMU bind bone directions for mapped joints.
+    cmu_bind_dirs: Dict[int, np.ndarray] = {}
+    for cmu_name, g1_idx in cmu_map.items():
+        if cmu_name == "Hips":
+            continue
+        j = _joint_by_name(root, cmu_name)
+        if j is None:
+            raise ValueError(f"CMU joint {cmu_name} not found in source skeleton")
+        norm = np.linalg.norm(j.offset)
+        if norm > 1e-8:
+            cmu_bind_dirs[g1_idx] = (j.offset / norm).astype(np.float32)
+
+    # Build G1 local rotations so that each G1 bone points in the same direction
+    # (in its G1 parent frame) as the corresponding CMU bone points in its CMU
+    # parent frame.  Intermediate unmapped detail joints keep identity local
+    # rotation.  Joints with no meaningful offset inherit the CMU world rotation.
     local_rots = np.zeros((T, 34, 3, 3), dtype=np.float32)
     world_rots = np.zeros((T, 34, 3, 3), dtype=np.float32)
 
-    # Root
-    local_rots[:, 0] = cmu_rotations["Hips"]
-    world_rots[:, 0] = local_rots[:, 0]
-
-    for j in range(1, 34):
-        p = parents[j]
-        parent_world = world_rots[:, p]
-        if j in g1_to_cmu:
-            cmu_name = g1_to_cmu[j]
-            desired_world = cmu_rotations[cmu_name]
-            local_rots[:, j] = np.transpose(parent_world, (0, 2, 1)) @ desired_world
-            world_rots[:, j] = parent_world @ local_rots[:, j]
-        else:
-            # Unmapped joint follows parent orientation.
-            local_rots[:, j] = np.eye(3, dtype=np.float32)
-            world_rots[:, j] = parent_world
+    for t in range(T):
+        for j in range(34):
+            p = parents[j]
+            parent_world = world_rots[t, p] if p >= 0 else np.eye(3, dtype=np.float32)
+            if j in g1_to_cmu:
+                cmu_name = g1_to_cmu[j]
+                cmu_world = cmu_rotations[cmu_name][t]
+                if j not in cmu_bind_dirs or np.linalg.norm(g1_bind_dirs[j]) < 1e-8:
+                    # No meaningful bone direction: copy world rotation.
+                    local_rots[t, j] = parent_world.T @ cmu_world
+                else:
+                    cmu_dir = cmu_bind_dirs[j]
+                    g1_dir = g1_bind_dirs[j]
+                    # Desired CMU bone direction expressed in G1 parent frame.
+                    desired_dir = parent_world.T @ cmu_world @ cmu_dir
+                    local_rots[t, j] = _minimal_rotation(g1_dir, desired_dir)
+            else:
+                local_rots[t, j] = np.eye(3, dtype=np.float32)
+            world_rots[t, j] = parent_world @ local_rots[t, j]
 
     # Scale CMU root trajectory and place G1 pelvis at the scaled CMU Hips position.
     root_pos = cmu_positions["Hips"] * scale

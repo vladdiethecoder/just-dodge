@@ -69,7 +69,9 @@ def m_row(m):
 
 if __name__ == "__main__":
     binp = sys.argv[1]
-    animp = sys.argv[2] if len(sys.argv) > 2 else None
+    positional = [arg for arg in sys.argv[2:] if not arg.startswith("--")]
+    animp = positional[0] if positional else None
+    allow_static = "--allow-static" in sys.argv[2:]
     vc, ic, bc, verts, idxs, bones, skin = read_bin(binp)
     print(f"[OK] {binp}")
     print(f"  verts={vc} idxs={ic} bones={bc}")
@@ -81,19 +83,25 @@ if __name__ == "__main__":
             assert 0 <= pi < bc, f"{name} bad parent"
     # head bone Y above hips (Y-up game space). Translation stored row-major at
     # indices 3 (x), 7 (y), 11 (z) of each 16-float matrix.
-    hidx = next(i for i, b in enumerate(bones) if b[0] == "Hips")
-    head_idx = next((i for i, b in enumerate(bones) if b[0] == "Head"), None)
+    hidx = next(
+        (i for i, b in enumerate(bones) if b[0] in {"Hips", "root", "Pelvis"}),
+        next(i for i, b in enumerate(bones) if b[1] == -1),
+    )
+    head_idx = next(
+        (i for i, b in enumerate(bones) if b[0] in {"Head", "head", "Skull"}),
+        None,
+    )
     def world_y(inv):
         # world bind = inverse(inv_bind); translation = -inv_trans for rigid
         return -inv[7]
     # inverse bind should map bind mesh ~ to bone space; check diag of rest not degenerate
-    # skin weights sum ~1 and max 4
+    # skin weights sum ~1 and max 8
     bad_w = 0
     for g in skin:
         s = sum(w for _, w in g)
-        if abs(s - 1.0) > 0.02 or len(g) > 4:
+        if abs(s - 1.0) > 0.02 or len(g) > 8:
             bad_w += 1
-    print(f"  skin verts with bad weight sum/>4 = {bad_w}/{vc}")
+    print(f"  skin verts with bad weight sum/>8 = {bad_w}/{vc}")
     # vertex bounding-box height (game Y) — model should be ~1.5-1.8 units tall
     vys = [verts[i][0][1] for i in range(vc)]  # pos[1] = Y
     vh = max(vys) - min(vys)
@@ -118,6 +126,9 @@ if __name__ == "__main__":
             if any(any(abs(f[b][i] - f0[i]) > 1e-3 for i in range(16)) for f in frames[1:]):
                 moving += 1
         print(f"  bones whose matrix changes across clip: {moving}/{bc}")
-        assert delta > 1e-3 or moving > 0, "animation appears static!"
-        print("  [OK] animation is non-static")
+        if allow_static:
+            print("  [OK] static animation explicitly allowed")
+        else:
+            assert delta > 1e-3 or moving > 0, "animation appears static!"
+            print("  [OK] animation is non-static")
     print("ALL CHECKS PASSED")

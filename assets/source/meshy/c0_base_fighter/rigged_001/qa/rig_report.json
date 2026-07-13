@@ -1,0 +1,123 @@
+{
+  "source": "assets/source/meshy/c0_base_fighter/rigged_001/model.fbx",
+  "meshes": [
+    {
+      "name": "char1",
+      "vertices": 96822,
+      "polygons": 193940,
+      "groups": 22,
+      "group_names": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head"
+      ],
+      "unbound": 0,
+      "weight_sum_min": 0.9999998644925654,
+      "weight_sum_max": 1.00000017612183,
+      "max_influences": 9,
+      "modifiers": [
+        {
+          "name": "Armature",
+          "type": "ARMATURE",
+          "object": "Armature"
+        }
+      ]
+    }
+  ],
+  "armatures": [
+    {
+      "name": "Armature",
+      "bones": 24,
+      "roots": [
+        "Hips"
+      ],
+      "bone_names": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ],
+      "hierarchy": {
+        "Hips": null,
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot",
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head"
+      },
+      "animation_data": "Armature|Armature|Armature|clip0|baselayer"
+    }
+  ],
+  "actions": [
+    {
+      "name": "Armature|Armature|Armature|clip0|baselayer",
+      "frame_range": [
+        1.0,
+        1.0
+      ],
+      "fcurves": 249
+    }
+  ],
+  "scene_frames": [
+    1,
+    250
+  ],
+  "fps": 30
+}

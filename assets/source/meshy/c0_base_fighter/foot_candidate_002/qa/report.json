@@ -1,0 +1,39 @@
+{
+  "source": "assets/source/meshy/c0_base_fighter/foot_candidate_002/model.fbx",
+  "mesh_objects": [
+    {
+      "name": "mesh_node",
+      "vertices": 75132,
+      "edges": 225420,
+      "polygons": 150280,
+      "materials": [],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    }
+  ],
+  "armatures": [],
+  "bbox_min": [
+    -0.35919100046157837,
+    -0.9488720893859863,
+    -0.9066829681396484
+  ],
+  "bbox_max": [
+    0.3570699989795685,
+    0.9505630135536194,
+    0.904670000076294
+  ],
+  "bbox_size": [
+    0.7162610292434692,
+    1.899435043334961,
+    1.8113529682159424
+  ],
+  "totals": {
+    "vertices": 75132,
+    "polygons": 150280,
+    "mesh_objects": 1,
+    "armatures": 0
+  }
+}

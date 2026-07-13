@@ -9,13 +9,13 @@ Usage (Blender headless):
 What is preserved (nothing thrown away):
   - Triangulated vertex positions, normals, UVs, indices   (mesh)
   - Full bone hierarchy: name, parent index, rest-local matrix, inverse-bind matrix
-  - Per-vertex skin weights: top-4 joints by magnitude, renormalized
+  - Per-vertex skin weights: top-8 joints by magnitude, renormalized
   - Baked skeletal animation (optional): per-frame, per-bone parent-relative local matrix
 
 Coordinate handling (so the game sees a sane model):
-  - Everything is converted into MESH-LOCAL space first (matches the old exporter's
-    vertex space, so the static mesh looks identical to before).
-  - A global transform G = R * Scale(s) is applied uniformly to vertices, normals,
+  - Everything is baked through Blender's imported world transforms first. This
+    preserves FBX parent scale/axis transforms instead of guessing from mesh-local axes.
+  - A global transform G = Scale(s) * R is applied uniformly to vertices, normals,
     bone matrices and animation matrices:
         R : Blender Z-up / -Y-forward  ->  game Y-up / +Z-forward (rotation -90deg about X)
         s : auto-detected cm->m scale (1.0 if model is already meter-scale)
@@ -35,7 +35,7 @@ Output format (magic "SKM1"):
         f32[16] inverse_bind        (game space)
   )
   -- skin    : vert_count * (
-        u8 count (1..4)
+        u8 count (1..8)
         count * (u32 joint_index, f32 weight)
   )
 
@@ -107,30 +107,29 @@ def main():
 
     R = axis_rotation()
 
-    # ---- Bone rest matrices in MESH-LOCAL space -------------------------
-    # M_i (mesh-local rest world) = mesh_world^{-1} * arm_world * bone.matrix_local
-    mesh_world_inv = mesh_obj.matrix_world.inverted()
+    # ---- Bone rest matrices in imported Blender world space -------------
+    # Baking parent/object transforms is mandatory for FBX files whose mesh is
+    # rotated under a scaled armature (Meshy rigs commonly use this layout).
     arm_world = armature.matrix_world
 
     bones = list(armature.data.bones)
     bone_index = {b.name: i for i, b in enumerate(bones)}
     bone_count = len(bones)
 
-    M_rest = []  # mesh-local rest-world matrices
+    M_rest = []  # imported world-space rest matrices
     for b in bones:
-        m = mesh_world_inv @ arm_world @ b.matrix_local
+        m = arm_world @ b.matrix_local
         M_rest.append(m)
 
-    # auto-detect scale from the MESH bounding box (authoritative: that's what
-    # renders). Blender's FBX importer brings Meshy models in at ~100x (cm); a
-    # humanoid should end up ~1.5-1.8 game units tall. If the bbox height is
-    # clearly not already meters (> 5 units), rescale to ~1.6 units.
-    ys = [v.co.z for v in mesh_obj.data.vertices]  # Blender Z-up pre-bake
+    # Auto-detect scale from the baked world-space Z-up bounding box.
+    world_positions = [mesh_obj.matrix_world @ v.co for v in mesh_obj.data.vertices]
+    ys = [v.z for v in world_positions]
     bbox_h = (max(ys) - min(ys)) if ys else 0.0
     s = 0.05 if bbox_h > 5.0 else 1.0
     G = mathutils.Matrix.Scale(s, 4) @ R  # uniform scale then rotation
+    normal_world = mesh_obj.matrix_world.to_3x3().inverted().transposed()
 
-    # ---- Mesh vertices (mesh-local, then G applied) ---------------------
+    # ---- Mesh vertices (imported world-space, then G applied) -----------
     mesh = mesh_obj.data
     mesh.calc_loop_triangles()
     uv_layer = mesh.uv_layers.active
@@ -161,7 +160,7 @@ def main():
                 if gname in bone_index and g.weight > 0.0:
                     groups.append((bone_index[gname], g.weight))
             groups.sort(key=lambda t: t[1], reverse=True)
-            top = groups[:4]
+            top = groups[:8]
             wsum = sum(w for _, w in top) or 1.0
             top = [(ji, w / wsum) for ji, w in top]
 
@@ -170,8 +169,9 @@ def main():
                    round(uv[0], 5), round(uv[1], 5), skin_key(top))
             if key not in unique:
                 # apply global transform to point + normal
-                gp = G @ co.to_4d()
-                gn = (R @ no.normalized().to_4d())  # rotation only
+                gp = G @ (mesh_obj.matrix_world @ co).to_4d()
+                world_normal = (normal_world @ no).normalized()
+                gn = R @ world_normal.to_4d()  # rotation only
                 unique[key] = len(new_pos) // 3  # VERTEX index, not float count
                 new_pos.extend([gp.x, gp.y, gp.z])
                 new_nrm.extend([gn.x, gn.y, gn.z])
@@ -185,6 +185,7 @@ def main():
     print(f"Scale factor s={s} (pre-bake mesh bbox height={bbox_h:.2f})")
 
     # ---- Bone serialization ---------------------------------------------
+    rest_world_game = [G @ matrix for matrix in M_rest]
     rest_local = []  # parent-relative rest (game space)
     inv_bind = []
     parent_indices = []
@@ -193,11 +194,14 @@ def main():
         p = b.parent
         pi = bone_index[p.name] if p is not None else -1
         parent_indices.append(pi)
-        Mp_inv = M_rest[pi].inverted() if pi >= 0 else mathutils.Matrix.Identity(4)
-        rl = Mp_inv @ M_rest[i]                  # parent-relative rest (mesh-local)
-        rl_g = apply_global(rl, G)
-        ib = (M_rest[i]).inverted()             # mesh-local inverse bind
-        ib_g = apply_global(ib, G)
+        rl_g = (
+            rest_world_game[pi].inverted() @ rest_world_game[i]
+            if pi >= 0
+            else rest_world_game[i]
+        )
+        # Vertices are serialized as G * mesh_world * p. Therefore the exact
+        # inverse bind is inverse(G * bone_world), not a basis conjugation.
+        ib_g = rest_world_game[i].inverted()
         rest_local.append(rl_g)
         inv_bind.append(ib_g)
         bone_names.append(b.name)
@@ -246,11 +250,18 @@ def main():
                 for fr in frames:
                     bpy.context.scene.frame_set(fr)
                     bpy.context.view_layer.update()
+                    pose_world_game = [
+                        G @ arm_world @ armature.pose.bones[i].matrix
+                        for i in range(bone_count)
+                    ]
                     for i, b in enumerate(bones):
-                        # pose.bones[i].matrix is parent-relative in armature-local
-                        pm = mesh_world_inv @ arm_world @ armature.pose.bones[i].matrix
-                        pm_g = apply_global(pm, G)
-                        f.write(struct.pack("<16f", *mat_to_list(pm_g)))
+                        pi = parent_indices[i]
+                        local = (
+                            pose_world_game[pi].inverted() @ pose_world_game[i]
+                            if pi >= 0
+                            else pose_world_game[i]
+                        )
+                        f.write(struct.pack("<16f", *mat_to_list(local)))
             print(f"Wrote {anim_out}: {len(frames)} frames @ {fps}fps, {bone_count} bones")
         else:
             print("No armature animation found; skipping .anim")

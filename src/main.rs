@@ -3,12 +3,10 @@
 use glam::{Mat4, Vec3, vec3};
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::mpsc::{self, Receiver, TryRecvError};
-use std::thread;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
-use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
+use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::Key;
 use winit::window::{Window, WindowId};
@@ -17,7 +15,11 @@ mod action_matrix;
 mod ai;
 mod armor;
 mod asset;
+mod cleanbox;
 mod combat;
+mod dodge_presentation;
+mod duel_physics;
+mod duel_world;
 mod hitbox;
 mod injury;
 mod input;
@@ -31,48 +33,84 @@ mod telemetry;
 mod truth;
 mod ui;
 
-/// Result delivered by the combat clip worker: generated skinning matrices for
-/// the player and opponent. `None` means the side had no action or generation
-/// failed.
-type CombatClipResult = (Option<Vec<[Mat4; 24]>>, Option<Vec<[Mat4; 24]>>);
+const TRUTH_TICKS_PER_SECOND: u128 = 60;
+const TICK_CREDIT_PER_SECOND: u128 = 1_000_000_000;
+const MAX_CATCH_UP_TICKS: u32 = 8;
 
-/// Result delivered by the idle clip worker: raw G1 frames and skinning matrices
-/// for the player and opponent. Idle clips are generated once at startup and
-/// loop whenever combat is not active.
-type IdleClipResult = (
-    Option<Vec<[Mat4; 34]>>,
-    Option<Vec<[Mat4; 24]>>,
-    Option<Vec<[Mat4; 34]>>,
-    Option<Vec<[Mat4; 24]>>,
-);
+/// Converts elapsed wall time into exact 60 Hz simulation ticks without
+/// rounding each redraw independently. Fractional tick credit is retained.
+#[derive(Debug, Default)]
+struct FixedStepClock {
+    tick_credit: u128,
+}
 
+impl FixedStepClock {
+    fn push_elapsed(&mut self, elapsed: Duration) -> u32 {
+        let added = elapsed.as_nanos().saturating_mul(TRUTH_TICKS_PER_SECOND);
+        self.tick_credit = self.tick_credit.saturating_add(added);
+
+        let available = self.tick_credit / TICK_CREDIT_PER_SECOND;
+        let ticks = available.min(MAX_CATCH_UP_TICKS as u128) as u32;
+        self.tick_credit -= u128::from(ticks) * TICK_CREDIT_PER_SECOND;
+        ticks
+    }
+}
+
+const FIRST_PERSON_EYE_HEIGHT: f32 = 1.62;
+const FIRST_PERSON_FOV_Y_RAD: f32 = 70.0_f32.to_radians();
+const FIRST_PERSON_MOUSE_SENSITIVITY: f32 = 0.005;
+const FIRST_PERSON_MAX_PITCH_RAD: f32 = 80.0_f32.to_radians();
+
+/// Presentation-only player-head camera. It never feeds combat truth, cleanbox,
+/// replay, or player movement; all geometry remains driven by authoritative roots.
 struct Camera {
-    theta: f32,
-    phi: f32,
-    radius: f32,
-    dragging: bool,
-    last_mouse: (f64, f64),
+    yaw: f32,
+    pitch: f32,
+    last_mouse: Option<(f64, f64)>,
 }
 
 impl Camera {
     fn new() -> Self {
         Self {
-            theta: 0.6,
-            phi: 1.0,
-            radius: 12.0,
-            dragging: false,
-            last_mouse: (0.0, 0.0),
+            // yaw=0 faces the locked opponent axis (-Z) from the player root.
+            yaw: 0.0,
+            pitch: 0.0,
+            last_mouse: None,
         }
     }
 
-    fn proj_view(&self, aspect: f32) -> Mat4 {
-        let eye = vec3(
-            self.radius * self.phi.sin() * self.theta.sin(),
-            self.radius * self.phi.cos(),
-            self.radius * self.phi.sin() * self.theta.cos(),
+    fn reset(&mut self) {
+        *self = Self::new();
+    }
+
+    fn record_mouse_position(&mut self, position: (f64, f64)) -> Option<(f32, f32)> {
+        let previous = self.last_mouse.replace(position)?;
+        let delta = (
+            (position.0 - previous.0) as f32,
+            (position.1 - previous.1) as f32,
         );
-        let view = Mat4::look_at_lh(eye, Vec3::ZERO, Vec3::Y);
-        let proj = Mat4::perspective_lh(std::f32::consts::FRAC_PI_4, aspect, 0.1, 100.0);
+        self.yaw -= delta.0 * FIRST_PERSON_MOUSE_SENSITIVITY;
+        self.pitch = (self.pitch - delta.1 * FIRST_PERSON_MOUSE_SENSITIVITY)
+            .clamp(-FIRST_PERSON_MAX_PITCH_RAD, FIRST_PERSON_MAX_PITCH_RAD);
+        Some(delta)
+    }
+
+    fn eye(&self, player_root: Vec3) -> Vec3 {
+        player_root + Vec3::Y * FIRST_PERSON_EYE_HEIGHT
+    }
+
+    fn forward(&self) -> Vec3 {
+        vec3(
+            self.yaw.sin() * self.pitch.cos(),
+            self.pitch.sin(),
+            -self.yaw.cos() * self.pitch.cos(),
+        )
+    }
+
+    fn proj_view(&self, aspect: f32, player_root: Vec3) -> Mat4 {
+        let eye = self.eye(player_root);
+        let view = Mat4::look_at_lh(eye, eye + self.forward(), Vec3::Y);
+        let proj = Mat4::perspective_lh(FIRST_PERSON_FOV_Y_RAD, aspect, 0.1, 100.0);
         proj * view
     }
 }
@@ -88,27 +126,18 @@ struct App {
     camera: Camera,
     start_time: Instant,
     last_frame_time: Instant,
+    fixed_step_clock: FixedStepClock,
     input: input::InputState,
     clip_fps: f32,
     first_frame_presented: bool,
-    // Python MotionBrains bridge.
-    motion_service: Arc<motion_service::MotionService>,
-    skinned_mesh: Arc<asset::SkinnedMeshData>,
-    // Idle clips are generated once at startup and loop outside combat.
-    player_idle_clip: Option<Vec<[Mat4; 24]>>,
-    opponent_idle_clip: Option<Vec<[Mat4; 24]>>,
-    // Raw G1 idle clips are kept as the from_pose context for combat actions.
-    player_idle_g1_clip: Option<Vec<[Mat4; 34]>>,
-    opponent_idle_g1_clip: Option<Vec<[Mat4; 34]>>,
-    // Combat clips play during Reveal.
-    player_clip: Option<Vec<[Mat4; 24]>>,
-    opponent_clip: Option<Vec<[Mat4; 24]>>,
-    combat_clip_rx: Option<Receiver<CombatClipResult>>,
-    // Last valid displayed pose; used only if both idle and combat clips are unavailable.
-    last_player_pose: [Mat4; 24],
-    last_opponent_pose: [Mat4; 24],
+    /// C0 reference-pose skinning matrices. Raw generated motion remains
+    /// rejected until combat-close supplies source-valid clips.
+    c0_reference_skin: Vec<Mat4>,
+    /// Optional local-only C0 Dodge presentation. It cannot affect truth.
+    dodge_presentation: Option<dodge_presentation::DodgePresentation>,
     // Combat systems
     truth: truth::CombatTruth,
+    duel_world: duel_world::DuelWorld,
     ai: ai::AiController,
     replay: replay::ReplayRecorder,
     replay_saved: bool,
@@ -188,33 +217,13 @@ impl ApplicationHandler for App {
                 eprintln!("main: starting renderer init after first present");
                 self.renderer = Some(renderer::Renderer::new(device, queue, config, false));
                 self.ui_renderer = Some(ui::UiRenderer::new(device, queue, config));
+                self.last_frame_time = Instant::now();
+                self.fixed_step_clock = FixedStepClock::default();
                 eprintln!("main: renderer + UI init done");
             }
 
             if let Some(w) = self.window.as_ref() {
                 w.request_redraw();
-            }
-        }
-
-        // Poll combat clip worker result.
-        if let Some(rx) = &self.combat_clip_rx {
-            match rx.try_recv() {
-                Ok((player, opponent)) => {
-                    if player.is_some() || opponent.is_some() {
-                        eprintln!("main: combat clip received");
-                        self.player_clip = player;
-                        self.opponent_clip = opponent;
-                        if let Some(w) = self.window.as_ref() {
-                            w.request_redraw();
-                        }
-                    }
-                    self.combat_clip_rx = None;
-                }
-                Err(TryRecvError::Empty) => { /* keep polling */ }
-                Err(TryRecvError::Disconnected) => {
-                    eprintln!("main: combat clip worker disconnected");
-                    self.combat_clip_rx = None;
-                }
             }
         }
 
@@ -258,28 +267,19 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::MouseInput { state, button, .. } => {
-                if button == MouseButton::Left {
-                    self.camera.dragging = state == ElementState::Pressed;
-                }
+                self.input
+                    .handle_mouse_button(button, state == ElementState::Pressed);
             }
 
             WindowEvent::CursorMoved { position, .. } => {
-                if self.camera.dragging {
-                    let dx = position.x - self.camera.last_mouse.0;
-                    let dy = position.y - self.camera.last_mouse.1;
-                    self.camera.theta -= dx as f32 * 0.005;
-                    self.camera.phi = (self.camera.phi - dy as f32 * 0.005)
-                        .clamp(0.1, std::f32::consts::PI - 0.1);
+                if let Some((dx, dy)) = self.camera.record_mouse_position((position.x, position.y))
+                {
+                    self.input.handle_mouse_motion(dx, dy);
                 }
-                self.camera.last_mouse = (position.x, position.y);
             }
 
             WindowEvent::MouseWheel { delta, .. } => {
-                let scroll = match delta {
-                    MouseScrollDelta::LineDelta(_, y) => y,
-                    MouseScrollDelta::PixelDelta(p) => p.y as f32 * 0.1,
-                };
-                self.camera.radius = (self.camera.radius - scroll * 0.5).clamp(1.0, 20.0);
+                self.input.handle_scroll(&delta);
             }
 
             WindowEvent::RedrawRequested => {
@@ -291,8 +291,8 @@ impl ApplicationHandler for App {
                 if event.state == ElementState::Pressed {
                     if let Key::Character(c) = &event.logical_key {
                         if c.as_str() == "r" {
-                            self.camera = Camera::new();
-                            eprintln!("Camera reset");
+                            self.camera.reset();
+                            eprintln!("First-person camera reset");
                         }
                     }
                 }
@@ -304,66 +304,13 @@ impl ApplicationHandler for App {
 }
 
 impl App {
-    fn spawn_combat_clip_worker(&mut self, snapshot: &truth::TruthSnapshot) {
-        if self.combat_clip_rx.is_some() {
-            return;
-        }
-        if self.player_clip.is_some() && self.opponent_clip.is_some() {
-            return;
-        }
-        let Some(player_action) = snapshot.player.action else {
-            return;
-        };
-        let Some(opponent_action) = snapshot.opponent.action else {
-            return;
-        };
-
-        eprintln!("main: spawning combat clip worker");
-        let service = Arc::clone(&self.motion_service);
-        let mesh = Arc::clone(&self.skinned_mesh);
-        let player_from_pose = self
-            .player_idle_g1_clip
-            .as_ref()
-            .and_then(|c| c.first().copied())
-            .expect("idle clip must be ready before combat clip generation");
-        let opponent_from_pose = self
-            .opponent_idle_g1_clip
-            .as_ref()
-            .and_then(|c| c.first().copied())
-            .expect("idle clip must be ready before combat clip generation");
-        let player_condition = motion::ActionCondition {
-            action: map_truth_action(player_action),
-            stance: map_truth_stance(snapshot.player.stance),
-            from_pose: Some(player_from_pose),
-        };
-        let opponent_condition = motion::ActionCondition {
-            action: map_truth_action(opponent_action),
-            stance: map_truth_stance(snapshot.opponent.stance),
-            from_pose: Some(opponent_from_pose),
-        };
-        let (tx, rx) = mpsc::channel();
-        self.combat_clip_rx = Some(rx);
-        thread::spawn(move || {
-            eprintln!("[combat clip worker] start");
-            let started = Instant::now();
-            let player = generate_skin_clip(&service, &mesh, &player_condition);
-            let opponent = generate_skin_clip(&service, &mesh, &opponent_condition);
-            let result: CombatClipResult = (player, opponent);
-            eprintln!(
-                "[combat clip worker] done in {:.2}s",
-                started.elapsed().as_secs_f32()
-            );
-            let _ = tx.send(result);
-        });
-    }
-
     fn combat_update(
         &mut self,
     ) -> Option<(
         truth::TruthSnapshot,
         input::PlanInput,
-        [Mat4; 24],
-        [Mat4; 24],
+        Vec<Mat4>,
+        Vec<Mat4>,
         f32,
         input::PlayerIntent,
     )> {
@@ -373,7 +320,7 @@ impl App {
 
         // --- Fixed-step combat update (before borrowing renderer) ---
         let now = Instant::now();
-        let real_dt = now.duration_since(self.last_frame_time).as_secs_f32();
+        let real_dt = now.duration_since(self.last_frame_time);
         self.last_frame_time = now;
 
         // Presentation never mutates truth: read snapshot, apply inputs through truth API.
@@ -420,21 +367,38 @@ impl App {
         }
         self.input.reset_plan();
 
-        // Step the authoritative truth at 60 Hz.
-        self.truth.fixed_tick(real_dt);
+        // Advance and record exactly once per authoritative 60 Hz tick. A
+        // redraw can run zero or multiple ticks; fractional time is retained.
+        let ticks = self.fixed_step_clock.push_elapsed(real_dt);
+        for _ in 0..ticks {
+            let before_tick = self.truth.snapshot().clone();
+            let resolve_packet = cleanbox::submit_resolve_packet(
+                &mut self.truth,
+                &mut self.duel_world,
+                self.player_pos,
+                vec3(0.0, 0.0, -1.0),
+            )
+            .expect("locked cleanbox targets must submit one valid Resolve packet");
+            self.truth.tick();
+            let tick_snapshot = self.truth.snapshot();
+            let truth_hash = self.truth.truth_hash();
+            if let Some(packet) = resolve_packet {
+                self.replay
+                    .record_resolve_packet(&before_tick, tick_snapshot, &packet, truth_hash);
+            }
+            let replay_snap = replay::ReplaySnapshot {
+                frame: tick_snapshot.frame,
+                phase: tick_snapshot.phase.name().to_string(),
+                player_health: (tick_snapshot.player.health * 10.0).max(0.0) as u32,
+                opponent_health: (tick_snapshot.opponent.health * 10.0).max(0.0) as u32,
+                player_stamina: (tick_snapshot.player.stamina * 10.0).max(0.0) as u32,
+                opponent_stamina: (tick_snapshot.opponent.stamina * 10.0).max(0.0) as u32,
+            };
+            self.replay
+                .record_frame(tick_snapshot.frame, truth_hash, &replay_snap);
+        }
 
-        // Record snapshot and events for replay.
         let snapshot = self.truth.snapshot().clone();
-        let replay_snap = replay::ReplaySnapshot {
-            frame: snapshot.frame,
-            phase: snapshot.phase.name().to_string(),
-            player_health: (snapshot.player.health * 10.0).max(0.0) as u32,
-            opponent_health: (snapshot.opponent.health * 10.0).max(0.0) as u32,
-            player_stamina: (snapshot.player.stamina * 10.0).max(0.0) as u32,
-            opponent_stamina: (snapshot.opponent.stamina * 10.0).max(0.0) as u32,
-        };
-        self.replay
-            .record_frame(snapshot.frame, self.truth.truth_hash(), &replay_snap);
 
         // Save replay once on match end.
         if snapshot.match_over && !self.replay_saved {
@@ -442,19 +406,7 @@ impl App {
             self.replay_saved = true;
         }
 
-        // Spawn a worker to generate action clips once the truth reveals.
-        // The actual inference runs on a background thread so the render loop
-        // does not stall every frame.
-        if snapshot.phase == truth::Phase::Reveal {
-            self.spawn_combat_clip_worker(&snapshot);
-        } else {
-            // Clear combat clips when the exchange resolves so the next exchange regenerates.
-            self.player_clip = None;
-            self.opponent_clip = None;
-            self.combat_clip_rx = None;
-        }
-
-        let (player_joints, opponent_joints) = self.current_pose();
+        let (player_joints, opponent_joints) = self.current_pose(&snapshot);
         let elapsed = self.start_time.elapsed().as_secs_f32();
         let intent = self.input.intent();
 
@@ -519,7 +471,7 @@ impl App {
                 combat.unwrap();
 
             let aspect = config.width as f32 / config.height as f32;
-            let proj_view = self.camera.proj_view(aspect);
+            let proj_view = self.camera.proj_view(aspect, self.player_pos);
 
             // --- Now borrow renderer and queue for GPU work ---
             let renderer = self.renderer.as_mut().unwrap();
@@ -539,6 +491,12 @@ impl App {
                 bytemuck::bytes_of(&[proj_view * player_model]),
             );
 
+            let weapon_model = renderer::first_person_weapon_model(
+                self.camera.eye(self.player_pos),
+                self.camera.forward(),
+            );
+            renderer.update_first_person_weapon(queue, &proj_view, weapon_model);
+
             let opp_model = Mat4::from_translation(vec3(0.0, 0.0, -1.0)) * correct_model;
             renderer.skinned[1].model = opp_model;
             queue.write_buffer(
@@ -552,10 +510,7 @@ impl App {
             renderer.update_skin_joints_indexed(queue, 1, &opponent_joints);
 
             if self.show_debug {
-                renderer.update_debug_bones(device, queue, &player_joints);
-                let proxies = hitbox::extract_body_proxies(&[player_joints]);
-                let lines = hitbox::debug_lines(&proxies);
-                renderer.update_hitbox_debug(device, &lines);
+                renderer.update_debug_bones(device, &player_joints);
             }
 
             // --- Render ---
@@ -591,7 +546,8 @@ impl App {
                     occlusion_query_set: None,
                 });
                 renderer.render(&mut rpass);
-                renderer.render_skinned(&mut rpass);
+                renderer.render_first_person_weapon(&mut rpass);
+                renderer.render_skinned_from(&mut rpass, 1);
                 if self.show_debug {
                     renderer.render_debug_overlay(&mut rpass);
                     renderer.render_hitbox_debug(&mut rpass);
@@ -665,52 +621,15 @@ impl App {
         queue.present(surface_texture);
     }
 
-    fn current_pose(&mut self) -> ([Mat4; 24], [Mat4; 24]) {
-        let elapsed = self.start_time.elapsed().as_secs_f32();
-        let tick = (elapsed * self.clip_fps) as usize;
-
-        // During Reveal, prefer the combat clip if it has arrived; otherwise
-        // fall back to the looping idle clip. Outside Reveal, always use idle.
-        // If neither source has a frame yet, hold the last valid pose. Idle
-        // clips are generated before the event loop starts, so the last-pose
-        // fallback is only a safety net.
-        let in_reveal = self.truth.phase() == truth::Phase::Reveal;
-
-        let player = if in_reveal {
-            self.player_clip
-                .as_ref()
-                .and_then(|clip| clip_frame(clip, tick))
-                .or_else(|| {
-                    self.player_idle_clip
-                        .as_ref()
-                        .and_then(|clip| clip_frame(clip, tick))
-                })
-        } else {
-            self.player_idle_clip
-                .as_ref()
-                .and_then(|clip| clip_frame(clip, tick))
-        }
-        .unwrap_or(self.last_player_pose);
-
-        let opponent = if in_reveal {
-            self.opponent_clip
-                .as_ref()
-                .and_then(|clip| clip_frame(clip, tick))
-                .or_else(|| {
-                    self.opponent_idle_clip
-                        .as_ref()
-                        .and_then(|clip| clip_frame(clip, tick))
-                })
-        } else {
-            self.opponent_idle_clip
-                .as_ref()
-                .and_then(|clip| clip_frame(clip, tick))
-        }
-        .unwrap_or(self.last_opponent_pose);
-
-        self.last_player_pose = player;
-        self.last_opponent_pose = opponent;
-        (player, opponent)
+    fn current_pose(&self, _snapshot: &truth::TruthSnapshot) -> (Vec<Mat4>, Vec<Mat4>) {
+        // The admitted source clip failed the ordered raw-source and C0 human
+        // visual gates. Keep its optional local loader available for QA, but do
+        // not promote any source-derived pose into the runtime until a source
+        // selection unit proves readable Dodge semantics before C0 admission.
+        (
+            self.c0_reference_skin.clone(),
+            self.c0_reference_skin.clone(),
+        )
     }
 
     fn save_replay(&self) {
@@ -726,91 +645,37 @@ impl App {
     }
 }
 
-fn map_truth_action(action: truth::Action) -> motion::Action {
-    match action {
-        truth::Action::Strike => motion::Action::Strike,
-        truth::Action::Block => motion::Action::Block,
-        truth::Action::Grab => motion::Action::Grab,
-        truth::Action::Thrust => motion::Action::Thrust,
-        truth::Action::Dodge => motion::Action::Dodge,
+fn opponent_dodge_presentation_tick(snapshot: &truth::TruthSnapshot) -> Option<u32> {
+    if snapshot.opponent.action != Some(truth::Action::Dodge) {
+        return None;
     }
+    dodge_phase_tick(snapshot.phase, snapshot.phase_frame)
 }
 
-fn map_truth_stance(stance: truth::Stance) -> motion::Stance {
-    match stance {
-        truth::Stance::Top => motion::Stance::Top,
-        truth::Stance::Left => motion::Stance::Left,
-        truth::Stance::Right => motion::Stance::Right,
-    }
-}
-
-/// Return frame `tick` from `clip` if it is non-empty.
-fn clip_frame(clip: &[[Mat4; 24]], tick: usize) -> Option<[Mat4; 24]> {
-    let fc = clip.len();
-    if fc == 0 { None } else { Some(clip[tick % fc]) }
-}
-
-/// Generate the Idle/Longsword/Top clip for both sides and convert each to
-/// skinning matrices. The raw G1 frames are kept so they can seed combat actions.
-fn generate_idle_clips(
-    service: &motion_service::MotionService,
-    mesh: &asset::SkinnedMeshData,
-) -> IdleClipResult {
-    // Let the MotionBrains service supply its own internal idle clip by passing
-    // no context. Avoids procedural bind-pose generation on the Rust side.
-    let condition = motion::ActionCondition {
-        action: motion::Action::Idle,
-        stance: motion::Stance::Top,
-        from_pose: None,
+fn dodge_phase_tick(phase: truth::Phase, phase_frame: u32) -> Option<u32> {
+    let offset = match phase {
+        truth::Phase::Commit => 0,
+        truth::Phase::Reveal => 5,
+        truth::Phase::Resolve => 20,
+        truth::Phase::Consequence => 50,
+        truth::Phase::Observe | truth::Phase::Plan => return None,
     };
-
-    let player_g1 = motion::generate_action_clip(&condition, service);
-    let opponent_g1 = motion::generate_action_clip(&condition, service);
-
-    let player_skin = player_g1.as_ref().ok().map(|clip| {
-        clip.iter()
-            .map(|g1| asset::compute_skin_matrices(g1, mesh))
-            .collect::<Vec<_>>()
-    });
-    let opponent_skin = opponent_g1.as_ref().ok().map(|clip| {
-        clip.iter()
-            .map(|g1| asset::compute_skin_matrices(g1, mesh))
-            .collect::<Vec<_>>()
-    });
-
-    eprintln!(
-        "[idle clip worker] player: {} frames, opponent: {} frames",
-        player_skin.as_ref().map(|c| c.len()).unwrap_or(0),
-        opponent_skin.as_ref().map(|c| c.len()).unwrap_or(0)
-    );
-
-    (player_g1.ok(), player_skin, opponent_g1.ok(), opponent_skin)
+    Some((offset + phase_frame).min(dodge_presentation::DODGE_PRESENTATION_TICKS - 1))
 }
 
-/// Generate a combat clip on the worker thread and convert it to skinning matrices.
-fn generate_skin_clip(
-    service: &motion_service::MotionService,
-    mesh: &asset::SkinnedMeshData,
-    condition: &motion::ActionCondition,
-) -> Option<Vec<[Mat4; 24]>> {
-    match motion::generate_action_clip(condition, service) {
-        Ok(g1_clip) => {
-            let clip: Vec<[Mat4; 24]> = g1_clip
-                .iter()
-                .map(|g1| asset::compute_skin_matrices(g1, mesh))
-                .collect();
-            eprintln!(
-                "[combat clip worker] generated {:?}/{:?}: {} frames",
-                condition.action,
-                condition.stance,
-                clip.len()
-            );
-            Some(clip)
-        }
-        Err(e) => {
-            eprintln!("[combat clip worker] failed to generate clip: {e}");
-            None
-        }
+#[cfg(test)]
+mod dodge_presentation_phase_tests {
+    use super::*;
+
+    #[test]
+    fn dodge_presentation_phase_mapping_is_commit_through_consequence_only() {
+        assert_eq!(dodge_phase_tick(truth::Phase::Observe, 0), None);
+        assert_eq!(dodge_phase_tick(truth::Phase::Plan, 0), None);
+        assert_eq!(dodge_phase_tick(truth::Phase::Commit, 4), Some(4));
+        assert_eq!(dodge_phase_tick(truth::Phase::Reveal, 0), Some(5));
+        assert_eq!(dodge_phase_tick(truth::Phase::Resolve, 0), Some(20));
+        assert_eq!(dodge_phase_tick(truth::Phase::Consequence, 29), Some(79));
+        assert_eq!(dodge_phase_tick(truth::Phase::Consequence, 100), Some(79));
     }
 }
 
@@ -846,47 +711,169 @@ fn last_result_text(snapshot: &truth::TruthSnapshot) -> Option<String> {
     })
 }
 
+#[cfg(test)]
+mod fixed_step_tests {
+    use super::*;
+    use std::time::Duration;
+
+    fn hashes_at_render_rate(render_hz: u32) -> (Vec<u64>, Vec<replay::MatchEvent>) {
+        let mut clock = FixedStepClock::default();
+        let mut truth = truth::CombatTruth::new();
+        let mut duel_world = duel_world::DuelWorld::new();
+        let mut replay = replay::ReplayRecorder::new(0);
+        let mut hashes = Vec::new();
+        let mut previous = Duration::ZERO;
+
+        for render_frame in 1..=(render_hz * 3) {
+            let absolute = Duration::from_secs_f64(render_frame as f64 / render_hz as f64);
+            let elapsed = absolute - previous;
+            previous = absolute;
+
+            for _ in 0..clock.push_elapsed(elapsed) {
+                if truth.snapshot().frame == 30 {
+                    truth.apply_input(
+                        truth::Side::Player,
+                        truth::PlayerInput::SelectAction(truth::Action::Thrust),
+                    );
+                    truth.apply_input(
+                        truth::Side::Player,
+                        truth::PlayerInput::SelectStance(truth::Stance::Top),
+                    );
+                    truth.apply_input(truth::Side::Player, truth::PlayerInput::Commit);
+                    truth.apply_input(
+                        truth::Side::Opponent,
+                        truth::PlayerInput::SelectAction(truth::Action::Block),
+                    );
+                    truth.apply_input(
+                        truth::Side::Opponent,
+                        truth::PlayerInput::SelectStance(truth::Stance::Top),
+                    );
+                    truth.apply_input(truth::Side::Opponent, truth::PlayerInput::Commit);
+                }
+
+                let before_tick = truth.snapshot().clone();
+                let resolve_packet = cleanbox::submit_resolve_packet(
+                    &mut truth,
+                    &mut duel_world,
+                    vec3(0.0, 0.0, 1.0),
+                    vec3(0.0, 0.0, -1.0),
+                )
+                .unwrap();
+                truth.tick();
+                let truth_hash = truth.truth_hash();
+                if let Some(packet) = resolve_packet {
+                    replay.record_resolve_packet(
+                        &before_tick,
+                        truth.snapshot(),
+                        &packet,
+                        truth_hash,
+                    );
+                }
+                hashes.push(truth_hash);
+            }
+        }
+
+        assert_eq!(truth.snapshot().frame, 180);
+        (hashes, replay.events)
+    }
+
+    #[test]
+    fn fixed_step_clock_is_render_rate_independent() {
+        let expected = hashes_at_render_rate(60);
+        let resolve_packets = expected
+            .1
+            .iter()
+            .filter(|event| matches!(event.kind, replay::EventKind::ResolvePacket { .. }))
+            .count();
+        assert_eq!(resolve_packets, 1);
+        for render_hz in [30, 144, 240] {
+            assert_eq!(hashes_at_render_rate(render_hz), expected, "{render_hz} Hz");
+        }
+    }
+
+    #[test]
+    fn first_person_camera_is_root_relative_and_faces_locked_opponent_axis() {
+        let camera = Camera::new();
+        let root = vec3(2.0, 0.25, 4.0);
+        assert_eq!(camera.eye(root), root + Vec3::Y * FIRST_PERSON_EYE_HEIGHT);
+        assert!(camera.forward().abs_diff_eq(-Vec3::Z, 1e-6));
+        assert!(camera.proj_view(16.0 / 9.0, root).is_finite());
+    }
+
+    #[test]
+    fn first_person_camera_look_ignores_initial_sample_and_clamps_pitch() {
+        let mut camera = Camera::new();
+        assert_eq!(camera.record_mouse_position((100.0, 100.0)), None);
+        assert_eq!(camera.yaw, 0.0);
+        assert_eq!(camera.pitch, 0.0);
+
+        let delta = camera.record_mouse_position((200.0, 100_000.0)).unwrap();
+        assert_eq!(delta.0, 100.0);
+        assert!(camera.yaw < 0.0);
+        assert_eq!(camera.pitch, -FIRST_PERSON_MAX_PITCH_RAD);
+        assert!(camera.forward().is_finite());
+    }
+
+    #[test]
+    fn fixed_step_clock_bounds_catch_up_without_dropping_time() {
+        let mut clock = FixedStepClock::default();
+        let mut ticks = Vec::new();
+
+        ticks.push(clock.push_elapsed(Duration::from_secs(1)));
+        for _ in 0..7 {
+            ticks.push(clock.push_elapsed(Duration::ZERO));
+        }
+
+        assert_eq!(ticks, vec![8, 8, 8, 8, 8, 8, 8, 4]);
+        assert_eq!(clock.push_elapsed(Duration::ZERO), 0);
+    }
+}
+
 fn main() {
-    let telemetry_enabled = std::env::args().any(|a| a == "--telemetry");
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--reduce-replay")
+    {
+        if arguments.len() != 2 {
+            eprintln!("usage: just-dodge --reduce-replay <path.jdrp>");
+            std::process::exit(2);
+        }
+        match replay::ReplayRecorder::reduce_file(std::path::Path::new(&arguments[1])) {
+            Ok(report) => print!("{report}"),
+            Err(error) => {
+                eprintln!("replay reduction failed: {error:#}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
+    let telemetry_enabled = arguments.iter().any(|argument| argument == "--telemetry");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
-    let motion_service =
-        Arc::new(motion_service::MotionService::new().expect("MotionBrains service required"));
-    let skinned_mesh = Arc::new(
-        asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets))
-            .expect("required skinned mesh missing"),
+    let c0_root = format!("{assets}/source/meshy/c0_base_fighter/pose_carrier_001/cooked");
+    let c0_mesh = asset::load_skinned(&format!("{c0_root}/c0_pose_carrier.bin"))
+        .expect("C0 pose carrier required");
+    let c0_reference = asset::load_skeletal_animation(&format!("{c0_root}/c0_reference.anim"))
+        .expect("C0 reference action required");
+    assert_eq!(c0_mesh.bones.len(), 163, "C0 carrier bone contract");
+    assert_eq!(
+        c0_reference.bone_count,
+        c0_mesh.bones.len(),
+        "C0 reference hierarchy"
     );
-    // Generate idle clips up front so there is never a procedural bind-pose
-    // fallback. This runs on a worker thread but is awaited before the event
-    // loop starts, guaranteeing valid idle motion from the first rendered frame.
-    let (player_idle_g1_clip, player_idle_clip, opponent_idle_g1_clip, opponent_idle_clip) = {
-        let service = Arc::clone(&motion_service);
-        let mesh = Arc::clone(&skinned_mesh);
-        let (tx, rx) = mpsc::channel();
-        thread::spawn(move || {
-            let result = generate_idle_clips(&service, &mesh);
-            let _ = tx.send(result);
-        });
-        rx.recv().expect("idle clip worker disconnected")
-    };
-
-    let player_idle_g1_clip = player_idle_g1_clip
-        .expect("Idle clip generation failed for player; no procedural fallback available");
-    let opponent_idle_g1_clip = opponent_idle_g1_clip
-        .expect("Idle clip generation failed for opponent; no procedural fallback available");
-    let player_idle_clip = player_idle_clip
-        .expect("Idle clip generation failed for player; no procedural fallback available");
-    let opponent_idle_clip = opponent_idle_clip
-        .expect("Idle clip generation failed for opponent; no procedural fallback available");
-
-    let last_player_pose = player_idle_clip
-        .first()
-        .copied()
-        .expect("player idle clip must not be empty");
-    let last_opponent_pose = opponent_idle_clip
-        .first()
-        .copied()
-        .expect("opponent idle clip must not be empty");
+    let c0_reference_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference.frames[0])
+        .expect("C0 reference pose must produce valid skinning matrices");
+    let dodge_presentation = std::env::var_os("JUST_DODGE_DODGE_F413").map(|path| {
+        let path = PathBuf::from(path);
+        eprintln!(
+            "presentation: loading local Dodge source {}",
+            path.display()
+        );
+        dodge_presentation::DodgePresentation::load(&path, &c0_mesh, &c0_reference.frames[0])
+            .expect("JUST_DODGE_DODGE_F413 must be a validated local [N,413] source stream")
+    });
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -900,21 +887,14 @@ fn main() {
         camera: Camera::new(),
         start_time: Instant::now(),
         last_frame_time: Instant::now(),
+        fixed_step_clock: FixedStepClock::default(),
         input: input::InputState::default(),
         clip_fps: 30.0,
         first_frame_presented: false,
-        motion_service,
-        skinned_mesh,
-        player_idle_clip: Some(player_idle_clip),
-        opponent_idle_clip: Some(opponent_idle_clip),
-        player_idle_g1_clip: Some(player_idle_g1_clip),
-        opponent_idle_g1_clip: Some(opponent_idle_g1_clip),
-        player_clip: None,
-        opponent_clip: None,
-        combat_clip_rx: None,
-        last_player_pose,
-        last_opponent_pose,
+        c0_reference_skin,
+        dodge_presentation,
         truth: truth::CombatTruth::new(),
+        duel_world: duel_world::DuelWorld::new(),
         ai: ai::AiController::new(
             truth::Side::Opponent,
             ai::AiPersonality::default(),

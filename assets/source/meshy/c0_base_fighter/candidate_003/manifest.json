@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "slug": "c0_base_fighter_candidate_003",
+  "category": "fighter_body",
+  "status": "generated",
+  "source": {
+    "reference_hashes": [
+      "1321db1b74bad3436007209c39de3fb5580c787378364b686d8163340f21ad72",
+      "ba05059f6afabb88f825ecd91fa01a05dbf1336fc33a005c4b2b405df33348b6",
+      "73c11e5eed99beba9e4349af964d3f1a554d943ff95ff01e4012dd462e0de382",
+      "9ee10e11c06d24b58d866faae9d27be96d22f7fa766fdd2b8885194184016ac8"
+    ],
+    "prompt": "Setting-neutral realistic adult male base fighter; exact T-pose; neutral technical underlayer; separate equipment.",
+    "model": "meshy-6",
+    "pose_mode": "t-pose"
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a0d-7b8e-75a9-939a-a575cae48168",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "pose_mode": "t-pose",
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_c0_views_v2/back.png",
+          "/tmp/just_dodge_c0_views_v2/front.png",
+          "/tmp/just_dodge_c0_views_v2/left.png",
+          "/tmp/just_dodge_c0_views_v2/right.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/candidate_003/model.fbx",
+      "sha256": "00340dac5eeb68b73c61018c8bcebbdf8ad5efa0523cae6787a50739a1ed9a18",
+      "bytes": 4055308
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 53305,
+      "polygons": 106618,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": false,
+    "rejection_reason": "Best torso/body-core candidate, but mitten hands and toeless feet require accepted replacement components before full-fighter acceptance."
+  }
+}

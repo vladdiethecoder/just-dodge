@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "slug": "e0_arena_threshold_candidate_001",
+  "category": "arena_module",
+  "status": "accepted_geometry",
+  "source": {
+    "reference_hashes": [
+      "43e857f3e8eb60d0eefe9e55dcce1631a6e104aa98dd1579d4b2895d58e14a0d",
+      "5d9a3ed81edf9e7bec73ec29d8a1d6b6c37235a67b648d4ef807e83f513213f0",
+      "9bec0ef8624e152ee826d7158d06e1d182d01d52b20e51d34c49951b874443db",
+      "df6865d07da4c1c94bd2b4eea9e82c3e02134bbf53d3a7c1c8071ebcddd5c2c8"
+    ],
+    "prompt": "Setting-neutral brutalist arena threshold with structural frame, impact panels, sockets, braces, and separate planned break components.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a33-b425-7dc6-94c7-80ad8493004f",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_e0_views_v1/back.png",
+          "/tmp/just_dodge_e0_views_v1/front.png",
+          "/tmp/just_dodge_e0_views_v1/left.png",
+          "/tmp/just_dodge_e0_views_v1/right.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001/model.fbx",
+      "sha256": "3e6f6bd1b5aae18096031a32d9b319c02f5753a16f13c079ac533beb4f5ec888",
+      "bytes": 9983900
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 133815,
+      "polygons": 267638,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0,
+      "bbox_size": [
+        1.6839590072631836,
+        0.40041399002075195,
+        1.8995270729064941
+      ]
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": true,
+    "rejection_reason": null,
+    "conditions": [
+      "Split logical frame/panel/socket/brace/foot components locally; add named pivots/sockets and collision/fracture metadata before simulation acceptance."
+    ]
+  }
+}

@@ -20,7 +20,11 @@ fn step(name: &str) -> Instant {
 }
 
 fn done(name: &str, t0: Instant) {
-    eprintln!("[mb_probe] {} done in {:.2}s", name, t0.elapsed().as_secs_f32());
+    eprintln!(
+        "[mb_probe] {} done in {:.2}s",
+        name,
+        t0.elapsed().as_secs_f32()
+    );
 }
 
 fn main() {
@@ -28,15 +32,28 @@ fn main() {
 
     let t0 = step("load skinned mesh");
     let mesh = match asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets)) {
-        Ok(m) => { eprintln!("[mb_probe]   {} verts, {} bones", m.vertices.len(), m.bones.len()); m }
-        Err(e) => { eprintln!("FAIL: {e}"); return; }
+        Ok(m) => {
+            eprintln!(
+                "[mb_probe]   {} verts, {} bones",
+                m.vertices.len(),
+                m.bones.len()
+            );
+            m
+        }
+        Err(e) => {
+            eprintln!("FAIL: {e}");
+            return;
+        }
     };
     done("load skinned mesh", t0);
 
     let t0 = step("MotionPipeline::new (loads 5 ONNX models)");
     let mut pipe = match motion::MotionPipeline::new(&assets) {
         Ok(p) => p,
-        Err(e) => { eprintln!("FAIL: {e}"); return; }
+        Err(e) => {
+            eprintln!("FAIL: {e}");
+            return;
+        }
     };
     done("MotionPipeline::new", t0);
 
@@ -49,7 +66,10 @@ fn main() {
     let t0 = step("decode_encoder_input (ONNX inference, 40 frames)");
     let g1_frames = match pipe.decode_encoder_input(&enc_in, t) {
         Ok(f) => f,
-        Err(e) => { eprintln!("FAIL: {e}"); return; }
+        Err(e) => {
+            eprintln!("FAIL: {e}");
+            return;
+        }
     };
     done("decode_encoder_input", t0);
 
@@ -60,5 +80,9 @@ fn main() {
         .collect();
     done("compute_skin_matrices", t0);
 
-    eprintln!("[mb_probe] SUCCESS: {} G1 frames, {} skin frames", g1_frames.len(), skin_frames.len());
+    eprintln!(
+        "[mb_probe] SUCCESS: {} G1 frames, {} skin frames",
+        g1_frames.len(),
+        skin_frames.len()
+    );
 }

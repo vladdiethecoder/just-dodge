@@ -1,0 +1,43 @@
+{
+  "timestamp": "20260709_224144",
+  "actions": {
+    "Strike": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 0.9619,
+      "mean_joint_velocity_m_per_frame": 0.1337,
+      "bbox_min": [
+        -0.646,
+        -0.7936,
+        -0.6669
+      ],
+      "bbox_max": [
+        0.7816,
+        0.5478,
+        0.6795
+      ],
+      "left_hand_range_m": 1.4212,
+      "right_hand_range_m": 1.0818
+    },
+    "Idle": {
+      "frames": 32,
+      "duration_seconds": 1.067,
+      "root_path_m": 0.0,
+      "max_joint_velocity_m_per_frame": 1.016,
+      "mean_joint_velocity_m_per_frame": 0.1304,
+      "bbox_min": [
+        -0.6821,
+        -0.6478,
+        -0.6434
+      ],
+      "bbox_max": [
+        0.8453,
+        0.6199,
+        0.4401
+      ],
+      "left_hand_range_m": 1.027,
+      "right_hand_range_m": 1.242
+    }
+  }
+}

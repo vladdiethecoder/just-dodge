@@ -59,7 +59,10 @@ impl ApplicationHandler for App {
             desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &config);
-        eprintln!("wgpu_probe: surface configured at {}x{}", config.width, config.height);
+        eprintln!(
+            "wgpu_probe: surface configured at {}x{}",
+            config.width, config.height
+        );
 
         self.window = Some(window);
         self.surface = Some(surface);
@@ -97,17 +100,22 @@ impl ApplicationHandler for App {
                     config.width = physical.width.max(1);
                     config.height = physical.height.max(1);
                     surface.configure(device, config);
-                    eprintln!(
-                        "wgpu_probe: resized to {}x{}",
-                        config.width, config.height
-                    );
+                    eprintln!("wgpu_probe: resized to {}x{}", config.width, config.height);
                 }
             }
             WindowEvent::RedrawRequested => {
-                let Some(surface) = self.surface.as_ref() else { return };
-                let Some(device) = self.device.as_ref() else { return };
-                let Some(queue) = self.queue.as_ref() else { return };
-                let Some(config) = self.config.as_ref() else { return };
+                let Some(surface) = self.surface.as_ref() else {
+                    return;
+                };
+                let Some(device) = self.device.as_ref() else {
+                    return;
+                };
+                let Some(queue) = self.queue.as_ref() else {
+                    return;
+                };
+                let Some(config) = self.config.as_ref() else {
+                    return;
+                };
 
                 let frame = surface.get_current_texture();
                 let surface_texture = match frame {

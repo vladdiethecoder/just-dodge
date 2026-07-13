@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "slug": "w0_sword_blade_candidate_001",
+  "category": "weapon",
+  "status": "accepted_geometry",
+  "source": {
+    "reference_hashes": [
+      "6de5639a2d2e474790d6983b0777099c65be85d22084de64f434d8414084b889",
+      "aa96eebe92005e385f389e95f99f84d11624f1b26ba937e2d405e0d8eede5e85",
+      "97f10716b37d8bda21afd4f6272bc8b4fd90dac755ad9ddcd02ae61cdefd0ddf",
+      "9690ee80aa3a971d9cd9041ac56247ff6c720d12933cf180aed9688fdfcd33e4"
+    ],
+    "prompt": "Detached physically engineered double-edged blade and full tang only; acute point, distal taper, fuller, bevels, measurable thickness.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a46-38c7-7949-82c9-c7d00993094a",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_w0_blade_views_v1/edge.png",
+          "/tmp/just_dodge_w0_blade_views_v1/flat_a.png",
+          "/tmp/just_dodge_w0_blade_views_v1/flat_b.png",
+          "/tmp/just_dodge_w0_blade_views_v1/three_quarter.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/w0_sword/blade_candidate_001/model.fbx",
+      "sha256": "54b982848c79c6a9a43d1cc5a125d66bf99d496ff012167a4f5feccfbe8825f2",
+      "bytes": 875900
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 11425,
+      "polygons": 22846,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0,
+      "bbox_size": [
+        0.1174440011382103,
+        0.05632000043988228,
+        1.8989189863204956
+      ]
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": true,
+    "rejection_reason": null,
+    "conditions": [
+      "Scale to exact 1.20 m blade + 0.28 m tang; define edge/tip collision and steel constitutive/fracture properties; assemble separate guard/grip/pommel."
+    ]
+  }
+}

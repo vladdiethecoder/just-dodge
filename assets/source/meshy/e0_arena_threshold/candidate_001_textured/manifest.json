@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "slug": "e0_arena_threshold_candidate_001_textured",
+  "category": "arena_module",
+  "status": "rejected",
+  "source": {
+    "reference_hashes": [],
+    "prompt": "Grounded charcoal concrete, gunmetal hardware, lighter graphite panels.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "retexture",
+      "task_id": "019f4a36-fe9c-761b-a7ed-e0c8a2dad9d4",
+      "parent_task_id": "019f4a33-b425-7dc6-94c7-80ad8493004f",
+      "request": {
+        "ai_model": "meshy-6",
+        "input_task_id": "019f4a33-b425-7dc6-94c7-80ad8493004f",
+        "enable_original_uv": true,
+        "enable_pbr": true,
+        "hd_texture": true,
+        "remove_lighting": true,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "text_style_prompt": "Grounded charcoal concrete, gunmetal hardware, lighter graphite panels."
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 10
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model.fbx",
+      "sha256": "6ef8a408d2573ae1ae8434ad4e7eac91dca846fe47a7e7f1c39326e8f536b283",
+      "bytes": 41749132
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": [
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model_textures/base_color.png",
+        "sha256": "a1df369f557edcff4da64043df774ed27ec5927724ea02b4e1c57895a809c1da",
+        "bytes": 32222214
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model_textures/emission.png",
+        "sha256": "5643fc2af8e03e45cec85c3b91e8c9c97d0ff50265e973e3b36ddc351eba6f1d",
+        "bytes": 12545
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model_textures/metallic.png",
+        "sha256": "0d7e4638258a95300160fa53a2e67788c92c4a75ec0c3b941facf65776aa43f2",
+        "bytes": 1143305
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model_textures/normal.png",
+        "sha256": "d97327b1983fb8575814f0acb8f6b992a3646abcefbad75e979ba352756e2183",
+        "bytes": 32776024
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/e0_arena_threshold/candidate_001_textured/model_textures/roughness.png",
+        "sha256": "62233a0f751330dc1fd40ec4e840862d98936b5877c3efc8d8f203f045ae30d8",
+        "bytes": 1326903
+      }
+    ]
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 133815,
+      "polygons": 267638,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0
+    },
+    "materials": {
+      "texture_dimensions": {
+        "base_color.png": [
+          4096,
+          4096
+        ],
+        "emission.png": [
+          2048,
+          2048
+        ],
+        "metallic.png": [
+          2048,
+          2048
+        ],
+        "normal.png": [
+          4096,
+          4096
+        ],
+        "roughness.png": [
+          2048,
+          2048
+        ]
+      }
+    },
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": false,
+    "rejection_reason": "Concrete/steel/panel separation failed; irregular pale projection marks; near-black compressed values."
+  }
+}

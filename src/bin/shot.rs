@@ -1,12 +1,13 @@
-// Headless offscreen screenshot harness: renders the current scene into an
-// offscreen texture, reads it back, and writes PNGs to /tmp for self-verification.
+// Headless offscreen screenshot harness: renders a SINGLE mannequin in bind pose
+// into an offscreen texture for high-contrast visual QA. Removes all arena clutter,
+// keeps one model, and writes PNGs to qa_runs/ for deformity/artifact inspection.
 // Run: cargo run --bin shot
-// Gate 1: bind-pose mannequin orientation diagnostic — three orthogonal views +
-//         mesh percentiles + bone root positions.
 use glam::{Mat4, Vec3, vec3};
 
 #[path = "../asset.rs"]
 mod asset;
+#[path = "../dodge_presentation.rs"]
+mod dodge_presentation;
 #[path = "../renderer.rs"]
 mod renderer;
 
@@ -47,7 +48,8 @@ async fn run() {
         .await
         .expect("No device");
 
-    let (w, h) = (800u32, 600u32);
+    // High-resolution single-model focus render for visual QA/debugging.
+    let (w, h) = (2048u32, 2048u32);
     let format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
     let config = wgpu::SurfaceConfiguration {
@@ -62,97 +64,107 @@ async fn run() {
         desired_maximum_frame_latency: 2,
     };
 
-    let mut renderer = renderer::Renderer::new(&device, &queue, &config);
+    let mut renderer = renderer::Renderer::new(&device, &queue, &config, false);
     let assets_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
 
-    // ─── Mesh diagnostics: percentiles + bone root positions ──────
-    if let Ok(mesh) = asset::load_skinned(&format!("{}/characters/mannequin_male.bin", assets_dir))
-    {
-        let mut xs = Vec::with_capacity(mesh.vertices.len());
-        let mut ys = Vec::with_capacity(mesh.vertices.len());
-        let mut zs = Vec::with_capacity(mesh.vertices.len());
-        let mut wsum_bad = 0u32;
-        for v in &mesh.vertices {
-            xs.push(v.position[0]);
-            ys.push(v.position[1]);
-            zs.push(v.position[2]);
-            let ws = v.joint_weights[0]
-                + v.joint_weights[1]
-                + v.joint_weights[2]
-                + v.joint_weights[3];
-            if (ws - 1.0).abs() > 0.01 {
-                wsum_bad += 1;
-            }
-        }
-        println!("MESH PERCENTILES:");
-        println!("  X  p05={:8.3} p50={:8.3} p95={:8.3} min={:8.3} max={:8.3}",
-            percentile(&xs, 0.05), percentile(&xs, 0.50), percentile(&xs, 0.95),
-            xs.iter().copied().fold(f32::MAX, f32::min),
-            xs.iter().copied().fold(f32::MIN, f32::max));
-        println!("  Y  p05={:8.3} p50={:8.3} p95={:8.3} min={:8.3} max={:8.3}",
-            percentile(&ys, 0.05), percentile(&ys, 0.50), percentile(&ys, 0.95),
-            ys.iter().copied().fold(f32::MAX, f32::min),
-            ys.iter().copied().fold(f32::MIN, f32::max));
-        println!("  Z  p05={:8.3} p50={:8.3} p95={:8.3} min={:8.3} max={:8.3}",
-            percentile(&zs, 0.05), percentile(&zs, 0.50), percentile(&zs, 0.95),
-            zs.iter().copied().fold(f32::MAX, f32::min),
-            zs.iter().copied().fold(f32::MIN, f32::max));
-        println!("  weight_bad={}", wsum_bad);
+    // ─── C0 contract diagnostics ────────────────────────────────────
+    let c0_root = format!("{assets_dir}/source/meshy/c0_base_fighter/pose_carrier_001/cooked");
+    let c0_mesh = asset::load_skinned(&format!("{c0_root}/c0_pose_carrier.bin"))
+        .expect("load C0 pose carrier");
+    let c0_reference = asset::load_skeletal_animation(&format!("{c0_root}/c0_reference.anim"))
+        .expect("load C0 reference action");
+    assert_eq!(c0_mesh.bones.len(), 163);
+    let c0_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference.frames[0])
+        .expect("C0 reference skinning");
+    assert_eq!(c0_skin.len(), c0_mesh.bones.len());
+    println!(
+        "C0 CONTRACT: {} verts, {} indices, {} bones, {} reference matrices",
+        c0_mesh.vertices.len(),
+        c0_mesh.indices.len(),
+        c0_mesh.bones.len(),
+        c0_skin.len()
+    );
+    let dodge_presentation = std::env::var_os("JUST_DODGE_DODGE_F413").map(|path| {
+        println!("shot: loading Dodge source {}", path.to_string_lossy());
+        dodge_presentation::DodgePresentation::load(
+            std::path::Path::new(&path),
+            &c0_mesh,
+            &c0_reference.frames[0],
+        )
+        .expect("JUST_DODGE_DODGE_F413 must be a validated local [N,413] source stream")
+    });
+    let dodge_tick = std::env::var("JUST_DODGE_DODGE_TICK").ok().map(|value| {
+        value
+            .parse::<u32>()
+            .expect("JUST_DODGE_DODGE_TICK must be an unsigned presentation tick")
+    });
+    let full_body_dodge_skin = dodge_tick.map(|tick| {
+        println!("shot: rendering full-body Dodge presentation tick {tick}");
+        dodge_presentation
+            .as_ref()
+            .expect("JUST_DODGE_DODGE_TICK requires JUST_DODGE_DODGE_F413")
+            .skin_for_tick(tick)
+    });
 
-        println!("BONE ROOT POSITIONS (world bind):");
-        for (i, b) in mesh.bones.iter().enumerate() {
-            // inverse_bind maps bone space → mesh space.
-            // The bone's world-space origin in bind pose is:
-            //   bind_world * vec4(0,0,0,1) where bind_world = inverse_bind.inverse()
-            let origin = b.inverse_bind.inverse() * Vec3::ZERO.extend(1.0);
-            let px = origin.x / origin.w;
-            let py = origin.y / origin.w;
-            let pz = origin.z / origin.w;
-            if i < 8 || b.parent == -1 || i == mesh.bones.len() - 1 {
-                println!(
-                    "  bone[{:2}] {:16} parent={:3} root=({:7.2},{:7.2},{:7.2})",
-                    i, b.name, b.parent, px, py, pz
-                );
-            }
-        }
-    }
-
-    // ─── Three orthogonal views ───────────────────────────────────
+    // ─── Three orthogonal close-up views of one C0 carrier ────
+    // Center the camera on the first skinned model's bind-pose root.
+    let model_center = renderer
+        .skinned
+        .first()
+        .map(|s| Vec3::new(s.model.w_axis.x, s.model.w_axis.y, s.model.w_axis.z))
+        .unwrap_or(Vec3::Y);
+    let look_at = model_center + Vec3::Y * 0.9; // aim at chest height
+    let cam_dist = 3.2f32; // full-body C0 framing, including feet and fingertips
     let views = [
         View {
             name: "front",
-            eye: vec3(0.0, 1.0, 4.0),
-            target: vec3(0.0, 1.0, 0.0),
+            eye: look_at + vec3(0.0, 0.0, cam_dist),
+            target: look_at,
             up: Vec3::Y,
         },
         View {
             name: "side",
-            eye: vec3(4.0, 1.0, 0.0),
-            target: vec3(0.0, 1.0, 0.0),
+            eye: look_at + vec3(cam_dist, 0.0, 0.0),
+            target: look_at,
             up: Vec3::Y,
         },
         View {
             name: "top",
-            eye: vec3(0.0, 5.0, 0.1),
-            target: vec3(0.0, 1.0, 0.0),
+            eye: look_at + vec3(0.0, cam_dist, 0.01),
+            target: look_at,
             up: -Vec3::Z,
+        },
+        View {
+            name: "first_person_duel",
+            eye: model_center + Vec3::Y * 1.62,
+            target: model_center + Vec3::Y * 1.62 - Vec3::Z,
+            up: Vec3::Y,
         },
     ];
 
-    // Corrective transform is baked into the renderer's model matrix.
-    // Bind-pose views use identity joint matrices.
-    renderer.update_skin_joints(&queue, &[Mat4::IDENTITY; 24]);
-
     for view in &views {
+        let primary_skin = full_body_dodge_skin.unwrap_or(&c0_skin);
+        renderer.update_skin_joints_indexed(&queue, 0, primary_skin);
+        let opponent_skin = full_body_dodge_skin.unwrap_or_else(|| {
+            dodge_presentation
+                .as_ref()
+                .map(|presentation| presentation.skin_for_tick(20))
+                .unwrap_or(&c0_skin)
+        });
+        renderer.update_skin_joints_indexed(&queue, 1, opponent_skin);
         let view_mat = Mat4::look_at_lh(view.eye, view.target, view.up);
-        let proj = Mat4::perspective_lh(
-            std::f32::consts::FRAC_PI_4,
-            w as f32 / h as f32,
-            0.1,
-            100.0,
-        );
+        let fov = if view.name == "first_person_duel" {
+            70.0_f32.to_radians()
+        } else {
+            std::f32::consts::FRAC_PI_4
+        };
+        let proj = Mat4::perspective_lh(fov, w as f32 / h as f32, 0.1, 100.0);
         let proj_view = proj * view_mat;
         renderer.update_camera(&queue, &proj_view);
+        let weapon_model =
+            renderer::first_person_weapon_model(view.eye, (view.target - view.eye).normalize());
+        renderer.update_first_person_weapon(&queue, &proj_view, weapon_model);
+        renderer.upload_debug_mvp(&queue, &proj_view);
 
         let color_tex = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("shot color"),
@@ -170,8 +182,7 @@ async fn run() {
         });
         let color_view = color_tex.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         {
             let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("shot pass"),
@@ -181,9 +192,9 @@ async fn run() {
                     depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.55,
-                            g: 0.70,
-                            b: 0.92,
+                            r: 0.02,
+                            g: 0.02,
+                            b: 0.02,
                             a: 1.0,
                         }),
                         store: wgpu::StoreOp::Store,
@@ -201,8 +212,27 @@ async fn run() {
                 multiview_mask: None,
                 occlusion_query_set: None,
             });
-            renderer.render(&mut rpass);
-            renderer.render_skinned(&mut rpass);
+            // The first-person view hides the player's full carrier, matching
+            // the runtime self-occlusion rule; all other QA views inspect player 0.
+            let skinned = if view.name == "first_person_duel" {
+                &renderer.skinned[1..]
+            } else {
+                &renderer.skinned[..1]
+            };
+            for s in skinned {
+                rpass.set_pipeline(&renderer.skin_pipeline);
+                rpass.set_bind_group(0, &s.uniform_bind_group, &[]);
+                rpass.set_bind_group(1, &s.texture_bind_group, &[]);
+                rpass.set_bind_group(2, &s.joint_bind_group, &[]);
+                rpass.set_vertex_buffer(0, s.vertex_buffer.slice(..));
+                rpass.set_index_buffer(s.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                rpass.draw_indexed(0..s.index_count, 0, 0..1);
+            }
+            if view.name == "first_person_duel" {
+                renderer.render_first_person_weapon(&mut rpass);
+            }
+            // Overlay bind-pose skeleton so bone-vs-mesh alignment is visible.
+            renderer.render_debug_overlay(&mut rpass);
         }
         queue.submit(std::iter::once(encoder.finish()));
 
@@ -214,8 +244,7 @@ async fn run() {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
-        let mut copy =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        let mut copy = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         copy.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture: &color_tex,
@@ -256,11 +285,19 @@ async fn run() {
         }
         drop(data);
         read_buf.unmap();
-        let path = format!("/tmp/jd_bind_{}.png", view.name);
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let out_dir = format!("{}/qa_runs/bind_pose_{}", env!("CARGO_MANIFEST_DIR"), stamp);
+        std::fs::create_dir_all(&out_dir).expect("create qa dir");
+        let label = dodge_tick
+            .map(|tick| format!("jd_dodge_tick_{tick}"))
+            .unwrap_or_else(|| "jd_bind".to_string());
+        let path = format!("{out_dir}/{label}_{}.png", view.name);
         img.save(&path).expect("save png");
         println!("shot: wrote {}", path);
     }
-
 }
 
 fn main() {

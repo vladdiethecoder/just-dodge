@@ -36,8 +36,8 @@ pub fn g1_to_skin(g1_world: &[Mat4; 34], mesh: &SkinnedMeshData) -> [Mat4; 24] {
 
 /// G1 skeleton parent indices (from motionbricks G1Skeleton34).
 pub const MotionBricks_PARENTS: [i32; 34] = [
-    -1, 0, 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 16, 17, 18,
-    19, 20, 21, 22, 23, 24, 17, 26, 27, 28, 29, 30, 31, 32,
+    -1, 0, 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+    17, 26, 27, 28, 29, 30, 31, 32,
 ];
 
 /// Convert world matrices to parent-relative local matrices.
@@ -231,10 +231,10 @@ mod tests {
         let mut g1 = [Mat4::IDENTITY; 34];
         // Arms spread: rotate left/right shoulders
         g1[18] = Mat4::from_rotation_z(-0.8); // left_shoulder_pitch
-        g1[26] = Mat4::from_rotation_z(0.8);  // right_shoulder_pitch
+        g1[26] = Mat4::from_rotation_z(0.8); // right_shoulder_pitch
         // Legs spread
-        g1[1] = Mat4::from_rotation_x(0.3);   // left_hip_pitch
-        g1[8] = Mat4::from_rotation_x(-0.3);  // right_hip_pitch
+        g1[1] = Mat4::from_rotation_x(0.3); // left_hip_pitch
+        g1[8] = Mat4::from_rotation_x(-0.3); // right_hip_pitch
         let skin = g1_to_skin(&g1, &mesh);
         for i in 0..24 {
             assert!(skin[i].is_finite(), "bone {i} has non-finite matrix");
@@ -244,8 +244,11 @@ mod tests {
                 skin[i].y_axis.truncate().length(),
                 skin[i].z_axis.truncate().length(),
             );
-            assert!(s.x > 0.01 && s.y > 0.01 && s.z > 0.01,
-                "bone {i} has zero scale: {:?}", s);
+            assert!(
+                s.x > 0.01 && s.y > 0.01 && s.z > 0.01,
+                "bone {i} has zero scale: {:?}",
+                s
+            );
         }
     }
 
@@ -262,8 +265,10 @@ mod tests {
 
         for i in 0..34 {
             let diff = g1[i] - rebuilt[i];
-            assert!(diff.x_axis.length() < 1e-4 && diff.y_axis.length() < 1e-4,
-                "bone {i} world→local→FK mismatch");
+            assert!(
+                diff.x_axis.length() < 1e-4 && diff.y_axis.length() < 1e-4,
+                "bone {i} world→local→FK mismatch"
+            );
         }
     }
 

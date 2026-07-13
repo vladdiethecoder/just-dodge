@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "slug": "w0_sword_candidate_002",
+  "category": "weapon",
+  "status": "rejected",
+  "source": {
+    "reference_hashes": [
+      "3c4adaa9e82e02cd03d033502cc00c64262fc9b25826f14e2fa7f0aa08895e95",
+      "c0e0f370b0d4b92f9737f1f468553d3a0c9b2e0e200dbd437bd65e08cdcbe8df",
+      "fb2d2a92931b4c9b06c9c5808f950020f952eb0725bee9a8b2892f286cb530af",
+      "0ddf3748d07076915046dfc8f42288e9212a786ce613ffa8ded3d36f67b5c8d9"
+    ],
+    "prompt": "Setting-neutral functional two-handed sword combat instrument; engineered point/fullers/bevels and separate blade/guard/grip/pommel.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a2a-3e64-73e5-b561-bbbad5dbff95",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_w0_views_v2/edge.png",
+          "/tmp/just_dodge_w0_views_v2/flat_a.png",
+          "/tmp/just_dodge_w0_views_v2/flat_b.png",
+          "/tmp/just_dodge_w0_views_v2/three_quarter.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/w0_sword/candidate_002/model.fbx",
+      "sha256": "fccbfd242b5acde0fca113b855e580fb5441368bcc790d820cd63a6b36e70183",
+      "bytes": 1265180
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 16486,
+      "polygons": 32968,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": false,
+    "rejection_reason": "Point partially improved but fuller/bevels, guard mass, grip wrap, pommel transitions, and physical component separation remain inadequate."
+  }
+}

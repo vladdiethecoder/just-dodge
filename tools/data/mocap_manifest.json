@@ -3,37 +3,47 @@
   "comment": "CMU motion capture data used in this project is redistributable under the CMU mocap license (http://mocap.cs.cmu.edu/).",
   "sources": [
     {
-      "id": "cmu_boxing",
-      "name": "CMU MoCap Boxing and Kicking",
-      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=13",
+      "id": "cmu_swordplay",
+      "name": "CMU MoCap Swordplay",
+      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=2",
       "license": "CMU Mocap License (redistributable for research/educational use)",
       "license_url": "http://mocap.cs.cmu.edu/",
       "redistributable": true,
       "raw_format": "bvh",
       "local_path": "data/cmu",
-      "actions": ["Strike", "DodgeAttack", "Bash"],
+      "actions": ["Strike"],
       "weapons": ["Longsword"],
       "retargeted": true,
       "retargeted_path": "data/cmu",
+      "provenance": {
+        "dataset": "CMU Graphics Lab Motion Capture Database",
+        "bvh_conversion": "Bruce Hahne / cgspeed.com MotionBuilder-friendly BVH release",
+        "subject_number": 2,
+        "subject_description": "various expressions and human behaviors",
+        "clip_description": "swordplay",
+        "index_reference": "https://gitlab.fing.edu.uy/aaguirre/lucy/-/raw/f5ff72d437948d11622ac229169a4afa5ec4f14c/mocap/cmu_mocap/bvh/original_files/cmu-mocap-index-text.txt"
+      },
+      "rationale": "Subject 2 contains actual swordplay clips (02_07, 02_08, 02_09). 02_07 is selected as the Strike/Longsword/Top source because it is the longest swordplay take, stays relatively planted, and contains clear overhead/overhand striking motions. This replaces the previous boxing clip (14_01), which was semantically a punch rather than a longsword top strike.",
       "clips": [
         {
-          "clip_id": "14_01",
-          "description": "Boxing punches",
-          "raw_path": "data/cmu/14_01.bvh",
+          "clip_id": "02_07",
+          "description": "Swordplay - primary Strike/Longsword/Top source",
+          "raw_path": "data/cmu/02_07.bvh",
           "retargeted": true,
-          "retargeted_path": "data/cmu/14_01_retargeted.npy"
+          "retargeted_path": "data/cmu/02_07_retargeted.npy",
+          "selected_for": ["Strike"]
         },
         {
-          "clip_id": "14_02",
-          "description": "Boxing punches",
-          "raw_path": "data/cmu/14_02.bvh",
+          "clip_id": "02_08",
+          "description": "Swordplay - alternative take with more footwork",
+          "raw_path": "data/cmu/02_08.bvh",
           "retargeted": false,
           "retargeted_path": ""
         },
         {
-          "clip_id": "14_03",
-          "description": "Boxing punches",
-          "raw_path": "data/cmu/14_03.bvh",
+          "clip_id": "02_09",
+          "description": "Swordplay - alternative acrobatic take",
+          "raw_path": "data/cmu/02_09.bvh",
           "retargeted": false,
           "retargeted_path": ""
         }
@@ -41,8 +51,8 @@
     },
     {
       "id": "cmu_idle",
-      "name": "CMU MoCap Idle/Neutral Standing",
-      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=140",
+      "name": "CMU MoCap Standing Idle",
+      "url": "http://mocap.cs.cmu.edu/search.php?subjectnumber=113",
       "license": "CMU Mocap License (redistributable for research/educational use)",
       "license_url": "http://mocap.cs.cmu.edu/",
       "redistributable": true,
@@ -52,17 +62,27 @@
       "weapons": ["Longsword"],
       "retargeted": true,
       "retargeted_path": "data/cmu",
+      "provenance": {
+        "dataset": "CMU Graphics Lab Motion Capture Database",
+        "bvh_conversion": "Bruce Hahne / cgspeed.com MotionBuilder-friendly BVH release",
+        "subject_number": 113,
+        "subject_description": "various everyday behaviors",
+        "clip_description": "Standing Still",
+        "index_reference": "https://gitlab.fing.edu.uy/aaguirre/lucy/-/raw/f5ff72d437948d11622ac229169a4afa5ec4f14c/mocap/cmu_mocap/bvh/original_files/cmu-mocap-index-text.txt"
+      },
+      "rationale": "113_21 is explicitly labeled 'Standing Still' and visually matches a calm, breathing-in-place idle: the actor stays planted with only small weight shifts and minimal arm motion. It replaces 140_06, which contained too much wandering and arm movement for a neutral idle, and avoids T-pose/calibration clips such as 87_02 or 140_05.",
       "clips": [
         {
-          "clip_id": "140_06",
-          "description": "Idle neutral standing",
-          "raw_path": "data/cmu/140_06.bvh",
+          "clip_id": "113_21",
+          "description": "Standing Still - primary Idle source",
+          "raw_path": "data/cmu/113_21.bvh",
           "retargeted": true,
-          "retargeted_path": "data/cmu/140_06_retargeted.npy"
+          "retargeted_path": "data/cmu/113_21_retargeted.npy",
+          "selected_for": ["Idle"]
         },
         {
           "clip_id": "140_07",
-          "description": "Idle neutral standing",
+          "description": "Idle - previous alternative take (kept for reference)",
           "raw_path": "data/cmu/140_07.bvh",
           "retargeted": false,
           "retargeted_path": ""

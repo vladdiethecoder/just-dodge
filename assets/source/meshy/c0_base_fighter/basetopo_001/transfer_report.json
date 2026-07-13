@@ -1,0 +1,66 @@
+{
+  "unit": "C0-BASETOPO-001",
+  "status": "accepted_topology_and_extremity_detail_transfer_source_not_runtime_installed",
+  "base": {
+    "asset": "assets/source/reference_humans/mpfb2_base_001",
+    "provenance_sha256": "4e4197d1301100dcbe84b6980de72b07be0fd459bedf0f52c02eda4f74f85b3c",
+    "license": "CC0-1.0",
+    "vertices": 13380,
+    "faces": 13378,
+    "components": 1,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "bones": 163,
+    "finger_bones": 38,
+    "toe_bones": 28,
+    "maximum_runtime_influences": 8,
+    "unbound_vertices": 0
+  },
+  "meshy_references": {
+    "hand": {
+      "path": "assets/source/meshy/c0_base_fighter/hand_candidate_001/model.fbx",
+      "sha256": "61c91cac4d156496dc13028c67af0032674c1324db674bd70f0d5c9028529123"
+    },
+    "foot": {
+      "path": "assets/source/meshy/c0_base_fighter/foot_candidate_002/model.fbx",
+      "sha256": "c179062eb3a0b722a8cd898216c39a009e983027826af744df35e7c573fa96ef"
+    }
+  },
+  "transfer": {
+    "method": "region-aligned nearest-surface displacement with wrist/ankle blend and hard 4 mm cap",
+    "changed_vertices": 5326,
+    "maximum_displacement_m": 0.004000044225991295,
+    "mean_displacement_m": 0.0013008874050095408,
+    "p99_displacement_m": 0.00400001881185425,
+    "topology_identical": true,
+    "weights_identical": true
+  },
+  "weight_reduction": {
+    "source_maximum_influences": 11,
+    "output_maximum_influences": 8,
+    "affected_vertices": 920,
+    "maximum_removed_weight": 0.1495149586116895,
+    "mean_removed_weight": 0.0008364145164589849,
+    "flex60_max_position_error_m": 0.0001417673765391122,
+    "flex60_p99_position_error_m": 2.9802322387695312e-08,
+    "vertices_over_1mm": 0
+  },
+  "output": {
+    "blend_sha256": "52e508adb958f4c2cf77cb56a9dfc7520f238bd4583c6d253437dce7367dc7e8",
+    "fbx_sha256": "5b0cdaac72418a3957276b84a6e9aabd4d225a52b4e438ed877291086bbe2171",
+    "fbx_reimport": {
+      "vertices": 13380,
+      "faces": 13378,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "bones": 163,
+      "maximum_influences": 6,
+      "unbound_vertices": 0
+    }
+  },
+  "qa": [
+    "qa/hand_detail_transfer.png",
+    "qa/foot_detail_transfer.png"
+  ],
+  "runtime_replacement": false
+}

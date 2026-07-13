@@ -69,7 +69,7 @@ impl InputState {
                     }
                     "1" => {
                         if pressed {
-                            self.selected_action = Some(Action::Strike);
+                            self.selected_action = Some(Action::Thrust);
                         }
                     }
                     "2" => {
@@ -79,19 +79,10 @@ impl InputState {
                     }
                     "3" => {
                         if pressed {
-                            self.selected_action = Some(Action::Grab);
+                            self.selected_action = Some(Action::Dodge);
                         }
                     }
-                    "q" => {
-                        if pressed {
-                            self.selected_stance = Some(Stance::Left);
-                        }
-                    }
-                    "e" => {
-                        if pressed {
-                            self.selected_stance = Some(Stance::Right);
-                        }
-                    }
+
                     "f1" => {
                         if pressed {
                             self.toggle_debug = true;
@@ -114,8 +105,8 @@ impl InputState {
 
     /// Process a mouse button event.
     pub fn handle_mouse_button(&mut self, button: MouseButton, pressed: bool) {
-        if pressed && button == MouseButton::Left {
-            self.fire_action = Some(Action::Strike);
+        if button == MouseButton::Left && pressed {
+            self.fire_action = Some(Action::Thrust);
         }
     }
 
@@ -191,14 +182,14 @@ mod tests {
     #[test]
     fn plan_input_reflects_selection() {
         let mut input = InputState::default();
-        input.selected_action = Some(Action::Strike);
-        input.selected_stance = Some(Stance::Left);
+        input.selected_action = Some(Action::Thrust);
+        input.selected_stance = Some(Stance::Top);
         input.confirmed = true;
         input.toggle_debug = true;
 
         let plan = input.plan_input();
-        assert_eq!(plan.selected_action, Some(Action::Strike));
-        assert_eq!(plan.selected_stance, Some(Stance::Left));
+        assert_eq!(plan.selected_action, Some(Action::Thrust));
+        assert_eq!(plan.selected_stance, Some(Stance::Top));
         assert!(plan.confirmed);
         assert!(plan.toggle_debug);
     }

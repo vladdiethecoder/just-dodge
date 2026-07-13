@@ -1,0 +1,96 @@
+{
+  "schema": "just_dodge_asset_contract_v1",
+  "unit": "C0-ASSET-CONTRACT-001",
+  "status": "accepted_geometry_rig_reference_source_materials_not_accepted_for_pbr",
+  "canonical_source": {
+    "blend": {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/c0_pose_carrier.blend",
+      "sha256": "ebfb845d1e70f0c058f17d4eb79b9e3d0d8ad988cc67c09ea58c89f9ea23b5da"
+    },
+    "fbx": {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/model.fbx",
+      "sha256": "1969d95d793a112119a7384dd73695bc5fadb52750cec8dee06b8e7adfaef086"
+    },
+    "reference_pose": {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/c0_reference_pose.json",
+      "sha256": "e24af77ad472331cac0ab9c3a1d54645ca7cc31ac8843e49a201e9befe6b6c16",
+      "schema": "c0_reference_pose_v1",
+      "bone_count": 163,
+      "uniform_runtime_scale": 0.9189499701711632,
+      "reference_height_m": 1.9587573409080505,
+      "reference_arm_span_m": 1.9208260774612427
+    },
+    "cooked_mesh": {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_pose_carrier.bin",
+      "sha256": "24b84977b5d4b275af385484c68a4624e6580fe22b0c7db14f149fa896dddb99"
+    },
+    "cooked_reference_animation": {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_reference.anim",
+      "sha256": "f0ec0e4ab59b9a859fc3ce26773de4dc43701f76e7eb69b94fdd9adc4c40bb10"
+    }
+  },
+  "source_provenance": {
+    "base": "MPFB2 2.0.17, commit 26c811d307b57e2f9f3d743b92d69681b1704e85",
+    "license": "CC0-1.0",
+    "meshy_usage": "bounded hand and foot surface-detail references only; topology, weights, bind hierarchy remain carrier-owned"
+  },
+  "geometry_and_rig_gate": {
+    "mesh_object": "Human_clean",
+    "armature_object": "Human.rig_clean",
+    "vertices": 13380,
+    "faces": 13378,
+    "bones": 163,
+    "uv_layers": 1,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "unbound_vertices": 0,
+    "maximum_serialized_influences": 6,
+    "maximum_runtime_influences": 8,
+    "simultaneous_60_degree_finger_toe_stress": "pass",
+    "validator_reports": {
+      "mesh": "c0438a28-c5b9-428c-9fed-7891514c6e0d",
+      "animation": "bb71afb8-94ba-4c48-b178-70e45ec8f55f",
+      "export_readiness": "f8ccf966-7c72-41a7-b061-f166b7468538"
+    }
+  },
+  "material_gate": {
+    "assigned_material_slots": 0,
+    "material_status": "no material assigned to Human_clean",
+    "pbr_texture_contract": "absent",
+    "validator_report": "232d5c3c-0665-4689-b7e5-00b7f096e3b0",
+    "consequence": "The carrier may be promoted for geometry, skeleton, bind/reference-pose, and animation integration. It may not be represented as a textured/PBR final character until authored material inputs are separately accepted."
+  },
+  "runtime_contract": {
+    "skeleton_capacity": 163,
+    "joint_buffer": "per-actor, dynamically sized from the loaded mesh bone count",
+    "pose_authority": "c0_reference_pose.json plus C0 world-frame retarget calibration; not a rebaked rest mesh",
+    "scale": 0.9189499701711632,
+    "material_behavior": "explicit neutral carrier fallback is allowed only while PBR inputs are absent; shader must not silently claim to sample unavailable textures",
+    "prohibited": [
+      "legacy mannequin substitution",
+      "fixed 24-joint buffer or API",
+      "shared pose buffer across actors",
+      "tuning C0 around invalid raw MotionBricks source motion"
+    ]
+  },
+  "visual_evidence": [
+    {
+      "path": "qa_runs/c0_asset_contract_20260710/c0_pose_carrier_close_workbench.png",
+      "sha256": "23d7ff40a871a2ddd9f3d57cbcb87a54c238f56a774b877f85cd0039075d9009",
+      "finding": "Current Blender Workbench close render: continuous full-body neutral/reference silhouette; visible fingers and toes; no visible exploded mesh or detached limb."
+    },
+    {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/qa/reference_stress60_front.png",
+      "finding": "Authoritative simultaneous 60-degree finger/toe stress frame: continuous limbs and torso, no visible skinning spikes."
+    },
+    {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/qa/reference_stress60_hand.png",
+      "finding": "Authoritative hand stress close-up: curled fingers retain separated silhouettes and remain connected to palm/wrist."
+    },
+    {
+      "path": "assets/source/meshy/c0_base_fighter/pose_carrier_001/qa/reference_stress60_foot.png",
+      "finding": "Authoritative foot stress close-up: individual toe silhouettes remain present and continuous with the forefoot."
+    }
+  ],
+  "next_gate": "C0-RUNTIME-CLOSURE-001: replace legacy mannequin loading and fixed 24-joint skinning with the C0 contract, then verify static/reference and measured primitive renders before enabling generated motion."
+}

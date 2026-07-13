@@ -1,0 +1,8 @@
+seed=77
+frames=1
+resolve_packets=1
+frame action physics_ticks outcome contacts player_action opponent_action truth_hash
+  111     0         0/1         Guard  2 Some(Thrust)   Some(Block)    0xb8c5eee08509d3cc
+contact 111 0 1 0.186667 WeaponEdge WeaponGuard
+contact 111 0 1 0.566667 WeaponEdge Body
+verdict=PASS

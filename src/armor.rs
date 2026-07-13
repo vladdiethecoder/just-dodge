@@ -107,7 +107,8 @@ pub fn resolve_armor(
             let effective_threshold = threshold * material_factor;
 
             if force > effective_threshold {
-                let absorbed = (force - effective_threshold) * type_multiplier(piece.material, damage_type);
+                let absorbed =
+                    (force - effective_threshold) * type_multiplier(piece.material, damage_type);
                 let integrity_loss = absorbed * 0.01;
                 piece.integrity = (piece.integrity - integrity_loss).max(0.0);
                 integrity_deltas.push((idx, -integrity_loss));
@@ -189,7 +190,12 @@ mod tests {
         let mut bash_state = ArmorState {
             pieces: vec![plate_torso()],
         };
-        let slash = resolve_armor(BodyRegion::Torso, 100.0, DamageType::Slash, &mut slash_state);
+        let slash = resolve_armor(
+            BodyRegion::Torso,
+            100.0,
+            DamageType::Slash,
+            &mut slash_state,
+        );
         let bash = resolve_armor(BodyRegion::Torso, 100.0, DamageType::Bash, &mut bash_state);
         assert!(slash.residual_force > bash.residual_force);
         assert!((slash.residual_force - 6.0).abs() < 1e-4);

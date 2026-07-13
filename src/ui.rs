@@ -156,7 +156,11 @@ fn char_uv(c: char) -> Option<(Vec2, Vec2)> {
 }
 
 impl UiRenderer {
-    pub fn new(device: &wgpu::Device, _queue: &wgpu::Queue, config: &wgpu::SurfaceConfiguration) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        _queue: &wgpu::Queue,
+        config: &wgpu::SurfaceConfiguration,
+    ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("UI Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("ui.wgsl").into()),
@@ -357,12 +361,18 @@ impl UiRenderer {
     }
 
     fn quad(&mut self, a: Vec2, b: Vec2, c: Vec2, d: Vec2, color: [f32; 4], mode: u32) {
-        self.vertices.push(UiVertex::new(a, Vec2::ZERO, color, mode));
-        self.vertices.push(UiVertex::new(b, Vec2::ZERO, color, mode));
-        self.vertices.push(UiVertex::new(c, Vec2::ZERO, color, mode));
-        self.vertices.push(UiVertex::new(a, Vec2::ZERO, color, mode));
-        self.vertices.push(UiVertex::new(c, Vec2::ZERO, color, mode));
-        self.vertices.push(UiVertex::new(d, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(a, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(b, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(c, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(a, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(c, Vec2::ZERO, color, mode));
+        self.vertices
+            .push(UiVertex::new(d, Vec2::ZERO, color, mode));
     }
 
     fn rect(&mut self, pos: Vec2, size: Vec2, color: [f32; 4]) {
@@ -377,17 +387,29 @@ impl UiRenderer {
         // Top
         self.rect(pos, Vec2::new(size.x, thickness), color);
         // Bottom
-        self.rect(pos + Vec2::new(0.0, size.y - thickness), Vec2::new(size.x, thickness), color);
+        self.rect(
+            pos + Vec2::new(0.0, size.y - thickness),
+            Vec2::new(size.x, thickness),
+            color,
+        );
         // Left
         self.rect(pos, Vec2::new(thickness, size.y), color);
         // Right
-        self.rect(pos + Vec2::new(size.x - thickness, 0.0), Vec2::new(thickness, size.y), color);
+        self.rect(
+            pos + Vec2::new(size.x - thickness, 0.0),
+            Vec2::new(thickness, size.y),
+            color,
+        );
     }
 
     fn glyph(&mut self, pos: Vec2, c: char, scale: f32, color: [f32; 4]) {
         let Some((uv0, uv1)) = char_uv(c) else {
             // Unknown char: render a small block.
-            self.rect(pos, Vec2::new(GLYPH_W * scale, GLYPH_H * scale), [0.5, 0.5, 0.5, color[3]]);
+            self.rect(
+                pos,
+                Vec2::new(GLYPH_W * scale, GLYPH_H * scale),
+                [0.5, 0.5, 0.5, color[3]],
+            );
             return;
         };
         let size = Vec2::new(GLYPH_W * scale, GLYPH_H * scale);
@@ -396,11 +418,13 @@ impl UiRenderer {
         let c = pos + size;
         let d = pos + Vec2::new(0.0, size.y);
         self.vertices.push(UiVertex::new(a, uv0, color, 1));
-        self.vertices.push(UiVertex::new(b, Vec2::new(uv1.x, uv0.y), color, 1));
+        self.vertices
+            .push(UiVertex::new(b, Vec2::new(uv1.x, uv0.y), color, 1));
         self.vertices.push(UiVertex::new(c, uv1, color, 1));
         self.vertices.push(UiVertex::new(a, uv0, color, 1));
         self.vertices.push(UiVertex::new(c, uv1, color, 1));
-        self.vertices.push(UiVertex::new(d, Vec2::new(uv0.x, uv1.y), color, 1));
+        self.vertices
+            .push(UiVertex::new(d, Vec2::new(uv0.x, uv1.y), color, 1));
     }
 
     fn text(&mut self, mut pos: Vec2, s: &str, scale: f32, color: [f32; 4]) {
@@ -516,9 +540,9 @@ impl UiRenderer {
 
         // --- Action menu (bottom) ---
         let actions = [
-            ("1 Strike", Action::Strike, [0.9, 0.2, 0.2, 0.9]),
+            ("1 Thrust", Action::Thrust, [0.9, 0.2, 0.2, 0.9]),
             ("2 Block", Action::Block, [0.2, 0.6, 0.9, 0.9]),
-            ("3 Grab", Action::Grab, [0.9, 0.7, 0.2, 0.9]),
+            ("3 Dodge", Action::Dodge, [0.3, 0.9, 0.5, 0.9]),
         ];
         let btn_w = 140.0;
         let btn_h = 36.0;
@@ -531,7 +555,12 @@ impl UiRenderer {
             let selected = plan.selected_action == Some(*action);
             self.rect(Vec2::new(x, y), Vec2::new(btn_w, btn_h), *color);
             if selected {
-                self.rect_outline(Vec2::new(x, y), Vec2::new(btn_w, btn_h), [1.0, 1.0, 1.0, 1.0], 3.0);
+                self.rect_outline(
+                    Vec2::new(x, y),
+                    Vec2::new(btn_w, btn_h),
+                    [1.0, 1.0, 1.0, 1.0],
+                    3.0,
+                );
             }
             let tx = x + (btn_w - label.len() as f32 * GLYPH_ADV * 1.5) / 2.0;
             self.text(Vec2::new(tx, y + 10.0), label, 1.5, [1.0, 1.0, 1.0, 1.0]);
@@ -547,15 +576,23 @@ impl UiRenderer {
         );
         let tri_center = Vec2::new(w / 2.0, stance_y + 12.0);
         match plan.selected_stance.unwrap_or(Stance::Top) {
-            Stance::Left => self.triangle(tri_center + Vec2::new(-24.0, 0.0), 14.0, [0.9, 0.9, 0.2, 1.0]),
+            Stance::Left => self.triangle(
+                tri_center + Vec2::new(-24.0, 0.0),
+                14.0,
+                [0.9, 0.9, 0.2, 1.0],
+            ),
             Stance::Top => self.triangle(tri_center, 14.0, [0.9, 0.9, 0.2, 1.0]),
-            Stance::Right => self.triangle(tri_center + Vec2::new(24.0, 0.0), 14.0, [0.9, 0.9, 0.2, 1.0]),
+            Stance::Right => self.triangle(
+                tri_center + Vec2::new(24.0, 0.0),
+                14.0,
+                [0.9, 0.9, 0.2, 1.0],
+            ),
         }
 
         // --- Plan / commit prompts ---
         if snapshot.phase == Phase::Plan {
             if !snapshot.player.committed {
-                let prompt = "Q/W/E stance   Space/Enter confirm";
+                let prompt = "Top stance   Space/Enter confirm";
                 let pw = prompt.len() as f32 * GLYPH_ADV * 1.5;
                 self.text(
                     Vec2::new((w - pw) / 2.0, h - 28.0),
@@ -594,10 +631,13 @@ impl UiRenderer {
         // --- Match over overlay ---
         if snapshot.match_over {
             self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.75]);
-            let winner = snapshot.winner.map(|s| match s {
-                Side::Player => "You Win!",
-                Side::Opponent => "Opponent Wins",
-            }).unwrap_or("Match Over");
+            let winner = snapshot
+                .winner
+                .map(|s| match s {
+                    Side::Player => "You Win!",
+                    Side::Opponent => "Opponent Wins",
+                })
+                .unwrap_or("Match Over");
             let mw = winner.len() as f32 * GLYPH_ADV * 4.0;
             self.text(
                 Vec2::new((w - mw) / 2.0, h / 2.0 - 20.0),
@@ -641,7 +681,10 @@ mod tests {
     #[test]
     fn font_atlas_builds_without_crash() {
         let atlas = build_font_atlas();
-        assert_eq!(atlas.len(), (ATLAS_COLS * ATLAS_CELL * 6 * ATLAS_CELL) as usize);
+        assert_eq!(
+            atlas.len(),
+            (ATLAS_COLS * ATLAS_CELL * 6 * ATLAS_CELL) as usize
+        );
         // At least some glyph pixels should be non-zero.
         assert!(atlas.iter().any(|&p| p > 0));
     }

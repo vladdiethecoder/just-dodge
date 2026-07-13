@@ -1,0 +1,62 @@
+{
+  "unit": "C0-POSE-CARRIER-001",
+  "status": "accepted_reference_pose_source_not_runtime_installed",
+  "base": {
+    "project": "MPFB2 2.0.17",
+    "commit": "26c811d307b57e2f9f3d743b92d69681b1704e85",
+    "license": "CC0-1.0",
+    "macro_values": {
+      "gender": 1.0,
+      "age": 0.48,
+      "muscle": 0.72,
+      "weight": 0.52,
+      "proportions": 0.55,
+      "height": 0.62,
+      "caucasian": 1.0
+    },
+    "vertices": 13380,
+    "faces": 13378,
+    "bones": 163,
+    "maximum_source_influences": 8
+  },
+  "meshy_detail_transfer": {
+    "hand_reference": "../hand_candidate_001/model.fbx",
+    "foot_reference": "../foot_candidate_002/model.fbx",
+    "maximum_displacement_m": 0.004,
+    "topology_preserved": true,
+    "weights_preserved": true
+  },
+  "reference_action": {
+    "name": "C0_REFERENCE_POSE",
+    "mapped_bone_directions": 33,
+    "maximum_direction_error_degrees": 0.0,
+    "reference_height_m": 1.9587573409080505,
+    "reference_arm_span_m": 1.9208260774612427,
+    "uniform_runtime_scale": 0.9189499701711632,
+    "runtime_scaled_height_m": 1.8
+  },
+  "verification": {
+    "topology_identical_to_bind_source": true,
+    "weights_identical_to_bind_source": true,
+    "changed_bind_vertices": 0,
+    "reference_pose_json_deterministic": true,
+    "fbx_reimport": {
+      "vertices": 13380,
+      "faces": 13378,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "bones": 163,
+      "maximum_influences": 6,
+      "unbound_vertices": 0
+    },
+    "simultaneous_60_degree_finger_toe_stress": "pass"
+  },
+  "artifacts": {
+    "blend_sha256": "ebfb845d1e70f0c058f17d4eb79b9e3d0d8ad988cc67c09ea58c89f9ea23b5da",
+    "fbx_sha256": "1969d95d793a112119a7384dd73695bc5fadb52750cec8dee06b8e7adfaef086",
+    "reference_pose_sha256": "e24af77ad472331cac0ab9c3a1d54645ca7cc31ac8843e49a201e9befe6b6c16",
+    "pose_tool_sha256": "77a9327b6585aa7380d159d4749e9c0d0e61ac26d6283dd75892d375a3c9267f"
+  },
+  "runtime_replacement": false,
+  "next_gate": "Consume c0_reference_pose.json in explicit MotionBricks reference-pose alignment, cook the 163-bone source, and run generated full-rate live visual QA."
+}

@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
-use crate::truth::{Action, ContactGeometry, HitLocation, Side, Stance};
+use crate::truth::{Action, ContactGeometry, ContactSurface, HitLocation, Side, Stance};
 
 /// Result of resolving a pair of committed actions.
 #[derive(Debug, Clone)]
@@ -102,10 +102,8 @@ pub fn timing(action: Action) -> Option<Timing> {
         .map(|(_, t)| *t)
 }
 
-/// Resolve a pair of committed actions into a contact result.
-///
-/// `contact` is provided by the hitbox agent.  If it is `None` or out of range,
-/// the result is a `Whiff`.
+/// Select configured magnitude/location data while deriving interaction class
+/// and winner exclusively from recorded physical contact evidence.
 pub fn resolve(
     action_a: Action,
     action_b: Action,
@@ -113,10 +111,9 @@ pub fn resolve(
     stance_b: Stance,
     contact: &Option<ContactGeometry>,
 ) -> MatrixResult {
-    // No contact geometry or out of range => whiff.
-    if contact.map_or(true, |c| !c.in_range) {
+    let Some(contact) = contact.filter(|contact| contact.in_range) else {
         return whiff_result(Side::Player);
-    }
+    };
 
     let same_stance = stance_a == stance_b;
     let data = matrix_data();
@@ -131,9 +128,14 @@ pub fn resolve(
             StanceCondition::Any => true,
         };
         if stance_ok {
+            let _legacy_contact = rule.contact;
+            let (contact_type, initiative) = match contact.surface {
+                ContactSurface::Body => (ContactType::Hit, contact.attacker),
+                ContactSurface::Guard => (ContactType::Beat, contact.attacker.opposite()),
+            };
             return MatrixResult {
-                contact_type: rule.contact,
-                initiative: rule.initiative.to_side(),
+                contact_type,
+                initiative,
                 hit_location: rule.hit_location,
                 force: rule.force,
                 tempo_delta: 0,
@@ -141,8 +143,17 @@ pub fn resolve(
         }
     }
 
-    // No explicit rule matched: safe fallback.
-    whiff_result(Side::Player)
+    let (contact_type, initiative) = match contact.surface {
+        ContactSurface::Body => (ContactType::Hit, contact.attacker),
+        ContactSurface::Guard => (ContactType::Beat, contact.attacker.opposite()),
+    };
+    MatrixResult {
+        contact_type,
+        initiative,
+        hit_location: HitLocation::Torso,
+        force: 0.0,
+        tempo_delta: 0,
+    }
 }
 
 fn whiff_result(initiative: Side) -> MatrixResult {
@@ -167,39 +178,71 @@ mod tests {
         Some(ContactGeometry {
             distance: 1.0,
             in_range: true,
+            attacker: Side::Player,
+            surface: ContactSurface::Body,
         })
     }
 
     #[test]
     fn strike_beats_grab() {
-        let r = resolve(Action::Strike, Action::Grab, Stance::Top, Stance::Top, &in_range());
+        let r = resolve(
+            Action::Strike,
+            Action::Grab,
+            Stance::Top,
+            Stance::Top,
+            &in_range(),
+        );
         assert_eq!(r.contact_type, ContactType::Hit);
         assert_eq!(r.initiative, Side::Player);
     }
 
     #[test]
-    fn block_beats_strike_same_stance() {
-        let r = resolve(Action::Block, Action::Strike, Stance::Top, Stance::Top, &in_range());
-        assert_eq!(r.contact_type, ContactType::Beat);
+    fn body_contact_overrides_block_label() {
+        let r = resolve(
+            Action::Block,
+            Action::Strike,
+            Stance::Top,
+            Stance::Top,
+            &in_range(),
+        );
+        assert_eq!(r.contact_type, ContactType::Hit);
         assert_eq!(r.initiative, Side::Player);
     }
 
     #[test]
-    fn grab_beats_block() {
-        let r = resolve(Action::Grab, Action::Block, Stance::Top, Stance::Top, &in_range());
-        assert_eq!(r.contact_type, ContactType::GrabSuccess);
+    fn body_contact_overrides_grab_label() {
+        let r = resolve(
+            Action::Grab,
+            Action::Block,
+            Stance::Top,
+            Stance::Top,
+            &in_range(),
+        );
+        assert_eq!(r.contact_type, ContactType::Hit);
         assert_eq!(r.initiative, Side::Player);
     }
 
     #[test]
-    fn same_stance_strike_clashes() {
-        let r = resolve(Action::Strike, Action::Strike, Stance::Left, Stance::Left, &in_range());
-        assert_eq!(r.contact_type, ContactType::Clash);
+    fn body_contact_overrides_clash_label() {
+        let r = resolve(
+            Action::Strike,
+            Action::Strike,
+            Stance::Left,
+            Stance::Left,
+            &in_range(),
+        );
+        assert_eq!(r.contact_type, ContactType::Hit);
     }
 
     #[test]
     fn missing_contact_is_whiff() {
-        let r = resolve(Action::Strike, Action::Block, Stance::Top, Stance::Top, &None);
+        let r = resolve(
+            Action::Strike,
+            Action::Block,
+            Stance::Top,
+            Stance::Top,
+            &None,
+        );
         assert_eq!(r.contact_type, ContactType::Whiff);
     }
 

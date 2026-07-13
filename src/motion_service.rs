@@ -19,7 +19,9 @@ impl MotionService {
         Python::with_gil(|py| {
             let sys = py.import("sys").map_err(py_err)?;
             let path = sys.getattr("path").map_err(py_err)?;
-            let path = path.downcast::<PyList>().map_err(|_| anyhow::anyhow!("sys.path is not a list"))?;
+            let path = path
+                .downcast::<PyList>()
+                .map_err(|_| anyhow::anyhow!("sys.path is not a list"))?;
             let cwd = std::env::current_dir()?;
             path.insert(0, cwd.to_str().context("invalid cwd")?)
                 .map_err(py_err)?;
@@ -74,6 +76,42 @@ impl MotionService {
                 .getattr("generate_clip")
                 .map_err(py_err)?
                 .call1((action, weapon, stance, ctx_array, seed))
+                .map_err(py_err)?
+                .extract()
+                .map_err(py_err)?;
+            motion::load_g1_frames_from_bytes(&bytes)
+        })
+    }
+
+    pub fn load_primitive_clip(
+        &self,
+        action: &str,
+        weapon: &str,
+        stance: &str,
+    ) -> Result<Vec<[Mat4; 34]>> {
+        Python::with_gil(|py| {
+            let svc = py.import("motionbricks_service").map_err(py_err)?;
+            let bytes: Vec<u8> = svc
+                .getattr("load_primitive_clip")
+                .map_err(py_err)?
+                .call1((action, weapon, stance))
+                .map_err(py_err)?
+                .extract()
+                .map_err(py_err)?;
+            motion::load_g1_frames_from_bytes(&bytes)
+        })
+    }
+
+    /// NVIDIA's full NavigationAgent path: official random-controller signal,
+    /// qpos context, canonicalization, spring target, forced generation, then
+    /// MuJoCo-to-motion conversion. This carries no fabricated combat label.
+    pub fn generate_official_navigation_clip(&self, seed: u64) -> Result<Vec<[Mat4; 34]>> {
+        Python::with_gil(|py| {
+            let svc = py.import("motionbricks_service").map_err(py_err)?;
+            let bytes: Vec<u8> = svc
+                .getattr("generate_official_navigation_clip")
+                .map_err(py_err)?
+                .call1((seed,))
                 .map_err(py_err)?
                 .extract()
                 .map_err(py_err)?;

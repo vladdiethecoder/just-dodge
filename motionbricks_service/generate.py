@@ -7,6 +7,7 @@ context_frames, seed)` which returns deterministic float32 bytes of shape
 """
 import math
 import os
+from types import SimpleNamespace
 from typing import Any, Optional
 
 import numpy as np
@@ -14,6 +15,7 @@ import pyron
 import torch
 
 _SERVICE: dict | None = None
+_OFFICIAL_SERVICE: dict | None = None
 
 # Paths to the GR00T MotionBricks checkout and its trained checkpoints.
 # All paths can be overridden via environment variables (see README.md).
@@ -159,6 +161,39 @@ def _load_yaml_cfg(path: str) -> dict:
     return load_yaml_cfg(path)
 
 
+def _ensure_canonical_motionbricks_import() -> Any:
+    """Import MotionBricks only from the configured checkout."""
+    import importlib
+    import sys
+
+    canonical_dir = os.path.abspath(MB_DIR)
+    if not os.path.isdir(canonical_dir):
+        raise RuntimeError(f"MotionBricks checkout is missing: {canonical_dir}")
+
+    cached = sys.modules.get("motionbricks")
+    cached_file = getattr(cached, "__file__", None)
+    if cached_file is not None and not os.path.abspath(cached_file).startswith(
+        canonical_dir + os.sep
+    ):
+        for name in list(sys.modules):
+            if name == "motionbricks" or name.startswith("motionbricks."):
+                del sys.modules[name]
+
+    if canonical_dir in sys.path:
+        sys.path.remove(canonical_dir)
+    sys.path.insert(0, canonical_dir)
+    motionbricks = importlib.import_module("motionbricks")
+    module_file = motionbricks.__file__
+    if module_file is None or not os.path.abspath(module_file).startswith(
+        canonical_dir + os.sep
+    ):
+        raise RuntimeError(
+            "Refusing non-canonical MotionBricks import: "
+            f"{module_file}; expected under {canonical_dir}"
+        )
+    return motionbricks
+
+
 def init_service(
     mb_dir: str = MB_DIR,
     checkpoint_dir: str = CHECKPOINT_DIR,
@@ -168,6 +203,7 @@ def init_service(
     if _SERVICE is not None:
         return _SERVICE
 
+    _ensure_canonical_motionbricks_import()
     from motionbricks.helper.mujoco_helper import get_mujoco_converter
     from motionbricks.motion_backbone.demo.clips import clip_holder_G1
     from motionbricks.motion_backbone.inference.motion_inference import motion_inference
@@ -259,6 +295,61 @@ def init_service(
     }
     print("[motionbricks_service] ready")
     return _SERVICE
+
+
+def init_official_service() -> dict:
+    """Initialize NVIDIA's unmodified navigation wrapper around MotionBricks.
+
+    The wrapper owns canonicalization, spring-target construction, qpos
+    filtering, and MuJoCo conversion; this service must not duplicate them.
+    """
+    global _OFFICIAL_SERVICE
+    if _OFFICIAL_SERVICE is not None:
+        return _OFFICIAL_SERVICE
+
+    _ensure_canonical_motionbricks_import()
+    from motionbricks.motion_backbone.demo.utils import navigation_demo
+
+    scene_xml = os.path.join(MB_DIR, "assets", "skeletons", "g1", "scene_29dof.xml")
+    args = SimpleNamespace(
+        humanoid_xml=scene_xml,
+        humanoid_scene_xml=scene_xml,
+        skeleton_xml=SKELETON_XML,
+        result_dir=CHECKPOINT_DIR,
+        data_root=os.path.join(MB_DIR, "datasets"),
+        explicit_dataset_folder=None,
+        clips_ckpt=CLIP_CKPT,
+        reprocess_clips=False,
+        controller="random",
+        lookat_movement_direction=False,
+        pre_filter_qpos=True,
+        source_root_realignment=True,
+        target_root_realignment=True,
+        force_canonicalization=True,
+        skip_ending_target_cond=False,
+        random_speed_scale=False,
+        speed_scale=[1.0, 1.0],
+        generate_dt=2.0,
+        clips="G1",
+        random_seed=1234,
+        return_model_configs=True,
+        return_dataloader=True,
+        recording_dir=None,
+        EXP="default",
+        planner="default",
+        use_qpos=True,
+        allowed_mode=None,
+    )
+    prior_cwd = os.getcwd()
+    try:
+        # NVIDIA's checked-in Hydra configs intentionally contain paths relative
+        # to the MotionBricks checkout (for example `out/.../skeleton`).
+        os.chdir(MB_DIR)
+        demo = navigation_demo(args)
+    finally:
+        os.chdir(prior_cwd)
+    _OFFICIAL_SERVICE = {"args": args, "demo": demo, "agent": demo.full_agent}
+    return _OFFICIAL_SERVICE
 
 
 def _load_primitives() -> list[dict]:
@@ -466,15 +557,10 @@ def _run_inference(
     return pred_global_motions[:, :num_pred_frames, :]
 
 
-def _to_413_frames(pred_global_motions: torch.Tensor, motion_rep: Any) -> np.ndarray:
-    """Convert unnormalized global motion features to the Rust [N, 413] layout."""
-    out = motion_rep.inverse(
-        pred_global_motions, is_normalized=False, return_quat=False, return_all=False
-    )
-    root_pos = out["root_pos"][0].detach().cpu().numpy()
-    posed_joints = out["posed_joints"][0].detach().cpu().numpy()
-    rot_mats = out["global_joint_rots"][0].detach().cpu().numpy()
-
+def _pack_413_frames(
+    root_pos: np.ndarray, posed_joints: np.ndarray, rot_mats: np.ndarray
+) -> np.ndarray:
+    """Pack authoritative global transforms into the Rust [N, 413] layout."""
     N = root_pos.shape[0]
     frames = np.zeros((N, 413), dtype=np.float32)
     frames[:, 0:3] = root_pos
@@ -498,14 +584,122 @@ def _to_413_frames(pred_global_motions: torch.Tensor, motion_rep: Any) -> np.nda
     return frames
 
 
+def _to_413_frames(pred_global_motions: torch.Tensor, motion_rep: Any) -> np.ndarray:
+    """Convert unnormalized global motion features to the Rust [N, 413] layout."""
+    out = motion_rep.inverse(
+        pred_global_motions, is_normalized=False, return_quat=False, return_all=False
+    )
+    return _pack_413_frames(
+        out["root_pos"][0].detach().cpu().numpy(),
+        out["posed_joints"][0].detach().cpu().numpy(),
+        out["global_joint_rots"][0].detach().cpu().numpy(),
+    )
+
+
+def _reset_official_episode(agent: Any, demo: Any) -> None:
+    """Reset every stateful upstream navigation-controller field we exercise.
+
+    The upstream base reset clears only `_prev_qpos`; `random_controller` also
+    caches `_control` and `_time_since_prev_control`, which otherwise leaks one
+    request's control target into the next same-seed request.
+    """
+    agent.reset()
+    controller = demo.controller
+    controller.reset()
+    if hasattr(controller, "_control"):
+        controller._control = None
+    if hasattr(controller, "_time_since_prev_control"):
+        controller._time_since_prev_control = 0.0
+
+
+def generate_official_navigation_clip(seed: int = 0) -> bytes:
+    """Run one exact NVIDIA MotionBricks controller/replan cycle.
+
+    It returns a healthy 34-joint G1 locomotion trajectory. It intentionally
+    accepts no combat-action label: the released navigation checkpoint has no
+    Strike/Block/Thrust conditioning, so combat semantics remain fail-closed.
+    """
+    svc = init_official_service()
+    args = svc["args"]
+    demo = svc["demo"]
+    agent = svc["agent"]
+
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    _reset_official_episode(agent, demo)
+
+    qpos = agent.get_next_frame()
+    demo.mj_data.qpos[:] = qpos[0]
+    controls = demo.controller.generate_control_signals(
+        None,
+        demo.mj_model,
+        demo.mj_data,
+        visualize=False,
+        control_info={"force_idle": False, "allowed_mode": None},
+    )
+    controls["context_mujoco_qpos"] = agent.get_context_mujoco_qpos()
+    with torch.no_grad():
+        agent.generate_new_frames(
+            controls,
+            demo.controller.get_controller_dt() * args.generate_dt,
+            force_generation=True,
+        )
+
+    positions, rotations = agent._converter.convert_mujoco_qpos_to_motion_transforms(
+        agent.frames["mujoco_qpos"]
+    )
+    frames = _pack_413_frames(
+        positions[0, :, 0, :].detach().cpu().numpy(),
+        positions[0].detach().cpu().numpy(),
+        rotations[0].detach().cpu().numpy(),
+    )
+    if not np.isfinite(frames).all():
+        raise RuntimeError("Official MotionBricks trajectory contains non-finite values")
+    return frames.tobytes()
+
+
+def load_primitive_clip(
+    action: str, weapon: str, stance: str, root_lock: bool = True
+) -> bytes:
+    """Return the measured primitive clip without neural generation.
+
+    This is the source-validity/calibration path: it proves serialization and
+    retargeting against the real mocap window before generated output is trusted.
+    """
+    svc = init_service()
+    feature_window = _load_primitive(action, weapon, stance)
+    features = torch.from_numpy(feature_window[None]).to(svc["device"])
+    out = svc["motion_rep"].inverse(
+        features, is_normalized=True, return_quat=False, return_all=False
+    )
+    frames = _pack_413_frames(
+        out["root_pos"][0].detach().cpu().numpy(),
+        out["posed_joints"][0].detach().cpu().numpy(),
+        out["global_joint_rots"][0].detach().cpu().numpy(),
+    )
+    if not np.isfinite(frames).all():
+        raise RuntimeError("Primitive clip contains non-finite values")
+    if root_lock and frames.shape[0] > 0:
+        frames[:, 0:3] = frames[0, 0:3]
+    return frames.tobytes()
+
+
 def generate_clip(
     action: str,
     weapon: str,
     stance: str,
     context_frames: Optional[list] = None,  # list of [34, 4, 4] world matrices
     seed: int = 0,
+    root_lock: bool = True,
 ) -> bytes:
-    """Generate a deterministic combat clip and return raw float32 bytes of [N, 413]."""
+    """Generate a deterministic combat clip and return raw float32 bytes of [N, 413].
+
+    Args:
+        root_lock: If True, subtract the first-frame root translation from all
+            generated frames. This prevents the VQVAE from extrapolating small
+            capture-space root drift into runaway global motion during gameplay.
+    """
     svc = init_service()
     assert svc["ready"]
 
@@ -535,5 +729,11 @@ def generate_clip(
 
     if not np.isfinite(frames).all():
         raise RuntimeError("Generated clip contains non-finite values")
+
+    if root_lock and frames.shape[0] > 0:
+        # Root-lock the clip: keep the pose (root-relative joint positions and
+        # global rotations) but pin the global root translation to the first frame.
+        # This prevents the VQVAE from drifting across the arena during generation.
+        frames[:, 0:3] = frames[0, 0:3]
 
     return frames.tobytes()

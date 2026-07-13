@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "timestamp_utc": "20260712_015400",
+  "source": "NVIDIA full_navigation_agent official random-controller path",
+  "capability": "navigation_only_not_combat_action_motion",
+  "seed": 1234,
+  "payload_sha256": "503f8073304dd6f76b7d6dc74b022f9a5cf1dd875b7c87a3a7f2e7869f77453b",
+  "source_metrics": {
+    "root_height_min_m": 0.73345,
+    "root_height_max_m": 0.783457,
+    "max_segment_length_error_m": 1.8e-07,
+    "max_joint_step_m_per_frame": 0.076645,
+    "reference_segment_count": 33
+  },
+  "motion_metrics": {
+    "frames": 36,
+    "duration_seconds": 1.2,
+    "root_path_m": 0.2704,
+    "max_joint_velocity_m_per_frame": 0.0766,
+    "mean_joint_velocity_m_per_frame": 0.009,
+    "bbox_min": [
+      -0.4269,
+      -0.0081,
+      -0.0568
+    ],
+    "bbox_max": [
+      0.3765,
+      1.08,
+      0.3669
+    ],
+    "left_hand_range_m": 0.3444,
+    "right_hand_range_m": 0.236
+  }
+}

@@ -1,16 +1,33 @@
 // Arena renderer: rigid textured meshes (rock, gate, pillar, ground) + a
-// skinned mannequin driven by MotionBricks-decoded joint matrices.
-// Camera: orbital with mouse drag + scroll zoom.
+// skinned C0 pose carrier driven by per-actor skinning matrices.
+// Camera: deterministic player-head first-person view.
 
 use crate::asset;
-use glam::Mat4;
+use glam::{Mat4, Vec3};
 use wgpu::util::DeviceExt;
 
-/// Canonical corrective transform applied to all skinned mannequin models
-/// (scale-down from SKM1 native units and rotate from Z-up to Y-up).
+/// Canonical model transform for C0-POSE-CARRIER-001. The cooked carrier is
+/// already Y-up; its reference-pose authority supplies this uniform scale.
 pub fn skinned_correct_model() -> Mat4 {
-    Mat4::from_scale(glam::vec3(0.22, 0.22, 0.22))
-        * Mat4::from_rotation_x(std::f32::consts::FRAC_PI_2)
+    Mat4::from_scale(glam::Vec3::splat(0.918_949_97))
+}
+
+/// Pure presentation transform for the W0 sword. The hilt is placed in the
+/// lower-right first-person frame; no combat or cleanbox state is read here.
+pub fn first_person_weapon_model(eye: Vec3, forward: Vec3) -> Mat4 {
+    let forward = forward.normalize();
+    // `look_at_lh` maps this basis direction to visual screen-right.
+    let screen_right = Vec3::Y.cross(forward).normalize();
+    let blade = (forward * 0.78 + Vec3::Y * 0.62).normalize();
+    let thickness = blade.cross(screen_right).normalize();
+    // Keep the source-metric hilt in frame rather than scaling the accepted mesh.
+    let hilt = eye + forward * 0.72 + screen_right * 0.24 - Vec3::Y * 0.35;
+    Mat4::from_cols(
+        screen_right.extend(0.0),
+        thickness.extend(0.0),
+        blade.extend(0.0),
+        hilt.extend(1.0),
+    )
 }
 
 pub struct MeshObject {
@@ -32,6 +49,7 @@ pub struct SkinnedObject {
     pub texture_bind_group: wgpu::BindGroup,
     pub joint_buffer: wgpu::Buffer,
     pub joint_bind_group: wgpu::BindGroup,
+    pub bone_count: usize,
     pub model: Mat4,
 }
 
@@ -40,6 +58,8 @@ pub struct Renderer {
     pub skin_pipeline: wgpu::RenderPipeline,
     pub debug_pipeline: wgpu::RenderPipeline,
     pub objects: Vec<MeshObject>,
+    /// Accepted W0 longsword, rendered only through the first-person path.
+    pub first_person_weapon: MeshObject,
     pub skinned: Vec<SkinnedObject>,
     pub depth_view: wgpu::TextureView,
     proj_view: Mat4,
@@ -49,7 +69,7 @@ pub struct Renderer {
     debug_line_count: u32,
     hitbox_vb: Option<wgpu::Buffer>,
     hitbox_line_count: u32,
-    /// Parent index (-1 = root) for each of the 24 mannequin bones.
+    /// Parent index (-1 = root) for the active skinned carrier hierarchy.
     pub bone_parents: Vec<i32>,
 }
 
@@ -143,6 +163,58 @@ fn build_mesh_buffers(
     (vb, ib, mesh.indices.len() as u32)
 }
 
+fn build_solid_mesh_object(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    uniform_bgl: &wgpu::BindGroupLayout,
+    texture_bgl: &wgpu::BindGroupLayout,
+    mesh_path: &str,
+    label: &str,
+    rgba: [u8; 4],
+) -> MeshObject {
+    let mesh = asset::load_binary(mesh_path)
+        .unwrap_or_else(|error| panic!("failed to load {label} mesh {mesh_path}: {error}"));
+    let (vertex_buffer, index_buffer, index_count) = build_mesh_buffers(device, &mesh, label);
+    let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some(&format!("{label} UB")),
+        size: 64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(&format!("{label} UBG")),
+        layout: uniform_bgl,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: uniform_buffer.as_entire_binding(),
+        }],
+    });
+    let (texture_view, sampler) = build_solid_texture(device, queue, rgba);
+    let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(&format!("{label} TBG")),
+        layout: texture_bgl,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&texture_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+        ],
+    });
+    MeshObject {
+        vertex_buffer,
+        index_buffer,
+        index_count,
+        uniform_buffer,
+        uniform_bind_group,
+        texture_bind_group,
+        model: Mat4::IDENTITY,
+    }
+}
+
 fn build_procedural_ground(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer, u32) {
     let s = 10.0f32;
     let vertices: [f32; 8 * 4] = [
@@ -234,11 +306,63 @@ fn build_ground_texture(
     (view, sampler)
 }
 
+/// Explicit untextured-carrier fallback. C0 currently has no accepted PBR
+/// texture contract, so this is a declared solid color rather than a disguised
+/// substitute texture.
+fn build_solid_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    rgba: [u8; 4],
+) -> (wgpu::TextureView, wgpu::Sampler) {
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("C0 carrier fallback texture"),
+        size: wgpu::Extent3d {
+            width: 1,
+            height: 1,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
+    });
+    queue.write_texture(
+        wgpu::TexelCopyTextureInfo {
+            texture: &texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        &rgba,
+        wgpu::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(4),
+            rows_per_image: Some(1),
+        },
+        wgpu::Extent3d {
+            width: 1,
+            height: 1,
+            depth_or_array_layers: 1,
+        },
+    );
+    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        mag_filter: wgpu::FilterMode::Linear,
+        min_filter: wgpu::FilterMode::Linear,
+        mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+        ..Default::default()
+    });
+    (view, sampler)
+}
+
 impl Renderer {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         config: &wgpu::SurfaceConfiguration,
+        minimal_scene: bool,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -395,9 +519,19 @@ impl Renderer {
                     shader_location: 3,
                 },
                 wgpu::VertexAttribute {
-                    format: wgpu::VertexFormat::Float32x4,
+                    format: wgpu::VertexFormat::Uint32x4,
                     offset: 48,
                     shader_location: 4,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x4,
+                    offset: 64,
+                    shader_location: 5,
+                },
+                wgpu::VertexAttribute {
+                    format: wgpu::VertexFormat::Float32x4,
+                    offset: 80,
+                    shader_location: 6,
                 },
             ],
         };
@@ -465,11 +599,12 @@ impl Renderer {
                 },
             ],
         };
-        let debug_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Debug Pipeline Layout"),
-            bind_group_layouts: &[Some(&uniform_bgl)],
-            immediate_size: 0,
-        });
+        let debug_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Debug Pipeline Layout"),
+                bind_group_layouts: &[Some(&uniform_bgl)],
+                immediate_size: 0,
+            });
         let debug_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Debug Pipeline"),
             cache: None,
@@ -541,184 +676,190 @@ impl Renderer {
         // --- Build all rigid objects ---
         let mut objects = Vec::new();
 
-        // Arena layout (circular, ~3m radius):
-        //   Rock at (0,0,-3), Gate at (2.6,0,1.5), Pillar at (-2.6,0,1.5)
-        // Mannequin at center (0,0,0)
-        struct ObjCfg {
-            bin: &'static str,
-            tex: &'static str,
-            model: Mat4,
-        }
-        // Arena assets stripped for baseline: ground + sky only.
-        let cfgs = [
-            ObjCfg {
-                bin: "arena_rock.bin",
-                tex: "arena_rock_0.png",
-                model: Mat4::from_translation(glam::vec3(0.0, -0.2, -3.0)),
-            },
-            ObjCfg {
-                bin: "lintel_gate.bin",
-                tex: "lintel_gate_0.jpg",
-                model: Mat4::from_translation(glam::vec3(2.6, -0.1, 1.5)),
-            },
-            ObjCfg {
-                bin: "rune_pillar.bin",
-                tex: "rune_pillar_0.jpg",
-                model: Mat4::from_translation(glam::vec3(-2.6, 0.0, 1.5)),
-            },
-        ];
+        if !minimal_scene {
+            // Arena layout (circular, ~3m radius):
+            //   Rock at (0,0,-3), Gate at (2.6,0,1.5), Pillar at (-2.6,0,1.5)
+            // Mannequin at center (0,0,0)
+            struct ObjCfg {
+                bin: &'static str,
+                tex: &'static str,
+                model: Mat4,
+            }
+            let cfgs = [
+                ObjCfg {
+                    bin: "arena_rock.bin",
+                    tex: "arena_rock_0.png",
+                    model: Mat4::from_translation(glam::vec3(0.0, -0.2, -3.0)),
+                },
+                ObjCfg {
+                    bin: "lintel_gate.bin",
+                    tex: "lintel_gate_0.jpg",
+                    model: Mat4::from_translation(glam::vec3(2.6, -0.1, 1.5)),
+                },
+                ObjCfg {
+                    bin: "rune_pillar.bin",
+                    tex: "rune_pillar_0.jpg",
+                    model: Mat4::from_translation(glam::vec3(-2.6, 0.0, 1.5)),
+                },
+            ];
 
-        for cfg in cfgs {
-            let mesh = asset::load_binary(&format!("{}/{}", assets, cfg.bin))
-                .unwrap_or_else(|e| panic!("Failed to load {}: {e}", cfg.bin));
-            let (vb, ib, ic) = build_mesh_buffers(device, &mesh, cfg.bin);
-            println!(
-                "  {}: {} verts, {} idxs",
-                cfg.bin,
-                mesh.vertices.len() / 3,
-                mesh.indices.len()
-            );
+            for cfg in cfgs {
+                let mesh = asset::load_binary(&format!("{}/{}", assets, cfg.bin))
+                    .unwrap_or_else(|e| panic!("Failed to load {}: {e}", cfg.bin));
+                let (vb, ib, ic) = build_mesh_buffers(device, &mesh, cfg.bin);
+                println!(
+                    "  {}: {} verts, {} idxs",
+                    cfg.bin,
+                    mesh.vertices.len() / 3,
+                    mesh.indices.len()
+                );
 
-            // Per-object uniform (MVP = proj_view * model, updated each frame)
-            let ub = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some(&format!("UB {}", cfg.bin)),
-                size: 64,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
-            let ubg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some(&format!("UBG {}", cfg.bin)),
-                layout: &uniform_bgl,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: ub.as_entire_binding(),
-                }],
-            });
-
-            let (_t, tv, ts) = load_texture(device, queue, &format!("{}/{}", assets, cfg.tex));
-            let tbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some(&format!("TBG {}", cfg.bin)),
-                layout: &texture_bgl,
-                entries: &[
-                    wgpu::BindGroupEntry {
+                // Per-object uniform (MVP = proj_view * model, updated each frame)
+                let ub = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some(&format!("UB {}", cfg.bin)),
+                    size: 64,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                let ubg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(&format!("UBG {}", cfg.bin)),
+                    layout: &uniform_bgl,
+                    entries: &[wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&tv),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&ts),
-                    },
-                ],
-            });
+                        resource: ub.as_entire_binding(),
+                    }],
+                });
 
-            objects.push(MeshObject {
-                vertex_buffer: vb,
-                index_buffer: ib,
-                index_count: ic,
-                uniform_buffer: ub,
-                uniform_bind_group: ubg,
-                texture_bind_group: tbg,
-                model: cfg.model,
-            });
+                let (_t, tv, ts) = load_texture(device, queue, &format!("{}/{}", assets, cfg.tex));
+                let tbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some(&format!("TBG {}", cfg.bin)),
+                    layout: &texture_bgl,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&tv),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&ts),
+                        },
+                    ],
+                });
+
+                objects.push(MeshObject {
+                    vertex_buffer: vb,
+                    index_buffer: ib,
+                    index_count: ic,
+                    uniform_buffer: ub,
+                    uniform_bind_group: ubg,
+                    texture_bind_group: tbg,
+                    model: cfg.model,
+                });
+            }
         }
 
         // --- Ground plane ---
-        {
-            let (gv, gi, gc) = build_procedural_ground(device);
-            let (gtv, gts) = build_ground_texture(device, queue);
-            let g_model = Mat4::IDENTITY;
-            let ub = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("UB Ground"),
-                size: 64,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            });
-            let ubg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("UBG Ground"),
-                layout: &uniform_bgl,
-                entries: &[wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: ub.as_entire_binding(),
-                }],
-            });
-            let tbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("TBG Ground"),
-                layout: &texture_bgl,
-                entries: &[
-                    wgpu::BindGroupEntry {
+        if !minimal_scene {
+            {
+                let (gv, gi, gc) = build_procedural_ground(device);
+                let (gtv, gts) = build_ground_texture(device, queue);
+                let g_model = Mat4::IDENTITY;
+                let ub = device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("UB Ground"),
+                    size: 64,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                let ubg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("UBG Ground"),
+                    layout: &uniform_bgl,
+                    entries: &[wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&gtv),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&gts),
-                    },
-                ],
-            });
-            objects.push(MeshObject {
-                vertex_buffer: gv,
-                index_buffer: gi,
-                index_count: gc,
-                uniform_buffer: ub,
-                uniform_bind_group: ubg,
-                texture_bind_group: tbg,
-                model: g_model,
-            });
+                        resource: ub.as_entire_binding(),
+                    }],
+                });
+                let tbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("TBG Ground"),
+                    layout: &texture_bgl,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&gtv),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&gts),
+                        },
+                    ],
+                });
+                objects.push(MeshObject {
+                    vertex_buffer: gv,
+                    index_buffer: gi,
+                    index_count: gc,
+                    uniform_buffer: ub,
+                    uniform_bind_group: ubg,
+                    texture_bind_group: tbg,
+                    model: g_model,
+                });
+            }
         }
 
-        // --- Skinned characters ---
+        // --- Skinned C0 pose carriers ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
-
-        let mut bone_parents: Vec<i32> = Vec::new();
+        let skin_path = format!(
+            "{assets}/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_pose_carrier.bin"
+        );
+        let mesh = asset::load_skinned(&skin_path)
+            .unwrap_or_else(|error| panic!("failed to load C0 pose carrier {skin_path}: {error}"));
+        assert_eq!(
+            mesh.bones.len(),
+            163,
+            "C0-POSE-CARRIER-001 must preserve its 163-bone contract"
+        );
+        let bone_parents = mesh.bones.iter().map(|bone| bone.parent).collect();
+        let positions: Vec<glam::Vec3> = if minimal_scene {
+            vec![glam::Vec3::ZERO]
+        } else {
+            vec![glam::vec3(0.0, 0.0, 1.0), glam::vec3(0.0, 0.0, -1.0)]
+        };
         let correct_model = skinned_correct_model();
-
-        for (bin_name, tex_name, pos) in [
-            ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, 1.0)),
-            ("mannequin_male.bin", "mannequin_male_0.png", glam::vec3(0.0, 0.0, -1.0)),
-        ] {
-            let skin_path = format!("{}/characters/{}", assets, bin_name);
-            if let Ok(mesh) = asset::load_skinned(&skin_path) {
-                if bone_parents.is_empty() {
-                    bone_parents = mesh.bones.iter().map(|b| b.parent).collect();
-                }
-                let vc = mesh.vertices.len();
-            let mut interleaved: Vec<u8> =
-                Vec::with_capacity(vc * std::mem::size_of::<asset::SkinnedVertex>());
-            for v in &mesh.vertices {
-                interleaved.extend_from_slice(bytemuck::bytes_of(&v.position));
-                interleaved.extend_from_slice(bytemuck::bytes_of(&v.normal));
-                interleaved.extend_from_slice(bytemuck::bytes_of(&v.uv));
-                interleaved.extend_from_slice(bytemuck::bytes_of(&v.joint_indices));
-                interleaved.extend_from_slice(bytemuck::bytes_of(&v.joint_weights));
-            }
+        let vc = mesh.vertices.len();
+        let mut interleaved = Vec::with_capacity(vc * std::mem::size_of::<asset::SkinnedVertex>());
+        for vertex in &mesh.vertices {
+            interleaved.extend_from_slice(bytemuck::bytes_of(&vertex.position));
+            interleaved.extend_from_slice(bytemuck::bytes_of(&vertex.normal));
+            interleaved.extend_from_slice(bytemuck::bytes_of(&vertex.uv));
+            interleaved.extend_from_slice(bytemuck::bytes_of(&vertex.joint_indices));
+            interleaved.extend_from_slice(bytemuck::bytes_of(&vertex.joint_weights));
+        }
+        for pos in positions {
             let svb = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Skin VB"),
+                label: Some("C0 Skin VB"),
                 contents: &interleaved,
                 usage: wgpu::BufferUsages::VERTEX,
             });
             let sib = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Skin IB"),
+                label: Some("C0 Skin IB"),
                 contents: bytemuck::cast_slice(&mesh.indices),
                 usage: wgpu::BufferUsages::INDEX,
             });
             let sub = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("Skin UB"),
+                label: Some("C0 Skin UB"),
                 size: 64,
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
             let subg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Skin UBG"),
+                label: Some("C0 Skin UBG"),
                 layout: &uniform_bgl,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
                     resource: sub.as_entire_binding(),
                 }],
             });
-            let (_st, stv, sts) =
-                load_texture(device, queue, &format!("{}/{}", assets, tex_name));
+            let (stv, sts) = build_solid_texture(device, queue, [176, 163, 154, 255]);
             let stbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Skin TBG"),
+                label: Some("C0 carrier fallback TBG"),
                 layout: &texture_bgl,
                 entries: &[
                     wgpu::BindGroupEntry {
@@ -731,26 +872,20 @@ impl Renderer {
                     },
                 ],
             });
-            // joint storage buffer: 24 mat4x4<f32>
             let joint_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("Joint Buffer"),
-                size: (24 * std::mem::size_of::<glam::Mat4>()) as u64,
+                label: Some("C0 Joint Buffer"),
+                size: (mesh.bones.len() * std::mem::size_of::<glam::Mat4>()) as u64,
                 usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             });
             let joint_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("Joint BG"),
+                label: Some("C0 Joint BG"),
                 layout: &joint_bgl,
                 entries: &[wgpu::BindGroupEntry {
                     binding: 0,
                     resource: joint_buffer.as_entire_binding(),
                 }],
             });
-            println!(
-                "  skinned mannequin: {} verts, {} idxs",
-                vc,
-                mesh.indices.len()
-            );
             skinned.push(SkinnedObject {
                 vertex_buffer: svb,
                 index_buffer: sib,
@@ -760,16 +895,33 @@ impl Renderer {
                 texture_bind_group: stbg,
                 joint_buffer,
                 joint_bind_group,
+                bone_count: mesh.bones.len(),
                 model: Mat4::from_translation(pos) * correct_model,
             });
-            }
         }
+        println!(
+            "  C0 pose carrier: {} verts, {} idxs, {} bones",
+            vc,
+            mesh.indices.len(),
+            mesh.bones.len()
+        );
+
+        let first_person_weapon = build_solid_mesh_object(
+            device,
+            queue,
+            &uniform_bgl,
+            &texture_bgl,
+            &format!("{assets}/weapons/w0_sword_assembled.bin"),
+            "W0 first-person longsword",
+            [48, 56, 64, 255],
+        );
 
         Self {
             pipeline,
             skin_pipeline,
             debug_pipeline,
             objects,
+            first_person_weapon,
             skinned,
             depth_view,
             proj_view: Mat4::IDENTITY,
@@ -783,27 +935,30 @@ impl Renderer {
         }
     }
 
-    /// Upload bone line vertices from a frame of 24 skinning matrices.
-    pub fn update_debug_bones(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, joints: &[Mat4; 24]) {
+    /// Upload bone line vertices from one carrier skinning frame.
+    pub fn update_debug_bones(&mut self, device: &wgpu::Device, joints: &[Mat4]) {
+        assert_eq!(
+            joints.len(),
+            self.bone_parents.len(),
+            "debug skeleton must match the active carrier hierarchy"
+        );
         // Extract joint world positions (translation component of each matrix)
-        let mut pos = [glam::Vec3::ZERO; 24];
-        for i in 0..24 {
-            pos[i] = joints[i].w_axis.truncate();
-        }
+        let pos: Vec<glam::Vec3> = joints.iter().map(|joint| joint.w_axis.truncate()).collect();
         // Build line vertices: each parent-child pair = 2 vertices
-        let mut verts: Vec<f32> = Vec::with_capacity(24 * 2 * 6);
-        for i in 0..24 {
-            let p = if i < self.bone_parents.len() { self.bone_parents[i] } else { -1 };
-            if p >= 0 && (p as usize) < 24 {
+        let mut verts: Vec<f32> = Vec::with_capacity(joints.len() * 2 * 6);
+        for (i, parent) in self.bone_parents.iter().copied().enumerate() {
+            if parent >= 0 && (parent as usize) < joints.len() {
                 // From child (red) to parent (white)
                 verts.extend_from_slice(pos[i].to_array().as_ref()); // position
                 verts.extend_from_slice(&[1.0, 0.2, 0.2]); // red
-                verts.extend_from_slice(pos[p as usize].to_array().as_ref()); // position
+                verts.extend_from_slice(pos[parent as usize].to_array().as_ref()); // position
                 verts.extend_from_slice(&[1.0, 1.0, 1.0]); // white
             }
         }
         self.debug_line_count = (verts.len() / 6) as u32;
-        if self.debug_line_count == 0 { return; }
+        if self.debug_line_count == 0 {
+            return;
+        }
         let vb = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Debug VB"),
             contents: bytemuck::cast_slice(&verts),
@@ -820,7 +975,9 @@ impl Renderer {
     /// Draw the bone overlay (call after render_skinned).
     pub fn render_debug_overlay<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
         let Some(ref vb) = self.debug_vb else { return };
-        if self.debug_line_count == 0 { return };
+        if self.debug_line_count == 0 {
+            return;
+        };
         rpass.set_pipeline(&self.debug_pipeline);
         rpass.set_bind_group(0, &self.debug_ubg, &[]);
         rpass.set_vertex_buffer(0, vb.slice(..));
@@ -828,7 +985,11 @@ impl Renderer {
     }
 
     /// Upload hitbox debug line vertices.
-    pub fn update_hitbox_debug(&mut self, device: &wgpu::Device, lines: &[(glam::Vec3, glam::Vec3)]) {
+    pub fn update_hitbox_debug(
+        &mut self,
+        device: &wgpu::Device,
+        lines: &[(glam::Vec3, glam::Vec3)],
+    ) {
         if lines.is_empty() {
             self.hitbox_vb = None;
             self.hitbox_line_count = 0;
@@ -854,34 +1015,42 @@ impl Renderer {
     /// Draw hitbox debug lines.
     pub fn render_hitbox_debug<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
         let Some(ref vb) = self.hitbox_vb else { return };
-        if self.hitbox_line_count == 0 { return };
+        if self.hitbox_line_count == 0 {
+            return;
+        };
         rpass.set_pipeline(&self.debug_pipeline);
         rpass.set_bind_group(0, &self.debug_ubg, &[]);
         rpass.set_vertex_buffer(0, vb.slice(..));
         rpass.draw(0..self.hitbox_line_count, 0..1);
     }
 
-    /// Write a frame's 24 skinning matrices into the joint storage buffer.
-    pub fn update_skin_joints(&self, queue: &wgpu::Queue, joints: &[Mat4; 24]) {
+    /// Write one skinning frame into every compatible skinned object.
+    pub fn update_skin_joints(&self, queue: &wgpu::Queue, joints: &[Mat4]) {
         for s in &self.skinned {
-            // Column-major f32 array of 24 mat4 (each 16 f32).
-            let mut data = Vec::with_capacity(24 * 16);
-            for m in joints.iter() {
-                data.extend_from_slice(&m.to_cols_array());
-            }
-            queue.write_buffer(&s.joint_buffer, 0, bytemuck::cast_slice(&data));
+            self.write_skin_joints(queue, s, joints);
         }
     }
 
     /// Write skinning matrices to a specific skinned object by index.
-    pub fn update_skin_joints_indexed(&self, queue: &wgpu::Queue, idx: usize, joints: &[Mat4; 24]) {
+    pub fn update_skin_joints_indexed(&self, queue: &wgpu::Queue, idx: usize, joints: &[Mat4]) {
         if let Some(s) = self.skinned.get(idx) {
-            let mut data = Vec::with_capacity(24 * 16);
-            for m in joints.iter() {
-                data.extend_from_slice(&m.to_cols_array());
-            }
-            queue.write_buffer(&s.joint_buffer, 0, bytemuck::cast_slice(&data));
+            self.write_skin_joints(queue, s, joints);
         }
+    }
+
+    fn write_skin_joints(&self, queue: &wgpu::Queue, skinned: &SkinnedObject, joints: &[Mat4]) {
+        assert_eq!(
+            joints.len(),
+            skinned.bone_count,
+            "skinning frame has {} joints but carrier requires {}",
+            joints.len(),
+            skinned.bone_count
+        );
+        let mut data = Vec::with_capacity(joints.len() * 16);
+        for joint in joints {
+            data.extend_from_slice(&joint.to_cols_array());
+        }
+        queue.write_buffer(&skinned.joint_buffer, 0, bytemuck::cast_slice(&data));
     }
 
     /// Update camera projection * view matrix (call each frame)
@@ -892,11 +1061,27 @@ impl Renderer {
             let mvp = self.proj_view * obj.model;
             queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
         }
-        // Mannequin uniform (identity model; skinning happens in the vertex shader)
+        // Carrier model uniforms; skinning happens in the vertex shader.
         for s in &self.skinned {
             let mvp = self.proj_view * s.model;
             queue.write_buffer(&s.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
         }
+    }
+
+    /// Upload the visual-only W0 sword transform for the current first-person frame.
+    pub fn update_first_person_weapon(
+        &mut self,
+        queue: &wgpu::Queue,
+        proj_view: &Mat4,
+        model: Mat4,
+    ) {
+        self.first_person_weapon.model = model;
+        let mvp = *proj_view * model;
+        queue.write_buffer(
+            &self.first_person_weapon.uniform_buffer,
+            0,
+            bytemuck::bytes_of(&[mvp]),
+        );
     }
 
     /// Render all rigid objects
@@ -911,9 +1096,28 @@ impl Renderer {
         }
     }
 
-    /// Render the skinned mannequin (no-op if mesh failed to load)
-    pub fn render_skinned<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
-        for s in &self.skinned {
+    /// Render the accepted W0 weapon after arena geometry and before skinned actors.
+    pub fn render_first_person_weapon<'a>(&'a self, rpass: &mut wgpu::RenderPass<'a>) {
+        let weapon = &self.first_person_weapon;
+        rpass.set_pipeline(&self.pipeline);
+        rpass.set_bind_group(0, &weapon.uniform_bind_group, &[]);
+        rpass.set_bind_group(1, &weapon.texture_bind_group, &[]);
+        rpass.set_vertex_buffer(0, weapon.vertex_buffer.slice(..));
+        rpass.set_index_buffer(weapon.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+        rpass.draw_indexed(0..weapon.index_count, 0, 0..1);
+    }
+
+    /// Render skinned C0 carriers beginning at `first_instance`.
+    ///
+    /// First-person presentation omits the camera owner's full carrier to avoid
+    /// head/interior self-occlusion; the visual weapon path will be supplied by
+    /// the later source-valid motion/weapon unit.
+    pub fn render_skinned_from<'a>(
+        &'a self,
+        rpass: &mut wgpu::RenderPass<'a>,
+        first_instance: usize,
+    ) {
+        for s in self.skinned.iter().skip(first_instance) {
             rpass.set_pipeline(&self.skin_pipeline);
             rpass.set_bind_group(0, &s.uniform_bind_group, &[]);
             rpass.set_bind_group(1, &s.texture_bind_group, &[]);
@@ -941,5 +1145,30 @@ impl Renderer {
             view_formats: &[],
         });
         self.depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::{Vec3, vec3};
+
+    use super::first_person_weapon_model;
+
+    #[test]
+    fn first_person_weapon_transform_is_finite_rigid_and_camera_relative() {
+        let eye = vec3(2.0, 1.62, 4.0);
+        let model = first_person_weapon_model(eye, Vec3::NEG_Z);
+
+        assert!(model.is_finite());
+        assert!((model.determinant() - 1.0).abs() < 1.0e-4);
+        assert!(
+            model.w_axis.x < eye.x,
+            "screen-right is world -X at zero yaw"
+        );
+        assert!(model.w_axis.y < eye.y, "hilt stays below the camera eye");
+        assert!(
+            model.w_axis.z < eye.z,
+            "hilt stays forward of the camera eye"
+        );
     }
 }

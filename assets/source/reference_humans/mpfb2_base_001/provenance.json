@@ -1,0 +1,50 @@
+{
+  "asset_id": "mpfb2_base_001",
+  "created_at": "2026-07-10T13:46:07-04:00",
+  "source": {
+    "project": "MakeHuman Community MPFB2",
+    "repository": "https://github.com/makehumancommunity/mpfb2",
+    "commit": "26c811d307b57e2f9f3d743b92d69681b1704e85",
+    "version": "2.0.17",
+    "base_mesh_path": "src/mpfb/data/3dobjs/base.obj",
+    "base_mesh_sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+  },
+  "license": {
+    "assets": "CC0-1.0",
+    "source_code": "GPL-3.0-or-later",
+    "official_asset_license_reference": "https://static.makehumancommunity.org/mpfb/faq/is_it_really_free.html",
+    "bundled_license_files": [
+      "LICENSE.md",
+      "LICENSE.ASSETS.md"
+    ]
+  },
+  "generation": {
+    "blender": "4.3.2",
+    "rig_preset": "default",
+    "helpers_removed": true,
+    "top_influences": 8,
+    "weight_pruning": {
+      "affected_vertices": 920,
+      "max_removed_weight": 0.1495149586116895,
+      "mean_removed_weight": 0.0008364145164589849,
+      "flex60_max_position_error_m": 0.0001417673765391122,
+      "flex60_p99_position_error_m": 2.9802322387695312e-08,
+      "vertices_over_1mm": 0
+    }
+  },
+  "verified_output": {
+    "vertices": 13380,
+    "faces": 13378,
+    "connected_components": 1,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "bones": 163,
+    "finger_bones": 38,
+    "toe_bones": 28,
+    "maximum_imported_influences": 6,
+    "unbound_vertices": 0,
+    "blend_sha256": "eadba97973f53551ec70bec251f103021c2bbf6b15442d9e943e3fd13518c02f",
+    "fbx_sha256": "58a18c4e808412edf0022971ba554aaced0270ab1a22f006be0bd7755a05affd"
+  },
+  "status": "accepted_topology_source_not_runtime_installed"
+}

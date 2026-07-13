@@ -1,0 +1,6 @@
+# Immutable external sources and generated QA evidence are preserved byte-for-byte.
+# Do not normalize their line endings or apply textual diff/whitespace checks.
+/assets/source/** -text -diff
+/data/cmu/** -text -diff
+/tier1_research/** -text -diff
+/qa_runs/** -text -diff

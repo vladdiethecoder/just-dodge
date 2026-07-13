@@ -1,0 +1,97 @@
+{
+  "source": "assets/source/meshy/c0_base_fighter/assembled_001/model.fbx",
+  "mesh_objects": [
+    {
+      "name": "BodyCore",
+      "vertices": 40794,
+      "edges": 121673,
+      "polygons": 80881,
+      "materials": [
+        "OuterBodyNeutral"
+      ],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    },
+    {
+      "name": "Foot_Left",
+      "vertices": 69428,
+      "edges": 207733,
+      "polygons": 138297,
+      "materials": [
+        "OuterBodyNeutral"
+      ],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    },
+    {
+      "name": "Foot_Right",
+      "vertices": 69428,
+      "edges": 207733,
+      "polygons": 138297,
+      "materials": [
+        "OuterBodyNeutral"
+      ],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    },
+    {
+      "name": "Hand_Left",
+      "vertices": 95898,
+      "edges": 287688,
+      "polygons": 191792,
+      "materials": [
+        "OuterBodyNeutral"
+      ],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    },
+    {
+      "name": "Hand_Right",
+      "vertices": 95898,
+      "edges": 287688,
+      "polygons": 191792,
+      "materials": [
+        "OuterBodyNeutral"
+      ],
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "loose_vertices": 0,
+      "vertex_groups": 0,
+      "shape_keys": 0
+    }
+  ],
+  "armatures": [],
+  "bbox_min": [
+    -0.8949999809265137,
+    -0.1900000125169754,
+    0.0
+  ],
+  "bbox_max": [
+    0.8949999809265137,
+    0.148886039853096,
+    1.7999999523162842
+  ],
+  "bbox_size": [
+    1.7899999618530273,
+    0.3388860523700714,
+    1.7999999523162842
+  ],
+  "totals": {
+    "vertices": 371446,
+    "polygons": 741059,
+    "mesh_objects": 5,
+    "armatures": 0
+  }
+}

@@ -37,6 +37,17 @@ pub enum DamageType {
     Pierce,
 }
 
+/// Stable physical function of a collision proxy.
+///
+/// This is simulation evidence, not a rendered-material label. A
+/// `WeaponGuard` is a defensive interaction surface; a `Body` is damageable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ProxyRole {
+    Body,
+    WeaponEdge,
+    WeaponGuard,
+}
+
 /// A single collision proxy: bone-local AABB transformed into world space.
 #[derive(Debug, Clone)]
 pub struct HitboxProxy {
@@ -44,6 +55,7 @@ pub struct HitboxProxy {
     pub local_aabb: Aabb,
     pub world_transform: Mat4,
     pub damage_type: DamageType,
+    pub role: ProxyRole,
     pub world_aabb: Aabb,
 }
 
@@ -53,6 +65,9 @@ pub struct ContactGeometry {
     pub point: Vec3,
     pub normal: Vec3,
     pub depth: f32,
+    /// Fraction through the current deterministic physics substep at first contact.
+    /// Static overlap reports `0.0`.
+    pub time_of_impact: f32,
     pub attacker_proxy: usize,
     pub defender_proxy: usize,
 }
@@ -140,6 +155,7 @@ pub fn extract_body_proxies(skin_matrices: &[[Mat4; 24]]) -> Vec<HitboxProxy> {
             local_aabb: local,
             world_transform,
             damage_type: DamageType::Bash,
+            role: ProxyRole::Body,
             world_aabb,
         });
     }
@@ -159,6 +175,7 @@ pub fn extract_weapon_proxy(weapon_transform: &Mat4) -> HitboxProxy {
         local_aabb: local,
         world_transform,
         damage_type: DamageType::Slash,
+        role: ProxyRole::WeaponEdge,
         world_aabb,
     }
 }
@@ -173,48 +190,163 @@ fn aabb_intersect(a: &Aabb, b: &Aabb) -> bool {
         && a.max.z > b.min.z
 }
 
+fn static_contact(
+    attacker: &HitboxProxy,
+    defender: &HitboxProxy,
+    attacker_proxy: usize,
+    defender_proxy: usize,
+) -> Option<ContactGeometry> {
+    if !aabb_intersect(&attacker.world_aabb, &defender.world_aabb) {
+        return None;
+    }
+
+    let overlap_min = attacker.world_aabb.min.max(defender.world_aabb.min);
+    let overlap_max = attacker.world_aabb.max.min(defender.world_aabb.max);
+    let overlap = overlap_max - overlap_min;
+    let mut axis = 0usize;
+    let mut min_penetration = overlap.x;
+    if overlap.y < min_penetration {
+        axis = 1;
+        min_penetration = overlap.y;
+    }
+    if overlap.z < min_penetration {
+        axis = 2;
+        min_penetration = overlap.z;
+    }
+
+    let difference = attacker.world_aabb.center() - defender.world_aabb.center();
+    let mut normal = Vec3::ZERO;
+    normal[axis] = if difference[axis] >= 0.0 { 1.0 } else { -1.0 };
+    Some(ContactGeometry {
+        point: (overlap_min + overlap_max) * 0.5,
+        normal,
+        depth: min_penetration,
+        time_of_impact: 0.0,
+        attacker_proxy,
+        defender_proxy,
+    })
+}
+
 /// Compute contact data for the first penetrating attacker/defender proxy pair.
 pub fn contact(attacker: &[HitboxProxy], defender: &[HitboxProxy]) -> Option<ContactGeometry> {
-    for (ai, a) in attacker.iter().enumerate() {
-        for (di, d) in defender.iter().enumerate() {
-            if !aabb_intersect(&a.world_aabb, &d.world_aabb) {
-                continue;
+    for (attacker_proxy, attacker) in attacker.iter().enumerate() {
+        for (defender_proxy, defender) in defender.iter().enumerate() {
+            if let Some(contact) =
+                static_contact(attacker, defender, attacker_proxy, defender_proxy)
+            {
+                return Some(contact);
             }
-
-            let overlap_min = a.world_aabb.min.max(d.world_aabb.min);
-            let overlap_max = a.world_aabb.max.min(d.world_aabb.max);
-            let overlap = overlap_max - overlap_min;
-
-            // Find the axis of minimum penetration.
-            let mut axis = 0usize;
-            let mut min_pen = overlap.x;
-            if overlap.y < min_pen {
-                axis = 1;
-                min_pen = overlap.y;
-            }
-            if overlap.z < min_pen {
-                axis = 2;
-                min_pen = overlap.z;
-            }
-
-            // Direction from defender to attacker on the separating axis.
-            let ca = a.world_aabb.center();
-            let cd = d.world_aabb.center();
-            let diff = ca - cd;
-            let sign = if diff[axis] >= 0.0 { 1.0 } else { -1.0 };
-            let mut normal = Vec3::ZERO;
-            normal[axis] = sign;
-
-            return Some(ContactGeometry {
-                point: (overlap_min + overlap_max) * 0.5,
-                normal,
-                depth: min_pen,
-                attacker_proxy: ai,
-                defender_proxy: di,
-            });
         }
     }
     None
+}
+
+/// Conservative continuous collision detection across one deterministic physics substep.
+///
+/// The attacker centre is swept from its previous to current AABB centre through
+/// a defender AABB expanded by the maximum endpoint half-extents. This rejects
+/// endpoint tunnelling even if a rotating/scaling proxy makes the conservative
+/// swept volume wider than the exact mesh.
+pub fn swept_contact(
+    previous_attacker: &[HitboxProxy],
+    current_attacker: &[HitboxProxy],
+    defender: &[HitboxProxy],
+) -> Option<ContactGeometry> {
+    swept_contacts(previous_attacker, current_attacker, defender)
+        .into_iter()
+        .next()
+}
+
+/// Return every swept weapon/body contact from one deterministic physics substep.
+///
+/// The list is canonically ordered, so a shared bilateral world reducer can
+/// retain simultaneous contacts instead of silently discarding all but one.
+pub fn swept_contacts(
+    previous_attacker: &[HitboxProxy],
+    current_attacker: &[HitboxProxy],
+    defender: &[HitboxProxy],
+) -> Vec<ContactGeometry> {
+    let mut contacts = Vec::new();
+    for (attacker_proxy, current) in current_attacker.iter().enumerate() {
+        let previous = previous_attacker.get(attacker_proxy).unwrap_or(current);
+        for (defender_proxy, target) in defender.iter().enumerate() {
+            let candidate = static_contact(previous, target, attacker_proxy, defender_proxy)
+                .or_else(|| {
+                    swept_pair_contact(previous, current, target, attacker_proxy, defender_proxy)
+                });
+            let Some(candidate) = candidate else {
+                continue;
+            };
+            contacts.push(candidate);
+        }
+    }
+    contacts.sort_by(|left, right| {
+        left.time_of_impact
+            .total_cmp(&right.time_of_impact)
+            .then_with(|| left.attacker_proxy.cmp(&right.attacker_proxy))
+            .then_with(|| left.defender_proxy.cmp(&right.defender_proxy))
+    });
+    contacts
+}
+
+fn swept_pair_contact(
+    previous: &HitboxProxy,
+    current: &HitboxProxy,
+    target: &HitboxProxy,
+    attacker_proxy: usize,
+    defender_proxy: usize,
+) -> Option<ContactGeometry> {
+    let start = previous.world_aabb.center();
+    let end = current.world_aabb.center();
+    let delta = end - start;
+    let half_extents = ((previous.world_aabb.max - previous.world_aabb.min)
+        .max(current.world_aabb.max - current.world_aabb.min))
+        * 0.5;
+    let expanded_min = target.world_aabb.min - half_extents;
+    let expanded_max = target.world_aabb.max + half_extents;
+
+    let mut enter = f32::NEG_INFINITY;
+    let mut exit = f32::INFINITY;
+    let mut impact_axis = None;
+    for axis in 0..3 {
+        if delta[axis].abs() <= f32::EPSILON {
+            if start[axis] < expanded_min[axis] || start[axis] > expanded_max[axis] {
+                return None;
+            }
+            continue;
+        }
+
+        let first = (expanded_min[axis] - start[axis]) / delta[axis];
+        let second = (expanded_max[axis] - start[axis]) / delta[axis];
+        let axis_enter = first.min(second);
+        let axis_exit = first.max(second);
+        if axis_enter > enter {
+            enter = axis_enter;
+            impact_axis = Some(axis);
+        }
+        exit = exit.min(axis_exit);
+        if enter > exit {
+            return None;
+        }
+    }
+
+    let axis = impact_axis?;
+    if exit < 0.0 || enter > 1.0 {
+        return None;
+    }
+
+    let time_of_impact = enter.max(0.0);
+    let mut normal = Vec3::ZERO;
+    normal[axis] = if delta[axis] > 0.0 { -1.0 } else { 1.0 };
+    let centre = start + delta * time_of_impact;
+    Some(ContactGeometry {
+        point: centre - normal * half_extents[axis],
+        normal,
+        depth: 0.0,
+        time_of_impact,
+        attacker_proxy,
+        defender_proxy,
+    })
 }
 
 /// Return the 12 world-space edges of each proxy AABB as line segments.
@@ -258,6 +390,19 @@ pub fn debug_lines(proxies: &[HitboxProxy]) -> Vec<(Vec3, Vec3)> {
 mod tests {
     use super::*;
 
+    fn proxy_at(center: Vec3, extents: Vec3) -> HitboxProxy {
+        let world_transform = Mat4::from_translation(center);
+        let local_aabb = Aabb::from_extents(extents);
+        HitboxProxy {
+            bone_index: 0,
+            local_aabb,
+            world_transform,
+            damage_type: DamageType::Slash,
+            role: ProxyRole::WeaponEdge,
+            world_aabb: transform_aabb(world_transform, &local_aabb),
+        }
+    }
+
     #[test]
     fn overlapping_aabbs_produce_contact() {
         let attacker = vec![HitboxProxy {
@@ -265,14 +410,22 @@ mod tests {
             local_aabb: Aabb::from_extents(Vec3::ONE),
             world_transform: Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
             damage_type: DamageType::Bash,
-            world_aabb: transform_aabb(Mat4::from_translation(vec3(0.0, 0.0, 0.0)), &Aabb::from_extents(Vec3::ONE)),
+            role: ProxyRole::Body,
+            world_aabb: transform_aabb(
+                Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
+                &Aabb::from_extents(Vec3::ONE),
+            ),
         }];
         let defender = vec![HitboxProxy {
             bone_index: 0,
             local_aabb: Aabb::from_extents(Vec3::ONE),
             world_transform: Mat4::from_translation(vec3(0.5, 0.0, 0.0)),
             damage_type: DamageType::Bash,
-            world_aabb: transform_aabb(Mat4::from_translation(vec3(0.5, 0.0, 0.0)), &Aabb::from_extents(Vec3::ONE)),
+            role: ProxyRole::Body,
+            world_aabb: transform_aabb(
+                Mat4::from_translation(vec3(0.5, 0.0, 0.0)),
+                &Aabb::from_extents(Vec3::ONE),
+            ),
         }];
 
         let c = contact(&attacker, &defender).expect("expected contact");
@@ -290,17 +443,66 @@ mod tests {
             local_aabb: Aabb::from_extents(Vec3::ONE),
             world_transform: Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
             damage_type: DamageType::Bash,
-            world_aabb: transform_aabb(Mat4::from_translation(vec3(0.0, 0.0, 0.0)), &Aabb::from_extents(Vec3::ONE)),
+            role: ProxyRole::Body,
+            world_aabb: transform_aabb(
+                Mat4::from_translation(vec3(0.0, 0.0, 0.0)),
+                &Aabb::from_extents(Vec3::ONE),
+            ),
         }];
         let defender = vec![HitboxProxy {
             bone_index: 0,
             local_aabb: Aabb::from_extents(Vec3::ONE),
             world_transform: Mat4::from_translation(vec3(2.0, 0.0, 0.0)),
             damage_type: DamageType::Bash,
-            world_aabb: transform_aabb(Mat4::from_translation(vec3(2.0, 0.0, 0.0)), &Aabb::from_extents(Vec3::ONE)),
+            role: ProxyRole::Body,
+            world_aabb: transform_aabb(
+                Mat4::from_translation(vec3(2.0, 0.0, 0.0)),
+                &Aabb::from_extents(Vec3::ONE),
+            ),
         }];
 
         assert!(contact(&attacker, &defender).is_none());
+    }
+
+    #[test]
+    fn swept_contact_detects_a_weapon_that_tunnels_between_endpoints() {
+        let previous_weapon = vec![proxy_at(vec3(-2.0, 0.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let current_weapon = vec![proxy_at(vec3(2.0, 0.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let defender = vec![proxy_at(Vec3::ZERO, Vec3::ONE)];
+
+        assert!(contact(&previous_weapon, &defender).is_none());
+        assert!(contact(&current_weapon, &defender).is_none());
+
+        let impact = swept_contact(&previous_weapon, &current_weapon, &defender)
+            .expect("continuous sweep must not tunnel through the defender");
+        assert!((0.0..1.0).contains(&impact.time_of_impact));
+        assert_eq!(impact.normal, -Vec3::X);
+        assert_eq!(impact.depth, 0.0);
+    }
+
+    #[test]
+    fn swept_contacts_retains_and_orders_multiple_defender_hits() {
+        let previous_weapon = vec![proxy_at(vec3(-3.0, 0.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let current_weapon = vec![proxy_at(vec3(3.0, 0.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let defender = vec![
+            proxy_at(vec3(-1.0, 0.0, 0.0), Vec3::ONE),
+            proxy_at(vec3(1.0, 0.0, 0.0), Vec3::ONE),
+        ];
+
+        let contacts = swept_contacts(&previous_weapon, &current_weapon, &defender);
+        assert_eq!(contacts.len(), 2);
+        assert_eq!(contacts[0].defender_proxy, 0);
+        assert_eq!(contacts[1].defender_proxy, 1);
+        assert!(contacts[0].time_of_impact < contacts[1].time_of_impact);
+    }
+
+    #[test]
+    fn swept_contact_rejects_a_weapon_passing_outside_the_defender() {
+        let previous_weapon = vec![proxy_at(vec3(-2.0, 2.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let current_weapon = vec![proxy_at(vec3(2.0, 2.0, 0.0), vec3(0.1, 0.1, 0.1))];
+        let defender = vec![proxy_at(Vec3::ZERO, Vec3::ONE)];
+
+        assert!(swept_contact(&previous_weapon, &current_weapon, &defender).is_none());
     }
 
     #[test]

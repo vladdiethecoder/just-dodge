@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "slug": "c0_base_fighter_rigged_001",
+  "category": "fighter_body",
+  "status": "rigged",
+  "source": {
+    "reference_hashes": [
+      "050447efb8368432e347a179226b365e7103bd64983a5ba756b4bad7dc94ebb4"
+    ],
+    "prompt": "Meshy auto-rig of accepted C0 matched-graft retopo.",
+    "model": "meshy-6",
+    "pose_mode": "t-pose"
+  },
+  "tasks": [
+    {
+      "endpoint": "rigging",
+      "task_id": "019f4c2a-73ff-7bd1-950d-f3f5cee8a2dc",
+      "parent_task_id": "C0-RETOPO-003",
+      "request": {
+        "height_meters": 1.8,
+        "source_sha256": "050447efb8368432e347a179226b365e7103bd64983a5ba756b4bad7dc94ebb4",
+        "input_delivery": "verified temporary HTTPS GLB"
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 5
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/model.fbx",
+      "sha256": "81fd608d4c8b53fd29651e16541d3b37ff8cc08a1ccd36b71cdf772d08bb489f",
+      "bytes": 8850092
+    },
+    "glb": null,
+    "thumbnails": [
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/bind_contact.png",
+        "sha256": "f6f5f54865ea202717fa02fdee35ef41504d8968701549706aeb27f3715cbf5e",
+        "bytes": 140904
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/walk_contact.png",
+        "sha256": "bc84f6e7514f5d868e866867a2dfcc8dd02d29d8b515dbe94afa175e5c0bef38",
+        "bytes": 246164
+      },
+      {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/run_contact.png",
+        "sha256": "293b18cb06688fe85b2b1cc88d2ac2f79f502961cf2a92aca38dcca9bf981bd9",
+        "bytes": 245543
+      }
+    ],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 96822,
+      "polygons": 193940,
+      "five_digit_geometry_preserved": true,
+      "bind_visual": "PASS",
+      "walk_visual": "PASS",
+      "run_visual": "PASS"
+    },
+    "materials": {
+      "status": "neutral/untextured rig source"
+    },
+    "rig": {
+      "armatures": 1,
+      "bones": 24,
+      "roots": [
+        "Hips"
+      ],
+      "bone_names": [
+        "Hips",
+        "LeftUpLeg",
+        "LeftLeg",
+        "LeftFoot",
+        "LeftToeBase",
+        "RightUpLeg",
+        "RightLeg",
+        "RightFoot",
+        "RightToeBase",
+        "Spine02",
+        "Spine01",
+        "Spine",
+        "LeftShoulder",
+        "LeftArm",
+        "LeftForeArm",
+        "LeftHand",
+        "RightShoulder",
+        "RightArm",
+        "RightForeArm",
+        "RightHand",
+        "neck",
+        "Head",
+        "head_end",
+        "headfront"
+      ],
+      "hierarchy": {
+        "Hips": null,
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot",
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head"
+      },
+      "unbound_vertices": 0,
+      "weight_sum_min": 0.9999998644925654,
+      "weight_sum_max": 1.00000017612183,
+      "max_influences": 9,
+      "finger_bones": 0,
+      "toe_base_bones": 2,
+      "walk_action": [
+        {
+          "name": "Armature|Armature|Armature|walking_man|baselayer",
+          "frame_range": [
+            1.0,
+            32.0
+          ],
+          "fcurves": 249
+        }
+      ],
+      "run_action": [
+        {
+          "name": "Armature|Armature|Armature|running|baselayer",
+          "frame_range": [
+            1.0,
+            20.0
+          ],
+          "fcurves": 249
+        }
+      ],
+      "walk_fbx": {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/walking.fbx",
+        "sha256": "06174fe350a984c51c2f1db8a50b89c4eb2b4e218f2acc17c1569e9d2c726c3c",
+        "bytes": 8874508
+      },
+      "run_fbx": {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/running.fbx",
+        "sha256": "34efb951eb9f221f28fa8aba65e7fc0d427e1bdfb2a01bf369ca06a3d7a2f354",
+        "bytes": 8866060
+      }
+    },
+    "runtime": {
+      "status": "SKIN8_COOKED_NOT_INTEGRATED",
+      "source_max_influences": 9,
+      "cooked_max_influences": 8,
+      "current_engine_influences": 8,
+      "cooked_mesh": {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin",
+        "sha256": "415e64b1acbf22dd6d207961fcab2bc30db32c67ff5150a0ed4f147be0478036",
+        "bytes": 7317707
+      },
+      "walk_animation": {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim",
+        "sha256": "11b2a8d27c5b27eff5fd9524689abb8bea2cc90dee7a7467f432f92f21468ef2",
+        "bytes": 49166
+      },
+      "run_animation": {
+        "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/cooked/running.anim",
+        "sha256": "7c54f3d8f7578ee1a3377b197fd4d7855f622e6fd09e82f8b51387baa74ba3ef",
+        "bytes": 30734
+      },
+      "top8_probe": {
+        "sampled_walk_run_frames": 16,
+        "dropped_assignments": 79,
+        "mean_error_m_max": 2.01e-08,
+        "rms_error_m_max": 9.38e-07,
+        "max_error_m": 0.00016465,
+        "verdict": "PASS"
+      },
+      "verification": [
+        "SKM1 integrity PASS",
+        "ANM1 walk/run integrity PASS",
+        "legacy four-influence SKM tests PASS",
+        "wgpu eight-influence shader pipeline smoke PASS"
+      ],
+      "remaining": "Production MotionBricks retarget/full-rate visual QA before runtime replacement."
+    },
+    "vision": [
+      {
+        "artifact": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/bind_contact.png",
+        "verdict": "PASS",
+        "scope": "rigged bind/cardinal geometry"
+      },
+      {
+        "artifact": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/walk_contact.png",
+        "verdict": "PASS",
+        "scope": "included walk diagnostic"
+      },
+      {
+        "artifact": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/rigged_001/qa/run_contact.png",
+        "verdict": "PASS",
+        "scope": "included run diagnostic"
+      }
+    ],
+    "accepted": true,
+    "rejection_reason": null,
+    "conditions": [
+      "Use the verified eight-influence SKM/runtime path; do not regress to naive top-four pruning.",
+      "No finger bones are present; this 24-bone rig is acceptable only for the current MotionBricks body baseline, not final articulated grip anatomy.",
+      "Run production MotionBricks retarget and full-rate deformation QA before runtime replacement."
+    ]
+  }
+}

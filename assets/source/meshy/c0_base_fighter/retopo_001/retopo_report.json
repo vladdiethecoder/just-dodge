@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "asset_id": "c0_base_fighter_retopo_001",
+  "source_sha256": "9c4dd4a5bceb15490eac61dea62022daea4372299ea757218fa20bb18e479a35",
+  "simplification": {
+    "BodyCore": {
+      "before": 80881,
+      "after": 80694,
+      "target": 80000
+    },
+    "Foot_Left": {
+      "before": 138297,
+      "after": 55228,
+      "target": 55000
+    },
+    "Foot_Right": {
+      "before": 138297,
+      "after": 55228,
+      "target": 55000
+    },
+    "Hand_Left": {
+      "before": 191792,
+      "after": 55000,
+      "target": 55000
+    },
+    "Hand_Right": {
+      "before": 191792,
+      "after": 55000,
+      "target": 55000
+    }
+  },
+  "graft_measurements_m": {
+    "body_ankle_center_y": 0.072,
+    "pre_alignment_foot_ankle_center_y": -0.004,
+    "foot_translation_y": 0.076,
+    "body_forearm_center_y": 0.045,
+    "body_forearm_radius_y": 0.045,
+    "pre_taper_hand_radius_y": 0.015,
+    "hand_taper_band_x": [
+      0.705,
+      0.78
+    ]
+  },
+  "topology": {
+    "vertices": 146356,
+    "polygons": 290325,
+    "boundary_edges": 0,
+    "nonmanifold_edges": 0,
+    "connected_components": 1,
+    "min": [
+      -0.8949965834617615,
+      -0.1380157172679901,
+      3.3687442169139103e-07
+    ],
+    "max": [
+      0.8949965834617615,
+      0.15598848462104797,
+      1.7999999523162842
+    ],
+    "size": [
+      1.789993166923523,
+      0.2940042018890381,
+      1.7999996154418625
+    ]
+  },
+  "artifacts": {
+    "blend": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/c0_retopo.blend",
+      "sha256": "4f667836612fa54528d5fa50031265ba207feff5d584ac28b6bcefe0ea531230",
+      "bytes": 83585604
+    },
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/model.fbx",
+      "sha256": "fcd0fe6530facd305f20b4c265edd439accad70f58bcf21d5ef287c26e51ec6d",
+      "bytes": 9424348
+    },
+    "glb": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/c0_base_fighter/retopo_001/model.glb",
+      "sha256": "050447efb8368432e347a179226b365e7103bd64983a5ba756b4bad7dc94ebb4",
+      "bytes": 8220868
+    }
+  }
+}

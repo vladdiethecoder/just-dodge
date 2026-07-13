@@ -1,0 +1,15 @@
+{
+  "idle_frames": 4,
+  "strike_frames": 4,
+  "bones": 163,
+  "vertices": 14517,
+  "min_determinant": 0.999996662,
+  "max_determinant": 1.000000834,
+  "min_axis_scale": 0.999993682,
+  "max_axis_scale": 1.000006676,
+  "max_local_length_error_m": 0.000000000,
+  "max_source_length_error_m": 0.000000209,
+  "max_height_pump_m": 0.302177429,
+  "max_width_pump_m": 1.090946674,
+  "sampled_objs": ["frame_0000.obj", "frame_0001.obj", "frame_0002.obj", "frame_0003.obj"]
+}

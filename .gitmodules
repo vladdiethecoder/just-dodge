@@ -1,0 +1,18 @@
+[submodule "tier3_research/acl"]
+	path = tier3_research/acl
+	url = https://github.com/nfrechette/acl.git
+[submodule "tier3_research/ggrs"]
+	path = tier3_research/ggrs
+	url = https://github.com/gschup/ggrs.git
+[submodule "tier3_research/meshoptimizer"]
+	path = tier3_research/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer.git
+[submodule "tier3_research/ozz-animation"]
+	path = tier3_research/ozz-animation
+	url = https://github.com/guillaumeblanc/ozz-animation.git
+[submodule "tier3_research/rerun"]
+	path = tier3_research/rerun
+	url = https://github.com/rerun-io/rerun.git
+[submodule "tier3_research/tracy"]
+	path = tier3_research/tracy
+	url = https://github.com/wolfpld/tracy.git

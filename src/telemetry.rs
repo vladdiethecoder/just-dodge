@@ -32,7 +32,10 @@ impl Telemetry {
         } else {
             None
         };
-        Self { writer, frame_count: 0 }
+        Self {
+            writer,
+            frame_count: 0,
+        }
     }
 
     /// Write one frame. No-op if telemetry is disabled.
@@ -47,7 +50,9 @@ impl Telemetry {
                 r#"{{"fn":{},"t":{:.3},"player_pos":[{:.3},{:.3},{:.3}],"intent":"{}","phase":"{}","combat":{},"frame":{}}}"#,
                 self.frame_count,
                 f.t,
-                f.player_pos[0], f.player_pos[1], f.player_pos[2],
+                f.player_pos[0],
+                f.player_pos[1],
+                f.player_pos[2],
                 f.player_intent,
                 f.opponent_phase,
                 combat,

@@ -93,11 +93,37 @@ pub enum PlayerInput {
     Commit,
 }
 
-/// Geometry of a contact event, produced by the hitbox agent.
+/// The measured defender surface at a physical contact boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+pub enum ContactSurface {
+    Body,
+    Guard,
+}
+
+/// Geometry of a contact event, produced by the shared physical world.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 pub struct ContactGeometry {
     pub distance: f32,
     pub in_range: bool,
+    pub attacker: Side,
+    pub surface: ContactSurface,
+}
+
+/// Complete physical-world result for one truth tick.
+///
+/// `contact: None` is an observed whiff; absence of a batch is an unresolved
+/// physical step and must never be converted into a synthetic whiff.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct PhysicalContactBatch {
+    pub truth_frame: u32,
+    pub contact: Option<ContactGeometry>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContactSubmissionError {
+    NotResolving,
+    WrongTruthFrame { expected: u32, received: u32 },
+    Duplicate,
 }
 
 /// Where on the body a hit lands.
@@ -162,6 +188,7 @@ impl PartialEq for TruthSnapshot {
 pub struct CombatTruth {
     snapshot: TruthSnapshot,
     exchange_resolved: bool,
+    pending_physical_contact: Option<PhysicalContactBatch>,
 }
 
 impl CombatTruth {
@@ -190,6 +217,7 @@ impl CombatTruth {
                 winner: None,
             },
             exchange_resolved: false,
+            pending_physical_contact: None,
         }
     }
 
@@ -199,6 +227,36 @@ impl CombatTruth {
 
     pub fn snapshot(&self) -> &TruthSnapshot {
         &self.snapshot
+    }
+
+    /// The only truth frame accepted for the next physical contact batch.
+    pub fn expected_contact_frame(&self) -> Option<u32> {
+        (self.snapshot.phase == Phase::Resolve && !self.exchange_resolved)
+            .then(|| self.snapshot.frame.saturating_add(1))
+    }
+
+    /// Submit the complete physical result for the next Resolve-phase truth tick.
+    ///
+    /// This accepts a measured contact or a measured absence of contact. It never
+    /// accepts animation output as evidence and rejects stale or duplicate batches.
+    pub fn submit_physical_contact(
+        &mut self,
+        batch: PhysicalContactBatch,
+    ) -> Result<(), ContactSubmissionError> {
+        let Some(expected) = self.expected_contact_frame() else {
+            return Err(ContactSubmissionError::NotResolving);
+        };
+        if batch.truth_frame != expected {
+            return Err(ContactSubmissionError::WrongTruthFrame {
+                expected,
+                received: batch.truth_frame,
+            });
+        }
+        if self.pending_physical_contact.is_some() {
+            return Err(ContactSubmissionError::Duplicate);
+        }
+        self.pending_physical_contact = Some(batch);
+        Ok(())
     }
 
     /// Deterministic FNV-1a hash of the current snapshot.
@@ -213,8 +271,15 @@ impl CombatTruth {
         }
         let fighter = self.state_mut(side);
         match input {
-            PlayerInput::SelectAction(action) => fighter.action = Some(action),
-            PlayerInput::SelectStance(stance) => fighter.stance = stance,
+            PlayerInput::SelectAction(action)
+                if crate::combat::is_first_playable_choice(action, fighter.stance) =>
+            {
+                fighter.action = Some(action)
+            }
+            PlayerInput::SelectStance(stance) if stance == crate::combat::FIRST_PLAYABLE_STANCE => {
+                fighter.stance = stance
+            }
+            PlayerInput::SelectAction(_) | PlayerInput::SelectStance(_) => {}
             PlayerInput::Commit => {
                 if fighter.action.is_none() {
                     fighter.action = Some(Action::Block);
@@ -224,35 +289,26 @@ impl CombatTruth {
         }
     }
 
-    /// Advance the state machine by `dt` seconds at a fixed 60 Hz step.
-    pub fn fixed_tick(&mut self, dt: f32) {
-        let frames = (dt * 60.0).round() as u32;
-        if frames == 0 {
-            return;
-        }
-        for _ in 0..frames {
-            self.tick_frame();
-        }
-    }
-
-    fn tick_frame(&mut self) {
+    /// Advance the authoritative state machine by exactly one 60 Hz tick.
+    /// Wall-clock accumulation belongs to the application layer.
+    pub fn tick(&mut self) {
         self.snapshot.frame += 1;
         self.snapshot.phase_frame += 1;
 
         let duration = self.snapshot.phase.duration_frames();
+        if self.snapshot.phase == Phase::Resolve && !self.exchange_resolved {
+            self.exchange_resolved = self.resolve_exchange();
+        }
         if self.snapshot.phase_frame < duration {
-            // Resolve-phase contact outcome runs once on the first frame.
-            if self.snapshot.phase == Phase::Resolve && !self.exchange_resolved {
-                self.resolve_exchange();
-                self.exchange_resolved = true;
-            }
             return;
         }
 
         // Phase budget exhausted: run end-of-phase logic, then advance.
         match self.snapshot.phase {
             Phase::Commit => self.end_commit(),
-            Phase::Resolve => self.advance_phase(),
+            Phase::Resolve if !self.exchange_resolved => {
+                self.snapshot.phase_frame = duration;
+            }
             _ => self.advance_phase(),
         }
     }
@@ -274,6 +330,7 @@ impl CombatTruth {
                 self.snapshot.opponent.committed = false;
                 self.snapshot.last_contact = None;
                 self.exchange_resolved = false;
+                self.pending_physical_contact = None;
             }
             Phase::Commit => {
                 // Lock inputs. Any side that has not committed defaults to Block.
@@ -286,6 +343,7 @@ impl CombatTruth {
             }
             Phase::Resolve => {
                 self.exchange_resolved = false;
+                self.pending_physical_contact = None;
             }
             _ => {}
         }
@@ -298,26 +356,27 @@ impl CombatTruth {
         self.advance_phase();
     }
 
-    fn resolve_exchange(&mut self) {
+    fn resolve_exchange(&mut self) -> bool {
+        let Some(batch) = self.pending_physical_contact.take() else {
+            return false;
+        };
         let (Some(action_a), Some(action_b)) =
             (self.snapshot.player.action, self.snapshot.opponent.action)
         else {
             self.snapshot.last_contact = None;
-            return;
+            return true;
         };
 
-        // For this prototype the truth layer uses a deterministic in-range proxy
-        // when the hitbox agent has not yet supplied real contact geometry.
-        let contact = default_contact();
         let result = action_matrix::resolve(
             action_a,
             action_b,
             self.snapshot.player.stance,
             self.snapshot.opponent.stance,
-            &Some(contact),
+            &batch.contact,
         );
-        self.snapshot.last_contact = Some(contact);
+        self.snapshot.last_contact = batch.contact;
         self.apply_result(&result);
+        true
     }
 
     fn apply_result(&mut self, result: &MatrixResult) {
@@ -393,13 +452,6 @@ impl Default for CombatTruth {
     }
 }
 
-fn default_contact() -> ContactGeometry {
-    ContactGeometry {
-        distance: 1.0,
-        in_range: true,
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Deterministic hashing
 // ---------------------------------------------------------------------------
@@ -433,6 +485,8 @@ fn write_option_contact(buf: &mut Vec<u8>, contact: Option<ContactGeometry>) {
             buf.push(1);
             buf.extend_from_slice(&c.distance.to_bits().to_le_bytes());
             buf.push(if c.in_range { 1 } else { 0 });
+            buf.push(c.attacker as u8);
+            buf.push(c.surface as u8);
         }
     }
 }
@@ -491,7 +545,7 @@ mod tests {
 
     fn tick(truth: &mut CombatTruth, frames: u32) {
         for _ in 0..frames {
-            truth.fixed_tick(1.0 / 60.0);
+            truth.tick();
         }
     }
 
@@ -512,6 +566,12 @@ mod tests {
         tick(&mut truth, 15);
         assert_eq!(truth.phase(), Phase::Resolve);
 
+        truth
+            .submit_physical_contact(PhysicalContactBatch {
+                truth_frame: truth.expected_contact_frame().unwrap(),
+                contact: None,
+            })
+            .unwrap();
         tick(&mut truth, 30);
         assert_eq!(truth.phase(), Phase::Consequence);
 
@@ -535,6 +595,21 @@ mod tests {
     }
 
     #[test]
+    fn plan_rejects_actions_and_stances_outside_the_locked_slice() {
+        let mut truth = CombatTruth::new();
+        tick(&mut truth, 30); // Observe -> Plan
+
+        truth.apply_input(Side::Player, PlayerInput::SelectAction(Action::Strike));
+        truth.apply_input(Side::Player, PlayerInput::SelectStance(Stance::Left));
+
+        assert_eq!(truth.snapshot().player.action, None);
+        assert_eq!(truth.snapshot().player.stance, Stance::Top);
+
+        truth.apply_input(Side::Player, PlayerInput::SelectAction(Action::Thrust));
+        assert_eq!(truth.snapshot().player.action, Some(Action::Thrust));
+    }
+
+    #[test]
     fn truth_hash_is_stable_across_clones() {
         let truth = CombatTruth::new();
         let cloned = truth.clone();
@@ -554,16 +629,62 @@ mod tests {
     }
 
     #[test]
-    fn block_beats_strike_same_stance() {
+    fn resolve_phase_fails_closed_without_a_physical_batch() {
         let mut truth = CombatTruth::new();
-        tick(&mut truth, 30); // Plan
+        tick(&mut truth, 30); // Observe -> Plan
         truth.apply_input(Side::Player, PlayerInput::SelectAction(Action::Strike));
         truth.apply_input(Side::Player, PlayerInput::Commit);
         truth.apply_input(Side::Opponent, PlayerInput::SelectAction(Action::Block));
         truth.apply_input(Side::Opponent, PlayerInput::Commit);
-        tick(&mut truth, 81); // through Commit/Reveal into Resolve (first Resolve frame)
+        tick(&mut truth, 60); // Plan -> Commit
+        tick(&mut truth, 5); // Commit -> Reveal
+        tick(&mut truth, 15); // Reveal -> Resolve
+
+        tick(&mut truth, 30);
+        assert_eq!(truth.phase(), Phase::Resolve);
+        assert!(truth.snapshot().last_contact.is_none());
+        assert_eq!(truth.snapshot().player.health, 100.0);
+        assert_eq!(truth.snapshot().opponent.health, 100.0);
+
+        let expected = truth.expected_contact_frame().unwrap();
+        let stale = PhysicalContactBatch {
+            truth_frame: expected - 1,
+            contact: None,
+        };
+        assert_eq!(
+            truth.submit_physical_contact(stale),
+            Err(ContactSubmissionError::WrongTruthFrame {
+                expected,
+                received: expected - 1,
+            })
+        );
+    }
+
+    #[test]
+    fn guard_contact_beats_thrust_in_the_locked_slice() {
+        let mut truth = CombatTruth::new();
+        tick(&mut truth, 30); // Plan
+        truth.apply_input(Side::Player, PlayerInput::SelectAction(Action::Thrust));
+        truth.apply_input(Side::Player, PlayerInput::Commit);
+        truth.apply_input(Side::Opponent, PlayerInput::SelectAction(Action::Block));
+        truth.apply_input(Side::Opponent, PlayerInput::Commit);
+        tick(&mut truth, 60); // Plan -> Commit
+        tick(&mut truth, 5); // Commit -> Reveal
+        tick(&mut truth, 15); // Reveal -> Resolve
+        truth
+            .submit_physical_contact(PhysicalContactBatch {
+                truth_frame: truth.expected_contact_frame().unwrap(),
+                contact: Some(ContactGeometry {
+                    distance: 1.0,
+                    in_range: true,
+                    attacker: Side::Player,
+                    surface: ContactSurface::Guard,
+                }),
+            })
+            .unwrap();
+        tick(&mut truth, 1);
         assert!(truth.snapshot().last_contact.is_some());
-        // Player attacked; opponent blocked same stance (Top) -> player should lose stamina.
+        // Player thrust; measured guard contact means player loses stamina.
         assert!(truth.snapshot().player.stamina < 100.0);
         assert_eq!(truth.snapshot().player.health, 100.0);
         assert_eq!(truth.snapshot().opponent.health, 100.0);

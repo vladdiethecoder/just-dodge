@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "slug": "w0_sword_pommel_candidate_001",
+  "category": "weapon",
+  "status": "rejected",
+  "source": {
+    "reference_hashes": [
+      "7c9f811c38f21efe7676546e1701bad3bd80883eed856e19c671518c5e7c6376",
+      "68651b8dabab5ce7f13d4ceed714e6a38807cf32e7ba321144591a14a6984c26",
+      "6b9628b99acd6fc094c5a6bf7cd66f120b835ce72ad8554784c9ca70217e4cc0",
+      "ad4f59dd1209bc56b412559da9bb7c43cd3d317693232d557381aa25b97580e5"
+    ],
+    "prompt": "Faceted counterweight pommel with tang socket, peen recess and keyed interface.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a4c-12e7-72fa-820d-1a085d29f74e",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_w0_pommel_views_v1/back.png",
+          "/tmp/just_dodge_w0_pommel_views_v1/front.png",
+          "/tmp/just_dodge_w0_pommel_views_v1/left.png",
+          "/tmp/just_dodge_w0_pommel_views_v1/right.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/w0_sword/pommel_candidate_001/model.fbx",
+      "sha256": "661f53c1092a94d7d3a19836f13e777a809cbf3b954b48bb59fc41576010487d",
+      "bytes": 3528988
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 53490,
+      "polygons": 106980,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0,
+      "bbox_size": [
+        1.0294950008392334,
+        0.7840690016746521,
+        1.8997290134429932
+      ]
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": false,
+    "rejection_reason": "Peen recess and keyed grip interface are missing; opening reads as an unrestricted rectangular through-hole."
+  }
+}

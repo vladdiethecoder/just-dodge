@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "slug": "w0_sword_guard_candidate_001",
+  "category": "weapon",
+  "status": "accepted_geometry",
+  "source": {
+    "reference_hashes": [
+      "45cd13793c5b2f2623b0a30af61d234fc53bbf998ea949e1295d1598888012c4",
+      "bdef5c28afe6a070813110422fdc507a28b94c2ef9cd9a151b489d104910c1d6",
+      "b1a5e2ae8cb5ea7491ee52e3c366d79534977c74bad390e598ada1900d1fb0ea",
+      "6bd243c1f397b1cb2c6d83237005c85b4fe8a12ebdfe0276be5fd23a5e2c0a22"
+    ],
+    "prompt": "Centered slotted forged guard with symmetric tapered quillons.",
+    "model": "meshy-6",
+    "pose_mode": ""
+  },
+  "tasks": [
+    {
+      "endpoint": "multi-image-to-3d",
+      "task_id": "019f4a4c-046a-7a38-8d93-c51896189157",
+      "parent_task_id": null,
+      "request": {
+        "ai_model": "meshy-6",
+        "model_type": "standard",
+        "should_texture": false,
+        "should_remesh": false,
+        "target_formats": [
+          "fbx",
+          "glb"
+        ],
+        "alpha_thumbnail": true,
+        "multi_view_thumbnails": true,
+        "remove_lighting": true,
+        "image_enhancement": false,
+        "file_paths": [
+          "/tmp/just_dodge_w0_guard_views_v1/back.png",
+          "/tmp/just_dodge_w0_guard_views_v1/front.png",
+          "/tmp/just_dodge_w0_guard_views_v1/left.png",
+          "/tmp/just_dodge_w0_guard_views_v1/right.png"
+        ]
+      },
+      "status": "SUCCEEDED",
+      "task_error": null,
+      "seed": null,
+      "consumed_credits": 20
+    }
+  ],
+  "artifacts": {
+    "fbx": {
+      "path": "/run/media/vdubrov/Bulk-SSD/Just Dodge/assets/source/meshy/w0_sword/guard_candidate_001/model.fbx",
+      "sha256": "7f9b063789de67683fc29f8bc5fe1baa9852fc5342231f67c672b66de3800059",
+      "bytes": 885196
+    },
+    "glb": null,
+    "thumbnails": [],
+    "textures": []
+  },
+  "qa": {
+    "geometry": {
+      "vertices": 11957,
+      "polygons": 23922,
+      "nonmanifold_edges": 0,
+      "boundary_edges": 0,
+      "bbox_size": [
+        1.8995139598846436,
+        0.1984899938106537,
+        0.11643800139427185
+      ]
+    },
+    "materials": {},
+    "rig": null,
+    "runtime": null,
+    "vision": [],
+    "accepted": true,
+    "rejection_reason": null
+  }
+}

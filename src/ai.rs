@@ -126,23 +126,19 @@ impl AiController {
             }
         }
 
-        // Base weights: Strike, Block, Grab, Thrust, Dodge.
-        let mut weights = [0.25f32, 0.25f32, 0.15f32, 0.20f32, 0.15f32];
+        // First-playable cleanbox weights: Thrust, Block, Dodge.
+        let mut weights = [0.45f32, 0.30f32, 0.25f32];
 
         // Health-driven biases.
         if snapshot.opponent_health < 0.30 {
-            weights[0] += 0.15; // bias toward Strike
-            weights[3] += 0.10; // bias toward Thrust
-            weights[1] -= 0.10;
-            weights[2] -= 0.08;
-            weights[4] -= 0.07;
+            weights[0] += 0.15; // bias toward Thrust
+            weights[1] -= 0.08;
+            weights[2] -= 0.07;
         }
         if snapshot.my_health < 0.30 {
             weights[1] += 0.15; // bias toward Block
-            weights[4] += 0.10; // bias toward Dodge
-            weights[0] -= 0.10;
-            weights[2] -= 0.08;
-            weights[3] -= 0.07;
+            weights[2] += 0.10; // bias toward Dodge
+            weights[0] -= 0.12;
         }
 
         // Clamp and renormalize so probabilities stay valid even when both
@@ -164,48 +160,28 @@ impl AiController {
             cumulative += *w;
             if r < cumulative {
                 return match i {
-                    0 => Action::Strike,
+                    0 => Action::Thrust,
                     1 => Action::Block,
-                    2 => Action::Grab,
-                    3 => Action::Thrust,
-                    4 => Action::Dodge,
+                    2 => Action::Dodge,
                     _ => unreachable!(),
                 };
             }
         }
-        Action::Strike
+        Action::Thrust
     }
 
-    fn pick_stance(&mut self, snapshot: &AiSnapshot) -> Stance {
-        let in_plan = snapshot.phase.eq_ignore_ascii_case("plan");
-
-        if !in_plan {
-            if let Some(last_stance) = snapshot.last_player_stance {
-                if self.rng.next_bool(0.3) {
-                    return last_stance;
-                }
-            }
-        }
-
-        match self.rng.next_u32(0..3) {
-            0 => Stance::Top,
-            1 => Stance::Left,
-            2 => Stance::Right,
-            _ => unreachable!(),
-        }
+    fn pick_stance(&mut self, _snapshot: &AiSnapshot) -> Stance {
+        crate::combat::FIRST_PLAYABLE_STANCE
     }
 }
 
-/// Counter relationship: return the action that beats `action`.
-/// Block beats Strike, Grab beats Block, Strike beats Grab,
-/// Dodge beats Thrust, Strike beats Dodge.
+/// Slice-local heuristic only. Physical contacts, not this table, determine
+/// Block/Hit/Whiff in truth.
 fn counter(action: Action) -> Action {
     match action {
-        Action::Strike => Action::Block,
-        Action::Block => Action::Grab,
-        Action::Grab => Action::Strike,
+        Action::Strike | Action::Grab | Action::Block => Action::Thrust,
         Action::Thrust => Action::Dodge,
-        Action::Dodge => Action::Strike,
+        Action::Dodge => Action::Thrust,
     }
 }
 
@@ -253,16 +229,8 @@ mod tests {
             snap.last_player_stance = Some(Stance::Top);
             for _ in 0..200 {
                 let commit = ai.select_action(&snap);
-                // Stance is always one of the three valid variants.
-                assert!(matches!(
-                    commit.stance,
-                    Stance::Top | Stance::Left | Stance::Right
-                ));
-                // Action is always one of the five valid variants.
-                assert!(matches!(
-                    commit.action,
-                    Action::Strike | Action::Block | Action::Grab | Action::Thrust | Action::Dodge
-                ));
+                assert_eq!(commit.stance, crate::combat::FIRST_PLAYABLE_STANCE);
+                assert!(crate::combat::is_first_playable_action(commit.action));
             }
         }
     }
@@ -273,8 +241,8 @@ mod tests {
         let mut ai = AiController::new(Side::Opponent, personality, 99);
 
         let mut plan_snap = AiSnapshot::new("Plan", 1.0, 1.0);
-        plan_snap.last_player_action = Some(Action::Grab);
-        plan_snap.last_player_stance = Some(Stance::Right);
+        plan_snap.last_player_action = Some(Action::Thrust);
+        plan_snap.last_player_stance = Some(Stance::Top);
 
         let reveal_snap = AiSnapshot::new("Reveal", 1.0, 1.0);
         // reveal_snap has no last action/stance, so it should only use base weights.
@@ -295,12 +263,12 @@ mod tests {
         for seed in 0..100 {
             let mut ai = AiController::new(Side::Opponent, personality, seed);
             let mut snap = AiSnapshot::new("Reveal", 1.0, 1.0);
-            snap.last_player_action = Some(Action::Strike);
+            snap.last_player_action = Some(Action::Thrust);
             let commit = ai.select_action(&snap);
-            if commit.action == Action::Block {
+            if commit.action == Action::Dodge {
                 return;
             }
         }
-        panic!("AI never countered a revealed Strike in 100 seeds");
+        panic!("AI never selected Dodge against a revealed Thrust in 100 seeds");
     }
 }

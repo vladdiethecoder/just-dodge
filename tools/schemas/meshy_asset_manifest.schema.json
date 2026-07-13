@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Just Dodge Meshy Asset Candidate Manifest",
+  "type": "object",
+  "required": ["schema_version", "slug", "category", "status", "source", "tasks", "artifacts", "qa"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "slug": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+    "category": {"enum": ["fighter_body", "anatomical_component", "clothing", "armor", "weapon", "shield", "arena_module", "prop"]},
+    "status": {"enum": ["planned", "submitted", "generated", "rejected", "accepted_geometry", "textured", "rigged", "cooked", "runtime_verified"]},
+    "source": {
+      "type": "object",
+      "required": ["reference_hashes", "prompt", "model"],
+      "properties": {
+        "reference_hashes": {"type": "array", "items": {"type": "string"}},
+        "prompt": {"type": "string"},
+        "model": {"const": "meshy-6"},
+        "pose_mode": {"enum": ["", "a-pose", "t-pose"]}
+      },
+      "additionalProperties": false
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["endpoint", "task_id", "request", "status", "consumed_credits"],
+        "properties": {
+          "endpoint": {"type": "string"},
+          "task_id": {"type": "string"},
+          "parent_task_id": {"type": ["string", "null"]},
+          "request": {"type": "object"},
+          "status": {"enum": ["PENDING", "IN_PROGRESS", "SUCCEEDED", "FAILED", "CANCELED"]},
+          "task_error": {"type": ["object", "null"]},
+          "seed": {"type": ["integer", "null"]},
+          "consumed_credits": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": true
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["fbx", "glb", "thumbnails", "textures"],
+      "properties": {
+        "fbx": {"$ref": "#/$defs/file"},
+        "glb": {"$ref": "#/$defs/file"},
+        "thumbnails": {"type": "array", "items": {"$ref": "#/$defs/file"}},
+        "textures": {"type": "array", "items": {"$ref": "#/$defs/file"}}
+      },
+      "additionalProperties": false
+    },
+    "qa": {
+      "type": "object",
+      "required": ["geometry", "materials", "rig", "runtime", "vision", "accepted"],
+      "properties": {
+        "geometry": {"type": "object"},
+        "materials": {"type": "object"},
+        "rig": {"type": ["object", "null"]},
+        "runtime": {"type": ["object", "null"]},
+        "vision": {"type": "array", "items": {"type": "object"}},
+        "accepted": {"type": "boolean"},
+        "rejection_reason": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": ["object", "null"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0}
+      },
+      "required": ["path", "sha256", "bytes"],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
