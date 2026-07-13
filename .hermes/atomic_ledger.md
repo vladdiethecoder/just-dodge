@@ -44,24 +44,22 @@
 ---
 
 ## Active Unit
-M3-MOTION-CONTRACT-007 — define the public, deterministic presentation request boundary.
+M3-MOTION-TELLS-SOURCE-010 — acquire and admit semantic combat source clips; keep the app bind-pose path unmodified until that gate passes.
 
-Mode: Implementation.
+Mode: Evidence-gated source acquisition.
 
-Goal: derive a typed MotionBricks request from public `m3::Snapshot` data without exposing Plan-phase intent or mutating combat truth.
+Goal: obtain neural source motions with a visible sword Strike, defensive Block, and torso-directed Grab; produce at least eight readable reveal frames per action, then regenerate the MotionBricks primitive library through the provenance-preserving encoder.
 
-Expected behavior: request identity is deterministic from snapshot fields, carries only public side/action/phase/phase-frame/injury state, and returns no action-bearing request during Observe/Plan.
+Observed numeric bridge: `0e5a29a0cc99b7e29e259a4192ef6be3e8c8eb60` maps each cached G1 source frame into the 24-bone armored hierarchy with finite, positive-determinant skin matrices and deterministic receipts. All-target validation passed. The bridge is intentionally not wired to `App::current_pose()`.
 
-Files: `.hermes/atomic_ledger.md`, `src/milestone3.rs`, `src/motion.rs`, `src/main.rs`, focused M3/motion tests.
+Failed source gate: the current `assets/data/primitives.ron` candidates have exactly four frames. Frame-2 QA rendered no mesh collapse, but Strike is a raised unarmed arm gesture and Block/Grab are bilateral T-pose-like arm spreads; none has a visible W0 sword or a distinguishable combat tell. Evidence: `qa_runs/m3_contact_truth_001/b13_retarget/shot_{strike,block,grab}.log` and the three hashed front renders recorded in `docs/reports/M3_MOTION_GATE_20260713.md`.
 
-Baseline: `App::current_pose()` returns reference matrices for both fighters. `m3::Snapshot` has public phase, frame, revealed action pair, public fighter injury, and no direct MotionBricks request type.
+Primary source path: local `kimodo_gen` is installed. On 2026-07-13 it reached the text-encoder initialization but the configured remote text-encoder service was unavailable; the local LLM2Vec fallback then received HTTP 401 from gated `meta-llama/Meta-Llama-3-8B-Instruct`. No generated candidate was admitted or written.
 
-Validation: RED tests for Plan isolation and request stability; same replay produces an identical request receipt; request creation leaves canonical M3 hash unchanged; warning-denying focused tests and all-target compilation.
+Required external resource: the owner must approve access to the gated Meta Llama repository and authenticate their local Hugging Face CLI. Do not provide a token in chat or commit one. Once that local credential exists, re-run the exact candidate commands recorded in `docs/reports/M3_MOTION_GATE_20260713.md`; do not substitute hand-authored animation or a bind-pose fallback.
 
-Rollback: remove only the request type/converter/tests; keep static bind-pose rendering and packet-driven truth unchanged.
-
-Strike count: 0.
-Current status: In Progress.
+Strike count: 0. The source failure was blocked before any candidate reached C0 promotion.
+Current status: Blocked on owner-side gated-model authorization.
 
 ### DODGE-SOURCE-EXTERNAL-001 closure record
 - Probe: CMU Graphics Lab Motion Capture Database, subject 14 / trial 02. Official FAQ (`https://mocap.cs.cmu.edu/faqs.php`) verified 2026-07-12: motion data may be copied, modified, or redistributed without permission.

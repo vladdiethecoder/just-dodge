@@ -4,8 +4,8 @@
 
 - Branch: `milestone3-first-playable-terra`
 - Starting revision: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`
-- Current implementation revision: `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`
-- Authored implementation: deterministic M3 truth integration, cleanbox adapter, armored-duelist import, renderer bridge, headless verification, and status/evidence documents.
+- Current implementation revision: `0e5a29a0cc99b7e29e259a4192ef6be3e8c8eb60`
+- Authored implementation: deterministic M3 truth integration, cleanbox adapter, armored-duelist import, public motion requests, fail-closed MotionBricks source cache, 24-bone retarget QA bridge, renderer bridge, headless verification, and status/evidence documents.
 
 ## Current verified mechanics
 
@@ -17,7 +17,7 @@
 | Body/guard/whiff consequences | `milestone3::tests::body_packet_overrides_action_labels_and_guard_packet_causes_no_injury` | Pass |
 | Replay reconstruction | `m3_match --autoplay 1` then `m3_match --verify` | Frame 342, `Player`, hash `d1a3cc1bfb9c2f67` |
 | Warning-clean project | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` | Pass |
-| Full test surface | repeated `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | 79 library + 93 game-binary + 1 official-motion + 6 motion-service tests passed |
+| Full test surface | `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` at `0e5a29a` | 85 library + 93 game-binary + 1 official-motion + 1 serialized motion-service test passed |
 
 ## Runtime asset integration
 
@@ -32,11 +32,12 @@
 - `milestone3::Session` owns inputs, phase advancement, physical contact admission, injury, replay, and truth hashes.
 - `M3CleanboxWorld` supplies measured packets from two physics substeps; it does not choose outcomes from action labels.
 - Renderer, camera, and weapon response consume snapshots after truth advancement. They do not mutate M3 state.
-- `App::current_pose()` still returns bind matrices. MotionBricks action conditioning and retargeted runtime pose are not implemented; see `B.1.1`–`B.1.6` in `DEVELOPMENT_TASKLIST.md`.
+- `App::current_pose()` still returns bind matrices by gate, not absence: public motion requests, artifact validation/cache loading, and retarget transport exist. Current four-frame source clips fail the player-visible semantic tell gate, so no retargeted pose is promoted into the app. See `M3_MOTION_GATE_20260713.md`.
 
 ## Boundaries retained
 
 - Five human packaged matches and canonical gameplay media are not demonstrated.
 - Current Wayland automation/capture evidence is insufficient for a real-match video claim. X11 probing showed injected input can reach the app, but it is not a five-match human-playtest substitute.
 - The new armored-duelist manifest records technical provenance only; redistribution rights remain unverified. The build must not be described as distributable.
-- One first all-target run transiently failed `all_top_primitives_are_present_and_rigid`; three focused reruns and a later full all-target rerun passed. Stabilizing that test is a tracked QA item, not evidence of a resolved source defect.
+- The motion-service integration suite is now a single serialized contract test; it passed 10 consecutive isolated runs and the current all-target suite. This fixes test-harness concurrency without weakening any primitive assertions.
+- Neural source generation through the repository's Kimodo path is blocked by owner-side Hugging Face authorization for `meta-llama/Meta-Llama-3-8B-Instruct`; the exact reproducer and no-fallback policy are in `M3_MOTION_GATE_20260713.md`.
