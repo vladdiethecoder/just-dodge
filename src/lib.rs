@@ -11,6 +11,7 @@ pub mod injury;
 pub mod m3_cleanbox;
 pub mod milestone3;
 pub mod motion;
+pub mod motion_request;
 pub mod motion_service;
 pub mod renderer;
 pub mod retarget;
