@@ -35,6 +35,7 @@
 ## Milestone 3: First Playable
 
 **Definition:** Complete single-exchange duel, ugly but functional.
+**Current status:** BLOCKED. Deterministic core, replay, package launch, and compiler/test gates are verified; real Wayland input/video evidence and runtime-asset distribution rights are not. See `docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md`.
 **Acceptance Criteria:**
 - [ ] Full match loop: menu → setup → observe → plan → commit → reveal → resolve → consequence → match result.
 - [ ] 3 actions with injury and win/loss.

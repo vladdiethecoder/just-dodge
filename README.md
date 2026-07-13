@@ -27,6 +27,7 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 - [Risk Register](docs/RISK-REGISTER.md)
 - [Lessons from OATHYARD](docs/LESSONS-FROM-OATHYARD.md)
 - [Milestone 3 Build Record](docs/reports/TERRA_AGENTIC_BUILD.md)
+- [Milestone 3 First Playable Report](docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md)
 - [Milestone 3 Asset Provenance Audit](docs/reports/ASSET_PROVENANCE_M3.md)
 - [Changelog](CHANGELOG.md)
 
