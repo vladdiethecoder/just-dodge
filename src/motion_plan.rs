@@ -304,8 +304,8 @@ impl MotionPlanPacketV1 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct JointMotorTargetV1 {
     pub joint_index: u8,
-    pub desired_position_millirad: i32,
-    pub desired_velocity_millirad_s: i32,
+    pub desired_rotation_6d_q15: [i16; 6],
+    pub desired_angular_velocity_millirad_s: [i32; 3],
     pub stiffness_q16: u16,
     pub damping_q16: u16,
     pub max_torque_millinewton_m: u32,
@@ -336,6 +336,9 @@ impl MotorTargetBatchV1 {
             }
             if seen[joint] {
                 return Err(MotionPlanError::DuplicateJoint(target.joint_index));
+            }
+            if !valid_rotation_6d(target.desired_rotation_6d_q15) {
+                return Err(MotionPlanError::InvalidRotationBasis(target.joint_index));
             }
             seen[joint] = true;
         }
@@ -388,6 +391,7 @@ pub enum MotionPlanError {
     NonCanonicalOrder(&'static str),
     InvalidJoint(u8),
     DuplicateJoint(u8),
+    InvalidRotationBasis(u8),
     MissingPlanHash,
     PlanHashMismatch,
     Serialization,
@@ -456,9 +460,23 @@ fn pose_targets(targets: &[PoseTargetV1], horizon: u16) -> Result<(), MotionPlan
         if previous.is_some_and(|value| key <= value) {
             return Err(MotionPlanError::NonCanonicalOrder("pose_targets"));
         }
+        if !valid_rotation_6d(target.rotation_6d_q15) {
+            return Err(MotionPlanError::InvalidRotationBasis(target.joint_index));
+        }
         previous = Some(key);
     }
     Ok(())
+}
+
+fn valid_rotation_6d(rotation: [i16; 6]) -> bool {
+    let first = rotation[..3].iter().copied().map(i64::from);
+    let second = rotation[3..].iter().copied().map(i64::from);
+    let norm_first: i64 = first.clone().map(|value| value * value).sum();
+    let norm_second: i64 = second.clone().map(|value| value * value).sum();
+    let dot: i64 = first.zip(second).map(|(left, right)| left * right).sum();
+    let unit = i64::from(i16::MAX).pow(2);
+    let norm_range = (unit * 3 / 4)..=(unit * 5 / 4);
+    norm_range.contains(&norm_first) && norm_range.contains(&norm_second) && dot.abs() <= unit / 8
 }
 
 fn fnv1a64(bytes: &[u8]) -> u64 {
@@ -585,12 +603,12 @@ mod tests {
             PoseTargetV1 {
                 tick_offset: 20,
                 joint_index: 22,
-                rotation_6d_q15: [0; 6],
+                rotation_6d_q15: [i16::MAX, 0, 0, 0, i16::MAX, 0],
             },
             PoseTargetV1 {
                 tick_offset: 20,
                 joint_index: 21,
-                rotation_6d_q15: [0; 6],
+                rotation_6d_q15: [i16::MAX, 0, 0, 0, i16::MAX, 0],
             },
         ];
         assert_eq!(
@@ -604,14 +622,21 @@ mod tests {
             overflow.seal(),
             Err(MotionPlanError::TickOutOfHorizon("root_targets"))
         );
+
+        let mut malformed = sample_plan();
+        malformed.pose_targets[0].rotation_6d_q15 = [0; 6];
+        assert_eq!(
+            malformed.seal(),
+            Err(MotionPlanError::InvalidRotationBasis(21))
+        );
     }
 
     #[test]
     fn motor_targets_reject_duplicate_and_unknown_joints() {
         let target = JointMotorTargetV1 {
             joint_index: 3,
-            desired_position_millirad: 100,
-            desired_velocity_millirad_s: 0,
+            desired_rotation_6d_q15: [i16::MAX, 0, 0, 0, i16::MAX, 0],
+            desired_angular_velocity_millirad_s: [0; 3],
             stiffness_q16: 32_768,
             damping_q16: 16_384,
             max_torque_millinewton_m: 80_000,
@@ -634,6 +659,18 @@ mod tests {
             ..duplicate
         };
         assert_eq!(invalid.validate(), Err(MotionPlanError::InvalidJoint(34)));
+
+        let malformed = MotorTargetBatchV1 {
+            targets: vec![JointMotorTargetV1 {
+                desired_rotation_6d_q15: [0; 6],
+                ..target
+            }],
+            ..duplicate
+        };
+        assert_eq!(
+            malformed.validate(),
+            Err(MotionPlanError::InvalidRotationBasis(3))
+        );
     }
 
     #[test]
