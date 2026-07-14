@@ -7,14 +7,14 @@ Produce a playable local 1v1 duel with the actions **Strike**, **Block**, and **
 ## Baseline
 
 - Workspace: `/run/media/vdubrov/NVMe-Storage1/Just Dodge`
-- Revision: clean `main` at `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`, equal to `origin/main`; one worktree exists.
+- Revision: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801` on `pvp-005-readable-live-motion`; public `main` remains the historical `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`; one worktree exists.
 - Selected live path: `main::App` → `milestone3::Session/Match` → `m3_cleanbox` → `cleanbox/duel_world/duel_physics` → `PhysicalContactBatch` → immutable `milestone3::Snapshot` → renderer/UI/replay.
 - Fresh baseline: warning-denying all-target check passes; 233 all-target tests pass; release `just-dodge` and `m3_match` build; deterministic autoplay ends at frame 342/hash `d1a3cc1bfb9c2f67`; 100 replay reconstructions pass.
-- PVP-002 closure: fmt, warning-denying clippy/check, tracked-lockfile compilation, 233 tests, release autoplay/replay, and a hydrated clean-checkout mirror pass. The 13-file MotionBricks bundle is pinned by SHA-256 and supplied fail-closed from an explicit trusted cache. No package/repo verifier or canonical media exists yet.
+- Current inherited closure: fmt, warning-denying clippy/check, 237 tests, release autoplay/replay, a hydrated clean-checkout mirror, two byte-identical local packages, repository/package verifiers, and automated OS-input flow pass at their recorded revisions. Canonical gameplay media and human motion-readability evidence do not exist yet.
 
 ## Canon Constraints
 
-- MotionBricks is the sole motion engine. No prebaked clips, no procedural fallbacks in release paths.
+- Official pinned ARDY is an offline proposal source only. Runtime motion is a frozen, canonical-payload-hashed packet. MotionBricks is admitted only if its exact source/checkpoint/license are recorded and an A/B gate proves it improves continuity/readability over the simpler frozen-source path. No runtime neural generation or silent fallback is allowed.
 - Hitbox proxies must match visual geometry exactly.
 - Combat truth never reads from renderer, camera, audio, or frame time.
 - Presentation never writes to combat truth.

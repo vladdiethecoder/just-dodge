@@ -1,9 +1,9 @@
 # Just Dodge — Development Task List
 
-Branch: `main`, based on clean-checkout gate revision `f41cde635c607b33bbf04c2dd4621222359df73f`; one worktree.
+Branch: `pvp-005-readable-live-motion`, published feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`; one worktree. Public `main` remains at historical ancestor `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 Last updated: 2026-07-14
-Active implementation unit: `PVP-005-ADMITTED-THREE-ACTION-MOTION`.
-Current mechanical blockers: bind-pose runtime, no admitted readable Strike/Block/Grab source set, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, Replay-footer overlap, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-004 closed the reproducible local package and automated OS input-path gates; it did not establish five human matches or public redistribution rights.
+Active implementation unit: `PVP-005-READABLE-LIVE-THREE-ACTION-MOTION`.
+Current PVP-005 blockers: the committed motion set is candidate-only; the visual harness lacks the pinned 16-view/layer/background contract and CI job; no first-six-frame human judgments exist; `App::current_pose()` returns reference matrices; and the sword is camera-relative rather than pose/socket-derived. PVP-004 closed the reproducible local package and automated OS input-path gates at its recorded ancestor revision; it did not establish PVP-005 motion admission, five human matches, or public redistribution rights.
 
 The Phase A/B tables below preserve detailed task history. The controlling PLAYABLE-PROOF order is now: reconcile → clean-checkout gates → full runtime flow → packaged interaction/cadence proof → admitted motion plans → coupled articulated physics → pose/socket contact → camera/readability → truth-driven presentation → human/package evidence.
 
@@ -23,7 +23,7 @@ The Phase A/B tables below preserve detailed task history. The controlling PLAYA
 
 ### B.1 — Motion
 
-Current status at `2677b4a` (2026-07-14): B.1.1 request isolation, fail-closed source/cache loading, numeric G1→24-bone transport, post-Reveal ARDY feasibility, quantized plan/replan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, and independent-joint tracking exist and are tested in isolation. The former Hugging Face authorization failure is historical. Runtime promotion remains blocked because `App::current_pose()` returns bind matrices, no complete three-action source has passed the first-eight-frame semantic gate, MotionBricks completion is not live, and the active-ragdoll core is not yet a coupled articulated/contact world.
+Current status at published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801` (2026-07-14): B.1.1 request isolation, fail-closed source/cache loading, numeric G1→24-bone transport, post-Reveal ARDY feasibility, quantized plan/replan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, independent-joint tracking, and a hash-bound three-action candidate packet exist. The former Hugging Face authorization failure is historical. Runtime promotion remains blocked because `App::current_pose()` returns reference matrices, the complete PVP-005 visual/human gate has not passed, and the live sword/proxies do not yet share the solved pose source.
 
 | ID | Task | Files | Work | Acceptance | Depends |
 |---|---|---|---|---|---|

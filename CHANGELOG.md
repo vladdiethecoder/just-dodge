@@ -2,7 +2,7 @@
 
 ## Unreleased — PLAYABLE-PROOF reconciliation baseline
 
-Source revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
+Published PVP-005 feature baseline: `4e481ccd59602c1cb4eda97183c32dec48f9a801` on `pvp-005-readable-live-motion`. Historical PVP-001 through PVP-004 receipts retain their original evaluated revisions, all of which are ancestors of this reachable branch.
 
 ### Added
 - `PhysicalContactBatch` replay v2 and a 120 Hz cleanbox-to-60 Hz M3 adapter; body, guard, and explicit whiff outcomes are contact-role driven.

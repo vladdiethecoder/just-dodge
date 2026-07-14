@@ -14,6 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.96.0
+      - run: python3 tools/verify_pvp005_revision_baseline.py
       - run: cargo fmt --check
       - run: RUSTFLAGS=-Dwarnings cargo check --locked --all-targets
       - run: RUSTFLAGS=-Dwarnings cargo test --locked --all-targets

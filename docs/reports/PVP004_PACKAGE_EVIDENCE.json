@@ -1,6 +1,12 @@
 {
   "schema": "just-dodge-pvp004-package-evidence-v1",
   "evaluated_revision": "b60878d0fe25589a388822e77158e390c766fc5e",
+  "reachability": {
+    "published_branch": "pvp-005-readable-live-motion",
+    "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
+    "evaluated_revision_is_ancestor": true,
+    "note": "Historical PVP-004 evidence remains bound to b60878d; no PVP-005 render or runtime claim is inferred from it."
+  },
   "package_status": "local_technical_pass",
   "public_redistribution_cleared": false,
   "package_bytes": 184144387,

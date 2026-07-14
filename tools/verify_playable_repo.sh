@@ -9,6 +9,7 @@ fi
 
 cd "$ROOT"
 cargo fmt --check
+python3 tools/verify_pvp005_revision_baseline.py
 python3 tools/verify_pvp005_candidate_packet.py
 RUSTFLAGS='-D warnings' cargo clippy --locked --all-targets -- -D warnings
 RUSTFLAGS='-D warnings' cargo test --locked --all-targets -- --test-threads=1

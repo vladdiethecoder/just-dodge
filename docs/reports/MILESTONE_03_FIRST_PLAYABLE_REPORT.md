@@ -1,8 +1,8 @@
 # Milestone 3 PLAYABLE-PROOF Report
 
 - PLAYABLE-PROOF gate: **NOT PASSED**
-- Evaluated baseline revision: `f41cde635c607b33bbf04c2dd4621222359df73f` plus PVP-003 runtime-flow changes
-- Branch: `main`; one worktree
+- Current audit baseline: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`; historical evidence remains bound to its recorded ancestor revisions
+- Branch: `pvp-005-readable-live-motion`; one worktree
 - Evaluation date: 2026-07-14
 
 ## Verified engineering evidence

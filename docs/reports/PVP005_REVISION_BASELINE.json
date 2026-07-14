@@ -1,0 +1,28 @@
+{
+  "schema": "just-dodge-pvp005-revision-baseline-v1",
+  "observed_utc_date": "2026-07-14",
+  "public_main": "2677b4a7dd050e7f4c5ee03881aa16035e413a8b",
+  "published_branch": "pvp-005-readable-live-motion",
+  "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
+  "history_is_linear": true,
+  "baseline_is_descendant_of_public_main": true,
+  "historical_evidence_revisions": {
+    "pvp002_clean_checkout": "f41cde635c607b33bbf04c2dd4621222359df73f",
+    "pvp003_runtime_flow": "b3d44ef0b2377d6d4bae129f95f2773f9ac9dbcc",
+    "pvp004_package": "b60878d0fe25589a388822e77158e390c766fc5e"
+  },
+  "candidate_packet": {
+    "manifest": "assets/motion/pvp005_candidates/manifest.json",
+    "manifest_sha256": "0943680512230b50366366bb69182131595311a5823f281e5ba035dec9a64755",
+    "status": "pending_blinded_human_trials",
+    "runtime_promoted": false
+  },
+  "current_fail_closed_findings": [
+    "The committed visual harness does not satisfy the 16-view layered PVP-005 contract.",
+    "No genuine first-six-frame blinded human judgments exist.",
+    "App::current_pose() returns reference matrices.",
+    "The live sword uses an independent camera-relative transform.",
+    "PLAYABLE-PROOF remains false."
+  ],
+  "evidence_policy": "Historical reports retain their evaluated revisions. New PVP-005 evidence must name an exact reachable source revision and must not combine outputs from different source revisions."
+}

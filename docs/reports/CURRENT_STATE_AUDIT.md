@@ -1,8 +1,8 @@
 # Current State Audit — PLAYABLE-PROOF Baseline
 
-- Audit baseline revision: `f41cde635c607b33bbf04c2dd4621222359df73f`
+- Audit baseline revision: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`
 - Audit UTC: 2026-07-14
-- Branch: `main`; PVP-003 is evaluated on top of the committed clean-checkout gate
+- Branch: `pvp-005-readable-live-motion`; historical PVP-003/PVP-004 reports retain their evaluated ancestor revisions
 - Worktrees: one (`/run/media/vdubrov/NVMe-Storage1/Just Dodge`)
 
 ## Selected executable path
