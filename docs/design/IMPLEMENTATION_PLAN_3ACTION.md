@@ -6,11 +6,11 @@ Produce a playable local 1v1 duel with the actions **Strike**, **Block**, and **
 
 ## Baseline
 
-- Workspace: `/run/media/vdubrov/Bulk-SSD/Just Dodge/.worktrees/proto-3action`
-- Branch: `proto-3action`
-- Current code: Rust + wgpu renderer, skinned mannequin, MotionBricks ONNX pipeline, procedural idle clip, placeholder combat timer in `src/main.rs`.
-- Baseline compile: passes after fixing `glam::Mat4::to_scale()` usage in `src/retarget.rs`.
-- Baseline tests: some retarget tests fail on `minimal_mesh()` (pre-existing, out of scope for this prototype unless the agent touches that code).
+- Workspace: `/run/media/vdubrov/NVMe-Storage1/Just Dodge`
+- Revision: clean `main` at `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`, equal to `origin/main`; one worktree exists.
+- Selected live path: `main::App` → `milestone3::Session/Match` → `m3_cleanbox` → `cleanbox/duel_world/duel_physics` → `PhysicalContactBatch` → immutable `milestone3::Snapshot` → renderer/UI/replay.
+- Fresh baseline: warning-denying all-target check passes; 233 all-target tests pass; release `just-dodge` and `m3_match` build; deterministic autoplay ends at frame 342/hash `d1a3cc1bfb9c2f67`; 100 replay reconstructions pass.
+- PVP-002 closure: fmt, warning-denying clippy/check, tracked-lockfile compilation, 233 tests, release autoplay/replay, and a hydrated clean-checkout mirror pass. The 13-file MotionBricks bundle is pinned by SHA-256 and supplied fail-closed from an explicit trusted cache. No package/repo verifier or canonical media exists yet.
 
 ## Canon Constraints
 
@@ -203,13 +203,13 @@ Never sees the player's hidden intent before reveal.
 
 ## Implementation Status
 
-Implemented in worktree `/run/media/vdubrov/Bulk-SSD/Just Dodge/.worktrees/proto-3action` on branch `proto-3action` using parallel agents.
+Implementation history was consolidated onto `main`. The status below distinguishes the live M3 path from supporting or isolated foundations; no old worktree is authoritative.
 
 | Module | Status | Notes |
 |---|---|---|
 | `truth` | ✅ Complete | State machine, snapshots, deterministic FNV-1a truth hash, phase budgets. |
 | `action_matrix` | ⚠️ Legacy QA only | It is not production outcome authority; measured `PhysicalContactBatch` data drives truth. |
-| `motion` | ⚠️ Superseded scaffold | The one-window-per-action/cache path is QA-only. B14X replaces it with quantized ARDy/MotionBricks plan packets feeding a physics-trained active ragdoll and deterministic articulated simulation. |
+| `motion` | ⚠️ Isolated foundations | Public post-Reveal requests, ARDY proposals, MotionBricks receipts, quantized plan packets, G1 articulation, hinge projection, and independent-joint tracking exist. None drives `App::current_pose()` or live contact. |
 | `hitbox` | ✅ Complete | Bone-aligned AABBs, weapon proxy, AABB-AABB contact, debug lines. |
 | `armor` | ✅ Complete | Deterministic threshold/integrity/coverage model for plate/leather/cloth. |
 | `injury` | ✅ Complete | Trauma accumulation, capability penalties, fracture, lethal torso threshold. |
@@ -218,18 +218,21 @@ Implemented in worktree `/run/media/vdubrov/Bulk-SSD/Just Dodge/.worktrees/proto
 | `input` | ✅ Complete | Plan-phase action/stance selection and confirm. |
 | `ui` | ✅ Complete | Bitmap-font wgpu UI: phase banner, HP/STA bars, action menu, stance indicator, result text, match-over overlay. |
 | `renderer` | ✅ Complete | Hitbox debug line rendering, UI overlay integration. |
-| `main.rs` | ✅ Complete | Wired truth → AI → replay → renderer → UI; fixed-step tick; saves replay on match end. |
+| `main.rs` | ⚠️ Partial player shell | Wires M3 truth → AI → replay → renderer → UI and saves a replay, but has no Menu/Establishing/Replay flow, cursor capture, packaged interaction proof, admitted action poses, or socket-derived weapons. |
 
 ## Verification Results
 
-- `cargo check --bin just-dodge` ✅
-- `cargo build --release --bin just-dodge` ✅
-- `cargo test --bin just-dodge -- --skip motion` → 49 passed, 0 failed, 6 filtered (motion tests skipped due to environment ONNX init hang).
-- Smoke run: `./target/release/just-dodge` starts, loads arena + two skinned mannequins, initializes renderer + UI, loads MotionBricks idle clip, and runs without runtime errors.
-- `python3 /home/vdubrov/.kimi-code/skills/game-design-planning/scripts/validate_design.py docs/design/` ✅
+- `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` passes.
+- `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passes 233 tests, including both live MotionBricks integrations.
+- `cargo test --locked --lib milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash -- --nocapture` passes.
+- `RUSTFLAGS='-Dwarnings' cargo build --locked --release --bin just-dodge --bin m3_match` passes.
+- Release launch initializes the Vulkan renderer/UI and writes a terminal replay under deterministic autoplay; `m3_match --verify` reconstructs frame 342/hash `d1a3cc1bfb9c2f67`.
+- `cargo fmt --check` and warning-denying clippy now pass. Package verification, live keyboard/mouse flow evidence, and canonical-media verification do not pass yet.
 
 ## Known Limitations
 
-- The current runtime still preloads QA action windows and does not implement ARDy planning, plan-packet replay, active-ragdoll motor control, or articulated-body physics.
-- Swept proxy/AABB contact is not the required convex/capsule CCD and deterministic contact-manifold solver.
-- Normal gameplay still lacks verified pose-derived weapon/guard/body geometry and packaged canonical media.
+- The runtime renders bind matrices for both actors. ARDY, plan-packet, G1 articulation, hinge projection, and active-ragdoll code is isolated from gameplay.
+- The current active-ragdoll tracker advances independent joint/root states; it does not yet implement parent-child coupling, gravity, limits, balance, ground, grips, or shared-world contacts.
+- M3 contact is reduced from action-authored cleanbox geometry, not pose-derived weapon/guard/body proxies.
+- The first-person sword uses an independent camera/action transform rather than the posed hand socket used by CCD/contact.
+- Normal gameplay lacks the complete player flow, package, human-match evidence, calibrated motion/contact/camera metrics, and canonical media.

@@ -1,6 +1,6 @@
 pub mod action_matrix;
-pub mod armor;
 pub mod active_ragdoll;
+pub mod armor;
 pub mod asset;
 pub mod cleanbox;
 pub mod combat;

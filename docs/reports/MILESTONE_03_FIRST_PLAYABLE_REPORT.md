@@ -1,36 +1,42 @@
-# Milestone 3 First Playable Report
+# Milestone 3 PLAYABLE-PROOF Report
 
-- Decision: **BLOCKED**
-- Evaluated revision: `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`
-- Starting revision: `c47256bfbb87d38d5d837e53c54816fc3a5d7ca3`
-- Branch: `milestone3-first-playable-terra`
+- PLAYABLE-PROOF gate: **NOT PASSED**
+- Evaluated revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`
+- Branch: clean `main`, equal to `origin/main`; one worktree
+- Evaluation date: 2026-07-14
 
 ## Verified engineering evidence
 
 | Requirement | Evidence | Result |
 |---|---|---|
-| Canonical Strike/Block/Grab truth state | `src/milestone3.rs` with 79 library tests | Pass |
+| Canonical Strike/Block/Grab truth state | `src/milestone3.rs`; focused M3 tests | Pass |
 | Hidden intent stays hidden until Reveal | M3 hidden-intent regression | Pass |
 | Resolve requires a physical packet | `resolve_holds_without_a_measured_packet` | Pass |
 | Two physics substeps reduce to one Resolve packet | `m3_cleanbox` regression | Pass |
 | Guard/body/whiff semantics derive from contact role | M3 body/guard regression | Pass |
 | Replay reconstruction | Fresh autoplay receipt hashes to `d1a3cc1bfb9c2f67`; verifier reproduces 343 states | Pass |
-| Warning-clean source | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` | Pass |
-| Test coverage | repeated `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | 179 Rust unit/integration tests passed |
+| Warning-denying check | `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` | Pass |
+| Test coverage | `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` | 233 tests passed |
+| Release launch | Release binary created Vulkan surface, initialized renderer/UI, reached terminal autoplay, and saved a replay | Pass for launch/automated path only |
 | Runtime C0 asset | 24-bone armored duelist, 82,928 vertices, 309,864 indices; cooked-mesh verifier and fresh offscreen bind frames | Pass for static asset integrity |
+| Clean-checkout gates | Tracked lockfile; fmt/warning-denying clippy/check; exact 13-file artifact hydration; 233 tests in isolated mirror | Pass |
 
 ## Evidence still required
 
 | Required evidence | Current state | Consequence |
 |---|---|---|
-| Action-conditioned MotionBricks runtime poses | `App::current_pose()` remains bind-pose matrices | No motion-readable action proof; pose-contact parity is not established |
+| Complete player flow | No Menu, Establishing, in-game Replay mode, documented rematch/exit, or cursor capture | Required flow is incomplete |
+| Admitted runtime poses | `App::current_pose()` remains bind-pose matrices; ARDY/MotionBricks/active-ragdoll foundations are isolated | No motion-readable action proof |
+| Coupled articulated physics | Current tracker advances independent joints/root and explicitly excludes coupling, gravity, limits, balance, ground, and contacts | Physical response target is unproven |
+| Pose-derived contact/socket parity | M3 uses action-authored cleanbox targets; first-person sword has an independent transform | Physics-derived visible contact is unproven |
 | Five real packaged keyboard/mouse matches | Not recorded | Player-loop criterion is unproven |
 | Continuous packaged gameplay video | Missing by design; canonical media verifier remains fail-closed | No gameplay-media claim |
-| Distribution rights for all package payloads | New C0 task/hash record is technical provenance only; legacy arena/weapon records also remain incomplete | No distributable-build claim |
+| Release package/repo verifier | No tracked package pipeline, package manifest, or aggregate verifier | Package gate absent |
+| Distribution rights for all package payloads | C0 and W0 technical provenance exists; complete redistribution grants remain incomplete | Blocks redistribution claims, not technical work |
 | Full PBR/lighting contract | Light-bronze fallback is structural/readability mitigation only | Generated PBR maps are not runtime-integrated |
 
 ## Decision
 
-The committed M3 core is mechanically stronger than the former action-table path: outcomes require a typed physical packet and the packet is replayed and hashed. The armored runtime opponent is now structurally valid and visible in static QA frames. These facts do not prove an independently playable, action-readable, distributable first playable.
+The live M3 core requires a typed packet, hashes every tick, and replays deterministically. That packet is currently generated from action-authored cleanbox targets rather than solved/rendered poses; both actors render bind matrices and the first-person sword is independent. Compilation, autoplay, replay, and static frames therefore do not establish the requested packaged human-play slice.
 
-Do not advance Milestone 3. Execute the dependency chain in `docs/reports/DEVELOPMENT_TASKLIST.md`, beginning with `B.1.1` (public deterministic motion request contract), then use real player matches and canonical media as the final M3 evidence gate.
+Advance only through the PVP chain in `docs/reports/DEVELOPMENT_TASKLIST.md`. Clean-checkout gate repair passed; complete runtime flow is now active. Motion, contact/socket, camera, presentation, and human-evidence units remain downstream.

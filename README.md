@@ -6,10 +6,12 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 
 ## Project Status
 
-- Stage: Milestone 3 engineering candidate; not a distributable build.
-- Current baseline: packet-driven deterministic three-action combat, replay/truth-hash verification, 120 Hz cleanbox reduction, and a Rust/wgpu bridge using a 24-bone armored runtime opponent.
-- Open M3 critical path: MotionBricks action conditioning and retargeting, pose-derived contact, player-loop evidence, canonical gameplay media, and asset-rights closure.
-- Distribution boundary: runtime asset source identity is recorded, but complete redistribution-rights records are not; see the asset audit before any release claim.
+- Stage: PLAYABLE-PROOF construction on clean `main`; the requested packaged vertical-slice gate has not passed.
+- Selected runtime path: `main::App` → `milestone3::Session/Match` → `m3_cleanbox` → `cleanbox/duel_world/duel_physics` → `PhysicalContactBatch` → immutable `milestone3::Snapshot` → renderer/UI/replay.
+- Verified baseline: deterministic three-action M3 truth, 120 Hz cleanbox reduction, 100 replay reconstructions, frame-342 truth hash `d1a3cc1bfb9c2f67`, fmt/warning-denying clippy/check, 233 all-target tests in a hydrated clean mirror, release binary launch, and static integrity of the 24-bone armored duelist.
+- Isolated foundations, not live gameplay: post-Reveal ARDY proposals, quantized motion-plan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, and independent-joint active-ragdoll tracking.
+- Open PLAYABLE-PROOF path: complete player flow and input proof; reproducible package/repo verification; admitted Strike/Block/Grab motion; coupled articulated physics; pose-derived contact and sword sockets; camera/readability; truth-driven presentation; five human packaged matches; canonical media and machine-readable evidence.
+- Distribution boundary: runtime asset source identity is recorded, but complete redistribution-rights records are not; this does not halt technical development and does block redistribution claims.
 
 ## Quick Links
 
@@ -56,6 +58,10 @@ Do not advance production scope until the corresponding prototype report says CO
 ```bash
 # Rust/wgpu game code
 cargo build
+
+# Hydrate the pinned large-model bundle from a trusted cache when live motion
+# tests or the game runtime are needed. Compilation does not embed these files.
+tools/hydrate_motionbricks_runtime.sh /path/to/trusted/motionbricks-assets
 
 # Python motion service dependencies
 python3 -m pip install -r motionbricks_service/requirements.txt

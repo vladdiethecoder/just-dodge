@@ -497,8 +497,8 @@ pub fn rest_pose_from_mesh(mesh: &SkinnedMeshData) -> [Mat4; BONE_COUNT] {
 
     // Build skin-bind world matrices from inverse_bind
     let mut skin_bind = [Mat4::IDENTITY; 24];
-    for i in 0..24.min(mesh.bones.len()) {
-        skin_bind[i] = mesh.bones[i].inverse_bind.inverse();
+    for (bind, bone) in skin_bind.iter_mut().zip(mesh.bones.iter()) {
+        *bind = bone.inverse_bind.inverse();
     }
 
     // Map SKIN_MAP: rich bone → skin bind world (when available)
@@ -537,12 +537,12 @@ mod tests {
 
     #[test]
     fn all_non_root_bones_have_parent() {
-        for i in 0..BONE_COUNT {
+        for (i, bone_name) in BONE_NAMES.iter().enumerate() {
             if i != PELVIS {
                 assert!(
                     bone_parent(i) >= 0,
                     "bone {i} ({}) has no parent",
-                    BONE_NAMES[i]
+                    bone_name
                 );
             }
         }

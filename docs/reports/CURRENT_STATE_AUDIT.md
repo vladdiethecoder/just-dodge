@@ -1,39 +1,51 @@
-# Current State Audit — M3 Packet Truth and Armored Duelist
+# Current State Audit — PLAYABLE-PROOF Baseline
 
-- Audit revision: `0e5a29a0cc99b7e29e259a4192ef6be3e8c8eb60`
-- Audit UTC: 2026-07-13
-- Branch: `milestone3-first-playable-terra`
+- Audit revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`
+- Audit UTC: 2026-07-14
+- Branch: clean `main`, equal to `origin/main`
+- Worktrees: one (`/run/media/vdubrov/NVMe-Storage1/Just Dodge`)
 
-## Observed current path
+## Selected executable path
 
-1. `src/main.rs` owns an `m3::Session` and consumes its immutable snapshot for UI and rendering.
-2. `src/m3_cleanbox.rs` advances `M3CleanboxWorld` shared cleanbox geometry at 120 Hz and submits one `PhysicalContactBatch` for the active 60 Hz Resolve truth frame.
-3. `src/milestone3.rs` accepts only the exact pending Resolve packet, rejects missing/stale/duplicate packets, applies contact-role outcome/injury, serializes replay v2, and verifies canonical hashes during replay.
-4. `src/bin/m3_match.rs` exercises the same session/cleanbox route headlessly. Fresh autoplay ended at frame 342 with hash `d1a3cc1bfb9c2f67`; fresh replay verification reproduced it.
-5. `src/motion_request.rs`, `src/motion_runtime.rs`, and `src/motion_retarget.rs` define deterministic public requests, fail-closed source-cache loading, and numeric G1→24-bone conversion. `src/bin/shot.rs` produced standard action-QA frames, but `src/main.rs` retains static reference skin matrices because the current source fails the visual tell gate.
+1. `src/main.rs` owns `milestone3::Session`, `M3CleanboxWorld`, deterministic AI, renderer, UI, input, telemetry, and the 60 Hz wall-time accumulator.
+2. `src/milestone3.rs` owns authoritative phase/input/injury/result state, exact contact admission, RON replay, and canonical truth hashes.
+3. `src/m3_cleanbox.rs` maps revealed M3 actions into `cleanbox::step_actions`, advances exactly two 120 Hz substeps, and adapts the reduced packet back into M3.
+4. `src/cleanbox.rs`, `src/duel_world.rs`, `src/duel_physics.rs`, and `src/hitbox.rs` remain supporting live dependencies; they are not quarantine candidates yet.
+5. Renderer/UI/camera consume cloned immutable M3 snapshots. `App::current_pose()` returns static reference skin matrices, and the first-person sword uses a separate presentation transform.
+6. `src/bin/m3_match.rs` exercises the same M3 session/cleanbox path without rendering.
 
 ## Evidence classification
 
-| Subsystem | Status | Reason |
+| Subsystem | Classification | Current evidence boundary |
 |---|---|---|
-| M3 intent/phase/replay truth | Verified | Warning-clean all-target compile and repeated full test pass |
-| 120 Hz → 60 Hz contact packet path | Verified for current cleanbox targets | Exact two-substep test and headless replay |
-| Outcome authority | Verified packet-driven | Missing packet holds resolve; body/guard/whiff tests pass |
-| Armored character import | Verified static asset integrity | Valid SKM1, 24-bone load, front/first-person frame inspection |
-| Motion-readable combat | Blocked | Four-frame source candidates are not semantic tells; neural Kimodo source generation is blocked on gated Hugging Face authorization. |
-| Pose-derived contact | Unproven | Current cleanbox target geometry is not produced from MotionBricks/retargeted sockets |
-| Player loop | Unproven | No five-match human packaged evidence |
-| Runtime materials | Partial | Light bronze supports silhouette; PBR import/shading is pending |
-| Distribution | Blocked | Rights/provenance closure is incomplete |
+| M3 intent/phase/injury/result truth | Live, verified mechanically | Warning-denying check; M3 tests; terminal frame 342 |
+| M3 replay/hash | Live, verified mechanically | 100 reconstructions; final hash `d1a3cc1bfb9c2f67` |
+| 120 Hz → 60 Hz adapter | Live, verified for authored cleanbox targets | Exactly two substeps; exact packet admission |
+| Physical outcome claim | Partial | Labels derive from packets, but the target geometry is action-authored rather than derived from solved/rendered poses |
+| Armored C0 import | Live presentation, static integrity only | 82,928 vertices; 309,864 indices; 24 bones; cooked verifier passes |
+| ARDY/MotionBricks plan packets | Isolated foundation | Provenance/quantization/replay tests exist; no live `App` consumer |
+| Active-ragdoll/G1 articulation | Isolated foundation | Independent-joint tracking and hinge projection tests; no coupled articulated world |
+| Player flow | Partial | Observe through MatchResult exists; Menu, Establishing, Replay mode, documented rematch, exit, and cursor capture do not |
+| Package/evidence | Absent | No tracked package pipeline, repo verifier, canonical video, manifest, or gate report |
 
-## Replaced baseline assumptions
+## Fresh baseline gates
 
-- The active M3 resolver is not the former 3×3 action lookup. Action intent selects planned behavior; `PhysicalContactBatch` is outcome evidence.
-- The active runtime opponent is not the old nude 163-bone carrier. It is the new 24-bone armored duelist in `assets/source/meshy/c0_armored_duelist_001/`.
-- A passing static bind frame proves import/skinning integrity only. It cannot prove action motion, combat tells, visible weapon alignment, or contact parity.
+- PASS: warning-denying all-target check.
+- PASS: 233 all-target tests (116 library, 115 main, two integrations).
+- PASS: release `just-dodge`/`m3_match` build and release launch through renderer/UI initialization and replay save.
+- PASS: armored cooked-mesh verifier.
+- PASS: `cargo fmt --check` and warning-denying clippy/check.
+- PASS: tracked `Cargo.lock` and locked compilation from an isolated checkout.
+- PASS: the isolated checkout hydrates and verifies all 13 pinned MotionBricks runtime files from an explicit trusted cache, then passes all 233 tests.
+- FAIL: canonical-media verifier (rendering overview, gameplay video, and manifest absent).
+- ABSENT: release package and package/repo verifier.
 
-## Current critical path
+## Historical documents
 
-`B.1.4a neural semantic source admission` → `B.1.4 motion tell gate` → runtime promotion → `B.2 pose-derived contact` → `B.3 camera` → `B.5 player loop` → `E.2 human matches` → `E.3 canonical media`.
+`M3_MOTION_GATE_20260713.md`, `TERRA_AGENTIC_BUILD.md`, and `ASSET_PROVENANCE_M3.md` are immutable evidence snapshots for older revisions. Their former Kimodo authorization blocker and test counts are historical, not current project status.
 
-Parallel non-truth work: PBR/material contract, asset cooker reproducibility, rights closure, and CI flake stabilization.
+## Ordered PLAYABLE-PROOF path
+
+`PVP-001 reconcile active path` → `PVP-002 clean-checkout gates` (passed) → `PVP-003 complete runtime flow` → `PVP-004 packaged interaction/cadence proof` → admitted plan packets/motion → coupled articulated physics → pose/socket-derived contact → camera/readability → truth-driven presentation → packaged human matches and canonical evidence.
+
+No 13-action, multiplayer, roster, anatomy/FEM, world, store, Supabase, or nonessential asset expansion is admitted before that chain passes.

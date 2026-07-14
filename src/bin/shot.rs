@@ -78,7 +78,7 @@ async fn run() {
         .expect("load C0 armored duelist");
     assert_eq!(c0_mesh.bones.len(), 24);
     let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
-    let c0_skin = if let Some(f413_path) = std::env::var("JUSTDODGE_QA_F413").ok() {
+    let c0_skin = if let Ok(f413_path) = std::env::var("JUSTDODGE_QA_F413") {
         let frames = motion::load_g1_frames(&f413_path)
             .expect("JUSTDODGE_QA_F413 clip must parse as [N,413] f32");
         assert!(!frames.is_empty(), "JUSTDODGE_QA_F413 clip is empty");

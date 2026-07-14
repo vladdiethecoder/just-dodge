@@ -51,48 +51,20 @@ impl InputState {
         match &event.logical_key {
             Key::Character(c) => {
                 let s = c.as_str();
-                match s {
-                    "w" => self.forward = pressed,
-                    "s" => self.back = pressed,
-                    "a" => self.left = pressed,
-                    "d" => self.right = pressed,
-                    " " => {
-                        if pressed {
-                            self.confirmed = true;
-                        }
-                    }
-                    "1" => {
-                        if pressed {
-                            self.selected_action = Some(Action::Strike);
-                        }
-                    }
-                    "2" => {
-                        if pressed {
-                            self.selected_action = Some(Action::Block);
-                        }
-                    }
-                    "3" => {
-                        if pressed {
-                            self.selected_action = Some(Action::Grab);
-                        }
-                    }
-
-                    "f1" => {
-                        if pressed {
-                            self.toggle_debug = true;
-                        }
-                    }
+                match (s, pressed) {
+                    ("w", _) => self.forward = pressed,
+                    ("s", _) => self.back = pressed,
+                    ("a", _) => self.left = pressed,
+                    ("d", _) => self.right = pressed,
+                    (" ", true) => self.confirmed = true,
+                    ("1", true) => self.selected_action = Some(Action::Strike),
+                    ("2", true) => self.selected_action = Some(Action::Block),
+                    ("3", true) => self.selected_action = Some(Action::Grab),
+                    ("f1", true) => self.toggle_debug = true,
                     _ => {}
                 }
             }
-            Key::Named(n) => match n {
-                winit::keyboard::NamedKey::Enter => {
-                    if pressed {
-                        self.confirmed = true;
-                    }
-                }
-                _ => {}
-            },
+            Key::Named(winit::keyboard::NamedKey::Enter) if pressed => self.confirmed = true,
             _ => {}
         }
     }
@@ -173,10 +145,12 @@ mod tests {
 
     #[test]
     fn plan_input_reflects_selection() {
-        let mut input = InputState::default();
-        input.selected_action = Some(Action::Strike);
-        input.confirmed = true;
-        input.toggle_debug = true;
+        let input = InputState {
+            selected_action: Some(Action::Strike),
+            confirmed: true,
+            toggle_debug: true,
+            ..Default::default()
+        };
 
         let plan = input.plan_input();
         assert_eq!(plan.selected_action, Some(Action::Strike));
@@ -186,9 +160,11 @@ mod tests {
 
     #[test]
     fn reset_plan_clears_one_shots() {
-        let mut input = InputState::default();
-        input.confirmed = true;
-        input.toggle_debug = true;
+        let mut input = InputState {
+            confirmed: true,
+            toggle_debug: true,
+            ..Default::default()
+        };
         input.reset_plan();
 
         let plan = input.plan_input();

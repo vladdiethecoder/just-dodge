@@ -101,9 +101,9 @@ fn map_g1_locals(g1_local: &[Mat4; 34], rest: &[Mat4; BONE_COUNT]) -> [Mat4; BON
     // and interpolate between Pelvis(0) and L5(1)/T12(6)
     let pelvis_local = out[0]; // already set from rest (Pelvis has no G1 source)
     let t12_local = out[6]; // already set from waist_yaw
-    for j in 2..=5 {
+    for (j, output) in out.iter_mut().enumerate().take(6).skip(2) {
         let t = (j - 1) as f32 / 5.0;
-        out[j] = lerp_local(pelvis_local, t12_local, t);
+        *output = lerp_local(pelvis_local, t12_local, t);
     }
     // Also refine L5(1)
     out[1] = lerp_local(pelvis_local, t12_local, 0.15);
@@ -111,9 +111,9 @@ fn map_g1_locals(g1_local: &[Mat4; 34], rest: &[Mat4; BONE_COUNT]) -> [Mat4; BON
     // T6(7) .. T8(10) between T12(6) and T7(11)
     let t12 = out[6];
     let t7 = out[11];
-    for j in 7..=10 {
+    for (j, output) in out.iter_mut().enumerate().take(11).skip(7) {
         let t = (j - 6) as f32 / 5.0;
-        out[j] = lerp_local(t12, t7, t);
+        *output = lerp_local(t12, t7, t);
     }
 
     // C6(12) between T7(11) and C7(13)
@@ -122,9 +122,9 @@ fn map_g1_locals(g1_local: &[Mat4; 34], rest: &[Mat4; BONE_COUNT]) -> [Mat4; BON
     // C6(14) .. C2(18) between C7(13) and C1(19)
     let c7 = out[13];
     let c1 = out[19];
-    for j in 14..=18 {
+    for (j, output) in out.iter_mut().enumerate().take(19).skip(14) {
         let t = (j - 13) as f32 / 6.0;
-        out[j] = lerp_local(c7, c1, t);
+        *output = lerp_local(c7, c1, t);
     }
 
     out
@@ -166,15 +166,15 @@ fn map_to_skin(rich_world: &[Mat4; BONE_COUNT], mesh: &SkinnedMeshData) -> [Mat4
     let align = hips_bind * rich_world[0].inverse();
 
     let mut out = [Mat4::IDENTITY; 24];
-    for i in 0..24 {
+    for (i, output) in out.iter_mut().enumerate() {
         // Find which rich bone maps to skin index i
         if let Some(rich_idx) = SKIN_MAP.iter().position(|&s| s == i as i32) {
             let rich_w = align * rich_world[rich_idx];
-            out[i] = rich_w * mesh.bones[i].inverse_bind;
+            *output = rich_w * mesh.bones[i].inverse_bind;
         } else {
             // Fallback: use pelvis for unmapped skin bones
             let rich_w = align * rich_world[0];
-            out[i] = rich_w * mesh.bones[i].inverse_bind;
+            *output = rich_w * mesh.bones[i].inverse_bind;
         }
     }
     out
@@ -191,7 +191,7 @@ mod tests {
         let bones = (0..24)
             .map(|i| Bone {
                 name: format!("Bone{i}"),
-                parent: if i == 0 { -1 } else { i as i32 - 1 },
+                parent: if i == 0 { -1 } else { i - 1 },
                 rest_local: Mat4::IDENTITY,
                 inverse_bind: Mat4::IDENTITY,
             })
@@ -209,8 +209,8 @@ mod tests {
         let g1 = [Mat4::IDENTITY; 34];
         let mesh = minimal_mesh();
         let skin = g1_to_skin(&g1, &mesh);
-        for i in 0..24 {
-            assert!(skin[i].is_finite(), "bone {i} has non-finite matrix");
+        for (i, matrix) in skin.iter().enumerate() {
+            assert!(matrix.is_finite(), "bone {i} has non-finite matrix");
         }
     }
 
@@ -221,8 +221,8 @@ mod tests {
         // Rotate left knee (G1 index 4)
         g1[4] = Mat4::from_rotation_x(0.5);
         let skin = g1_to_skin(&g1, &mesh);
-        for i in 0..24 {
-            assert!(skin[i].is_finite(), "bone {i} has non-finite matrix");
+        for (i, matrix) in skin.iter().enumerate() {
+            assert!(matrix.is_finite(), "bone {i} has non-finite matrix");
         }
     }
 
@@ -237,13 +237,13 @@ mod tests {
         g1[1] = Mat4::from_rotation_x(0.3); // left_hip_pitch
         g1[8] = Mat4::from_rotation_x(-0.3); // right_hip_pitch
         let skin = g1_to_skin(&g1, &mesh);
-        for i in 0..24 {
-            assert!(skin[i].is_finite(), "bone {i} has non-finite matrix");
+        for (i, matrix) in skin.iter().enumerate() {
+            assert!(matrix.is_finite(), "bone {i} has non-finite matrix");
             // Check no zero-scale (which would cause shearing)
             let s = glam::vec3(
-                skin[i].x_axis.truncate().length(),
-                skin[i].y_axis.truncate().length(),
-                skin[i].z_axis.truncate().length(),
+                matrix.x_axis.truncate().length(),
+                matrix.y_axis.truncate().length(),
+                matrix.z_axis.truncate().length(),
             );
             assert!(
                 s.x > 0.01 && s.y > 0.01 && s.z > 0.01,

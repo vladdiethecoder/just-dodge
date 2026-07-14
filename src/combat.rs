@@ -260,7 +260,7 @@ impl CombatPrimitive {
     /// assessment; source-motion visual QA remains a separate gate.
     pub fn validate(&self) -> Result<(), PrimitiveValidationError> {
         if !(MIN_MOTION_FRAMES..=MAX_MOTION_FRAMES).contains(&self.motion_frames)
-            || self.motion_frames % TOKEN_FRAMES != 0
+            || !self.motion_frames.is_multiple_of(TOKEN_FRAMES)
         {
             return Err(PrimitiveValidationError::InvalidMotionFrameCount);
         }
@@ -333,10 +333,10 @@ impl CombatPrimitive {
             if constraint.target.candidate_layers.is_empty() {
                 return Err(PrimitiveValidationError::EmptyInteractionAnatomyQuery);
             }
-            if let Some(impact) = constraint.impact {
-                if impact.force_millinewtons == 0 || impact.direction_milli == [0, 0, 0] {
-                    return Err(PrimitiveValidationError::InvalidImpactIntent);
-                }
+            if let Some(impact) = constraint.impact
+                && (impact.force_millinewtons == 0 || impact.direction_milli == [0, 0, 0])
+            {
+                return Err(PrimitiveValidationError::InvalidImpactIntent);
             }
             if constraint.strength == ConstraintStrength::Hard
                 && matches!(

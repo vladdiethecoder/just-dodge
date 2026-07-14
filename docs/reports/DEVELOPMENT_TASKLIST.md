@@ -1,10 +1,11 @@
 # Just Dodge — Development Task List
 
-Branch: `milestone3-first-playable-terra`
-Last updated: 2026-07-13
-Current blockers: real-match video evidence, asset-rights provenance, no action-conditioned motion.
+Branch: clean `main` at `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`, equal to `origin/main`; one worktree.
+Last updated: 2026-07-14
+Active implementation unit: `PVP-003-COMPLETE-RUNTIME-FLOW`.
+Current mechanical blockers: no package/repo verifier, incomplete player flow, bind-pose runtime, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-002 closed fmt/clippy, lockfile, and clean-checkout artifact hydration gates.
 
-Phase A status: A.0 complete at `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`; A.1 and A.2 complete with final verifier log SHA-256 `21088f7e33bb54b6e9fc3f110c050c1de9dd8256a52d5f387aa410bec75feebb`. Current implementation unit: B.1.1.
+The Phase A/B tables below preserve detailed task history. The controlling PLAYABLE-PROOF order is now: reconcile → clean-checkout gates → full runtime flow → packaged interaction/cadence proof → admitted motion plans → coupled articulated physics → pose/socket contact → camera/readability → truth-driven presentation → human/package evidence.
 
 ---
 
@@ -22,7 +23,7 @@ Phase A status: A.0 complete at `9691ecb9bc523ac9d0edb0c9950cf947aa2a2146`; A.1 
 
 ### B.1 — Motion
 
-Status at `0e5a29a` (2026-07-13): B.1.1 request isolation, B.1.2 fail-closed artifact/cache loading, and B.1.3 numeric G1→24-bone retarget are implemented and tested. Runtime promotion is **blocked** by B.1.4: the current four-frame source windows render as an unarmed raised-arm gesture (Strike) and near-T poses (Block/Grab), not readable combat tells. The provenance-preserving Kimodo source path is blocked on gated Hugging Face authorization; see `docs/reports/M3_MOTION_GATE_20260713.md`.
+Current status at `2677b4a` (2026-07-14): B.1.1 request isolation, fail-closed source/cache loading, numeric G1→24-bone transport, post-Reveal ARDY feasibility, quantized plan/replan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, and independent-joint tracking exist and are tested in isolation. The former Hugging Face authorization failure is historical. Runtime promotion remains blocked because `App::current_pose()` returns bind matrices, no complete three-action source has passed the first-eight-frame semantic gate, MotionBricks completion is not live, and the active-ragdoll core is not yet a coupled articulated/contact world.
 
 | ID | Task | Files | Work | Acceptance | Depends |
 |---|---|---|---|---|---|
@@ -30,7 +31,7 @@ Status at `0e5a29a` (2026-07-13): B.1.1 request isolation, B.1.2 fail-closed art
 | B.1.2 | M3-MOTION-LOAD — MotionBricks runtime adapter | `src/motion.rs`, `src/motion_service.rs`, `src/main.rs` | Load ONNX/NPY artifacts at runtime. Generate G1 pose frames for Strike, Block, Grab. Fail closed if artifacts missing/invalid. No silent fallback to bind pose in Player mode. | Valid finite G1 matrices for all three actions. Missing assets fail clearly before match start. Per-action inference timing ≤16 ms. | B.1.1 |
 | B.1.3 | M3-MOTION-RETARGET — Retarget to armored 24-bone C0 | `src/motion_retarget.rs`, `src/asset.rs`, `src/motion_runtime.rs`, `src/bin/shot.rs` | Create 24-bone MotionBricks-to-armored-duelist mapping and standardized QA rendering. Keep `App::current_pose()` bind-pose output until B.1.4 accepts a semantic source. Verify root alignment, bone orientation, weapon-hand socket. | Numeric transport passes: finite positive-determinant matrices, no collapse/inversion, deterministic pose receipts, bind regression valid. Runtime promotion remains gated on B.1.4. | B.1.2 |
 | B.1.4 | M3-MOTION-TELLS — Motion readability gate | `src/bin/shot.rs`, new motion QA tool/report | Capture standardized reveal-frame strips per action. Define first-six/eight-frame visual tells. Review camera-visible silhouette and weapon motion. | Strike, Block, Grab visually distinguishable before contact. No action accepted merely because it deforms. Evidence images and frame metadata recorded. | B.1.3 |
-| B.1.4a | M3-MOTION-SOURCE — Neural combat-source admission | `tools/kimodo_generate.py`, `tools/encode_primitives.py`, `assets/data/primitives.ron`, source QA reports | Generate provenance-captured G1 candidates for Strike/Block/Grab, select by source and retarget visual gates, then encode only admitted candidates. | At least eight readable reveal frames/action, visible weapon/hand intent where applicable, G1 continuity/topology pass, 24-bone QA pass. Current blocker: Hugging Face authorization for the gated local Kimodo fallback encoder. | B.1.4 |
+| B.1.4a | M3-MOTION-SOURCE — Neural combat-source admission | `tools/kimodo_generate.py`, `tools/encode_primitives.py`, `assets/data/primitives.ron`, source QA reports | Generate provenance-captured G1 candidates for Strike/Block/Grab, select by source and retarget visual gates, then encode only admitted candidates. | At least eight readable reveal frames/action, visible weapon/hand intent where applicable, G1 continuity/topology pass, 24-bone QA pass. The former authorization blocker was cleared by B14Z; no complete three-action source set is admitted. | B.1.4 |
 | B.1.5 | M3-MOTION-WEAPON — Weapon socket attachment | `src/renderer.rs`, `src/main.rs`, `src/hitbox.rs` | Attach W0 sword to deterministic hand/socket transforms from retargeted C0 pose instead of first-person-only placement. | Sword transform follows retargeted hand. Weapon arc, visible model, hand socket, and contact proxy agree. | B.1.3 |
 | B.1.6 | M3-MOTION-PERF — MotionBricks performance budget | `src/telemetry.rs`, `src/motion.rs`, `src/main.rs` | Measure inference, retarget, and skin upload costs. | Motion generation ≤16 ms/action worst acceptable. Retarget + skin upload ≤12 ms/frame. | B.1.3 |
 
@@ -182,4 +183,4 @@ Parallel (no truth risk, can run alongside B.1–B.5):
   D.4  D.5
 ```
 
-**Immediate next unit: B.1.1 — M3-MOTION-CONTRACT.** It is the single highest-value gap: the combat core already has deterministic packet truth, but `src/main.rs:614` still returns static bind-pose matrices, so the game cannot satisfy "Motion That Reads," camera readability, audio timing, or visible-contact-parity requirements.
+**Current unit: PVP-003-COMPLETE-RUNTIME-FLOW.** PVP-002 now tracks the lockfile, passes fmt/warning-denying clippy/check, and passes all 233 tests from an isolated checkout after fail-closed hydration of the 13-file pinned MotionBricks bundle. Implement and verify Menu → Establishing → Observe → Plan → Commit/Reveal → Resolve → Consequence → Replan → Result → Replay, rematch, and exit before package interaction proof.

@@ -13,9 +13,9 @@ use winit::keyboard::Key;
 use winit::window::{Window, WindowId};
 
 mod action_matrix;
+mod active_ragdoll;
 mod ai;
 mod armor;
-mod active_ragdoll;
 mod asset;
 mod cleanbox;
 mod combat;
@@ -153,6 +153,15 @@ struct App {
     player_pos: Vec3,
     show_debug: bool,
 }
+
+type CombatUpdate = (
+    m3::Snapshot,
+    input::PlanInput,
+    Vec<Mat4>,
+    Vec<Mat4>,
+    f32,
+    input::PlayerIntent,
+);
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -295,22 +304,21 @@ impl ApplicationHandler for App {
 
             WindowEvent::KeyboardInput { event, .. } => {
                 self.input.handle_key(&event);
-                if event.state == ElementState::Pressed {
-                    if let Key::Character(c) = &event.logical_key {
-                        if c.as_str() == "r" {
-                            self.camera.reset();
-                            if self.session.game.snapshot().phase == m3::Phase::MatchResult {
-                                let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
-                                self.session
-                                    .apply(m3::Side::Player, m3::Input::Restart { seed: next_seed })
-                                    .expect("restart is valid from MatchResult");
-                                self.replay_saved = false;
-                                self.input.reset_plan();
-                                eprintln!("Milestone 3 match restarted with seed {next_seed}");
-                            } else {
-                                eprintln!("First-person camera reset");
-                            }
-                        }
+                if event.state == ElementState::Pressed
+                    && let Key::Character(c) = &event.logical_key
+                    && c.as_str() == "r"
+                {
+                    self.camera.reset();
+                    if self.session.game.snapshot().phase == m3::Phase::MatchResult {
+                        let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
+                        self.session
+                            .apply(m3::Side::Player, m3::Input::Restart { seed: next_seed })
+                            .expect("restart is valid from MatchResult");
+                        self.replay_saved = false;
+                        self.input.reset_plan();
+                        eprintln!("Milestone 3 match restarted with seed {next_seed}");
+                    } else {
+                        eprintln!("First-person camera reset");
                     }
                 }
             }
@@ -321,19 +329,8 @@ impl ApplicationHandler for App {
 }
 
 impl App {
-    fn combat_update(
-        &mut self,
-    ) -> Option<(
-        m3::Snapshot,
-        input::PlanInput,
-        Vec<Mat4>,
-        Vec<Mat4>,
-        f32,
-        input::PlayerIntent,
-    )> {
-        if self.renderer.is_none() {
-            return None;
-        }
+    fn combat_update(&mut self) -> Option<CombatUpdate> {
+        self.renderer.as_ref()?;
 
         // --- Fixed-step combat update (before borrowing renderer) ---
         let now = Instant::now();
@@ -440,35 +437,33 @@ impl App {
             return;
         };
 
-        let frame = surface.get_current_texture();
-        let Ok(surface_texture) = (|| match frame {
-            wgpu::CurrentSurfaceTexture::Success(t) => Ok(t),
-            wgpu::CurrentSurfaceTexture::Suboptimal(t) => Ok(t),
+        let surface_texture = match surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(texture)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(texture) => texture,
             wgpu::CurrentSurfaceTexture::Occluded | wgpu::CurrentSurfaceTexture::Timeout => {
-                Err("occluded")
+                return;
             }
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
                 surface.configure(device, config);
-                Err("outdated")
+                return;
             }
-            wgpu::CurrentSurfaceTexture::Validation => Err("validation"),
-        })() else {
-            return;
+            wgpu::CurrentSurfaceTexture::Validation => return,
         };
 
         let view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        if self.renderer.is_some() {
-            let (snapshot, plan, player_joints, opponent_joints, _elapsed, _intent) =
-                combat.unwrap();
+        if let Some(renderer) = self.renderer.as_mut() {
+            let Some((snapshot, plan, player_joints, opponent_joints, _elapsed, _intent)) = combat
+            else {
+                return;
+            };
 
             let aspect = config.width as f32 / config.height as f32;
             let proj_view = self.camera.proj_view(aspect, self.player_pos);
 
             // --- Now borrow renderer and queue for GPU work ---
-            let renderer = self.renderer.as_mut().unwrap();
             renderer.upload_debug_mvp(queue, &proj_view);
 
             for obj in renderer.objects.iter() {

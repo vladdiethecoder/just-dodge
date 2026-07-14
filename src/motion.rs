@@ -284,7 +284,7 @@ impl MotionPipeline {
         let e_tensor = Tensor::<f32>::from_array((ort::value::Shape::new(e_shape), e_flat))?;
 
         // Named inputs — decoder graph matches tensors by name, not position.
-        let outputs = (&mut self.decoder).run(ort::inputs![
+        let outputs = self.decoder.run(ort::inputs![
             "quantized" => q_tensor,
             "target_cond" => t_tensor,
             "external_cond" => e_tensor,
@@ -363,13 +363,13 @@ impl MotionPipeline {
         let shape: Vec<i64> = vec![1, 304, t as i64];
         let flat: Vec<f32> = enc_in.to_vec();
         let tensor = Tensor::<f32>::from_array((ort::value::Shape::new(shape), flat))?;
-        let mut enc_out = (&mut self.encoder).run(ort::inputs!["input_frames" => tensor])?;
+        let mut enc_out = self.encoder.run(ort::inputs!["input_frames" => tensor])?;
         // Use indices output + codebook dequantization (avoids ORT version mismatch on quantized)
         let indices_val = enc_out
             .remove("indices")
             .ok_or_else(|| anyhow::anyhow!("no indices output"))?;
         let (idx_shape, idx_data) = indices_val.try_extract_tensor::<i64>()?;
-        let idx_owned: Vec<i64> = idx_data.iter().copied().collect();
+        let idx_owned = idx_data.to_vec();
         let idx_shape_v: Vec<usize> = idx_shape.iter().map(|&d| d as usize).collect();
         drop(indices_val);
         drop(enc_out);
@@ -448,7 +448,7 @@ impl MotionPipeline {
             }
         }
 
-        let mut buf = vec![0f32; 1 * 304 * t];
+        let mut buf = vec![0f32; 304 * t];
         for f in 0..t {
             let phase = 2.0 * std::f32::consts::PI * (f as f32) / (t as f32);
             let breathe = 0.02 * (phase * 0.5).sin();
@@ -457,7 +457,7 @@ impl MotionPipeline {
             // Rotations: identity 6D for all bones (cont6d: [1,0,0,0,1,0])
             for j in 0..g1_nb {
                 let gr_base = f * 304 + j * 6;
-                buf[gr_base + 0] = 1.0;
+                buf[gr_base] = 1.0;
                 buf[gr_base + 1] = 0.0;
                 buf[gr_base + 2] = 0.0;
                 buf[gr_base + 3] = 0.0;
@@ -471,7 +471,7 @@ impl MotionPipeline {
                 // Subtle breathing: Y oscillation
                 p.y += breathe;
                 // Subtle sway: X oscillation for upper body
-                if j >= 15 && j <= 17 {
+                if (15..=17).contains(&j) {
                     // spine bones
                     p.x += sway;
                 }
@@ -484,7 +484,7 @@ impl MotionPipeline {
                     buf[f * 304 + 303] = ric.y; // hip height
                 } else {
                     let ric_base = f * 304 + 204 + (j - 1) * 3;
-                    buf[ric_base + 0] = ric.x;
+                    buf[ric_base] = ric.x;
                     buf[ric_base + 1] = ric.y;
                     buf[ric_base + 2] = ric.z;
                 }
@@ -500,7 +500,7 @@ impl MotionPipeline {
     ///   [204..303] ric_data         (33 * 3 root-relative joint positions)
     ///   [303]      hip height (pelvis Y)
     pub fn build_idle_encoder_input(&self, t: usize) -> Vec<f32> {
-        let mut buf = vec![0f32; 1 * 304 * t];
+        let mut buf = vec![0f32; 304 * t];
         let nb = Self::G1_NB;
         let parents = Self::G1_PARENTS;
         for f in 0..t {
@@ -510,9 +510,9 @@ impl MotionPipeline {
             let hip_y = 0.9 + 0.02 * (phase * 2.0).sin();
             // world rotations: identity except knee/elbow bends about X
             let mut rot = [[0f32; 6]; 34];
-            for j in 0..nb {
+            for rotation in rot.iter_mut().take(nb) {
                 // identity 6D rotation
-                rot[j] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+                *rotation = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
             }
             let (s, c) = knee.sin_cos();
             rot[4] = [1.0, 0.0, 0.0, 0.0, c, -s]; // left knee about X
@@ -532,17 +532,15 @@ impl MotionPipeline {
                 pos[j] = [pos[p][0] + off[0], pos[p][1] + off[1], pos[p][2] + off[2]];
             }
             // write channels-first
-            for j in 0..nb {
+            for (j, rotation) in rot.iter().enumerate().take(nb) {
                 let gr_base = f * 304 + j * 6;
-                for d in 0..6 {
-                    buf[gr_base + d] = rot[j][d];
-                }
+                buf[gr_base..gr_base + 6].copy_from_slice(rotation);
             }
-            for j in 1..nb {
+            for (j, position) in pos.iter().enumerate().take(nb).skip(1) {
                 let ric_base = f * 304 + 204 + (j - 1) * 3;
-                buf[ric_base + 0] = pos[j][0] - pos[0][0];
-                buf[ric_base + 1] = pos[j][1] - pos[0][1];
-                buf[ric_base + 2] = pos[j][2] - pos[0][2];
+                buf[ric_base] = position[0] - pos[0][0];
+                buf[ric_base + 1] = position[1] - pos[0][1];
+                buf[ric_base + 2] = position[2] - pos[0][2];
             }
             buf[f * 304 + 303] = hip_y;
         }
@@ -553,7 +551,7 @@ impl MotionPipeline {
         let shape: Vec<i64> = input.shape().iter().map(|&d| d as i64).collect();
         let flat: Vec<f32> = input.iter().copied().collect();
         let tensor = Tensor::<f32>::from_array((ort::value::Shape::new(shape), flat))?;
-        let mut outputs = (&mut self.encoder).run(ort::inputs!["input_frames" => tensor])?;
+        let mut outputs = self.encoder.run(ort::inputs!["input_frames" => tensor])?;
         outputs
             .remove("quantized")
             .ok_or_else(|| anyhow::anyhow!("Missing 'quantized' output"))
@@ -562,7 +560,7 @@ impl MotionPipeline {
 
 /// Parse G1 frames from raw float32 bytes (same layout as .g1 files).
 pub fn load_g1_frames_from_bytes(data: &[u8]) -> Result<Vec<[Mat4; 34]>> {
-    if data.len() % (413 * 4) != 0 {
+    if !data.len().is_multiple_of(413 * 4) {
         anyhow::bail!(
             "G1 byte length {} not a multiple of frame size {}",
             data.len(),
@@ -646,7 +644,7 @@ fn write_rot6d(frame: &mut [f32], joint: usize, rot: Mat4) {
 /// the desired action intent.
 #[cfg(test)]
 fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec<f32> {
-    let mut buf = vec![0f32; 1 * 304 * frames];
+    let mut buf = vec![0f32; 304 * frames];
 
     // Pre-compute base rotations and positions from the current pose.
     // The ONNX test path uses this directly; an identity fallback is acceptable
@@ -665,14 +663,14 @@ fn build_action_encoder_input(condition: &ActionCondition, frames: usize) -> Vec
         let frame = &mut buf[frame_base..frame_base + 304];
 
         // Global 6D rotations (channels [0, 204)).
-        for j in 0..34 {
+        for (j, rotation) in base_rot6d.iter().enumerate() {
             let base_idx = j * 6;
-            frame[base_idx..base_idx + 6].copy_from_slice(&base_rot6d[j]);
+            frame[base_idx..base_idx + 6].copy_from_slice(rotation);
         }
 
         // Root-relative joint positions (channels [204, 303)).
-        for j in 1..34 {
-            let ric = base_pos[j] - root_pos;
+        for (j, position) in base_pos.iter().enumerate().skip(1) {
+            let ric = *position - root_pos;
             let ric_base = 204 + (j - 1) * 3;
             frame[ric_base..ric_base + 3].copy_from_slice(&[ric.x, ric.y, ric.z]);
         }

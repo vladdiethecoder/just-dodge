@@ -120,12 +120,12 @@ impl ActiveRagdollV1 {
             .first()
             .ok_or(ActiveRagdollError::MissingInitialRootTarget)?;
         let mut joints = [JointStateV1::default(); JOINT_COUNT];
-        for joint_index in 0..JOINT_COUNT {
+        for (joint_index, joint) in joints.iter_mut().enumerate() {
             let joint_index_u8 = joint_index as u8;
             let target = initial_pose_for_joint(&plan.pose_targets, joint_index_u8).ok_or(
                 ActiveRagdollError::MissingInitialJointTarget(joint_index_u8),
             )?;
-            joints[joint_index].rotation_6d_q15 = target.rotation_6d_q15;
+            joint.rotation_6d_q15 = target.rotation_6d_q15;
         }
         Ok(Self {
             state: ActiveRagdollStateV1 {
@@ -361,8 +361,8 @@ fn step_joint(state: &mut JointStateV1, target: &JointMotorTargetV1) {
         STIFFNESS_LIMIT_NM_PER_RAD * i64::from(target.stiffness_q16) / i64::from(u16::MAX);
     let damping = DAMPING_LIMIT_NM_S_PER_RAD * i64::from(target.damping_q16) / i64::from(u16::MAX);
     let torque_limit = i64::from(target.max_torque_millinewton_m);
-    for axis in 0..3 {
-        let error_millirad = i64::from(error_q15[axis]) * 1_000 / Q15_ONE;
+    for (axis, error_axis_q15) in error_q15.iter().enumerate() {
+        let error_millirad = i64::from(*error_axis_q15) * 1_000 / Q15_ONE;
         let velocity_error = i64::from(target.desired_angular_velocity_millirad_s[axis])
             - i64::from(state.angular_velocity_millirad_s[axis]);
         let torque = (stiffness * error_millirad + damping * velocity_error)

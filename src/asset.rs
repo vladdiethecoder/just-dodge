@@ -497,13 +497,13 @@ pub fn compute_skin_matrices(
     mesh: &SkinnedMeshData,
 ) -> [glam::Mat4; 24] {
     let mut out = [glam::Mat4::IDENTITY; 24];
-    for i in 0..24 {
-        let src = G1_TO_MANNEQUIN[i] as usize;
+    for (i, output) in out.iter_mut().enumerate() {
+        let src = G1_TO_MANNEQUIN[i];
         // Each bone uses its own bind world for alignment:
         // skin[i] = bind_world[i] * g1_world[src] * inv_bind[i]
         // For identity G1: bind_world[i] * I * inv_bind[i] = I (correct bind pose)
         let bind_world = mesh.bones[i].inverse_bind.inverse();
-        out[i] = bind_world * g1_world[src] * mesh.bones[i].inverse_bind;
+        *output = bind_world * g1_world[src] * mesh.bones[i].inverse_bind;
     }
     out
 }
@@ -512,8 +512,7 @@ pub fn compute_skin_matrices(
 /// Returns a list of warnings; empty = clean.
 pub fn validate_skin_matrices(out: &[glam::Mat4; 24], frame: usize) -> Vec<String> {
     let mut w = Vec::new();
-    for i in 0..24 {
-        let m = out[i];
+    for (i, m) in out.iter().copied().enumerate() {
         let det = m.determinant();
         if !m.is_finite() {
             w.push(format!("[f{:<3} b{:>2}] non-finite matrix", frame, i));
@@ -698,8 +697,7 @@ mod tests {
         let out = compute_skin_matrices(&g1_identity, &mesh);
 
         // Every matrix must be finite with positive determinant.
-        for i in 0..24 {
-            let m = out[i];
+        for (i, m) in out.iter().copied().enumerate() {
             assert!(m.is_finite(), "bone {}: non-finite matrix", i);
             let det = m.determinant();
             assert!(det > 0.0, "bone {}: non-positive det={:.3}", i, det);
@@ -755,15 +753,13 @@ mod tests {
         let rot = glam::Mat4::from_rotation_y(std::f32::consts::FRAC_PI_2);
         let mut g1_rot = [glam::Mat4::IDENTITY; 34];
         // Rotate pelvis and propagate to children via simple world rotation
-        for i in 0..34 {
-            g1_rot[i] = rot;
-        }
+        g1_rot.fill(rot);
 
         let out = compute_skin_matrices(&g1_rot, &mesh);
-        for i in 0..24 {
-            assert!(out[i].is_finite(), "bone {}: non-finite after rotation", i);
+        for (i, matrix) in out.iter().enumerate() {
+            assert!(matrix.is_finite(), "bone {}: non-finite after rotation", i);
             assert!(
-                out[i].determinant() > 0.0,
+                matrix.determinant() > 0.0,
                 "bone {}: non-positive det after rotation",
                 i
             );
@@ -801,10 +797,10 @@ mod tests {
         g1_spread[26] = glam::Mat4::from_translation(glam::vec3(0.7, 0.3, 0.0));
 
         let out = compute_skin_matrices(&g1_spread, &mesh);
-        for i in 0..24 {
-            assert!(out[i].is_finite(), "bone {}: non-finite on spread", i);
+        for (i, matrix) in out.iter().enumerate() {
+            assert!(matrix.is_finite(), "bone {}: non-finite on spread", i);
             assert!(
-                out[i].determinant() > 0.0,
+                matrix.determinant() > 0.0,
                 "bone {}: non-positive det on spread (shearing bug regression)",
                 i
             );

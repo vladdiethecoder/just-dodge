@@ -151,12 +151,11 @@ fn official_navigation_adapter_is_finite_continuous_and_deterministic() {
 
     let mut max_joint_step = 0.0f32;
     for pair in first.windows(2) {
-        for joint in 0..34 {
-            assert!(pair[0][joint].is_finite());
-            assert!(pair[1][joint].is_finite());
-            max_joint_step = max_joint_step.max(
-                (pair[1][joint].w_axis.truncate() - pair[0][joint].w_axis.truncate()).length(),
-            );
+        for (previous, current) in pair[0].iter().zip(&pair[1]) {
+            assert!(previous.is_finite());
+            assert!(current.is_finite());
+            max_joint_step = max_joint_step
+                .max((current.w_axis.truncate() - previous.w_axis.truncate()).length());
         }
     }
     assert!(

@@ -163,7 +163,7 @@ impl ApplicationHandler for App {
                 queue.present(surface_texture);
 
                 self.frames += 1;
-                if self.frames <= 5 || self.frames % 60 == 0 {
+                if self.frames <= 5 || self.frames.is_multiple_of(60) {
                     eprintln!(
                         "wgpu_probe: presented frame {} ({}x{})",
                         self.frames, config.width, config.height

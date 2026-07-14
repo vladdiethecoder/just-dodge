@@ -87,7 +87,7 @@ fn bone_extents(index: usize) -> Vec3 {
         // Feet / toes
         3 | 4 | 7 | 8 => vec3(0.08, 0.08, 0.08),
         // Spine chain
-        9 | 10 | 11 => vec3(0.18, 0.12, 0.12),
+        9..=11 => vec3(0.18, 0.12, 0.12),
         // Shoulders (treated as upper-arm volume)
         12 | 16 => vec3(0.08, 0.35, 0.08),
         // Upper arms
@@ -146,9 +146,8 @@ pub fn extract_body_proxies(skin_matrices: &[[Mat4; 24]]) -> Vec<HitboxProxy> {
         .unwrap_or([Mat4::IDENTITY; BODY_BONE_COUNT]);
 
     let mut proxies = Vec::with_capacity(BODY_BONE_COUNT);
-    for i in 0..BODY_BONE_COUNT {
+    for (i, world_transform) in matrices.iter().copied().enumerate() {
         let local = Aabb::from_extents(bone_extents(i));
-        let world_transform = matrices[i];
         let world_aabb = transform_aabb(world_transform, &local);
         proxies.push(HitboxProxy {
             bone_index: i,

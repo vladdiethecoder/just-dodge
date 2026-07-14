@@ -118,12 +118,11 @@ impl AiController {
         let in_plan = snapshot.phase.eq_ignore_ascii_case("plan");
 
         // Counter the revealed player action when available (post-reveal only).
-        if !in_plan {
-            if let Some(last) = snapshot.last_player_action {
-                if self.rng.next_bool(0.5) {
-                    return counter(last);
-                }
-            }
+        if !in_plan
+            && let Some(last) = snapshot.last_player_action
+            && self.rng.next_bool(0.5)
+        {
+            return counter(last);
         }
 
         // First-playable cleanbox weights: Thrust, Block, Dodge.

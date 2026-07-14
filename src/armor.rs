@@ -101,28 +101,27 @@ pub fn resolve_armor(
         .iter_mut()
         .enumerate()
         .find(|(_, p)| p.region == region)
+        && piece.integrity > 0.0
     {
-        if piece.integrity > 0.0 {
-            let (threshold, coverage, material_factor) = material_profile(piece.material);
-            let effective_threshold = threshold * material_factor;
+        let (threshold, coverage, material_factor) = material_profile(piece.material);
+        let effective_threshold = threshold * material_factor;
 
-            if force > effective_threshold {
-                let absorbed =
-                    (force - effective_threshold) * type_multiplier(piece.material, damage_type);
-                let integrity_loss = absorbed * 0.01;
-                piece.integrity = (piece.integrity - integrity_loss).max(0.0);
-                integrity_deltas.push((idx, -integrity_loss));
+        if force > effective_threshold {
+            let absorbed =
+                (force - effective_threshold) * type_multiplier(piece.material, damage_type);
+            let integrity_loss = absorbed * 0.01;
+            piece.integrity = (piece.integrity - integrity_loss).max(0.0);
+            integrity_deltas.push((idx, -integrity_loss));
 
-                if piece.integrity == 0.0 {
-                    // Destroyed: coverage drops to zero, so all post-threshold force passes through.
-                    residual_force = absorbed;
-                } else {
-                    let bypass = 1.0 - coverage;
-                    residual_force = absorbed * bypass;
-                }
+            if piece.integrity == 0.0 {
+                // Destroyed: coverage drops to zero, so all post-threshold force passes through.
+                residual_force = absorbed;
             } else {
-                residual_force = 0.0;
+                let bypass = 1.0 - coverage;
+                residual_force = absorbed * bypass;
             }
+        } else {
+            residual_force = 0.0;
         }
     }
 
