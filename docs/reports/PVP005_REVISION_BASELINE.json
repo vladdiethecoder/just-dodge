@@ -4,6 +4,7 @@
   "public_main": "2677b4a7dd050e7f4c5ee03881aa16035e413a8b",
   "published_branch": "pvp-005-readable-live-motion",
   "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
+  "reconciliation_commit": "99de72c87a64fdc994c7b044b5fb17cb4295e36c",
   "history_is_linear": true,
   "baseline_is_descendant_of_public_main": true,
   "historical_evidence_revisions": {
@@ -16,6 +17,15 @@
     "manifest_sha256": "0943680512230b50366366bb69182131595311a5823f281e5ba035dec9a64755",
     "status": "pending_blinded_human_trials",
     "runtime_promoted": false
+  },
+  "clean_verifier": {
+    "command": "tools/verify_playable_repo.sh",
+    "result": "PASS",
+    "package_revision": "99de72c87a64fdc994c7b044b5fb17cb4295e36c",
+    "package_assemblies": 2,
+    "assemblies_byte_identical": true,
+    "package_manifest_sha256": "6ffd6c3eca8d90e07622dd50617817dcc83f2ae1fb0964fc66435414588ece02",
+    "replay_hash": "d1a3cc1bfb9c2f67"
   },
   "current_fail_closed_findings": [
     "The committed visual harness does not satisfy the 16-view layered PVP-005 contract.",
