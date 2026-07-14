@@ -298,15 +298,22 @@ fn socket_model(
     };
     let forearm_index = index("RightForeArm");
     let hand_index = index("RightHand");
+    let upper_arm_index = index("RightArm");
     let posed = |joint: usize| actor_model * skin[joint] * mesh.bones[joint].inverse_bind.inverse();
     let forearm = posed(forearm_index).to_scale_rotation_translation().2;
     let hand = posed(hand_index).to_scale_rotation_translation().2;
+    let upper_arm = posed(upper_arm_index).to_scale_rotation_translation().2;
     let left_hand_index = index("LeftHand");
     let left_hand = posed(left_hand_index).to_scale_rotation_translation().2;
     let blade = if two_hand_weapon && hand.distance_squared(left_hand) > 1.0e-6 {
         (hand - left_hand).normalize()
     } else {
-        (hand - forearm).normalize()
+        let shoulder_to_hand = hand - upper_arm;
+        if shoulder_to_hand.length_squared() > 1.0e-6 {
+            shoulder_to_hand.normalize()
+        } else {
+            (hand - forearm).normalize()
+        }
     };
     let mut lateral = Vec3::Z.cross(blade);
     if lateral.length_squared() < 1.0e-6 {

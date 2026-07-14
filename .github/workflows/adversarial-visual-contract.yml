@@ -1,0 +1,82 @@
+name: Permanent Adversarial Visual Contract
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [pvp-005-readable-live-motion]
+    paths:
+      - "assets/motion/**"
+      - "assets/qa/**"
+      - "assets/source/**"
+      - "assets/weapons/**"
+      - "docs/quality/**"
+      - "src/**"
+      - "tools/qa/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  adversarial-visual-gate:
+    name: adversarial-visual-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - name: Install pinned headless Vulkan runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libvulkan1 mesa-vulkan-drivers vulkan-tools python3-pil
+          vulkaninfo --summary
+      - name: Validate inherited contract
+        run: python3 tools/qa/validate_adversarial_visual_contract.py
+      - name: Validate PVP-005 render contract
+        run: python3 tools/qa/pvp005_visual_contract.py
+      - name: Render acceptance-shaped candidate evidence
+        run: python3 tools/qa/run_pvp005_visual_harness.py --output "$RUNNER_TEMP/pvp005-adversarial"
+      - name: Archive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pvp005-adversarial-${{ github.sha }}
+          path: ${{ runner.temp }}/pvp005-adversarial
+          if-no-files-found: error
+          retention-days: 7
+
+  blender-asset-gate:
+    name: blender-asset-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Blender 5.1.2
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/blender.tar.xz" https://download.blender.org/release/Blender5.1/blender-5.1.2-linux-x64.tar.xz
+          tar --extract --xz --file "$RUNNER_TEMP/blender.tar.xz" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/blender-5.1.2-linux-x64" >> "$GITHUB_PATH"
+      - name: Verify pinned DCC and runtime carrier
+        run: |
+          python3 tools/qa/verify_blender_pin.py
+          python3 tools/verify_skinned_bin.py assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin
+
+  motion-readability-gate:
+    name: motion-readability-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate motion admission packet
+        run: python3 tools/qa/verify_pvp005_acceptance.py --scope motion
+
+  provenance-hash-gate:
+    name: provenance-hash-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate reachable revision and complete provenance
+        run: python3 tools/qa/verify_pvp005_acceptance.py --scope provenance

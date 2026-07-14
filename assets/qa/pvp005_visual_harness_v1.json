@@ -157,7 +157,7 @@
     },
     "qa_capture_binary": {
       "path": "src/bin/pvp005_capture.rs",
-      "sha256": "da7a60f9292cf01c8f31fb161753b56d2af0883188bcaeda8cca1d4c34eeb063"
+      "sha256": "bc1803612a5a9807a1bea39e61c03b77279d2ee909f1206ca5cb10d8d321c4c9"
     },
     "qa_mrt_shader": {
       "path": "src/pvp005_qa.wgsl",
@@ -173,11 +173,27 @@
     },
     "ardy_keypose_generator": {
       "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
-      "sha256": "c0821cda1190b0cbae8fc40385786e351ee1ad56cc956a6e21e6c96240c0d25e"
+      "sha256": "b658e5da4c2d4ba147c76e55287cca9f5c17fa79a0edec3f4b813d7e66ade222"
     },
     "ardy_keypose_iteration_1": {
       "path": "assets/qa/pvp005_ardy_keyposes_v1.json",
       "sha256": "62d0db4a8c350859abd347ab82a64679fa7849cd6793e9bf858f5fde602db022"
+    },
+    "ardy_keypose_iteration_2": {
+      "path": "assets/qa/pvp005_ardy_keyposes_v2.json",
+      "sha256": "fb9648329fa86e6a165d081c4a770cf60cf103fa489b7271c1a223096554b87c"
+    },
+    "ardy_candidate_screen": {
+      "path": "tools/qa/screen_pvp005_motion_candidates.py",
+      "sha256": "2b81a623b21b5b1c622f6abf2c1caf68209e11168255ab9683ec09642a4b8190"
+    },
+    "permanent_adversarial_contract": {
+      "path": "docs/quality/ADVERSARIAL_VISUAL_CONTRACT.md",
+      "sha256": "9ace2659484f6a1506f0d8e2f9822d18f1d384cd83beb5522a1bf280c56e48b9"
+    },
+    "permanent_adversarial_thresholds": {
+      "path": "docs/quality/ADVERSARIAL_VISUAL_THRESHOLDS.v1.json",
+      "sha256": "1030754a6a5e01dc16f7a907fea0e9a996f989f1ae495b75e833ea22fa76f345"
     }
   }
 }

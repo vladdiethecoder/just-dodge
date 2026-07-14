@@ -40,21 +40,49 @@ def git_revision(path: Path) -> str:
 
 def build_constraints(model, keyframes: list[dict[str, object]], device: str):
     import torch
-    from ardy.constraints import EndEffectorConstraintSet, Root2DConstraintSet
+    from ardy.constraints import Root2DConstraintSet, create_pairs
+
+    class PositionOnlyConstraintSet:
+        def __init__(self, frame_indices, positions, joint_indices, root_y=None):
+            self.frame_indices = frame_indices
+            self.positions = positions
+            self.joint_indices = torch.tensor(joint_indices)
+            self.root_y = root_y
+
+        def update_constraints(self, data_dict, index_dict):
+            indices = create_pairs(self.frame_indices, self.joint_indices)
+            data_dict["global_joints_positions"].append(
+                self.positions[:, self.joint_indices].reshape(-1, 3)
+            )
+            index_dict["global_joints_positions"].append(indices)
+            if self.root_y is not None:
+                data_dict["root_y_pos"].append(self.root_y)
+                index_dict["root_y_pos"].append(self.frame_indices)
 
     skeleton = model.skeleton
     frame_indices = torch.tensor([item["frame"] for item in keyframes])
-    root_xz = torch.tensor([item["root_xz_m"] for item in keyframes], dtype=torch.float32, device=device)
+    sparse_root_xz = torch.tensor(
+        [item["root_xz_m"] for item in keyframes], dtype=torch.float32, device=device
+    )
+    frames = int(model.gen_horizon_len)
+    dense_frames = torch.arange(frames)
+    root_xz = torch.empty((frames, 2), dtype=torch.float32, device=device)
+    for left, right in zip(range(len(keyframes) - 1), range(1, len(keyframes))):
+        start = int(keyframes[left]["frame"])
+        end = int(keyframes[right]["frame"])
+        alpha = torch.linspace(0.0, 1.0, end - start + 1, device=device)[:, None]
+        root_xz[start : end + 1] = sparse_root_xz[left].lerp(sparse_root_xz[right], alpha)
     roots = torch.cat(
-        [root_xz[:, :1], torch.full((len(keyframes), 1), 0.78, device=device), root_xz[:, 1:]],
+        [
+            sparse_root_xz[:, :1],
+            torch.full((len(keyframes), 1), 0.78, device=device),
+            sparse_root_xz[:, 1:],
+        ],
         dim=1,
     )
     neutral = skeleton.neutral_joints.to(device=device, dtype=torch.float32)
     positions = neutral[None].repeat(len(keyframes), 1, 1)
     positions = positions + roots[:, None]
-    rotations = torch.eye(3, device=device)[None, None].repeat(
-        len(keyframes), skeleton.nbjoints, 1, 1
-    )
 
     names = skeleton.bone_index
     for index, item in enumerate(keyframes):
@@ -64,33 +92,40 @@ def build_constraints(model, keyframes: list[dict[str, object]], device: str):
             positions[index, names[f"{side}_wrist_yaw_skel"]] = wrist
             positions[index, names[f"{side}_hand_roll_skel"]] = endpoint
 
-        # Feet stay at their initial world-space stance even when the root
-        # advances. Both ankle and toe endpoints are constrained.
-        initial_root = torch.tensor([0.0, 0.78, 0.0], device=device)
-        for foot in (
-            "left_ankle_roll_skel",
-            "left_toe_base",
-            "right_ankle_roll_skel",
-            "right_toe_base",
-        ):
-            positions[index, names[foot]] = neutral[names[foot]] + initial_root
-
-    heading = torch.zeros(len(keyframes), device=device)
+    heading = torch.zeros(frames, device=device)
     root_constraint = Root2DConstraintSet(
         skeleton,
-        frame_indices,
+        dense_frames,
         root_xz,
         global_root_heading=heading,
     )
-    end_effectors = EndEffectorConstraintSet(
-        skeleton,
-        frame_indices,
-        positions,
-        rotations,
-        root_xz,
-        joint_names=["LeftHand", "RightHand", "LeftFoot", "RightFoot", "Hips"],
+    hand_indices = [
+        names["pelvis_skel"],
+        names["left_wrist_yaw_skel"],
+        names["left_hand_roll_skel"],
+        names["right_wrist_yaw_skel"],
+        names["right_hand_roll_skel"],
+    ]
+    hands = PositionOnlyConstraintSet(frame_indices, positions, hand_indices)
+    foot_indices = [
+        names["pelvis_skel"],
+        names["left_ankle_roll_skel"],
+        names["left_toe_base"],
+        names["right_ankle_roll_skel"],
+        names["right_toe_base"],
+    ]
+    initial_root = torch.tensor([0.0, 0.78, 0.0], device=device)
+    dense_positions = neutral[None].repeat(frames, 1, 1) + initial_root
+    dense_positions[:, names["pelvis_skel"], 0] = root_xz[:, 0]
+    dense_positions[:, names["pelvis_skel"], 1] = 0.78
+    dense_positions[:, names["pelvis_skel"], 2] = root_xz[:, 1]
+    feet = PositionOnlyConstraintSet(
+        dense_frames,
+        dense_positions,
+        foot_indices,
+        root_y=torch.full((frames,), 0.78, device=device),
     )
-    return [root_constraint, end_effectors]
+    return [root_constraint, hands, feet]
 
 
 def main() -> None:
@@ -105,7 +140,10 @@ def main() -> None:
     if output.exists():
         raise SystemExit(f"refusing to overwrite ARDY proposal output: {output}")
     spec = json.loads(spec_path.read_text())
-    if spec.get("schema") != "just-dodge-pvp005-ardy-keyposes-v1":
+    if spec.get("schema") not in {
+        "just-dodge-pvp005-ardy-keyposes-v1",
+        "just-dodge-pvp005-ardy-keyposes-v2",
+    }:
         raise SystemExit("unsupported ARDY keypose schema")
     revision = git_revision(ardy_root)
     if revision != spec["source_commit"]:

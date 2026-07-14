@@ -1,0 +1,57 @@
+{
+  "schema": "just-dodge-adversarial-visual-thresholds-v1",
+  "version": 1,
+  "change_policy": "preserve_or_strengthen_without_reviewed_adr",
+  "renderer": {
+    "orbit_view_count": 16,
+    "orbit_step_degrees": 22.5,
+    "individual_view_size_px": 2048,
+    "sheet_size_px": 4096,
+    "first_person_strip_frames": 8,
+    "human_readability_frames": 6,
+    "required_exposure_offsets_ev": [-1, 0, 1],
+    "required_lighting_modes": ["neutral", "grazing", "gameplay"],
+    "required_distance_modes": ["near", "duel", "far"],
+    "mirror_required": true,
+    "approved_fov_extremes_required": true
+  },
+  "background": {
+    "minimum_edge_contrast_ratio": 4.5,
+    "minimum_passing_actor_edge_fraction": 0.95,
+    "minimum_passing_weapon_edge_fraction": 0.95,
+    "palette_version": "pvp005-matte-v1",
+    "paired_variants_when_single_fails": true
+  },
+  "physical": {
+    "maximum_planted_foot_drift_m": 0.02,
+    "maximum_ground_penetration_m": 0.01,
+    "maximum_socket_position_error_m": 0.01,
+    "maximum_socket_angle_error_degrees": 3.0,
+    "maximum_frozen_packet_evaluation_ms": 16.0
+  },
+  "human": {
+    "minimum_judgments_per_action": 20,
+    "minimum_accuracy_per_action": 0.8,
+    "maximum_pairwise_confusion": 0.2,
+    "mapping_visibility": "server_side_counterbalanced_hidden_from_reviewers"
+  },
+  "regression": {
+    "pinned_gpu_exact_hash": true,
+    "minimum_masked_ssim_approved_gpu": 0.995,
+    "maximum_masked_mean_absolute_error_approved_gpu": 0.00392156862745098,
+    "baseline_change_requires_reason": true,
+    "baseline_change_requires_acceptance_packet": true,
+    "baseline_change_requires_reviewed_adr": true
+  },
+  "dcc": {
+    "blender_version": "5.1.2",
+    "blender_build_hash": "ec6e62d40fa9",
+    "linux_x64_executable_sha256": "ed4a1317936e9993ee5b2c766976bff6fa6c5b7443f611d3367637240fc8593d"
+  },
+  "required_checks": [
+    "adversarial-visual-gate",
+    "blender-asset-gate",
+    "motion-readability-gate",
+    "provenance-hash-gate"
+  ]
+}

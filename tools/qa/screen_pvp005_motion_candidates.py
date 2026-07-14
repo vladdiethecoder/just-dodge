@@ -30,7 +30,7 @@ TELL_FRAMES = 8
 MAX_SEGMENT_DRIFT_M = 1.0e-4
 MAX_JOINT_STEP_M = 0.20
 MAX_ANGULAR_STEP_RAD = 0.70
-MAX_CONTACT_FOOT_DRIFT_M = 0.05
+MAX_CONTACT_FOOT_DRIFT_M = 0.02
 MAX_ROTATION_ERROR = 1.0e-3
 MIN_ROOT_HEIGHT_M = 0.45
 MAX_ROOT_HEIGHT_M = 1.20
@@ -94,9 +94,9 @@ def event_and_tell(action: str, positions: np.ndarray) -> tuple[int, list[int]]:
         end = len(positions) * 4 // 5
         separation = np.linalg.norm(hands[:, 0] - hands[:, 1], axis=1)
         event = start + int(np.argmin(separation[start:end]))
-    tell_end = max(TELL_FRAMES, event - 4)
-    tell_start = max(0, tell_end - TELL_FRAMES)
-    return event, list(range(tell_start, tell_start + TELL_FRAMES))
+    # Reveal readability is defined at the shipping boundary, not around an
+    # action-dependent event selected after seeing the generated motion.
+    return event, list(range(TELL_FRAMES))
 
 
 def semantic_metrics(action: str, positions: np.ndarray, event: int) -> dict[str, float]:
@@ -185,7 +185,7 @@ def inspect(path: Path, action: str, output: Path) -> tuple[dict, np.ndarray]:
     metric = {
         "action": action,
         "candidate": path.stem,
-        "source_path": str(path.relative_to(ROOT)),
+        "source_path": str(path.resolve().relative_to(ROOT)),
         "source_sha256": digest(path),
         "frames": frames,
         "fps": FPS,
@@ -278,10 +278,18 @@ def main() -> int:
         default=ROOT / "qa_runs/pvp005_motion_admission/screen",
     )
     args = parser.parse_args()
-    args.output.mkdir(parents=True, exist_ok=True)
+    args.root = args.root.resolve()
+    args.output = args.output.resolve()
+    if args.output.exists():
+        raise SystemExit(f"refusing to overwrite candidate screen output: {args.output}")
+    args.output.mkdir(parents=True)
 
     report = {
-        "schema": "just-dodge-pvp005-candidate-screen-v1",
+        "schema": "just-dodge-pvp005-candidate-screen-v2",
+        "readability_window": {
+            "basis": "first_player_visible_reveal_frames",
+            "frame_indices": list(range(TELL_FRAMES)),
+        },
         "thresholds": {
             "max_segment_drift_m": MAX_SEGMENT_DRIFT_M,
             "max_joint_step_m": MAX_JOINT_STEP_M,

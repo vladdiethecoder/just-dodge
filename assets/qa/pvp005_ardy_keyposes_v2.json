@@ -1,0 +1,49 @@
+{
+  "schema": "just-dodge-pvp005-ardy-keyposes-v2",
+  "model": "ARDY-G1-RP-25FPS-Horizon52",
+  "source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+  "fps": 25,
+  "frames": 52,
+  "diffusion_steps": 10,
+  "constraint_weight": 3.0,
+  "text_conditioning": false,
+  "seeds": [2026071521, 2026071522, 2026071523, 2026071524, 2026071525, 2026071526, 2026071527, 2026071528],
+  "constraint_revision": "dense_root_and_planted_feet_sparse_position_only_hands",
+  "weapon_policy": {
+    "strike": "two_hand_right_near_guard_left_near_pommel",
+    "block": "two_hand_right_near_guard_left_near_pommel",
+    "grab": "one_hand_right_shoulder_to_hand_low_forward_guard_left_hand_reaches"
+  },
+  "actions": {
+    "strike": {
+      "keyframes": [
+        {"frame": 0, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.20, 1.15, 0.25], "left_hand_m": [-0.10, 1.08, 0.12]},
+        {"frame": 7, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.24, 1.22, 0.28], "left_hand_m": [-0.13, 1.14, 0.15]},
+        {"frame": 15, "root_xz_m": [0.0, 0.02], "right_hand_m": [-0.12, 1.18, 0.40], "left_hand_m": [-0.02, 1.10, 0.27]},
+        {"frame": 27, "root_xz_m": [0.0, 0.08], "right_hand_m": [0.04, 0.98, 0.66], "left_hand_m": [0.12, 1.08, 0.54]},
+        {"frame": 39, "root_xz_m": [0.0, 0.10], "right_hand_m": [0.08, 0.90, 0.72], "left_hand_m": [0.15, 1.01, 0.59]},
+        {"frame": 51, "root_xz_m": [0.0, 0.04], "right_hand_m": [-0.16, 1.10, 0.32], "left_hand_m": [-0.04, 1.04, 0.20]}
+      ]
+    },
+    "block": {
+      "keyframes": [
+        {"frame": 0, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.18, 1.05, 0.32], "left_hand_m": [-0.04, 1.05, 0.18]},
+        {"frame": 7, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.22, 1.20, 0.34], "left_hand_m": [-0.10, 1.10, 0.18]},
+        {"frame": 15, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.18, 1.30, 0.34], "left_hand_m": [-0.06, 1.20, 0.18]},
+        {"frame": 27, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.16, 1.30, 0.34], "left_hand_m": [-0.04, 1.20, 0.18]},
+        {"frame": 39, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.14, 1.18, 0.32], "left_hand_m": [-0.02, 1.10, 0.18]},
+        {"frame": 51, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.14, 1.10, 0.32], "left_hand_m": [0.00, 1.04, 0.18]}
+      ]
+    },
+    "grab": {
+      "keyframes": [
+        {"frame": 0, "root_xz_m": [0.0, 0.0], "right_hand_m": [-0.24, 1.08, 0.38], "left_hand_m": [0.18, 1.08, 0.25]},
+        {"frame": 7, "root_xz_m": [0.0, 0.02], "right_hand_m": [-0.24, 1.08, 0.40], "left_hand_m": [0.25, 1.15, 0.45]},
+        {"frame": 15, "root_xz_m": [0.0, 0.10], "right_hand_m": [-0.23, 1.07, 0.42], "left_hand_m": [0.30, 1.18, 0.65]},
+        {"frame": 27, "root_xz_m": [0.0, 0.25], "right_hand_m": [-0.21, 1.06, 0.46], "left_hand_m": [0.20, 1.10, 0.80]},
+        {"frame": 39, "root_xz_m": [0.0, 0.18], "right_hand_m": [-0.22, 1.07, 0.42], "left_hand_m": [0.18, 1.08, 0.50]},
+        {"frame": 51, "root_xz_m": [0.0, 0.04], "right_hand_m": [-0.23, 1.08, 0.39], "left_hand_m": [0.12, 1.06, 0.30]}
+      ]
+    }
+  }
+}
