@@ -1,0 +1,254 @@
+{
+  "actions": {
+    "block": {
+      "c0_reveal": {
+        "front": {
+          "bytes": 799709,
+          "path": "assets/motion/pvp005_candidates/block/block_07_front_reveal.png",
+          "sha256": "ccff104686b0d1f3a36952e464471faeb2bee7344152374cdf51500898679045"
+        },
+        "side": {
+          "bytes": 680215,
+          "path": "assets/motion/pvp005_candidates/block/block_07_side_reveal.png",
+          "sha256": "c7d4f7ab073e94e67ca0c0c5172c5803dd8927b82619859659fa5063b59b5737"
+        }
+      },
+      "candidate": "block_07",
+      "event_frame": 18,
+      "f413": {
+        "bytes": 148680,
+        "path": "assets/motion/pvp005_candidates/block/block_07.413.f32",
+        "sha256": "afbc4d73b86125a0c0fc19d991ca7c18ac82786349cf8122453e7c238185ac74"
+      },
+      "fps": 25,
+      "frames": 90,
+      "prompt": "Plant the feet in a fighting stance, lift both forearms and both hands together across the upper chest and face in a compact high defensive guard, brace against an incoming overhead strike, then recover.",
+      "seed": 2026071402,
+      "semantic_metrics": {
+        "guard_height_over_shoulders_m": 0.15345895290374756,
+        "hand_height_at_event_m": 1.310036301612854,
+        "hand_horizontal_range_m": 0.21708469092845917,
+        "hand_separation_at_event_m": 0.10703056305646896,
+        "root_horizontal_path_m": 0.0618022158741951
+      },
+      "source": {
+        "bytes": 262130,
+        "path": "assets/motion/pvp005_candidates/block/block_07.ardy.npz",
+        "sha256": "15a8dfa28045fbbb2cbce933325f2af9af5f8eb599d8cd4b3926759b7e67090a"
+      },
+      "structural_metrics": {
+        "max_abs_position_m": 1.336918830871582,
+        "max_angular_step_rad": 0.3786226212978363,
+        "max_contact_foot_drift_m": 0.002980140969157219,
+        "max_joint_step_m": 0.08396518230438232,
+        "max_segment_drift_m": 2.682209014892578e-07,
+        "root_height_max_m": 0.781316876411438,
+        "root_height_min_m": 0.7784990072250366
+      },
+      "tell_frames": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "weapon_in_reveal": true
+    },
+    "grab": {
+      "c0_reveal": {
+        "front": {
+          "bytes": 735226,
+          "path": "assets/motion/pvp005_candidates/grab/grab_07_front_reveal.png",
+          "sha256": "427fc0d93f956451974180ac206c5ef319af72f4e6b50ab57b9adad1b5be672f"
+        },
+        "side": {
+          "bytes": 622539,
+          "path": "assets/motion/pvp005_candidates/grab/grab_07_side_reveal.png",
+          "sha256": "828b872cbe26fd7bf810eb87ba0fd2aa0ef281b218c3817735affcd484f0cc3d"
+        }
+      },
+      "candidate": "grab_07",
+      "event_frame": 22,
+      "f413": {
+        "bytes": 148680,
+        "path": "assets/motion/pvp005_candidates/grab/grab_07.413.f32",
+        "sha256": "df134b66d5d239ac119ba48cd7dda4acd041db6521feaf0548ae8c2b9ec61444"
+      },
+      "fps": 25,
+      "frames": 90,
+      "prompt": "From a low fighting stance, step forward toward an opponent, extend both open hands together at chest height, close the distance into a two-handed torso grab, pull backward, release, and recover.",
+      "seed": 2026071403,
+      "semantic_metrics": {
+        "hand_height_at_event_m": 1.1985132694244385,
+        "hand_horizontal_range_m": 0.39504632353782654,
+        "hand_separation_at_event_m": 0.03711084648966789,
+        "root_forward_extent_m": 0.058930035680532455,
+        "root_horizontal_path_m": 0.2359442412853241
+      },
+      "source": {
+        "bytes": 262130,
+        "path": "assets/motion/pvp005_candidates/grab/grab_07.ardy.npz",
+        "sha256": "a1c91db1cfd4bd7cb35c0af7dbc53bddb6c330acb260e03c34c729956e66aeb2"
+      },
+      "structural_metrics": {
+        "max_abs_position_m": 1.2084263563156128,
+        "max_angular_step_rad": 0.35662442445755005,
+        "max_contact_foot_drift_m": 0.013940912671387196,
+        "max_joint_step_m": 0.10703783482313156,
+        "max_segment_drift_m": 3.5762786865234375e-07,
+        "root_height_max_m": 0.77988600730896,
+        "root_height_min_m": 0.6795030832290649
+      },
+      "tell_frames": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "weapon_in_reveal": false
+    },
+    "strike": {
+      "c0_reveal": {
+        "front": {
+          "bytes": 897573,
+          "path": "assets/motion/pvp005_candidates/strike/strike_02_front_reveal.png",
+          "sha256": "0ab651d3cbd1a9f6503e77ae15f445521d937244db7ff8519787a3bf919da493"
+        },
+        "side": {
+          "bytes": 659679,
+          "path": "assets/motion/pvp005_candidates/strike/strike_02_side_reveal.png",
+          "sha256": "72a8be6b607225b90f0500ee468e4322aceb923afd424b4d1cb48ce7f3837a15"
+        }
+      },
+      "candidate": "strike_02",
+      "event_frame": 66,
+      "f413": {
+        "bytes": 148680,
+        "path": "assets/motion/pvp005_candidates/strike/strike_02.413.f32",
+        "sha256": "fc6aeb2d84cc506d79021d156469d483bf7bf08f26416199923436c428c8b383"
+      },
+      "fps": 25,
+      "frames": 90,
+      "prompt": "Plant the feet in a fighting stance, raise both hands together above the right shoulder as if gripping one weapon, drive both hands forward and downward in one decisive overhead strike, then recover to guard.",
+      "seed": 2026071401,
+      "semantic_metrics": {
+        "downward_hand_travel_m": 0.9176431894302368,
+        "hand_apex_frame": 33.0,
+        "hand_height_at_event_m": 1.0308839082717896,
+        "hand_horizontal_range_m": 0.16915029287338257,
+        "hand_separation_at_event_m": 0.27921658754348755,
+        "root_horizontal_path_m": 0.11516119539737701
+      },
+      "source": {
+        "bytes": 262130,
+        "path": "assets/motion/pvp005_candidates/strike/strike_02.ardy.npz",
+        "sha256": "acf5bedc6997e885081c830a5668da39e52e8f26be85cc96794152df8a0ab402"
+      },
+      "structural_metrics": {
+        "max_abs_position_m": 1.544823408126831,
+        "max_angular_step_rad": 0.30119186639785767,
+        "max_contact_foot_drift_m": 0.006453774403780699,
+        "max_joint_step_m": 0.08131270855665207,
+        "max_segment_drift_m": 2.682209014892578e-07,
+        "root_height_max_m": 0.8092867136001587,
+        "root_height_min_m": 0.7794039249420166
+      },
+      "tell_frames": [
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "weapon_in_reveal": true
+    }
+  },
+  "bound_files": {
+    "candidate_screen": {
+      "bytes": 37100,
+      "path": "assets/motion/pvp005_candidates/candidate_screen.json",
+      "sha256": "0c98725d63e01ba9dad693fbb5d810ac6fd4ae008330755dd2d83b270ff1c1a5"
+    },
+    "carrier": {
+      "bytes": 5710666,
+      "path": "assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin",
+      "sha256": "36a9c4e41f7e33ff58d68c10aa59a6b6cdbfb7e0384e0402e520801c205a1c7e"
+    },
+    "render_harness": {
+      "bytes": 14723,
+      "path": "src/bin/shot.rs",
+      "sha256": "0a480a29b9751f038d4cbfd5f31a4b288049f66f4ad726c84574d9973ed8a480"
+    },
+    "retargeter": {
+      "bytes": 8821,
+      "path": "src/motion_retarget.rs",
+      "sha256": "8e58f1ba2c9ef9349716095adece522da697cf7fe938f980bdadd88a63e0d8f8"
+    }
+  },
+  "generation": {
+    "diffusion_steps": 10,
+    "duration_seconds": 3.0,
+    "model_alias": "Kimodo-G1-SEED-v1",
+    "samples_per_action": 8
+  },
+  "provenance": {
+    "ardy_code": {
+      "commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+      "license": {
+        "bytes": 12576,
+        "path": "assets/motion/pvp005_candidates/third_party/ARDY_CODE_LICENSE.txt",
+        "sha256": "411f74af832a12782ba4dfaec7cb73eae7a77f8c2d36c97402aa92735fff5e9b"
+      },
+      "repository": "https://github.com/nv-tlabs/ardy"
+    },
+    "ardy_model": {
+      "config_sha256": "d34bcd2a43e5bade030e2779bd11e0c3d8ce7eeea6b636e7504efe9a404ec757",
+      "denoiser_sha256": "0c16ac26c1ab75e511cd24bb25bd9ad92078a2460b4ce78529788b5da22647a2",
+      "license": {
+        "bytes": 10229,
+        "path": "assets/motion/pvp005_candidates/third_party/ARDY_MODEL_LICENSE.txt",
+        "sha256": "11ccdcb47db87ac30b63765b5e5154403026c4fbb52c19919d99d912ec454e19"
+      },
+      "normalized_model_card": {
+        "bytes": 13036,
+        "path": "assets/motion/pvp005_candidates/third_party/ARDY_MODEL_CARD.md",
+        "sha256": "296c4117069de49fe18628cd8aa26fc6bbb9d0a17701e080ce13eb3a5da26ef6"
+      },
+      "repository": "nvidia/ARDY-G1-RP-25FPS-Horizon52",
+      "snapshot": "059b8007df0ba194a006a877b59a563955ac7b70",
+      "tokenizer_sha256": "6f2f75f738b8d6fb1b196d3253c7accc90494b9c12669b35968425fef54c8896",
+      "upstream_model_card_sha256": "e82149308c3f797631250eef6a104ec17b1d531bb671a5db57d1f5640a088e3b"
+    }
+  },
+  "public_distribution_ready": false,
+  "remaining_gates": [
+    "at least 20 blinded human participants with >=80% accuracy for every action",
+    "source-hash verifier wired into the repository release gate",
+    "pose-derived weapon socket/contact proxy parity"
+  ],
+  "runtime_promoted": false,
+  "schema": "just-dodge-pvp005-motion-candidate-packet-v1",
+  "status": "pending_blinded_human_trials",
+  "thresholds": {
+    "max_abs_position_m": 3.0,
+    "max_angular_step_rad": 0.7,
+    "max_contact_foot_drift_m": 0.05,
+    "max_joint_step_m": 0.2,
+    "max_rotation_error": 0.001,
+    "max_segment_drift_m": 0.0001,
+    "root_height_m": [
+      0.45,
+      1.2
+    ]
+  }
+}

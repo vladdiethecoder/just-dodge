@@ -34,6 +34,16 @@ fn qa_action() -> Option<Action> {
 }
 
 async fn run() {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap();
+    let stamp = stamp.as_secs() * 1_000_000 + stamp.subsec_micros() as u64;
+    let out_dir = std::env::var("JUSTDODGE_QA_OUT_DIR")
+        .unwrap_or_else(|_| format!("{}/qa_runs/bind_pose_{stamp}", env!("CARGO_MANIFEST_DIR")));
+    let label = std::env::var("JUSTDODGE_QA_LABEL")
+        .unwrap_or_else(|_| "jd_armored_duelist_bind".to_owned());
+    std::fs::create_dir_all(&out_dir).expect("create qa dir");
+
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::VULKAN,
         flags: wgpu::InstanceFlags::default(),
@@ -350,13 +360,6 @@ async fn run() {
         }
         drop(data);
         read_buf.unmap();
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap();
-        let stamp = stamp.as_secs() * 1_000_000 + stamp.subsec_micros() as u64;
-        let out_dir = format!("{}/qa_runs/bind_pose_{}", env!("CARGO_MANIFEST_DIR"), stamp);
-        std::fs::create_dir_all(&out_dir).expect("create qa dir");
-        let label = "jd_armored_duelist_bind";
         let path = format!("{out_dir}/{label}_{}.png", view.name);
         img.save(&path).expect("save png");
         println!("shot: wrote {}", path);

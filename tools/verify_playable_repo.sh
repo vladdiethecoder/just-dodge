@@ -9,6 +9,7 @@ fi
 
 cd "$ROOT"
 cargo fmt --check
+python3 tools/verify_pvp005_candidate_packet.py
 RUSTFLAGS='-D warnings' cargo clippy --locked --all-targets -- -D warnings
 RUSTFLAGS='-D warnings' cargo test --locked --all-targets -- --test-threads=1
 
@@ -26,4 +27,4 @@ diff -u \
 diff -qr "$VERIFY_ROOT/package-a" "$VERIFY_ROOT/package-b"
 git diff --check
 
-printf 'PLAYABLE_REPO_VERIFY=PASS tests=237 package_assemblies=2 identical=true\n'
+printf 'PLAYABLE_REPO_VERIFY=PASS package_assemblies=2 identical=true pvp005_candidate_packet=hash_bound_pending_human_trials\n'
