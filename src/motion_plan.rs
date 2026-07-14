@@ -258,6 +258,9 @@ impl MotionPlanPacketV1 {
             return Err(MotionPlanError::MissingModelReceipt);
         }
         bounded("root_targets", self.root_targets.len(), 1, MAX_PLAN_SAMPLES)?;
+        if self.root_targets[0].tick_offset != 0 {
+            return Err(MotionPlanError::MissingInitialRootTarget);
+        }
         bounded(
             "effector_targets",
             self.effector_targets.len(),
@@ -306,7 +309,9 @@ pub struct JointMotorTargetV1 {
     pub joint_index: u8,
     pub desired_rotation_6d_q15: [i16; 6],
     pub desired_angular_velocity_millirad_s: [i32; 3],
+    /// Isotropic spherical-joint gain applied equally on all three local axes.
     pub stiffness_q16: u16,
+    /// Isotropic spherical-joint damping applied equally on all three local axes.
     pub damping_q16: u16,
     pub max_torque_millinewton_m: u32,
 }
@@ -386,6 +391,7 @@ pub enum MotionPlanError {
     ZeroHorizon,
     IllegalResponse,
     MissingModelReceipt,
+    MissingInitialRootTarget,
     InvalidLength(&'static str),
     TickOutOfHorizon(&'static str),
     NonCanonicalOrder(&'static str),
@@ -621,6 +627,13 @@ mod tests {
         assert_eq!(
             overflow.seal(),
             Err(MotionPlanError::TickOutOfHorizon("root_targets"))
+        );
+
+        let mut missing_initial_root = sample_plan();
+        missing_initial_root.root_targets[0].tick_offset = 1;
+        assert_eq!(
+            missing_initial_root.seal(),
+            Err(MotionPlanError::MissingInitialRootTarget)
         );
 
         let mut malformed = sample_plan();

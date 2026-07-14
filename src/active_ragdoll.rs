@@ -21,6 +21,9 @@ pub const IDENTITY_ROTATION_6D_Q15: [i16; 6] = [i16::MAX, 0, 0, 0, i16::MAX, 0];
 const Q15_ONE: i64 = i16::MAX as i64;
 const ROOT_MASS_GRAMS: i64 = 70_000;
 const JOINT_INERTIA_MILLI_KG_M2: i64 = 50;
+// Force gains: mN/mm and mN*s/mm. F[mN] * 1_000 / mass[g] = a[mm/s^2].
+const ROOT_STIFFNESS_MILLI_NEWTON_PER_MM: i64 = ROOT_MASS_GRAMS * 16 / 1_000;
+const ROOT_DAMPING_MILLI_NEWTON_SECOND_PER_MM: i64 = ROOT_MASS_GRAMS * 8 / 1_000;
 const MAX_ROOT_ACCEL_MM_S2: i64 = 20_000;
 const MAX_ROOT_SPEED_MM_S: i64 = 10_000;
 const MAX_ANGULAR_SPEED_MILLIRAD_S: i64 = 20_000;
@@ -83,12 +86,14 @@ impl ActiveRagdollStateV1 {
     }
 
     pub fn kinetic_energy_millijoules(&self) -> u64 {
+        // Translational: g * (mm/s)^2 / 2_000_000 = mJ.
         let root_speed_squared: i128 = self
             .root_velocity_mm_s
             .iter()
             .map(|value| i128::from(*value) * i128::from(*value))
             .sum();
         let root = i128::from(ROOT_MASS_GRAMS) * root_speed_squared / 2_000_000;
+        // Rotational: milli-kg*m^2 * (millirad/s)^2 / 2_000_000 = mJ.
         let joints: i128 = self
             .joints
             .iter()
@@ -113,13 +118,14 @@ impl ActiveRagdollV1 {
         let first_root = plan
             .root_targets
             .first()
-            .filter(|target| target.tick_offset == 0)
             .ok_or(ActiveRagdollError::MissingInitialRootTarget)?;
         let mut joints = [JointStateV1::default(); JOINT_COUNT];
         for joint_index in 0..JOINT_COUNT {
-            if let Some(target) = initial_pose_for_joint(&plan.pose_targets, joint_index as u8) {
-                joints[joint_index].rotation_6d_q15 = target.rotation_6d_q15;
-            }
+            let joint_index_u8 = joint_index as u8;
+            let target = initial_pose_for_joint(&plan.pose_targets, joint_index_u8).ok_or(
+                ActiveRagdollError::MissingInitialJointTarget(joint_index_u8),
+            )?;
+            joints[joint_index].rotation_6d_q15 = target.rotation_6d_q15;
         }
         Ok(Self {
             state: ActiveRagdollStateV1 {
@@ -137,6 +143,7 @@ impl ActiveRagdollV1 {
         plan.valid_from_truth_tick + self.state.physics_tick / PHYSICS_SUBSTEPS_PER_TRUTH_TICK
     }
 
+    /// Applies impulse in milli-newton-seconds; dividing by grams yields delta mm/s.
     pub fn apply_root_impulse_milli_ns(&mut self, impulse: [i32; 3]) {
         for (velocity, impulse_axis) in self.state.root_velocity_mm_s.iter_mut().zip(impulse) {
             let delta = i64::from(impulse_axis) * 1_000 / ROOT_MASS_GRAMS;
@@ -207,6 +214,7 @@ impl ActiveRagdollV1 {
 pub enum ActiveRagdollError {
     MotionPlan(MotionPlanError),
     MissingInitialRootTarget,
+    MissingInitialJointTarget(u8),
     PlanBeforeValidity,
     PlanExpired,
     PlanMismatch,
@@ -226,13 +234,10 @@ pub fn compile_motor_targets(
 ) -> Result<MotorTargetBatchV1, ActiveRagdollError> {
     plan.validate()?;
     let offset = plan_offset(plan, truth_tick)?;
+    let offset = u16::try_from(offset).map_err(|_| ActiveRagdollError::PlanExpired)?;
     let mut targets = Vec::with_capacity(JOINT_COUNT);
     for joint_index in 0..JOINT_COUNT {
-        if let Some(target) = pose_for_joint_at(
-            &plan.pose_targets,
-            joint_index as u8,
-            u16::try_from(offset).unwrap_or(u16::MAX),
-        ) {
+        if let Some(target) = pose_for_joint_at(&plan.pose_targets, joint_index as u8, offset) {
             targets.push(JointMotorTargetV1 {
                 joint_index: joint_index as u8,
                 desired_rotation_6d_q15: target.rotation_6d_q15,
@@ -326,9 +331,13 @@ fn sample_root_target(targets: &[RootTargetV1], offset: u64) -> RootTargetV1 {
 
 fn step_root(state: &mut ActiveRagdollStateV1, target: RootTargetV1) {
     for axis in 0..3 {
-        let position_error = i64::from(target.position_mm[axis] - state.root_position_mm[axis]);
-        let velocity_error = i64::from(target.velocity_mm_s[axis] - state.root_velocity_mm_s[axis]);
-        let acceleration = (position_error * 16 + velocity_error * 8)
+        let position_error =
+            i64::from(target.position_mm[axis]) - i64::from(state.root_position_mm[axis]);
+        let velocity_error =
+            i64::from(target.velocity_mm_s[axis]) - i64::from(state.root_velocity_mm_s[axis]);
+        let force_millinewtons = position_error * ROOT_STIFFNESS_MILLI_NEWTON_PER_MM
+            + velocity_error * ROOT_DAMPING_MILLI_NEWTON_SECOND_PER_MM;
+        let acceleration = div_round(force_millinewtons * 1_000, ROOT_MASS_GRAMS)
             .clamp(-MAX_ROOT_ACCEL_MM_S2, MAX_ROOT_ACCEL_MM_S2);
         let velocity = i64::from(state.root_velocity_mm_s[axis])
             + div_round(acceleration, PHYSICS_TICKS_PER_SECOND);
@@ -445,10 +454,19 @@ fn cross_q30(left: [i16; 3], right: [i16; 3]) -> [i64; 3] {
 
 fn cross_i64(left: [i64; 3], right: [i64; 3]) -> [i64; 3] {
     [
-        left[1] * right[2] - left[2] * right[1],
-        left[2] * right[0] - left[0] * right[2],
-        left[0] * right[1] - left[1] * right[0],
+        difference_of_products(left[1], right[2], left[2], right[1]),
+        difference_of_products(left[2], right[0], left[0], right[2]),
+        difference_of_products(left[0], right[1], left[1], right[0]),
     ]
+}
+
+fn difference_of_products(a: i64, b: i64, c: i64, d: i64) -> i64 {
+    let value = i128::from(a) * i128::from(b) - i128::from(c) * i128::from(d);
+    i64::try_from(value.clamp(i128::from(i64::MIN), i128::from(i64::MAX))).unwrap_or(if value < 0 {
+        i64::MIN
+    } else {
+        i64::MAX
+    })
 }
 
 fn lerp3(left: [i32; 3], right: [i32; 3], numerator: i64, denominator: i64) -> [i32; 3] {
@@ -699,22 +717,26 @@ mod tests {
     }
 
     #[test]
-    fn future_pose_is_not_applied_before_its_recorded_tick() {
+    fn missing_initial_joint_is_rejected_without_anticipating_future_pose() {
         let mut plan = sample_plan();
         plan.pose_targets
             .retain(|target| !(target.joint_index == 10 && target.tick_offset == 0));
         plan.plan_hash = 0;
         let plan = plan.seal().unwrap();
-        let body = ActiveRagdollV1::from_plan(&plan).unwrap();
         assert_eq!(
-            body.state.joints[10].rotation_6d_q15,
-            IDENTITY_ROTATION_6D_Q15
+            ActiveRagdollV1::from_plan(&plan),
+            Err(ActiveRagdollError::MissingInitialJointTarget(10))
         );
         let before = compile_motor_targets(&plan, plan.valid_from_truth_tick).unwrap();
         assert!(before.targets.iter().all(|target| target.joint_index != 10));
         let at_tick = compile_motor_targets(&plan, plan.valid_from_truth_tick + 1).unwrap();
         assert_eq!(
-            at_tick.targets[10].desired_rotation_6d_q15,
+            at_tick
+                .targets
+                .iter()
+                .find(|target| target.joint_index == 10)
+                .unwrap()
+                .desired_rotation_6d_q15,
             ROTATED_Z_30_Q15
         );
     }
@@ -724,10 +746,73 @@ mod tests {
         let mut plan = sample_plan();
         plan.root_targets[0].tick_offset = 1;
         plan.plan_hash = 0;
-        let plan = plan.seal().unwrap();
+        assert_eq!(plan.seal(), Err(MotionPlanError::MissingInitialRootTarget));
+    }
+
+    #[test]
+    fn kinetic_energy_units_match_hand_calculations() {
+        let mut state = ActiveRagdollStateV1 {
+            physics_tick: 0,
+            plan_id: 1,
+            plan_hash: 1,
+            root_position_mm: [0; 3],
+            root_velocity_mm_s: [1_000, 0, 0],
+            joints: [JointStateV1::default(); JOINT_COUNT],
+        };
+        // 70 kg at 1 m/s: 0.5 * 70 * 1^2 = 35 J = 35,000 mJ.
+        assert_eq!(state.kinetic_energy_millijoules(), 35_000);
+        state.root_velocity_mm_s = [0; 3];
+        state.joints[0].angular_velocity_millirad_s = [1_000, 0, 0];
+        // 0.05 kg*m^2 at 1 rad/s: 0.025 J = 25 mJ.
+        assert_eq!(state.kinetic_energy_millijoules(), 25);
+    }
+
+    #[test]
+    fn timing_and_plan_identity_errors_fail_closed() {
+        let plan = sample_plan();
         assert_eq!(
-            ActiveRagdollV1::from_plan(&plan),
-            Err(ActiveRagdollError::MissingInitialRootTarget)
+            compile_motor_targets(&plan, plan.valid_from_truth_tick - 1),
+            Err(ActiveRagdollError::PlanBeforeValidity)
+        );
+        assert_eq!(
+            compile_motor_targets(
+                &plan,
+                plan.valid_from_truth_tick + u64::from(plan.horizon_truth_ticks)
+            ),
+            Err(ActiveRagdollError::PlanExpired)
+        );
+
+        let mut body = ActiveRagdollV1::from_plan(&plan).unwrap();
+        let mut wrong_tick = compile_motor_targets(&plan, plan.valid_from_truth_tick).unwrap();
+        wrong_tick.truth_tick += 1;
+        assert_eq!(
+            body.step(&plan, &wrong_tick),
+            Err(ActiveRagdollError::TickMismatch {
+                expected: plan.valid_from_truth_tick,
+                actual: plan.valid_from_truth_tick + 1,
+            })
+        );
+
+        let motors = compile_motor_targets(&plan, plan.valid_from_truth_tick).unwrap();
+        let mut other_plan = plan.clone();
+        other_plan.plan_id += 1;
+        other_plan.plan_hash = 0;
+        let other_plan = other_plan.seal().unwrap();
+        assert_eq!(
+            body.step(&other_plan, &motors),
+            Err(ActiveRagdollError::PlanMismatch)
+        );
+    }
+
+    #[test]
+    fn cross_product_saturates_instead_of_overflowing() {
+        assert_eq!(
+            difference_of_products(i64::MAX, i64::MAX, i64::MIN, i64::MAX),
+            i64::MAX
+        );
+        assert_eq!(
+            difference_of_products(i64::MIN, i64::MAX, i64::MAX, i64::MAX),
+            i64::MIN
         );
     }
 }
