@@ -27,6 +27,16 @@ pub struct PlanInput {
     pub toggle_debug: bool,
 }
 
+/// One-shot commands for the presentation-only outer player flow.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FlowInput {
+    pub start: bool,
+    pub replay: bool,
+    pub rematch: bool,
+    pub back_to_menu: bool,
+    pub quit: bool,
+}
+
 /// Accumulated input state across multiple events.
 #[derive(Debug, Default, Clone)]
 pub struct InputState {
@@ -42,6 +52,7 @@ pub struct InputState {
 
     confirmed: bool,
     toggle_debug: bool,
+    flow: FlowInput,
 }
 
 impl InputState {
@@ -56,15 +67,27 @@ impl InputState {
                     ("s", _) => self.back = pressed,
                     ("a", _) => self.left = pressed,
                     ("d", _) => self.right = pressed,
-                    (" ", true) => self.confirmed = true,
+                    (" ", true) => {
+                        self.confirmed = true;
+                        self.flow.start = true;
+                    }
                     ("1", true) => self.selected_action = Some(Action::Strike),
                     ("2", true) => self.selected_action = Some(Action::Block),
                     ("3", true) => self.selected_action = Some(Action::Grab),
                     ("f1", true) => self.toggle_debug = true,
+                    ("p", true) => self.flow.replay = true,
+                    ("r", true) => self.flow.rematch = true,
+                    ("q", true) => self.flow.quit = true,
                     _ => {}
                 }
             }
-            Key::Named(winit::keyboard::NamedKey::Enter) if pressed => self.confirmed = true,
+            Key::Named(winit::keyboard::NamedKey::Enter) if pressed => {
+                self.confirmed = true;
+                self.flow.start = true;
+            }
+            Key::Named(winit::keyboard::NamedKey::Escape) if pressed => {
+                self.flow.back_to_menu = true;
+            }
             _ => {}
         }
     }
@@ -137,6 +160,14 @@ impl InputState {
         self.confirmed = false;
         self.toggle_debug = false;
     }
+
+    pub const fn flow_input(&self) -> FlowInput {
+        self.flow
+    }
+
+    pub fn reset_flow(&mut self) {
+        self.flow = FlowInput::default();
+    }
 }
 
 #[cfg(test)]
@@ -183,5 +214,23 @@ mod tests {
         assert!(plan.selected_action.is_none());
 
         assert!(!plan.confirmed);
+    }
+
+    #[test]
+    fn reset_flow_clears_only_outer_one_shots() {
+        let mut input = InputState {
+            selected_action: Some(Action::Block),
+            flow: FlowInput {
+                start: true,
+                replay: true,
+                rematch: true,
+                back_to_menu: true,
+                quit: true,
+            },
+            ..Default::default()
+        };
+        input.reset_flow();
+        assert_eq!(input.flow_input(), FlowInput::default());
+        assert_eq!(input.plan_input().selected_action, Some(Action::Block));
     }
 }

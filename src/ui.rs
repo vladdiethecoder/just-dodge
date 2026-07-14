@@ -8,6 +8,7 @@ use crate::input::{Action, PlanInput};
 use bytemuck::{Pod, Zeroable};
 use glam::Vec2;
 use just_dodge::milestone3::{Phase, Side, Snapshot};
+use just_dodge::runtime_flow::{ESTABLISHING_TICKS, FlowStage};
 
 const GLYPH_W: f32 = 5.0;
 const GLYPH_H: f32 = 7.0;
@@ -44,6 +45,15 @@ pub struct UiRenderer {
     vertex_buffer: wgpu::Buffer,
     vertices: Vec<UiVertex>,
     screen_size: (u32, u32),
+}
+
+pub struct UiFrame<'a> {
+    pub snapshot: &'a Snapshot,
+    pub plan: &'a PlanInput,
+    pub flow_stage: FlowStage,
+    pub establishing_remaining: u16,
+    pub width: u32,
+    pub height: u32,
 }
 
 fn build_font_atlas() -> Vec<u8> {
@@ -344,7 +354,7 @@ impl UiRenderer {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("UI Vertex Buffer"),
-            size: (1024 * std::mem::size_of::<UiVertex>()) as u64,
+            size: (4096 * std::mem::size_of::<UiVertex>()) as u64,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -355,7 +365,7 @@ impl UiRenderer {
             texture_bind_group,
             screen_ub,
             vertex_buffer,
-            vertices: Vec::with_capacity(1024),
+            vertices: Vec::with_capacity(4096),
             screen_size: (config.width, config.height),
         }
     }
@@ -450,12 +460,17 @@ impl UiRenderer {
     pub fn render(
         &mut self,
         rpass: &mut wgpu::RenderPass,
-        snapshot: &Snapshot,
-        plan: &PlanInput,
+        frame: UiFrame<'_>,
         queue: &wgpu::Queue,
-        width: u32,
-        height: u32,
     ) {
+        let UiFrame {
+            snapshot,
+            plan,
+            flow_stage,
+            establishing_remaining,
+            width,
+            height,
+        } = frame;
         self.vertices.clear();
         if width != self.screen_size.0 || height != self.screen_size.1 {
             self.screen_size = (width, height);
@@ -482,7 +497,15 @@ impl UiRenderer {
         let phase_duration = phase_duration_frames(snapshot.phase);
         let remaining =
             (phase_duration.saturating_sub(u32::from(snapshot.phase_frame))) as f32 / 60.0;
-        let phase_label = format!("{:?}  {:.1}s", snapshot.phase, remaining);
+        let phase_label = match flow_stage {
+            FlowStage::Menu => "Menu".to_string(),
+            FlowStage::Establishing => {
+                format!("Establishing  {:.1}s", establishing_remaining as f32 / 60.0)
+            }
+            FlowStage::Replan => format!("Replan  {:.1}s", remaining),
+            FlowStage::Replay => format!("Replay  frame {}", snapshot.frame),
+            _ => format!("{flow_stage:?}  {remaining:.1}s"),
+        };
         let label_w = phase_label.len() as f32 * GLYPH_ADV * 2.0;
         self.text(
             Vec2::new((w - label_w) / 2.0, 8.0),
@@ -531,32 +554,34 @@ impl UiRenderer {
             [0.2, 0.8, 0.2, 1.0],
         );
 
-        // --- Action menu (bottom) ---
-        let actions = [
-            ("1 Strike", Action::Strike, [0.9, 0.2, 0.2, 0.9]),
-            ("2 Block", Action::Block, [0.2, 0.6, 0.9, 0.9]),
-            ("3 Grab", Action::Grab, [0.3, 0.9, 0.5, 0.9]),
-        ];
-        let btn_w = 140.0;
-        let btn_h = 36.0;
-        let gap = 16.0;
-        let total_w = actions.len() as f32 * btn_w + (actions.len() as f32 - 1.0) * gap;
-        let start_x = (w - total_w) / 2.0;
-        let y = h - 90.0;
-        for (i, (label, action, color)) in actions.iter().enumerate() {
-            let x = start_x + i as f32 * (btn_w + gap);
-            let selected = plan.selected_action == Some(*action);
-            self.rect(Vec2::new(x, y), Vec2::new(btn_w, btn_h), *color);
-            if selected {
-                self.rect_outline(
-                    Vec2::new(x, y),
-                    Vec2::new(btn_w, btn_h),
-                    [1.0, 1.0, 1.0, 1.0],
-                    3.0,
-                );
+        if flow_stage == FlowStage::Plan {
+            // --- Action menu (bottom) ---
+            let actions = [
+                ("1 Strike", Action::Strike, [0.9, 0.2, 0.2, 0.9]),
+                ("2 Block", Action::Block, [0.2, 0.6, 0.9, 0.9]),
+                ("3 Grab", Action::Grab, [0.3, 0.9, 0.5, 0.9]),
+            ];
+            let btn_w = 140.0;
+            let btn_h = 36.0;
+            let gap = 16.0;
+            let total_w = actions.len() as f32 * btn_w + (actions.len() as f32 - 1.0) * gap;
+            let start_x = (w - total_w) / 2.0;
+            let y = h - 90.0;
+            for (i, (label, action, color)) in actions.iter().enumerate() {
+                let x = start_x + i as f32 * (btn_w + gap);
+                let selected = plan.selected_action == Some(*action);
+                self.rect(Vec2::new(x, y), Vec2::new(btn_w, btn_h), *color);
+                if selected {
+                    self.rect_outline(
+                        Vec2::new(x, y),
+                        Vec2::new(btn_w, btn_h),
+                        [1.0, 1.0, 1.0, 1.0],
+                        3.0,
+                    );
+                }
+                let tx = x + (btn_w - label.len() as f32 * GLYPH_ADV * 1.5) / 2.0;
+                self.text(Vec2::new(tx, y + 10.0), label, 1.5, [1.0, 1.0, 1.0, 1.0]);
             }
-            let tx = x + (btn_w - label.len() as f32 * GLYPH_ADV * 1.5) / 2.0;
-            self.text(Vec2::new(tx, y + 10.0), label, 1.5, [1.0, 1.0, 1.0, 1.0]);
         }
 
         // --- Plan / commit prompts ---
@@ -583,7 +608,11 @@ impl UiRenderer {
         }
 
         // --- Result text (during Reveal/Resolve/Consequence) ---
-        if let Some((player_action, opponent_action)) = snapshot.revealed {
+        if !matches!(
+            flow_stage,
+            FlowStage::Menu | FlowStage::Establishing | FlowStage::Result
+        ) && let Some((player_action, opponent_action)) = snapshot.revealed
+        {
             let result = format!("{:?} vs {:?}", player_action, opponent_action);
             let rw = result.len() as f32 * GLYPH_ADV * 3.0;
             self.text(
@@ -595,8 +624,8 @@ impl UiRenderer {
         }
 
         // --- Match over overlay ---
-        if snapshot.phase == Phase::MatchResult {
-            self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.75]);
+        if flow_stage == FlowStage::Result {
+            self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.84]);
             let winner = snapshot
                 .winner
                 .map(|s| match s {
@@ -606,11 +635,85 @@ impl UiRenderer {
                 .unwrap_or("Match Result");
             let mw = winner.len() as f32 * GLYPH_ADV * 4.0;
             self.text(
-                Vec2::new((w - mw) / 2.0, h / 2.0 - 20.0),
+                Vec2::new((w - mw) / 2.0, h / 2.0 - 55.0),
                 winner,
                 4.0,
                 [1.0, 0.8, 0.2, 1.0],
             );
+            let prompt = "P Replay   R Rematch   Esc Menu   Q Quit";
+            let prompt_w = prompt.len() as f32 * GLYPH_ADV * 1.6;
+            self.text(
+                Vec2::new((w - prompt_w) / 2.0, h / 2.0 + 25.0),
+                prompt,
+                1.6,
+                [0.9, 0.9, 0.9, 1.0],
+            );
+        }
+
+        match flow_stage {
+            FlowStage::Menu => {
+                self.rect(Vec2::ZERO, Vec2::new(w, h), [0.015, 0.02, 0.035, 1.0]);
+                let title = "JUST DODGE";
+                let title_w = title.len() as f32 * GLYPH_ADV * 5.0;
+                self.text(
+                    Vec2::new((w - title_w) / 2.0, h * 0.36),
+                    title,
+                    5.0,
+                    [0.95, 0.78, 0.24, 1.0],
+                );
+                let subtitle = "A deterministic three-action duel";
+                let subtitle_w = subtitle.len() as f32 * GLYPH_ADV * 1.8;
+                self.text(
+                    Vec2::new((w - subtitle_w) / 2.0, h * 0.48),
+                    subtitle,
+                    1.8,
+                    [0.78, 0.82, 0.9, 1.0],
+                );
+                let prompt = "Enter or Space to begin   Q Quit";
+                let prompt_w = prompt.len() as f32 * GLYPH_ADV * 1.8;
+                self.text(
+                    Vec2::new((w - prompt_w) / 2.0, h * 0.62),
+                    prompt,
+                    1.8,
+                    [1.0, 1.0, 1.0, 1.0],
+                );
+            }
+            FlowStage::Establishing => {
+                self.rect(Vec2::ZERO, Vec2::new(w, h), [0.02, 0.025, 0.04, 0.82]);
+                let title = "ESTABLISHING";
+                let title_w = title.len() as f32 * GLYPH_ADV * 3.2;
+                self.text(
+                    Vec2::new((w - title_w) / 2.0, h * 0.43),
+                    title,
+                    3.2,
+                    [0.95, 0.78, 0.24, 1.0],
+                );
+                let elapsed = ESTABLISHING_TICKS.saturating_sub(establishing_remaining);
+                let progress = elapsed as f32 / ESTABLISHING_TICKS as f32;
+                self.bar(
+                    Vec2::new(w * 0.3, h * 0.54),
+                    Vec2::new(w * 0.4, 10.0),
+                    progress,
+                    [0.15, 0.15, 0.18, 1.0],
+                    [0.95, 0.62, 0.18, 1.0],
+                );
+            }
+            FlowStage::Replay => {
+                let prompt = "REPLAY   R Rematch   Esc Menu   Q Quit";
+                self.rect(
+                    Vec2::new(0.0, h - 34.0),
+                    Vec2::new(w, 34.0),
+                    [0.0, 0.0, 0.0, 0.82],
+                );
+                let prompt_w = prompt.len() as f32 * GLYPH_ADV * 1.5;
+                self.text(
+                    Vec2::new((w - prompt_w) / 2.0, h - 24.0),
+                    prompt,
+                    1.5,
+                    [0.95, 0.9, 0.65, 1.0],
+                );
+            }
+            _ => {}
         }
 
         // Upload and draw

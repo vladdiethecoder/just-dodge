@@ -1,8 +1,8 @@
 # Current State Audit — PLAYABLE-PROOF Baseline
 
-- Audit revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`
+- Audit baseline revision: `f41cde635c607b33bbf04c2dd4621222359df73f`
 - Audit UTC: 2026-07-14
-- Branch: clean `main`, equal to `origin/main`
+- Branch: `main`; PVP-003 is evaluated on top of the committed clean-checkout gate
 - Worktrees: one (`/run/media/vdubrov/NVMe-Storage1/Just Dodge`)
 
 ## Selected executable path
@@ -25,18 +25,19 @@
 | Armored C0 import | Live presentation, static integrity only | 82,928 vertices; 309,864 indices; 24 bones; cooked verifier passes |
 | ARDY/MotionBricks plan packets | Isolated foundation | Provenance/quantization/replay tests exist; no live `App` consumer |
 | Active-ragdoll/G1 articulation | Isolated foundation | Independent-joint tracking and hinge projection tests; no coupled articulated world |
-| Player flow | Partial | Observe through MatchResult exists; Menu, Establishing, Replay mode, documented rematch, exit, and cursor capture do not |
+| Player flow | Live, verified mechanically | Menu → Establishing → duel phases → Result → validated Replay; rematch/menu/quit and duel-only cursor capture are implemented. Real keyboard/mouse package evidence remains open |
 | Package/evidence | Absent | No tracked package pipeline, repo verifier, canonical video, manifest, or gate report |
 
 ## Fresh baseline gates
 
 - PASS: warning-denying all-target check.
-- PASS: 233 all-target tests (116 library, 115 main, two integrations).
+- PASS: 237 all-target tests (119 library, 116 main, two integrations).
 - PASS: release `just-dodge`/`m3_match` build and release launch through renderer/UI initialization and replay save.
 - PASS: armored cooked-mesh verifier.
 - PASS: `cargo fmt --check` and warning-denying clippy/check.
 - PASS: tracked `Cargo.lock` and locked compilation from an isolated checkout.
 - PASS: the isolated checkout hydrates and verifies all 13 pinned MotionBricks runtime files from an explicit trusted cache, then passes all 233 tests.
+- PASS: runtime-flow truth-isolation and replay tests; release Menu and Result captures; cursor capture/release logs.
 - FAIL: canonical-media verifier (rendering overview, gameplay video, and manifest absent).
 - ABSENT: release package and package/repo verifier.
 
@@ -46,6 +47,6 @@
 
 ## Ordered PLAYABLE-PROOF path
 
-`PVP-001 reconcile active path` → `PVP-002 clean-checkout gates` (passed) → `PVP-003 complete runtime flow` → `PVP-004 packaged interaction/cadence proof` → admitted plan packets/motion → coupled articulated physics → pose/socket-derived contact → camera/readability → truth-driven presentation → packaged human matches and canonical evidence.
+`PVP-001 reconcile active path` → `PVP-002 clean-checkout gates` (passed) → `PVP-003 complete runtime flow` (passed mechanically) → `PVP-004 packaged interaction/cadence proof` → admitted plan packets/motion → coupled articulated physics → pose/socket-derived contact → camera/readability → truth-driven presentation → packaged human matches and canonical evidence.
 
 No 13-action, multiplayer, roster, anatomy/FEM, world, store, Supabase, or nonessential asset expansion is admitted before that chain passes.

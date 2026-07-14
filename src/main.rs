@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::{m3_cleanbox, milestone3 as m3};
+use just_dodge::{m3_cleanbox, milestone3 as m3, runtime_flow};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -9,8 +9,7 @@ use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
 use winit::event::{ElementState, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::keyboard::Key;
-use winit::window::{Window, WindowId};
+use winit::window::{CursorGrabMode, Window, WindowId};
 
 mod action_matrix;
 mod active_ragdoll;
@@ -144,6 +143,8 @@ struct App {
     session: m3::Session,
     cleanbox_world: m3_cleanbox::M3CleanboxWorld,
     ai: m3::SeededAi,
+    flow: runtime_flow::RuntimeFlow,
+    cursor_captured: bool,
     replay_saved: bool,
     /// QA-only deterministic driver. It uses the same input/session path as
     /// keyboard selection; it is never the default launch mode.
@@ -288,9 +289,15 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::CursorMoved { position, .. } => {
-                if let Some((dx, dy)) = self.camera.record_mouse_position((position.x, position.y))
-                {
-                    self.input.handle_mouse_motion(dx, dy);
+                let stage = self.flow.stage(self.session.game.snapshot());
+                if stage.captures_cursor() {
+                    if let Some((dx, dy)) =
+                        self.camera.record_mouse_position((position.x, position.y))
+                    {
+                        self.input.handle_mouse_motion(dx, dy);
+                    }
+                } else {
+                    self.camera.last_mouse = None;
                 }
             }
 
@@ -304,23 +311,7 @@ impl ApplicationHandler for App {
 
             WindowEvent::KeyboardInput { event, .. } => {
                 self.input.handle_key(&event);
-                if event.state == ElementState::Pressed
-                    && let Key::Character(c) = &event.logical_key
-                    && c.as_str() == "r"
-                {
-                    self.camera.reset();
-                    if self.session.game.snapshot().phase == m3::Phase::MatchResult {
-                        let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
-                        self.session
-                            .apply(m3::Side::Player, m3::Input::Restart { seed: next_seed })
-                            .expect("restart is valid from MatchResult");
-                        self.replay_saved = false;
-                        self.input.reset_plan();
-                        eprintln!("Milestone 3 match restarted with seed {next_seed}");
-                    } else {
-                        eprintln!("First-person camera reset");
-                    }
-                }
+                self.handle_flow_commands(event_loop);
             }
 
             _ => {}
@@ -329,6 +320,98 @@ impl ApplicationHandler for App {
 }
 
 impl App {
+    fn handle_flow_commands(&mut self, event_loop: &ActiveEventLoop) {
+        let command = self.input.flow_input();
+        let stage = self.flow.stage(self.session.game.snapshot());
+
+        if command.quit {
+            event_loop.exit();
+            self.input.reset_flow();
+            return;
+        }
+        if command.back_to_menu {
+            self.flow.back_to_menu();
+            self.camera.reset();
+            self.sync_cursor_capture(runtime_flow::FlowStage::Menu);
+            self.input.reset_flow();
+            return;
+        }
+        if command.start && stage == runtime_flow::FlowStage::Menu {
+            let current = self.session.game.snapshot();
+            let seed = if current.frame == 0 {
+                current.seed
+            } else {
+                current.seed.wrapping_add(1)
+            };
+            self.reset_match(seed);
+            assert!(self.flow.start_match());
+            eprintln!("Player flow: Establishing, seed {seed}");
+        } else if command.replay && stage == runtime_flow::FlowStage::Result {
+            let snapshot = self.session.game.snapshot().clone();
+            match self
+                .flow
+                .enter_replay(&snapshot, self.session.replay.clone())
+            {
+                Ok(()) => eprintln!("Player flow: Replay"),
+                Err(error) => eprintln!("Replay refused: {error}"),
+            }
+        } else if command.rematch
+            && matches!(
+                stage,
+                runtime_flow::FlowStage::Result | runtime_flow::FlowStage::Replay
+            )
+        {
+            let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
+            assert!(self.flow.begin_rematch());
+            self.reset_match(next_seed);
+            eprintln!("Player flow: rematch Establishing, seed {next_seed}");
+        } else if command.rematch && stage.captures_cursor() {
+            self.camera.reset();
+            eprintln!("First-person camera reset");
+        }
+        self.input.reset_flow();
+    }
+
+    fn reset_match(&mut self, seed: u64) {
+        self.session = m3::Session::new(seed);
+        self.cleanbox_world = m3_cleanbox::M3CleanboxWorld::new();
+        self.ai = m3::SeededAi::new(seed);
+        self.replay_saved = false;
+        self.fixed_step_clock = FixedStepClock::default();
+        self.last_frame_time = Instant::now();
+        self.input = input::InputState::default();
+        self.camera.reset();
+    }
+
+    fn sync_cursor_capture(&mut self, stage: runtime_flow::FlowStage) {
+        let desired = stage.captures_cursor();
+        if desired == self.cursor_captured {
+            return;
+        }
+        let Some(window) = self.window.as_ref() else {
+            return;
+        };
+        if desired {
+            let locked = window
+                .set_cursor_grab(CursorGrabMode::Locked)
+                .or_else(|_| window.set_cursor_grab(CursorGrabMode::Confined));
+            if let Err(error) = locked {
+                eprintln!("Cursor capture unavailable: {error}");
+                return;
+            }
+            window.set_cursor_visible(false);
+            self.camera.last_mouse = None;
+        } else {
+            if let Err(error) = window.set_cursor_grab(CursorGrabMode::None) {
+                eprintln!("Cursor release failed: {error}");
+            }
+            window.set_cursor_visible(true);
+            self.camera.last_mouse = None;
+        }
+        self.cursor_captured = desired;
+        eprintln!("Cursor captured: {desired}");
+    }
+
     fn combat_update(&mut self) -> Option<CombatUpdate> {
         self.renderer.as_ref()?;
 
@@ -344,7 +427,7 @@ impl App {
             eprintln!("debug overlay: {}", self.show_debug);
         }
 
-        if self.session.game.snapshot().phase == m3::Phase::Plan {
+        if self.flow.stage(self.session.game.snapshot()) == runtime_flow::FlowStage::Plan {
             let snap = self.session.game.snapshot().clone();
             if !snap.player.committed {
                 let player_action = if self.autoplay {
@@ -381,19 +464,49 @@ impl App {
         // A redraw can run zero or multiple ticks; fractional time is retained.
         let ticks = self.fixed_step_clock.push_elapsed(real_dt);
         for _ in 0..ticks {
-            self.cleanbox_world
-                .submit_resolve_packet(&mut self.session, self.player_pos, vec3(0.0, 0.0, -1.0))
-                .expect("M3 Resolve cleanbox packet must be valid");
-            self.session.tick();
+            let stage = self.flow.stage(self.session.game.snapshot());
+            match stage {
+                runtime_flow::FlowStage::Establishing => {
+                    self.flow.tick_establishing();
+                }
+                runtime_flow::FlowStage::Replay => {
+                    self.flow
+                        .advance_replay()
+                        .expect("validated replay playback must remain deterministic");
+                }
+                runtime_flow::FlowStage::Menu | runtime_flow::FlowStage::Result => {}
+                _ => {
+                    debug_assert!(
+                        self.flow.truth_ticks_allowed(self.session.game.snapshot()),
+                        "only live duel stages may advance combat truth"
+                    );
+                    self.cleanbox_world
+                        .submit_resolve_packet(
+                            &mut self.session,
+                            self.player_pos,
+                            vec3(0.0, 0.0, -1.0),
+                        )
+                        .expect("M3 Resolve cleanbox packet must be valid");
+                    self.session.tick();
+                }
+            }
         }
 
-        let snapshot = self.session.game.snapshot().clone();
+        let live_snapshot = self.session.game.snapshot().clone();
 
         // Save replay once on match end.
-        if snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
+        if live_snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
             self.save_replay();
             self.replay_saved = true;
         }
+
+        let stage = self.flow.stage(&live_snapshot);
+        self.sync_cursor_capture(stage);
+        let snapshot = self
+            .flow
+            .replay_snapshot()
+            .cloned()
+            .unwrap_or(live_snapshot);
 
         let (player_joints, opponent_joints) = self.current_pose(&snapshot);
         let elapsed = self.start_time.elapsed().as_secs_f32();
@@ -563,11 +676,15 @@ impl App {
                 });
                 ui_renderer.render(
                     &mut rpass,
-                    &snapshot,
-                    &plan,
+                    ui::UiFrame {
+                        snapshot: &snapshot,
+                        plan: &plan,
+                        flow_stage: self.flow.stage(self.session.game.snapshot()),
+                        establishing_remaining: self.flow.establishing_remaining(),
+                        width: config.width,
+                        height: config.height,
+                    },
                     queue,
-                    config.width,
-                    config.height,
                 );
             }
 
@@ -910,6 +1027,12 @@ fn main() {
         session: m3::Session::new(0x4D33_0000_0000_0000),
         cleanbox_world: m3_cleanbox::M3CleanboxWorld::new(),
         ai: m3::SeededAi::new(0x4D33_0000_0000_0000),
+        flow: if autoplay {
+            runtime_flow::RuntimeFlow::autoplay()
+        } else {
+            runtime_flow::RuntimeFlow::menu()
+        },
+        cursor_captured: false,
         replay_saved: false,
         autoplay,
         telemetry: telemetry::Telemetry::new(telemetry_enabled),

@@ -10,6 +10,7 @@ Source revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 - `c0_armored_duelist_001`: tracked GLB/FBX/SKM1 source chain, 24-bone cooked character, hashes, Meshy task IDs, and conversion manifest.
 - Isolated post-Reveal ARDY service, quantized motion-plan/replan schema, replay receipts, active-ragdoll tracking core, official G1 articulation model, and deterministic hinge projection.
 - Tracked `Cargo.lock`, a 13-file MotionBricks runtime checksum manifest, and a fail-closed clean-checkout artifact hydrator.
+- Truth-isolated outer runtime flow for Menu, Establishing, all duel phases, Result, validated Replay playback, rematch, menu return, exit, and cursor capture/release.
 
 ### Changed
 - Runtime C0 loading now uses the armored duelist rather than the old nude carrier.
@@ -19,10 +20,11 @@ Source revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 
 ### Verified
 - Warning-denying all-target compile passed.
-- Fresh all-target test pass: 116 library + 115 game-binary + 1 official-motion + 1 serialized motion-service test (233 total).
+- Fresh all-target test pass: 119 library + 116 game-binary + 1 official-motion + 1 serialized motion-service test (237 total).
 - M3 autoplay/replay: Player terminal at frame 342, truth hash `d1a3cc1bfb9c2f67`.
 - Release `just-dodge` launched, initialized the Vulkan renderer/UI, reached terminal state under deterministic autoplay, saved a replay, and the replay independently reconstructed the same hash.
-- Fmt, warning-denying clippy/check, shell validation, runtime-bundle hashes, and 233 all-target tests pass; the same 233 tests pass in an isolated checkout after exact artifact hydration.
+- Fmt, warning-denying clippy/check, shell validation, runtime-bundle hashes, and 237 all-target tests pass; the pre-flow 233-test baseline also passes in an isolated checkout after exact artifact hydration.
+- Runtime-flow regressions prove Menu and Establishing cannot advance truth, Replay reconstructs the saved record without mutating the terminal live session, and duel-only stages own the captured cursor. Release captures show the Menu and terminal Result surfaces; compositor automation could not inject the Replay hotkey, so human input proof remains open.
 
 ### Boundaries
 - `App::current_pose()` still returns bind matrices; ARDY/MotionBricks/active-ragdoll foundations are not wired into live gameplay.

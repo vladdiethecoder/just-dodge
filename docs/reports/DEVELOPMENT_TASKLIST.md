@@ -1,9 +1,9 @@
 # Just Dodge — Development Task List
 
-Branch: clean `main` at `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`, equal to `origin/main`; one worktree.
+Branch: `main`, based on clean-checkout gate revision `f41cde635c607b33bbf04c2dd4621222359df73f`; one worktree.
 Last updated: 2026-07-14
-Active implementation unit: `PVP-003-COMPLETE-RUNTIME-FLOW`.
-Current mechanical blockers: no package/repo verifier, incomplete player flow, bind-pose runtime, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-002 closed fmt/clippy, lockfile, and clean-checkout artifact hydration gates.
+Active implementation unit: `PVP-004-PACKAGED-INTERACTION-CADENCE`.
+Current mechanical blockers: no package/repo verifier or real keyboard/mouse package evidence, bind-pose runtime, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-002 closed fmt/clippy, lockfile, and clean-checkout artifact hydration gates; PVP-003 closed the truth-isolated mechanical Menu-to-Replay flow.
 
 The Phase A/B tables below preserve detailed task history. The controlling PLAYABLE-PROOF order is now: reconcile → clean-checkout gates → full runtime flow → packaged interaction/cadence proof → admitted motion plans → coupled articulated physics → pose/socket contact → camera/readability → truth-driven presentation → human/package evidence.
 
@@ -183,4 +183,4 @@ Parallel (no truth risk, can run alongside B.1–B.5):
   D.4  D.5
 ```
 
-**Current unit: PVP-003-COMPLETE-RUNTIME-FLOW.** PVP-002 now tracks the lockfile, passes fmt/warning-denying clippy/check, and passes all 233 tests from an isolated checkout after fail-closed hydration of the 13-file pinned MotionBricks bundle. Implement and verify Menu → Establishing → Observe → Plan → Commit/Reveal → Resolve → Consequence → Replan → Result → Replay, rematch, and exit before package interaction proof.
+**Current unit: PVP-004-PACKAGED-INTERACTION-CADENCE.** PVP-003 added and mechanically verified Menu → Establishing → Observe → Plan → Commit/Reveal → Resolve → Consequence → Replan → Result → validated Replay, rematch, menu return, exit, and duel-only cursor capture without changing live combat truth. Add a reproducible release package plus fail-closed package/repo verifier, then record real keyboard/mouse launch-to-restart cadence before motion promotion.

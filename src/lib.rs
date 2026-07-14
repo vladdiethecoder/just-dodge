@@ -22,5 +22,6 @@ pub mod motion_service;
 pub mod renderer;
 pub mod replay;
 pub mod retarget;
+pub mod runtime_flow;
 pub mod skeleton;
 pub mod truth;

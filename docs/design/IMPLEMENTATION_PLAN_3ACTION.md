@@ -218,15 +218,16 @@ Implementation history was consolidated onto `main`. The status below distinguis
 | `input` | ✅ Complete | Plan-phase action/stance selection and confirm. |
 | `ui` | ✅ Complete | Bitmap-font wgpu UI: phase banner, HP/STA bars, action menu, stance indicator, result text, match-over overlay. |
 | `renderer` | ✅ Complete | Hitbox debug line rendering, UI overlay integration. |
-| `main.rs` | ⚠️ Partial player shell | Wires M3 truth → AI → replay → renderer → UI and saves a replay, but has no Menu/Establishing/Replay flow, cursor capture, packaged interaction proof, admitted action poses, or socket-derived weapons. |
+| `main.rs` | ⚠️ Mechanically complete flow, unproven package cadence | Wires M3 truth → AI → replay → renderer → UI; provides Menu/Establishing/duel/Result/validated Replay, rematch/menu/quit, and cursor ownership. Packaged human interaction proof, admitted action poses, and socket-derived weapons remain absent. |
 
 ## Verification Results
 
 - `RUSTFLAGS='-Dwarnings' cargo check --locked --all-targets` passes.
-- `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passes 233 tests, including both live MotionBricks integrations.
+- `RUSTFLAGS='-Dwarnings' cargo test --locked --all-targets` passes 237 tests, including both live MotionBricks integrations.
 - `cargo test --locked --lib milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash -- --nocapture` passes.
 - `RUSTFLAGS='-Dwarnings' cargo build --locked --release --bin just-dodge --bin m3_match` passes.
 - Release launch initializes the Vulkan renderer/UI and writes a terminal replay under deterministic autoplay; `m3_match --verify` reconstructs frame 342/hash `d1a3cc1bfb9c2f67`.
+- Runtime-flow regressions prove Menu/Establishing truth isolation and Replay reconstruction without terminal-session mutation; release Menu and Result captures are recorded locally.
 - `cargo fmt --check` and warning-denying clippy now pass. Package verification, live keyboard/mouse flow evidence, and canonical-media verification do not pass yet.
 
 ## Known Limitations
@@ -235,4 +236,4 @@ Implementation history was consolidated onto `main`. The status below distinguis
 - The current active-ragdoll tracker advances independent joint/root states; it does not yet implement parent-child coupling, gravity, limits, balance, ground, grips, or shared-world contacts.
 - M3 contact is reduced from action-authored cleanbox geometry, not pose-derived weapon/guard/body proxies.
 - The first-person sword uses an independent camera/action transform rather than the posed hand socket used by CCD/contact.
-- Normal gameplay lacks the complete player flow, package, human-match evidence, calibrated motion/contact/camera metrics, and canonical media.
+- Normal gameplay lacks a verified package, human-match evidence, calibrated motion/contact/camera metrics, and canonical media.
