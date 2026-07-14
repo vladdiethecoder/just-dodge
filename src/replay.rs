@@ -9,6 +9,7 @@ use std::path::Path;
 use anyhow::{Context, bail};
 
 use crate::duel_world::DuelWorldTruthTick;
+use crate::motion_plan::{ImpactEventV1, MotionPlanError, MotionPlanPacketV1};
 use crate::truth::{ContactSurface, Side, TruthSnapshot};
 
 const MAGIC: &[u8; 4] = b"JDRP";
@@ -47,6 +48,12 @@ pub enum EventKind {
     },
     ResolvePacket {
         receipt: ResolvePacketReceipt,
+    },
+    MotionPlan {
+        packet: MotionPlanPacketV1,
+    },
+    Impact {
+        event: ImpactEventV1,
     },
 }
 
@@ -137,6 +144,34 @@ impl ReplayRecorder {
     /// Record a single match event.
     pub fn record_event(&mut self, event: MatchEvent) {
         self.events.push(event);
+    }
+
+    /// Record an already-quantized neural plan after its hash validates.
+    pub fn record_motion_plan(
+        &mut self,
+        frame: u32,
+        packet: MotionPlanPacketV1,
+    ) -> Result<(), MotionPlanError> {
+        packet.validate()?;
+        self.record_event(MatchEvent {
+            frame,
+            kind: EventKind::MotionPlan { packet },
+        });
+        Ok(())
+    }
+
+    /// Record one authoritative impact emitted by deterministic physics.
+    pub fn record_impact(
+        &mut self,
+        frame: u32,
+        event: ImpactEventV1,
+    ) -> Result<(), MotionPlanError> {
+        event.validate()?;
+        self.record_event(MatchEvent {
+            frame,
+            kind: EventKind::Impact { event },
+        });
+        Ok(())
     }
 
     /// Record the measured 120 Hz packet and the truth state that admitted it.

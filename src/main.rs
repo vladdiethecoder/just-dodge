@@ -25,6 +25,7 @@ mod hitbox;
 mod injury;
 mod input;
 mod motion;
+mod motion_plan;
 mod motion_service;
 mod renderer;
 mod replay;
