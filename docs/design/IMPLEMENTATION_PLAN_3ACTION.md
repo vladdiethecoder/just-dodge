@@ -27,7 +27,7 @@ New modules (each owned by one parallel agent):
 | Module | File | Responsibility |
 |---|---|---|
 | `truth` | `src/truth.rs` | Deterministic combat state machine: phases, fighters, snapshots, truth hash. |
-| `action_matrix` | `src/action_matrix.rs` + `assets/data/action_matrix.ron` | 3×3 matchup data, timing table, contact-type rules. |
+| `action_matrix` | `src/action_matrix.rs` + `assets/data/action_matrix.ron` | Legacy QA/reference data only; it cannot declare production outcomes. |
 | `hitbox` | `src/hitbox.rs` | Extract geometry-accurate collision proxies from skinned pose + weapon mesh. |
 | `armor` | `src/armor.rs` | Deterministic material response for one material (plate FEM or simplified deterministic model). |
 | `injury` | `src/injury.rs` | Localized tissue injury and capability modifiers from residual force. |
@@ -39,7 +39,7 @@ Modified modules:
 
 | Module | Change |
 |---|---|
-| `src/motion.rs` | Add `generate_action_clip(action: Action, seed_pose: ...) -> Vec<[Mat4; 34]>` driven by MotionBricks. |
+| `src/motion.rs` | Add the ARDy-plan → MotionBricks-completion → quantized plan-packet boundary. A physics-trained active ragdoll tracks packets; deterministic simulation remains outcome authority. See `ONLINE_MOTIONBRICKS_INTERACTION_SOLVER.md`. |
 | `src/input.rs` | Add plan-phase action/stance selection input; commit action on confirm. |
 | `src/renderer.rs` | Render hitbox debug proxies, phase UI, action poses for both fighters. |
 | `src/main.rs` | Wire truth → motion → hitbox → renderer → replay; run fixed-step tick. |
@@ -66,19 +66,15 @@ Phases: `Observe → Plan → Commit → Reveal → Resolve → Consequence → 
 
 `TruthSnapshot` must be `Clone + Debug + PartialEq` and serializable deterministically.
 
-### `action_matrix`
+### Physical outcome authority
 
 ```rust
-pub fn resolve(action_a: Action, action_b: Action,
-               contact: &ContactGeometry, distance: DistanceBand,
-               ruleset: &RulesetVersion) -> MatrixResult;
+pub fn reduce_physical_contacts(
+    substeps: [SharedPhysicsStep; 2],
+) -> Result<PhysicalContactBatch, TruthBridgeError>;
 ```
 
-Data file `assets/data/action_matrix.ron` holds:
-- Timing table (startup, active, recovery frames per action).
-- 3×3 contact type table.
-- Initiative rules.
-- Armor/injury query parameters per contact type.
+The 120 Hz solver measures role-tagged swept contacts and reduces two substeps into one 60 Hz truth packet. Physical role and geometry—not action labels or a matchup table—determine Whiff, Hit, Beat, bind, deflection, material response, and injury. `action_matrix.ron` remains non-authoritative test/reference data until removed.
 
 ### `hitbox`
 
@@ -96,20 +92,17 @@ pub fn contact(a: &[HitboxProxy], b: &[HitboxProxy]) -> Option<ContactGeometry>;
 
 Use exact bone-aligned boxes/capsules from the mannequin skeleton and weapon geometry. No oversized proxies.
 
-### `motion`
+### Neural motion plan + active ragdoll
 
 ```rust
-pub enum Action { Strike, Block, Grab }
-
-pub fn generate_action_clip(
-    action: Action,
-    current_pose: &[Mat4; 34],
-    target_cond: &ActionCondition,
-    pipeline: &mut MotionPipeline,
-) -> Result<Vec<[Mat4; 34]>, Error>;
+pub fn propose_motion_plan(request: &PublicPostRevealState) -> Result<MotionPlanPacketV1, Error>;
+pub fn controller_targets(
+    plan: &MotionPlanPacketV1,
+    articulated_state: &ArticulatedState,
+) -> Result<MotorTargetBatch, Error>;
 ```
 
-If MotionBricks ONNX artifacts are missing, the function returns an error; the caller must abort with a clear message. No procedural fallback in the runtime path.
+ARDy proposes semantic short-horizon motion only after Reveal. MotionBricks completes locomotion, in-betweening, and sparse physical constraints. The result is quantized, assigned a stable ID/hash, and recorded before controller use. A physics-trained active-ragdoll policy proposes joint positions/velocities, impedance gains, and torque limits; deterministic articulated simulation alone resolves contact, balance, momentum, material response, and injury. Replays reuse recorded plan/replan packets verbatim. No API accepts an action filename, returns a persistent clip, or lets a neural model declare an outcome.
 
 ### `armor` + `injury`
 
@@ -161,22 +154,25 @@ Never sees the player's hidden intent before reveal.
 2. Running `./target/release/just-dodge` shows two fighters in an arena.
 3. Player can select Strike/Block/Grab and a stance, then confirm.
 4. AI commits an action deterministically.
-5. Reveal plays both MotionBricks-generated poses.
-6. Resolver determines contact and outcome.
-7. Match records a replay file with a stable truth hash.
-8. Re-running the same inputs produces the same truth hash.
+5. Reveal generates and records quantized ARDy/MotionBricks plan packets for both actors.
+6. The active-ragdoll controller proposes motors while articulated deterministic simulation resolves contact and outcome.
+7. Physics-derived `ImpactEvent` data drives camera, audio, VFX, motor compliance, and recovery.
+8. Match replay stores plan/replan packets and stable truth hashes; playback never reruns neural inference.
+9. Re-running the same packets and physical inputs produces the same truth hash.
 
 ## Parallel Agent Tasks
 
-### Agent 1: Combat Truth + Action Matrix
+### Agent 1: Combat Truth + Physical Contact Reduction
 - Implement `src/truth.rs` with state machine, snapshots, and truth hash.
-- Implement `src/action_matrix.rs` and `assets/data/action_matrix.ron`.
-- Provide tests for state machine transitions and matrix lookups.
+- Implement role-tagged 120 Hz shared physics and deterministic `PhysicalContactBatch` reduction.
+- Prove guard/body precedence, CCD ordering, packet admission, and replay hash stability.
 
-### Agent 2: MotionBricks Action Generation
-- Extend `src/motion.rs` to generate Strike/Block/Grab clips from MotionBricks.
-- Add `Action` enum and conditions.
-- Ensure no procedural fallback in runtime path.
+### Agent 2: Neural Planning, Plan Packets, and Active Ragdoll
+- Integrate ARDy as a post-Reveal semantic planner and extend MotionBricks with versioned interaction-state conditioning.
+- Quantize, hash, serialize, and replay parent-linked motion-plan/replan packets.
+- Train/adapt a physics-tracking active-ragdoll controller and export a measured runtime policy.
+- Prove replan latency, packet determinism, controller tracking, impact recovery, and zero runtime action-file lookup.
+- Ensure no procedural/baked fallback and no neural outcome oracle.
 
 ### Agent 3: Hitbox Proxy Extraction
 - Implement `src/hitbox.rs` with bone-aligned proxies and contact detection.
@@ -212,8 +208,8 @@ Implemented in worktree `/run/media/vdubrov/Bulk-SSD/Just Dodge/.worktrees/proto
 | Module | Status | Notes |
 |---|---|---|
 | `truth` | ✅ Complete | State machine, snapshots, deterministic FNV-1a truth hash, phase budgets. |
-| `action_matrix` | ✅ Complete | RON-driven 3×3 matchup matrix and timing table. |
-| `motion` | ✅ Complete | `generate_action_clip` for Strike/Block/Grab; tests compile. Runtime ONNX init hangs in this environment. |
+| `action_matrix` | ⚠️ Legacy QA only | It is not production outcome authority; measured `PhysicalContactBatch` data drives truth. |
+| `motion` | ⚠️ Superseded scaffold | The one-window-per-action/cache path is QA-only. B14X replaces it with quantized ARDy/MotionBricks plan packets feeding a physics-trained active ragdoll and deterministic articulated simulation. |
 | `hitbox` | ✅ Complete | Bone-aligned AABBs, weapon proxy, AABB-AABB contact, debug lines. |
 | `armor` | ✅ Complete | Deterministic threshold/integrity/coverage model for plate/leather/cloth. |
 | `injury` | ✅ Complete | Trauma accumulation, capability penalties, fracture, lethal torso threshold. |
@@ -234,6 +230,6 @@ Implemented in worktree `/run/media/vdubrov/Bulk-SSD/Just Dodge/.worktrees/proto
 
 ## Known Limitations
 
-- Action clips from `motion::generate_action_clip` are implemented but not wired into `main.rs`; the idle clip is rendered for all phases. Wiring requires resolving the environment ONNX initialization hang.
-- Motion tests cannot run in this environment because ONNX session creation hangs indefinitely. The implementation and test compilation are complete.
-- Some compiler warnings remain (pre-existing and minor).
+- The current runtime still preloads QA action windows and does not implement ARDy planning, plan-packet replay, active-ragdoll motor control, or articulated-body physics.
+- Swept proxy/AABB contact is not the required convex/capsule CCD and deterministic contact-manifold solver.
+- Normal gameplay still lacks verified pose-derived weapon/guard/body geometry and packaged canonical media.

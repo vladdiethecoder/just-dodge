@@ -3,7 +3,13 @@
 // keeps one model, and writes PNGs to qa_runs/ for deformity/artifact inspection.
 // Run: cargo run --bin shot
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::{asset, motion::Action, motion_retarget, motion_runtime::MotionRuntime, renderer};
+use just_dodge::{
+    asset,
+    motion::{self, Action},
+    motion_retarget,
+    motion_runtime::MotionRuntime,
+    renderer,
+};
 
 struct View {
     name: &'static str,
@@ -72,7 +78,28 @@ async fn run() {
         .expect("load C0 armored duelist");
     assert_eq!(c0_mesh.bones.len(), 24);
     let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
-    let c0_skin = if let Some(action) = qa_action() {
+    let c0_skin = if let Some(f413_path) = std::env::var("JUSTDODGE_QA_F413").ok() {
+        let frames = motion::load_g1_frames(&f413_path)
+            .expect("JUSTDODGE_QA_F413 clip must parse as [N,413] f32");
+        assert!(!frames.is_empty(), "JUSTDODGE_QA_F413 clip is empty");
+        let requested_frame = std::env::var("JUSTDODGE_QA_FRAME")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(frames.len() / 2);
+        let frame_index = requested_frame.min(frames.len() - 1);
+        let skin = motion_retarget::retarget_g1_frame_to_armored_skin(
+            &c0_mesh,
+            &frames[0],
+            &frames[frame_index],
+        )
+        .expect("external F413 frame must retarget into the armored duelist");
+        println!(
+            "C0 EXTERNAL-QA: source={f413_path} frame_count={} selected={frame_index} pose_receipt={:016x}",
+            frames.len(),
+            motion_retarget::armored_pose_receipt(&skin),
+        );
+        skin
+    } else if let Some(action) = qa_action() {
         let runtime =
             MotionRuntime::load(assets_dir).expect("M3 motion cache required for action QA");
         let frames = runtime
@@ -100,6 +127,42 @@ async fn run() {
             .expect("C0 armored-duelist reference skinning")
     };
     assert_eq!(c0_skin.len(), c0_mesh.bones.len());
+    let qa_weapon_model = std::env::var("JUSTDODGE_QA_ATTACH_W0")
+        .ok()
+        .is_some_and(|value| value == "1")
+        .then(|| {
+            let forearm_index = c0_mesh
+                .bones
+                .iter()
+                .position(|bone| bone.name == "RightForeArm")
+                .expect("C0 RightForeArm bone");
+            let hand_index = c0_mesh
+                .bones
+                .iter()
+                .position(|bone| bone.name == "RightHand")
+                .expect("C0 RightHand bone");
+            let model = renderer::skinned_correct_model();
+            let posed_forearm = model
+                * c0_skin[forearm_index]
+                * c0_mesh.bones[forearm_index].inverse_bind.inverse();
+            let posed_hand =
+                model * c0_skin[hand_index] * c0_mesh.bones[hand_index].inverse_bind.inverse();
+            let forearm = posed_forearm.to_scale_rotation_translation().2;
+            let hand = posed_hand.to_scale_rotation_translation().2;
+            let blade = (hand - forearm).normalize();
+            let mut lateral = Vec3::Z.cross(blade);
+            if lateral.length_squared() < 1.0e-6 {
+                lateral = Vec3::X.cross(blade);
+            }
+            lateral = lateral.normalize();
+            let thickness = blade.cross(lateral).normalize();
+            Mat4::from_cols(
+                lateral.extend(0.0),
+                thickness.extend(0.0),
+                blade.extend(0.0),
+                hand.extend(1.0),
+            )
+        });
     println!(
         "C0 ARMORED-DUELIST CONTRACT: {} verts, {} indices, {} bones, {} reference matrices",
         c0_mesh.vertices.len(),
@@ -156,8 +219,9 @@ async fn run() {
         let proj = Mat4::perspective_lh(fov, w as f32 / h as f32, 0.1, 100.0);
         let proj_view = proj * view_mat;
         renderer.update_camera(&queue, &proj_view);
-        let weapon_model =
-            renderer::first_person_weapon_model(view.eye, (view.target - view.eye).normalize());
+        let weapon_model = qa_weapon_model.unwrap_or_else(|| {
+            renderer::first_person_weapon_model(view.eye, (view.target - view.eye).normalize())
+        });
         renderer.update_first_person_weapon(&queue, &proj_view, weapon_model);
         renderer.upload_debug_mvp(&queue, &proj_view);
 
@@ -223,7 +287,7 @@ async fn run() {
                 rpass.set_index_buffer(s.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 rpass.draw_indexed(0..s.index_count, 0, 0..1);
             }
-            if view.name == "first_person_duel" {
+            if qa_weapon_model.is_some() || view.name == "first_person_duel" {
                 renderer.render_first_person_weapon(&mut rpass);
             }
             // Overlay bind-pose skeleton so bone-vs-mesh alignment is visible.
@@ -282,8 +346,8 @@ async fn run() {
         read_buf.unmap();
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+            .unwrap();
+        let stamp = stamp.as_secs() * 1_000_000 + stamp.subsec_micros() as u64;
         let out_dir = format!("{}/qa_runs/bind_pose_{}", env!("CARGO_MANIFEST_DIR"), stamp);
         std::fs::create_dir_all(&out_dir).expect("create qa dir");
         let label = "jd_armored_duelist_bind";
