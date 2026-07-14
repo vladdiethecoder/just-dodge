@@ -19,6 +19,7 @@ pub mod motion_request;
 pub mod motion_retarget;
 pub mod motion_runtime;
 pub mod motion_service;
+pub mod neural_plan;
 pub mod renderer;
 pub mod replay;
 pub mod retarget;

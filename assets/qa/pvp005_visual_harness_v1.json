@@ -214,6 +214,10 @@
     "motionbricks_admission_report": {
       "path": "docs/reports/PVP005_MOTIONBRICKS_ADMISSION.json",
       "sha256": "ada14ec84086ec463403f5b22f6b8e1f82e9ec3e7e5870daadc92aab4489c286"
+    },
+    "neural_plan_packet": {
+      "path": "src/neural_plan.rs",
+      "sha256": "7d6f7b4543a9f36f6aee4c07095b20c090869fdb40bace3b216e6d691b583fe7"
     }
   }
 }
