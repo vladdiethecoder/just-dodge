@@ -7,6 +7,7 @@ pub mod combat;
 pub mod dodge_presentation;
 pub mod duel_physics;
 pub mod duel_world;
+pub mod g1_articulation;
 pub mod hitbox;
 pub mod injury;
 pub mod m3_cleanbox;
