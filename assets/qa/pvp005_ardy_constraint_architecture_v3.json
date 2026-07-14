@@ -1,0 +1,84 @@
+{
+  "schema": "just-dodge-pvp005-ardy-constraint-architecture-v3",
+  "status": "design_only_generation_forbidden_until_validated",
+  "source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+  "model": "ARDY-G1-RP-25FPS-Horizon52",
+  "fps": 25,
+  "frames": 52,
+  "shipping_fps": 60,
+  "reveal_source_window": [0, 1, 2, 3, 4],
+  "reveal_shipping_window": [0, 1, 2, 3, 4, 5, 6, 7],
+  "generation_authorized": false,
+  "global_rules": {
+    "first_reveal_root_translation_max_m": 0.0,
+    "two_hand_grip_separation_m": 0.16,
+    "two_hand_grip_tolerance_m": 0.01,
+    "maximum_planted_foot_drift_m": 0.02,
+    "minimum_ground_clearance_m": -0.01,
+    "constraint_precheck_required": true,
+    "official_postprocess_ab_test_required": true,
+    "weapon_must_fit_duel_camera_at_fov_extremes": true
+  },
+  "actions": {
+    "strike": {
+      "tell": "right-weighted diagonal chamber with two hands and blade depth-biased away from the top crop",
+      "root_schedule": [
+        {"frames": [0, 15], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
+        {"frames": [16, 39], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.06]},
+        {"frames": [40, 51], "xz_start_m": [0.0, 0.06], "xz_end_m": [0.0, 0.02]}
+      ],
+      "contact_schedule": {
+        "left": [{"frames": [0, 51], "mode": "planted_world_anchor"}],
+        "right": [{"frames": [0, 15], "mode": "planted_world_anchor"}, {"frames": [16, 39], "mode": "unconstrained"}, {"frames": [40, 51], "mode": "planted_new_anchor"}]
+      },
+      "weapon_policy": "two_hand_right_near_guard_left_near_pommel",
+      "early_hand_keyposes_m": [
+        {"frame": 0, "right": [-0.18, 1.10, 0.22], "left": [-0.08, 1.02, 0.12]},
+        {"frame": 4, "right": [-0.30, 1.16, 0.27], "left": [-0.20, 1.08, 0.17]},
+        {"frame": 7, "right": [-0.34, 1.20, 0.30], "left": [-0.24, 1.12, 0.20]}
+      ]
+    },
+    "block": {
+      "tell": "cross-body horizontal guard below the eye line with two hands and a broad first-person silhouette",
+      "root_schedule": [
+        {"frames": [0, 51], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]}
+      ],
+      "contact_schedule": {
+        "left": [{"frames": [0, 51], "mode": "planted_world_anchor"}],
+        "right": [{"frames": [0, 51], "mode": "planted_world_anchor"}]
+      },
+      "weapon_policy": "two_hand_right_near_guard_left_near_pommel",
+      "early_hand_keyposes_m": [
+        {"frame": 0, "right": [-0.16, 1.04, 0.30], "left": [-0.03, 1.04, 0.20]},
+        {"frame": 4, "right": [-0.24, 1.12, 0.31], "left": [-0.10, 1.12, 0.23]},
+        {"frame": 7, "right": [-0.27, 1.16, 0.32], "left": [-0.13, 1.16, 0.24]}
+      ]
+    },
+    "grab": {
+      "tell": "open left-hand reach separated from a low outside right-hand sword guard",
+      "root_schedule": [
+        {"frames": [0, 15], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
+        {"frames": [16, 35], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.12]},
+        {"frames": [36, 51], "xz_start_m": [0.0, 0.12], "xz_end_m": [0.0, 0.04]}
+      ],
+      "contact_schedule": {
+        "left": [{"frames": [0, 35], "mode": "planted_world_anchor"}, {"frames": [36, 51], "mode": "unconstrained"}],
+        "right": [{"frames": [0, 15], "mode": "planted_world_anchor"}, {"frames": [16, 35], "mode": "unconstrained"}, {"frames": [36, 51], "mode": "planted_new_anchor"}]
+      },
+      "weapon_policy": "one_hand_right_shoulder_to_hand_low_outside_guard_left_hand_reaches",
+      "early_hand_keyposes_m": [
+        {"frame": 0, "right": [-0.25, 1.02, 0.30], "left": [0.18, 1.05, 0.26]},
+        {"frame": 4, "right": [-0.27, 1.00, 0.32], "left": [0.29, 1.10, 0.43]},
+        {"frame": 7, "right": [-0.28, 0.98, 0.34], "left": [0.36, 1.13, 0.55]}
+      ]
+    }
+  },
+  "authorization_requirements": [
+    "static architecture validator passes",
+    "root and planted-foot schedules are non-contradictory",
+    "two-hand keyposes satisfy grip separation",
+    "first-person analytic weapon/camera preflight passes at both FOV extremes",
+    "generator uses declared action-specific contact schedules",
+    "screen threshold remains 20 mm and Reveal starts at frame zero"
+  ]
+}

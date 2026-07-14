@@ -194,6 +194,18 @@
     "permanent_adversarial_thresholds": {
       "path": "docs/quality/ADVERSARIAL_VISUAL_THRESHOLDS.v1.json",
       "sha256": "1030754a6a5e01dc16f7a907fea0e9a996f989f1ae495b75e833ea22fa76f345"
+    },
+    "ardy_iteration_failure_ledger": {
+      "path": "docs/reports/PVP005_ARDY_ITERATION_LEDGER.json",
+      "sha256": "e474c0909415f41aa7436f5597c647e166bb224d904a815efa0fb3d84a79b438"
+    },
+    "ardy_constraint_architecture_v3": {
+      "path": "assets/qa/pvp005_ardy_constraint_architecture_v3.json",
+      "sha256": "7e76a4b1be5439fed905793cbc4d0efa6afe06a49fa77d5df34ab5d468ebead0"
+    },
+    "ardy_constraint_architecture_validator": {
+      "path": "tools/qa/validate_pvp005_constraint_architecture.py",
+      "sha256": "911dc0f8e62850d0fb53d55ce3d239ad78140fc92e528d007f7ff5895dcef449"
     }
   }
 }

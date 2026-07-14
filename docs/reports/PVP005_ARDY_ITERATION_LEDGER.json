@@ -1,0 +1,73 @@
+{
+  "schema": "just-dodge-pvp005-ardy-iteration-ledger-v1",
+  "verdict": "fail",
+  "playable_proof": false,
+  "reachable_source_revision": "8d4314488dff85a2a790669d85d883a2ff65ee02",
+  "reachable_remote_ref": "refs/heads/pvp-005-readable-live-motion",
+  "authority": "offline_kinematic_proposals_only",
+  "generator": {
+    "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
+    "sha256": "b658e5da4c2d4ba147c76e55287cca9f5c17fa79a0edec3f4b813d7e66ade222"
+  },
+  "screen": {
+    "path": "tools/qa/screen_pvp005_motion_candidates.py",
+    "sha256": "2b81a623b21b5b1c622f6abf2c1caf68209e11168255ab9683ec09642a4b8190",
+    "maximum_contact_foot_drift_m": 0.02,
+    "readability_frame_indices": [0, 1, 2, 3, 4, 5, 6, 7]
+  },
+  "source": {
+    "repository": "https://github.com/nv-tlabs/ardy",
+    "commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+    "source_license_sha256": "411f74af832a12782ba4dfaec7cb73eae7a77f8c2d36c97402aa92735fff5e9b",
+    "model": "ARDY-G1-RP-25FPS-Horizon52",
+    "skeleton": "G1Skeleton34",
+    "model_license_sha256": "11ccdcb47db87ac30b63765b5e5154403026c4fbb52c19919d99d912ec454e19",
+    "model_config_sha256": "d34bcd2a43e5bade030e2779bd11e0c3d8ce7eeea6b636e7504efe9a404ec757",
+    "model_denoiser_sha256": "0c16ac26c1ab75e511cd24bb25bd9ad92078a2460b4ce78529788b5da22647a2",
+    "model_tokenizer_sha256": "6f2f75f738b8d6fb1b196d3253c7accc90494b9c12669b35968425fef54c8896",
+    "text_conditioning": false
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "status": "failed",
+      "keypose_spec_path": "assets/qa/pvp005_ardy_keyposes_v1.json",
+      "keypose_spec_sha256": "62d0db4a8c350859abd347ab82a64679fa7849cd6793e9bf858f5fde602db022",
+      "generation_manifest_sha256": "5154cbf895561cf332d42b051b3505b16242a6ecc653badd2a7576d70fca2272",
+      "corrected_screen_report_sha256": "592e5a0d1f8660a38a5736e07da711412fa83c90801ffc4ee7b42faa4ad663fb",
+      "candidate_count": 24,
+      "structural_pass_count": {"strike": 0, "block": 0, "grab": 0},
+      "contact_foot_drift_range_m": {
+        "strike": [0.0473269522190094, 0.06795727461576462],
+        "block": [0.030015962198376656, 0.04708500951528549],
+        "grab": [0.040124937891960144, 0.051162682473659515]
+      },
+      "additional_failures": "Strike and Block remained overhead-convergent; selected runtime-camera renders also cropped the weapon.",
+      "large_artifact_storage": "local_target_only_not_acceptance_evidence"
+    },
+    {
+      "iteration": 2,
+      "status": "failed",
+      "keypose_spec_path": "assets/qa/pvp005_ardy_keyposes_v2.json",
+      "keypose_spec_sha256": "fb9648329fa86e6a165d081c4a770cf60cf103fa489b7271c1a223096554b87c",
+      "generation_manifest_sha256": "5aacc6174f873aa7916f794f657bd3409ee25028c9d9cf95748e71a747ad3443",
+      "corrected_screen_report_sha256": "4e183d1f13823c530d5d201fd72d05d7eb83cf598ecabb7fba43fea82a2e50c7",
+      "candidate_count": 24,
+      "structural_pass_count": {"strike": 0, "block": 0, "grab": 0},
+      "contact_foot_drift_range_m": {
+        "strike": [0.08285324275493622, 0.09896064549684525],
+        "block": [0.03170042857527733, 0.04356739670038223],
+        "grab": [0.10872912406921387, 0.12582232058048248]
+      },
+      "additional_failures": "Dense world-space constraints on both feet conflicted with moving-root Strike and Grab plans; Block improved continuity but still exceeded 20 mm.",
+      "large_artifact_storage": "local_target_only_not_acceptance_evidence"
+    }
+  ],
+  "stop_rule": {
+    "triggered": true,
+    "reason": "two_motion_iterations_failed",
+    "iteration_3_generation_authorized": false,
+    "required_next_atomic_unit": "validate a redesigned action-specific root/contact/keypose architecture before generating another candidate"
+  },
+  "claim_boundary": "No ARDY candidate is admitted, no large candidate artifact is published acceptance evidence, and no readability or runtime gate passes."
+}
