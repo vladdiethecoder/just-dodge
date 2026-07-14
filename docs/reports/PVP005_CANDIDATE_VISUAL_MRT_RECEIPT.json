@@ -1,0 +1,60 @@
+{
+  "schema": "just-dodge-pvp005-candidate-visual-mrt-receipt-v1",
+  "revision": "397b7d9cdaba2619246a6367421e4de4d95f9936",
+  "revision_reachable_on": "origin/pvp-005-readable-live-motion",
+  "candidate_manifest_sha256": "0943680512230b50366366bb69182131595311a5823f281e5ba035dec9a64755",
+  "visual_contract_sha256": "3a0417f7221729d6e2b9f98ead5c425218dffbe88e213b752b6f1b3b7e2134e2",
+  "visual_index_sha256": "b8231b1bc0439c544e4e8893f1bb2b0202a46b26c6c05d3f5a74f06cd1ea7452",
+  "repeat_visual_index_sha256": "b8231b1bc0439c544e4e8893f1bb2b0202a46b26c6c05d3f5a74f06cd1ea7452",
+  "exact_repeat_pass": true,
+  "renderer": {
+    "backend": "Vulkan",
+    "adapter": "NVIDIA GeForce RTX 5090",
+    "orbit_tile_px": [512, 512],
+    "orbit_sheet_px": [2048, 2048],
+    "first_person_strip_px": [4096, 512],
+    "backgrounds": ["charcoal", "offwhite"],
+    "implemented_layers": ["beauty", "silhouette", "object_id", "normals", "depth"]
+  },
+  "rendered_image_count": 270,
+  "actions": {
+    "strike": {
+      "orbit_samples": 256,
+      "orbit_crop_failures": 256,
+      "orbit_visibility_failures": 0,
+      "first_person_samples": 16,
+      "first_person_crop_failures": 16,
+      "first_person_visibility_failures": 0,
+      "pass": false
+    },
+    "block": {
+      "orbit_samples": 256,
+      "orbit_crop_failures": 68,
+      "orbit_visibility_failures": 0,
+      "first_person_samples": 16,
+      "first_person_crop_failures": 16,
+      "first_person_visibility_failures": 0,
+      "pass": false
+    },
+    "grab": {
+      "orbit_samples": 256,
+      "orbit_crop_failures": 142,
+      "orbit_visibility_failures": 0,
+      "first_person_samples": 16,
+      "first_person_crop_failures": 16,
+      "first_person_visibility_failures": 0,
+      "pass": false
+    }
+  },
+  "pass": false,
+  "claim_boundary": "Candidate-scope diagnostic receipt only. It is not motion admission, human readability evidence, or live-runtime playback evidence.",
+  "remaining_layers": [
+    "wireframe",
+    "skeleton",
+    "hand_socket_alignment",
+    "accumulated_weapon_path",
+    "collision_proxy_overlay"
+  ],
+  "remaining_scopes": ["admitted", "live_runtime"],
+  "next_atomic_unit": "Correct the pose-derived W0 socket scale/orientation contract and rerun the unchanged pinned camera harness; do not begin blind review while complete-weapon crop failures remain."
+}
