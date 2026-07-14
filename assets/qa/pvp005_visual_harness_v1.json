@@ -189,11 +189,11 @@
     },
     "permanent_adversarial_contract": {
       "path": "docs/quality/ADVERSARIAL_VISUAL_CONTRACT.md",
-      "sha256": "9ace2659484f6a1506f0d8e2f9822d18f1d384cd83beb5522a1bf280c56e48b9"
+      "sha256": "51f64128db301dddbdf8edb8bfce45e6f4924aea8d7381b014d34a97929934c7"
     },
     "permanent_adversarial_thresholds": {
       "path": "docs/quality/ADVERSARIAL_VISUAL_THRESHOLDS.v1.json",
-      "sha256": "1030754a6a5e01dc16f7a907fea0e9a996f989f1ae495b75e833ea22fa76f345"
+      "sha256": "e17e9c05a6e47b05c36cfdae9d084a6ecc8137086d762bc5773f3aa513f73092"
     },
     "ardy_iteration_failure_ledger": {
       "path": "docs/reports/PVP005_ARDY_ITERATION_LEDGER.json",
@@ -201,11 +201,11 @@
     },
     "ardy_constraint_architecture_v3": {
       "path": "assets/qa/pvp005_ardy_constraint_architecture_v3.json",
-      "sha256": "7e76a4b1be5439fed905793cbc4d0efa6afe06a49fa77d5df34ab5d468ebead0"
+      "sha256": "776182c59ec9802b6f3e546fa786c0d0322b16456fa6fa03ee8659d60703493e"
     },
     "ardy_constraint_architecture_validator": {
       "path": "tools/qa/validate_pvp005_constraint_architecture.py",
-      "sha256": "911dc0f8e62850d0fb53d55ce3d239ad78140fc92e528d007f7ff5895dcef449"
+      "sha256": "22eac101c004ebe60851b23f45358539832a6dc4ab5a561fddfd5687b53f8f05"
     }
   }
 }

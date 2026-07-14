@@ -12,6 +12,7 @@
     "required_exposure_offsets_ev": [-1, 0, 1],
     "required_lighting_modes": ["neutral", "grazing", "gameplay"],
     "required_distance_modes": ["near", "duel", "far"],
+    "approved_vertical_fov_degrees": [60, 85],
     "mirror_required": true,
     "approved_fov_extremes_required": true
   },
@@ -28,6 +29,19 @@
     "maximum_socket_position_error_m": 0.01,
     "maximum_socket_angle_error_degrees": 3.0,
     "maximum_frozen_packet_evaluation_ms": 16.0
+  },
+  "neural_runtime": {
+    "minimum_distributional_candidates_per_action": 32,
+    "minimum_fixed_seeds_per_action_stance_side_cell": 4,
+    "ardy_async_plan_refresh_p95_ms": 250.0,
+    "ardy_async_plan_refresh_worst_ms": 500.0,
+    "motionbricks_feedback_p95_ms": 2.5,
+    "motionbricks_feedback_worst_ms": 4.0,
+    "neural_plan_packet_decode_p95_ms": 1.0,
+    "neural_plan_packet_decode_worst_ms": 2.0,
+    "physics_feedback_tick_hz": 120,
+    "runtime_buffer_underruns_allowed": 0,
+    "runtime_neural_regeneration_during_replay_or_rollback": false
   },
   "human": {
     "minimum_judgments_per_action": 20,

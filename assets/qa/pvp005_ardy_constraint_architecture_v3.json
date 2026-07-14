@@ -1,6 +1,7 @@
 {
   "schema": "just-dodge-pvp005-ardy-constraint-architecture-v3",
-  "status": "design_only_generation_forbidden_until_validated",
+  "status": "superseded_archive_not_runtime_authority",
+  "superseded_by": "live_ardy_motionbricks_physics_neural_plan_packet_architecture",
   "source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
   "model": "ARDY-G1-RP-25FPS-Horizon52",
   "fps": 25,
@@ -33,9 +34,9 @@
       },
       "weapon_policy": "two_hand_right_near_guard_left_near_pommel",
       "early_hand_keyposes_m": [
-        {"frame": 0, "right": [-0.18, 1.10, 0.22], "left": [-0.08, 1.02, 0.12]},
-        {"frame": 4, "right": [-0.30, 1.16, 0.27], "left": [-0.20, 1.08, 0.17]},
-        {"frame": 7, "right": [-0.34, 1.20, 0.30], "left": [-0.24, 1.12, 0.20]}
+        {"frame": 0, "right": [-0.18, 1.10, 0.12], "left": [-0.08, 1.02, 0.22]},
+        {"frame": 4, "right": [-0.30, 1.16, 0.17], "left": [-0.20, 1.08, 0.27]},
+        {"frame": 7, "right": [-0.34, 1.20, 0.20], "left": [-0.24, 1.12, 0.30]}
       ]
     },
     "block": {
@@ -49,9 +50,9 @@
       },
       "weapon_policy": "two_hand_right_near_guard_left_near_pommel",
       "early_hand_keyposes_m": [
-        {"frame": 0, "right": [-0.16, 1.04, 0.30], "left": [-0.03, 1.04, 0.20]},
-        {"frame": 4, "right": [-0.24, 1.12, 0.31], "left": [-0.10, 1.12, 0.23]},
-        {"frame": 7, "right": [-0.27, 1.16, 0.32], "left": [-0.13, 1.16, 0.24]}
+        {"frame": 0, "right": [0.35, 1.04, 0.20], "left": [0.48, 1.04, 0.30]},
+        {"frame": 4, "right": [0.40, 1.12, 0.23], "left": [0.54, 1.12, 0.31]},
+        {"frame": 7, "right": [0.45, 1.16, 0.24], "left": [0.59, 1.16, 0.32]}
       ]
     },
     "grab": {
@@ -66,6 +67,7 @@
         "right": [{"frames": [0, 15], "mode": "planted_world_anchor"}, {"frames": [16, 35], "mode": "unconstrained"}, {"frames": [36, 51], "mode": "planted_new_anchor"}]
       },
       "weapon_policy": "one_hand_right_shoulder_to_hand_low_outside_guard_left_hand_reaches",
+      "camera_preflight_weapon_direction": [-0.35, -0.25, -0.90],
       "early_hand_keyposes_m": [
         {"frame": 0, "right": [-0.25, 1.02, 0.30], "left": [0.18, 1.05, 0.26]},
         {"frame": 4, "right": [-0.27, 1.00, 0.32], "left": [0.29, 1.10, 0.43]},

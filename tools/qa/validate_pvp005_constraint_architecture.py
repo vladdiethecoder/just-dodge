@@ -46,7 +46,8 @@ def distance(left: list[float], right: list[float]) -> float:
 def main() -> None:
     spec = json.loads(SPEC.read_text())
     require(spec.get("schema") == "just-dodge-pvp005-ardy-constraint-architecture-v3", "bad v3 architecture schema")
-    require(spec.get("status") == "design_only_generation_forbidden_until_validated", "v3 design status drift")
+    require(spec.get("status") == "superseded_archive_not_runtime_authority", "v3 archive status drift")
+    require(spec.get("superseded_by") == "live_ardy_motionbricks_physics_neural_plan_packet_architecture", "v3 supersession drift")
     require(spec.get("generation_authorized") is False, "iteration 3 must remain generation-forbidden")
     require(tuple(spec["actions"]) == ACTIONS, "action set or ordering drift")
     require(constant(SCREEN, "MAX_CONTACT_FOOT_DRIFT_M") <= 0.02, "candidate screen foot-drift threshold weakened")
@@ -77,7 +78,7 @@ def main() -> None:
 
     for left, right in (("strike", "block"), ("strike", "grab"), ("block", "grab")):
         require(distance(frame7_vectors[left], frame7_vectors[right]) >= 0.12, f"{left}/{right}: analytic early-pose separation too small")
-    print("PVP005_ARDY_V3_ARCHITECTURE=PASS_DESIGN_ONLY")
+    print("PVP005_ARDY_V3_ARCHITECTURE=PASS_SUPERSEDED_ARCHIVE_ONLY")
     print("PVP005_ARDY_ITERATION_3_GENERATION=FORBIDDEN")
 
 
