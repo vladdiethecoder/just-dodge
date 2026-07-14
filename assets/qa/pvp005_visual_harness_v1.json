@@ -154,6 +154,22 @@
     "debug_shader": {
       "path": "src/debug.wgsl",
       "sha256": "e25867c2e3839fa7effca8894330c70bbd6884da7af41d8a139039477641b410"
+    },
+    "qa_capture_binary": {
+      "path": "src/bin/pvp005_capture.rs",
+      "sha256": "bc1ff3277382b1a93ad172c2fa5d76fd899c26bed306f19d93fdf2aa83c1d000"
+    },
+    "qa_mrt_shader": {
+      "path": "src/pvp005_qa.wgsl",
+      "sha256": "c57a52eb93cf9731c912e1d6b3e9bfce4dbcd9030a8393f8797cc398cc837906"
+    },
+    "qa_orchestrator": {
+      "path": "tools/qa/run_pvp005_visual_harness.py",
+      "sha256": "bfa673f91a3378ceac4fb1bb52aaedd0e08c015bc763b3d0067942bdd075474f"
+    },
+    "qa_render_workflow": {
+      "path": ".github/workflows/pvp005-visual.yml",
+      "sha256": "3cd44c93fdfc5f80cce509c9ea45363cb9c640246ee78f037e705e65329caf26"
     }
   }
 }

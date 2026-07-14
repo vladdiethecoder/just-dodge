@@ -1,0 +1,43 @@
+name: PVP-005 Visual Harness
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [pvp-005-readable-live-motion]
+    paths:
+      - "assets/motion/pvp005_candidates/**"
+      - "assets/qa/pvp005_visual_harness_v1.json"
+      - "src/bin/pvp005_capture.rs"
+      - "src/pvp005_qa.wgsl"
+      - "src/renderer.rs"
+      - "src/motion_retarget.rs"
+      - "tools/qa/run_pvp005_visual_harness.py"
+      - ".github/workflows/pvp005-visual.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - name: Install pinned headless Vulkan runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libvulkan1 mesa-vulkan-drivers vulkan-tools
+          vulkaninfo --summary
+      - name: Validate bound visual contract
+        run: python3 tools/qa/pvp005_visual_contract.py
+      - name: Render every current candidate and fail on visual gates
+        run: python3 tools/qa/run_pvp005_visual_harness.py --output "$RUNNER_TEMP/pvp005-visual"
+      - name: Archive acceptance-shaped diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pvp005-candidate-visual-${{ github.sha }}
+          path: ${{ runner.temp }}/pvp005-visual
+          if-no-files-found: error
+          retention-days: 7
