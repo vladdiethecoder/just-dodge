@@ -23,6 +23,7 @@ mod dodge_presentation;
 mod duel_physics;
 mod duel_world;
 mod g1_articulation;
+mod hinge_projection;
 mod hitbox;
 mod injury;
 mod input;
