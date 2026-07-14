@@ -127,6 +127,7 @@ struct App {
     config: Option<wgpu::SurfaceConfiguration>,
     renderer: Option<renderer::Renderer>,
     ui_renderer: Option<ui::UiRenderer>,
+    runtime_assets: PathBuf,
     camera: Camera,
     start_time: Instant,
     last_frame_time: Instant,
@@ -232,7 +233,13 @@ impl ApplicationHandler for App {
                 self.config.as_ref(),
             ) {
                 eprintln!("main: starting renderer init after first present");
-                self.renderer = Some(renderer::Renderer::new(device, queue, config, false));
+                self.renderer = Some(renderer::Renderer::new(
+                    device,
+                    queue,
+                    config,
+                    false,
+                    &self.runtime_assets,
+                ));
                 self.ui_renderer = Some(ui::UiRenderer::new(device, queue, config));
                 self.last_frame_time = Instant::now();
                 self.fixed_step_clock = FixedStepClock::default();
@@ -1015,6 +1022,7 @@ fn main() {
         config: None,
         renderer: None,
         ui_renderer: None,
+        runtime_assets: PathBuf::from(assets),
         camera: Camera::new(),
         start_time: Instant::now(),
         last_frame_time: Instant::now(),

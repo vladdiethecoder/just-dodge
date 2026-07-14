@@ -69,8 +69,14 @@ async fn run() {
         desired_maximum_frame_latency: 2,
     };
 
-    let mut renderer = renderer::Renderer::new(&device, &queue, &config, false);
     let assets_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
+    let mut renderer = renderer::Renderer::new(
+        &device,
+        &queue,
+        &config,
+        false,
+        std::path::Path::new(assets_dir),
+    );
 
     // ─── C0 armored-duelist contract diagnostics ─────────────────────
     let c0_root = format!("{assets_dir}/source/meshy/c0_armored_duelist_001/cooked");

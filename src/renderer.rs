@@ -4,6 +4,7 @@
 
 use crate::asset;
 use glam::{Mat4, Vec3};
+use std::path::Path;
 use wgpu::util::DeviceExt;
 
 /// Canonical model transform for the accepted cooked C0 carrier. Cooked assets
@@ -363,13 +364,12 @@ impl Renderer {
         queue: &wgpu::Queue,
         config: &wgpu::SurfaceConfiguration,
         minimal_scene: bool,
+        assets: &Path,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
         });
-
-        let assets = concat!(env!("CARGO_MANIFEST_DIR"), "/assets");
 
         // Bind group layouts
         let uniform_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -704,7 +704,7 @@ impl Renderer {
             ];
 
             for cfg in cfgs {
-                let mesh = asset::load_binary(&format!("{}/{}", assets, cfg.bin))
+                let mesh = asset::load_binary(&assets.join(cfg.bin).to_string_lossy())
                     .unwrap_or_else(|e| panic!("Failed to load {}: {e}", cfg.bin));
                 let (vb, ib, ic) = build_mesh_buffers(device, &mesh, cfg.bin);
                 println!(
@@ -730,7 +730,8 @@ impl Renderer {
                     }],
                 });
 
-                let (_t, tv, ts) = load_texture(device, queue, &format!("{}/{}", assets, cfg.tex));
+                let (_t, tv, ts) =
+                    load_texture(device, queue, &assets.join(cfg.tex).to_string_lossy());
                 let tbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some(&format!("TBG {}", cfg.bin)),
                     layout: &texture_bgl,
@@ -807,7 +808,10 @@ impl Renderer {
         // --- Skinned C0 armored-duelist carriers ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
         let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
-            format!("{assets}/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+            assets
+                .join("source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+                .to_string_lossy()
+                .into_owned()
         });
         let mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
             panic!("failed to load C0 armored duelist {skin_path}: {error}")
@@ -925,7 +929,9 @@ impl Renderer {
             queue,
             &uniform_bgl,
             &texture_bgl,
-            &format!("{assets}/weapons/w0_sword_assembled.bin"),
+            &assets
+                .join("weapons/w0_sword_assembled.bin")
+                .to_string_lossy(),
             "W0 first-person longsword",
             [48, 56, 64, 255],
         );
