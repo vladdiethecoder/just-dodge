@@ -284,7 +284,12 @@ fn interpolate_frame(a: &[Mat4; 34], b: &[Mat4; 34], alpha: f32) -> [Mat4; 34] {
     })
 }
 
-fn socket_model(mesh: &asset::SkinnedMeshData, skin: &[Mat4], actor_model: Mat4) -> Mat4 {
+fn socket_model(
+    mesh: &asset::SkinnedMeshData,
+    skin: &[Mat4],
+    actor_model: Mat4,
+    two_hand_weapon: bool,
+) -> Mat4 {
     let index = |name: &str| {
         mesh.bones
             .iter()
@@ -296,7 +301,13 @@ fn socket_model(mesh: &asset::SkinnedMeshData, skin: &[Mat4], actor_model: Mat4)
     let posed = |joint: usize| actor_model * skin[joint] * mesh.bones[joint].inverse_bind.inverse();
     let forearm = posed(forearm_index).to_scale_rotation_translation().2;
     let hand = posed(hand_index).to_scale_rotation_translation().2;
-    let blade = (hand - forearm).normalize();
+    let left_hand_index = index("LeftHand");
+    let left_hand = posed(left_hand_index).to_scale_rotation_translation().2;
+    let blade = if two_hand_weapon && hand.distance_squared(left_hand) > 1.0e-6 {
+        (hand - left_hand).normalize()
+    } else {
+        (hand - forearm).normalize()
+    };
     let mut lateral = Vec3::Z.cross(blade);
     if lateral.length_squared() < 1.0e-6 {
         lateral = Vec3::X.cross(blade);
@@ -735,6 +746,7 @@ fn render_wire_tile(
 
 async fn run() {
     let action = std::env::var("PVP005_ACTION").expect("PVP005_ACTION is required");
+    let two_hand_weapon = action != "grab";
     let source_path = PathBuf::from(std::env::var("PVP005_F413").expect("PVP005_F413 is required"));
     let tell_start: usize = std::env::var("PVP005_TELL_START")
         .expect("PVP005_TELL_START is required")
@@ -879,7 +891,7 @@ async fn run() {
             .expect("candidate retarget");
         renderer.update_skin_joints_indexed(&queue, 0, &skin);
         let metric_actor_model = renderer::skinned_correct_model();
-        let metric_weapon_model = socket_model(&mesh, &skin, metric_actor_model);
+        let metric_weapon_model = socket_model(&mesh, &skin, metric_actor_model, two_hand_weapon);
         weapon_path.push(metric_weapon_model.transform_point3(vec3(0.0, 0.0, WEAPON_TIP_Z_M)));
         let hand_index = |name: &str| {
             mesh.bones
@@ -917,7 +929,8 @@ async fn run() {
                 let actor_model = renderer::skinned_correct_model();
                 renderer.skinned[0].model = actor_model;
                 renderer.update_camera(&queue, &pv);
-                let weapon_model = socket_model(&mesh, &skin, renderer.skinned[0].model);
+                let weapon_model =
+                    socket_model(&mesh, &skin, renderer.skinned[0].model, two_hand_weapon);
                 renderer.update_first_person_weapon(&queue, &pv, weapon_model);
                 render_tile(
                     &device,
@@ -1027,7 +1040,8 @@ async fn run() {
             renderer.skinned[0].model =
                 Mat4::from_translation(vec3(0.0, 0.0, -1.0)) * renderer::skinned_correct_model();
             renderer.update_camera(&queue, &pv);
-            let weapon_model = socket_model(&mesh, &skin, renderer.skinned[0].model);
+            let weapon_model =
+                socket_model(&mesh, &skin, renderer.skinned[0].model, two_hand_weapon);
             renderer.update_first_person_weapon(&queue, &pv, weapon_model);
             render_tile(
                 &device,

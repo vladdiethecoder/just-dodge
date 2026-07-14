@@ -157,7 +157,7 @@
     },
     "qa_capture_binary": {
       "path": "src/bin/pvp005_capture.rs",
-      "sha256": "f9c6c382e5d20c8a4c8138cc823993a26cdebe2176f04f890db8c414f6996833"
+      "sha256": "da7a60f9292cf01c8f31fb161753b56d2af0883188bcaeda8cca1d4c34eeb063"
     },
     "qa_mrt_shader": {
       "path": "src/pvp005_qa.wgsl",
@@ -170,6 +170,14 @@
     "qa_render_workflow": {
       "path": ".github/workflows/pvp005-visual.yml",
       "sha256": "3cd44c93fdfc5f80cce509c9ea45363cb9c640246ee78f037e705e65329caf26"
+    },
+    "ardy_keypose_generator": {
+      "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
+      "sha256": "c0821cda1190b0cbae8fc40385786e351ee1ad56cc956a6e21e6c96240c0d25e"
+    },
+    "ardy_keypose_iteration_1": {
+      "path": "assets/qa/pvp005_ardy_keyposes_v1.json",
+      "sha256": "62d0db4a8c350859abd347ab82a64679fa7849cd6793e9bf858f5fde602db022"
     }
   }
 }
