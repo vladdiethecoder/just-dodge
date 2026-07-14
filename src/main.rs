@@ -15,6 +15,7 @@ use winit::window::{Window, WindowId};
 mod action_matrix;
 mod ai;
 mod armor;
+mod active_ragdoll;
 mod asset;
 mod cleanbox;
 mod combat;
