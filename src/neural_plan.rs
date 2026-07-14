@@ -411,66 +411,70 @@ pub enum NeuralPlanError {
 }
 
 #[cfg(test)]
+pub(crate) fn fixture_packet(sequence: u64, source_hash: [u8; 32]) -> NeuralPlanPacketV1 {
+    const BASIS: [i16; 6] = [i16::MAX, 0, 0, 0, i16::MAX, 0];
+    let models = NeuralModelStackV1 {
+        ardy_source_sha256: [1; 32],
+        ardy_checkpoint_sha256: [2; 32],
+        motionbricks_interaction_checkpoint_sha256: [3; 32],
+        model_license_set_sha256: [4; 32],
+        source_rig_sha256: [5; 32],
+        normalization_sha256: [6; 32],
+        retargeter_sha256: [7; 32],
+        feedback_schema_sha256: [8; 32],
+    };
+    let pose = |truth_tick| QuantizedPoseSampleV1 {
+        truth_tick,
+        root_position_mm: [0, 900, 0],
+        root_heading_q15: [i16::MAX, 0],
+        joint_rotation_6d_q15: vec![BASIS; NEURAL_JOINT_COUNT],
+    };
+    NeuralPlanPacketV1::seal(
+        NeuralPlanPayloadV1 {
+            schema_version: NEURAL_PLAN_SCHEMA_VERSION,
+            sequence,
+            actor: Side::Player,
+            source_truth_tick: 98,
+            source_truth_sha256: source_hash,
+            valid_from_truth_tick: 100,
+            valid_until_truth_tick: 101,
+            seed: 20260714,
+            models,
+            constraints: vec![QuantizedNeuralConstraintV1 {
+                tick_offset: 0,
+                kind: NeuralConstraintKind::Root,
+                subject_index: 0,
+                position_mm: [0, 900, 0],
+                rotation_6d_q15: BASIS,
+                velocity_mm_s: [0; 3],
+                flags: 0,
+            }],
+            poses: vec![pose(100), pose(101)],
+            proxies: vec![QuantizedProxySampleV1 {
+                truth_tick: 100,
+                kind: NeuralProxyKind::Body,
+                proxy_index: 0,
+                center_mm: [0, 900, 0],
+                half_extent_mm: [200, 800, 150],
+                rotation_6d_q15: BASIS,
+            }],
+        },
+        NeuralPlanTimingV1 {
+            ardy_planning_us: 100_000,
+            motionbricks_feedback_us: 2_000,
+            packet_validation_decode_us: 800,
+            produced_monotonic_us: 55,
+        },
+    )
+    .unwrap()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    const BASIS: [i16; 6] = [i16::MAX, 0, 0, 0, i16::MAX, 0];
-
     fn packet(sequence: u64, source_hash: [u8; 32]) -> NeuralPlanPacketV1 {
-        let models = NeuralModelStackV1 {
-            ardy_source_sha256: [1; 32],
-            ardy_checkpoint_sha256: [2; 32],
-            motionbricks_interaction_checkpoint_sha256: [3; 32],
-            model_license_set_sha256: [4; 32],
-            source_rig_sha256: [5; 32],
-            normalization_sha256: [6; 32],
-            retargeter_sha256: [7; 32],
-            feedback_schema_sha256: [8; 32],
-        };
-        let pose = |truth_tick| QuantizedPoseSampleV1 {
-            truth_tick,
-            root_position_mm: [0, 900, 0],
-            root_heading_q15: [i16::MAX, 0],
-            joint_rotation_6d_q15: vec![BASIS; NEURAL_JOINT_COUNT],
-        };
-        NeuralPlanPacketV1::seal(
-            NeuralPlanPayloadV1 {
-                schema_version: NEURAL_PLAN_SCHEMA_VERSION,
-                sequence,
-                actor: Side::Player,
-                source_truth_tick: 98,
-                source_truth_sha256: source_hash,
-                valid_from_truth_tick: 100,
-                valid_until_truth_tick: 101,
-                seed: 20260714,
-                models,
-                constraints: vec![QuantizedNeuralConstraintV1 {
-                    tick_offset: 0,
-                    kind: NeuralConstraintKind::Root,
-                    subject_index: 0,
-                    position_mm: [0, 900, 0],
-                    rotation_6d_q15: BASIS,
-                    velocity_mm_s: [0; 3],
-                    flags: 0,
-                }],
-                poses: vec![pose(100), pose(101)],
-                proxies: vec![QuantizedProxySampleV1 {
-                    truth_tick: 100,
-                    kind: NeuralProxyKind::Body,
-                    proxy_index: 0,
-                    center_mm: [0, 900, 0],
-                    half_extent_mm: [200, 800, 150],
-                    rotation_6d_q15: BASIS,
-                }],
-            },
-            NeuralPlanTimingV1 {
-                ardy_planning_us: 100_000,
-                motionbricks_feedback_us: 2_000,
-                packet_validation_decode_us: 800,
-                produced_monotonic_us: 55,
-            },
-        )
-        .unwrap()
+        fixture_packet(sequence, source_hash)
     }
 
     #[test]

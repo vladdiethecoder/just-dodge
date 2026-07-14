@@ -217,7 +217,11 @@
     },
     "neural_plan_packet": {
       "path": "src/neural_plan.rs",
-      "sha256": "7d6f7b4543a9f36f6aee4c07095b20c090869fdb40bace3b216e6d691b583fe7"
+      "sha256": "549736708dcc701bf873fe87e6326783c2bd220a7e9fd8035e49667cbb34a097"
+    },
+    "neural_plan_replay": {
+      "path": "src/replay.rs",
+      "sha256": "d1adee2838dbb3ba5437638ce612f1662624702c3e6393921b3ff3d5168275d5"
     }
   }
 }

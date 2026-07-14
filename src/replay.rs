@@ -10,10 +10,11 @@ use anyhow::{Context, bail};
 
 use crate::duel_world::DuelWorldTruthTick;
 use crate::motion_plan::{ImpactEventV1, MotionPlanError, MotionPlanPacketV1};
+use crate::neural_plan::{NeuralPlanError, NeuralPlanPacketV1};
 use crate::truth::{ContactSurface, Side, TruthSnapshot};
 
 const MAGIC: &[u8; 4] = b"JDRP";
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 const HEADER_LEN: usize = 16;
 
 /// A discrete event that happened during a match.
@@ -51,6 +52,12 @@ pub enum EventKind {
     },
     MotionPlan {
         packet: MotionPlanPacketV1,
+    },
+    /// Exact canonical bytes are retained so replay/rollback never reruns a
+    /// neural model or silently reserializes a match-relevant payload.
+    NeuralPlan {
+        canonical_packet_bytes: Vec<u8>,
+        payload_sha256: [u8; 32],
     },
     Impact {
         event: ImpactEventV1,
@@ -160,6 +167,25 @@ impl ReplayRecorder {
         Ok(())
     }
 
+    /// Record a validated live-neural packet at its source truth frame.
+    pub fn record_neural_plan(
+        &mut self,
+        packet: NeuralPlanPacketV1,
+    ) -> Result<(), NeuralPlanError> {
+        let frame = u32::try_from(packet.payload.source_truth_tick)
+            .map_err(|_| NeuralPlanError::InvalidLength("replay_frame"))?;
+        let canonical_packet_bytes = packet.canonical_bytes()?;
+        let payload_sha256 = packet.payload_sha256;
+        self.record_event(MatchEvent {
+            frame,
+            kind: EventKind::NeuralPlan {
+                canonical_packet_bytes,
+                payload_sha256,
+            },
+        });
+        Ok(())
+    }
+
     /// Record one authoritative impact emitted by deterministic physics.
     pub fn record_impact(
         &mut self,
@@ -242,11 +268,13 @@ impl ReplayRecorder {
         let (frames, events): (Vec<ReplayFrame>, Vec<MatchEvent>) =
             postcard::from_bytes(&payload).context("failed to deserialize replay payload")?;
 
-        Ok(Self {
+        let replay = Self {
             seed,
             frames,
             events,
-        })
+        };
+        replay.validate_neural_plans()?;
+        Ok(replay)
     }
 
     /// Load and independently validate a replay's resolved physical receipts.
@@ -319,6 +347,50 @@ impl ReplayRecorder {
         }
         report.push_str("verdict=PASS\n");
         Ok(report)
+    }
+
+    /// Return the ordered match/replay neural configuration after validating
+    /// exact packet bytes, payload hashes, source frames, and per-actor sequence.
+    pub fn neural_payload_hashes(&self) -> Result<Vec<[u8; 32]>, anyhow::Error> {
+        self.validate_neural_plans()
+    }
+
+    fn validate_neural_plans(&self) -> Result<Vec<[u8; 32]>, anyhow::Error> {
+        let mut next_player = 1_u64;
+        let mut next_opponent = 1_u64;
+        let mut hashes = Vec::new();
+        for event in &self.events {
+            let EventKind::NeuralPlan {
+                canonical_packet_bytes,
+                payload_sha256,
+            } = &event.kind
+            else {
+                continue;
+            };
+            let packet = NeuralPlanPacketV1::from_canonical_bytes(canonical_packet_bytes)
+                .map_err(|error| anyhow::anyhow!("invalid replay NeuralPlan packet: {error:?}"))?;
+            if &packet.payload_sha256 != payload_sha256 {
+                bail!("replay NeuralPlan payload hash field mismatch");
+            }
+            if u64::from(event.frame) != packet.payload.source_truth_tick {
+                bail!("replay NeuralPlan source frame mismatch");
+            }
+            let expected = match packet.payload.actor {
+                Side::Player => &mut next_player,
+                Side::Opponent => &mut next_opponent,
+            };
+            if packet.payload.sequence != *expected {
+                bail!(
+                    "replay NeuralPlan sequence gap for {:?}: expected {}, got {}",
+                    packet.payload.actor,
+                    expected,
+                    packet.payload.sequence
+                );
+            }
+            *expected += 1;
+            hashes.push(packet.payload_sha256);
+        }
+        Ok(hashes)
     }
 }
 
@@ -503,6 +575,7 @@ mod tests {
     use super::*;
     use crate::cleanbox;
     use crate::duel_world::DuelWorld;
+    use crate::neural_plan::fixture_packet;
     use crate::truth::{Action, CombatTruth, PlayerInput, Stance};
 
     fn snapshot(frame: u32) -> ReplaySnapshot {
@@ -610,6 +683,69 @@ mod tests {
         let bytes_a = std::fs::read(&path_a).unwrap();
         let bytes_b = std::fs::read(&path_b).unwrap();
         assert_eq!(bytes_a, bytes_b);
+    }
+
+    #[test]
+    fn neural_plan_replay_retains_exact_bytes_hash_and_truth_binding() {
+        let path = env::temp_dir().join("just_dodge_neural_plan_replay.jdrp");
+        let _ = std::fs::remove_file(&path);
+        let packet = fixture_packet(1, [9; 32]);
+        let canonical = packet.canonical_bytes().unwrap();
+        let payload_hash = packet.payload_sha256;
+        let mut recorder = ReplayRecorder::new(20260714);
+        recorder.record_neural_plan(packet).unwrap();
+        recorder.save(&path).unwrap();
+
+        let loaded = ReplayRecorder::load(&path).unwrap();
+        assert_eq!(loaded.neural_payload_hashes().unwrap(), vec![payload_hash]);
+        let EventKind::NeuralPlan {
+            canonical_packet_bytes,
+            payload_sha256,
+        } = &loaded.events[0].kind
+        else {
+            panic!("expected NeuralPlan event");
+        };
+        assert_eq!(canonical_packet_bytes, &canonical);
+        assert_eq!(payload_sha256, &payload_hash);
+        assert_eq!(loaded.events[0].frame, 98);
+    }
+
+    #[test]
+    fn neural_plan_replay_load_rejects_tamper_and_sequence_gap() {
+        let tampered_path = env::temp_dir().join("just_dodge_neural_plan_tampered.jdrp");
+        let gap_path = env::temp_dir().join("just_dodge_neural_plan_gap.jdrp");
+        for path in [&tampered_path, &gap_path] {
+            let _ = std::fs::remove_file(path);
+        }
+
+        let mut tampered = ReplayRecorder::new(1);
+        tampered
+            .record_neural_plan(fixture_packet(1, [9; 32]))
+            .unwrap();
+        let EventKind::NeuralPlan {
+            canonical_packet_bytes,
+            ..
+        } = &mut tampered.events[0].kind
+        else {
+            unreachable!();
+        };
+        let final_byte = canonical_packet_bytes.len() - 1;
+        canonical_packet_bytes[final_byte] ^= 1;
+        tampered.save(&tampered_path).unwrap();
+        assert!(ReplayRecorder::load(&tampered_path).is_err());
+
+        let mut gap = ReplayRecorder::new(1);
+        let packet = fixture_packet(2, [9; 32]);
+        let canonical_packet_bytes = packet.canonical_bytes().unwrap();
+        gap.record_event(MatchEvent {
+            frame: 98,
+            kind: EventKind::NeuralPlan {
+                canonical_packet_bytes,
+                payload_sha256: packet.payload_sha256,
+            },
+        });
+        gap.save(&gap_path).unwrap();
+        assert!(ReplayRecorder::load(&gap_path).is_err());
     }
 
     fn resolved_packet(
