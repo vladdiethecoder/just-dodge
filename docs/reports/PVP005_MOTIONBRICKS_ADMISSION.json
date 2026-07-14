@@ -1,0 +1,86 @@
+{
+  "schema": "just-dodge-pvp005-motionbricks-admission-v1",
+  "verdict": "released_checkpoint_requires_interaction_conditioning_extension",
+  "playable_proof": false,
+  "reachable_feature_revision": "4648257",
+  "reachable_remote_ref": "refs/heads/pvp-005-readable-live-motion",
+  "public_main_revision": "2677b4a7dd050e7f4c5ee03881aa16035e413a8b",
+  "source": {
+    "repository": "https://github.com/NVlabs/GR00T-WholeBodyControl.git",
+    "commit": "f90ed64ec47a50d58898f69adec83d1f93c3b16f",
+    "license_git_blob_sha256": "24ab66be50d1aca4fc5e029ef76ce4ceaac6557ea21665caf4b140695a76ffee",
+    "motionbricks_readme_git_blob_sha256": "c7bb37e5f13775924a55ba3ea123def4147b91d7ec1ddcdbabeae91a77205fe1",
+    "motion_inference_git_blob_sha256": "1093e0e5d76dc425893b53e817066032e709f995c69f68acf4c756cc93fa2855",
+    "pose_backbone_git_blob_sha256": "61c93fe04d4c91f07aec134a7e8578992583247b9db622997127308a176e5c25",
+    "root_backbone_git_blob_sha256": "5c725442a0e589f1422178f796c822065b524056fd26ce216bfd64861d0fefed",
+    "g1_rig_source_git_blob_sha256": "6f5bc54dfafed7fb8ccd6133ed6a5114ad5c260bbfb01354ab2bd121ae641eac",
+    "repo_local_worktree_admitted": false,
+    "repo_local_worktree_reason": "3359 staged deletions plus 24 untracked repopulated paths; Git objects were read directly and the working tree is not provenance authority"
+  },
+  "full_external_runtime_root": "/run/media/vdubrov/NVMe-Storage1/gr00t/motionbricks/out",
+  "checkpoints": {
+    "pose": {
+      "path": "motionbricks_pose/version_1/checkpoints/model-step=2000000.ckpt",
+      "bytes": 1639126476,
+      "sha256": "0223c352b308ba638a499cc5c92104da36cb1d04cea2f8ce61d54a2489f853f1",
+      "config_sha256": "273af770d328b458510ee6049fac8e38fa486c8792cc27b3515dddc094a7cd1f",
+      "hparams_sha256": "3c482b9f810a9c4921d2e9fe46dae4e9e70d48ac9ea7d7b19a91fad2490d75e5",
+      "meta_sha256": "f70ba7887c5db6cd77739e573bbb734af0ec79a8cbabd9e435b7c72a5d040663"
+    },
+    "root": {
+      "path": "motionbricks_root/version_1/checkpoints/model-step=2000000.ckpt",
+      "bytes": 409551754,
+      "sha256": "d7299a9b1f5aca35730c36dfe7ea28075708ac8266bf384fe8e2ef9c9aee69c7",
+      "config_sha256": "b174f03a333f7f7857c3e2b8a32da517caddd198f228efeea2e203d046ce212a",
+      "hparams_sha256": "15dfadeab65b8ab1931b4e5257a2f9ebfa57e559510af1bd5baa96cfe2baeaf5",
+      "meta_sha256": "c541e9d63b9b876a56c031a360d4d3929013b83515510a10f47ae63f6c7c8f17"
+    },
+    "vqvae": {
+      "path": "motionbricks_vqvae/version_1/checkpoints/model-step=2000000.ckpt",
+      "bytes": 285607244,
+      "sha256": "f12a09d46ad390a8e2eecbe7219b2472fcab6b59df0a13f6a40c35cb6da4d99a",
+      "config_sha256": "027a2d7ba5f49cadeadbcc9a6b0c6784d657d5a842e41ff820c5233f1cd6c1f3",
+      "hparams_sha256": "7af860d6c144ff71ccdb4085b8413be892194ef419031b81e231502c2181576d",
+      "meta_sha256": "7bdf23605dcb89708a39bae33e12de59ebf4d216ba09b91931a2f813cc57e8c7"
+    },
+    "g1_clip": {
+      "path": "G1-clip.ckpt",
+      "bytes": 7761041,
+      "sha256": "84afc7c229473351a24b0a7d79fc47be9dbb81bd12774285f2f60a3c0e9028df"
+    }
+  },
+  "rig_and_normalization": {
+    "skeleton": "G1",
+    "joints_p_sha256": "8a582b7020d1609a34a9ea5ddfa597c8727b3e726e38cc80ecefe68171f43ecd",
+    "parents_p_sha256": "4ba0237379480ef33e64b7b8564f1d38dcb3e1ad5bfe01652ea1b7c97ccacb71",
+    "skeleton_yaml_sha256": "5820a223977a36e04e75824a7f720b57225ac30a067bdd32bc312469f3644050",
+    "motion_mean_sha256": "ca390f0081e2373ab71e860a3546cb70cc11fdfac6ce525155403e047b66fdea",
+    "motion_std_sha256": "fca7dd6135cbe96504b1307a7db97e9004556937a2fc72d139077b962cee6bd7",
+    "identical_across_pose_root_vqvae": true
+  },
+  "probe": {
+    "tool_path": "tools/qa/probe_motionbricks_online_contract.py",
+    "tool_sha256": "a601e2b6798ea5aee9bafac2dea296b1fa71a2ec26ff3378c9ff4a5c6c02823f",
+    "metrics_sha256": "76ad8285a67fbaeabca3b0d80ece9bb24c0f299c3ca30df8800fe66128f27d74",
+    "pose_accepts_text_embedding": false,
+    "root_accepts_text_embedding": false,
+    "has_interaction_parameter": false,
+    "conditioning": "four_frame_context_plus_four_frame_final_target_boundary",
+    "frames_per_token": 4,
+    "token_horizon": [6, 16]
+  },
+  "full_inventory": {
+    "tool_path": "tools/qa/inventory_motionbricks_release.py",
+    "tool_sha256": "3fdad4f3dbb3d836eabdca5b267dc89d20f4fc2b7a5d5cd3153b5c23db51e0dd",
+    "local_report_sha256": "dc00e1ec2eb4f388cb9cf5a93300faa79edcdba546e59d8fcb6b150a084f6920",
+    "local_report_status": "diagnostic_only_not_acceptance_storage"
+  },
+  "architecture_decision": {
+    "released_checkpoint_native_physics_feedback": false,
+    "released_checkpoint_admitted_as_physics_feedback": false,
+    "released_checkpoint_boundary_transition_candidate": true,
+    "compatible_trained_interaction_conditioning_extension_required": true,
+    "safe_implementable_next_atomic_unit": "define and test canonical NeuralPlanPacket bytes, payload SHA-256, truth bindings, and an asynchronous fail-closed buffer without invoking or relabelling the released checkpoint as feedback authority"
+  },
+  "exact_blocker": "No admitted compatible MotionBricks checkpoint exposes the interaction/physics-feedback conditioning channel required by the live high-frequency layer."
+}

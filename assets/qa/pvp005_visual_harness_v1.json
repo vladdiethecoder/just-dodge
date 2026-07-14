@@ -206,6 +206,14 @@
     "ardy_constraint_architecture_validator": {
       "path": "tools/qa/validate_pvp005_constraint_architecture.py",
       "sha256": "22eac101c004ebe60851b23f45358539832a6dc4ab5a561fddfd5687b53f8f05"
+    },
+    "motionbricks_release_inventory_tool": {
+      "path": "tools/qa/inventory_motionbricks_release.py",
+      "sha256": "3fdad4f3dbb3d836eabdca5b267dc89d20f4fc2b7a5d5cd3153b5c23db51e0dd"
+    },
+    "motionbricks_admission_report": {
+      "path": "docs/reports/PVP005_MOTIONBRICKS_ADMISSION.json",
+      "sha256": "ada14ec84086ec463403f5b22f6b8e1f82e9ec3e7e5870daadc92aab4489c286"
     }
   }
 }
