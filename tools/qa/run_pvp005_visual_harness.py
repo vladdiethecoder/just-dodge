@@ -49,8 +49,8 @@ def build_index(output: Path, actions: list[str], config_hash: str) -> dict[str,
         report = json.loads(report_path.read_text())
         reports[action] = report
         images = sorted(action_root.glob("*.png"))
-        if len(images) != 90:
-            raise SystemExit(f"{action}: expected 80 orbit sheets and 10 first-person strips, found {len(images)}")
+        if len(images) != 180:
+            raise SystemExit(f"{action}: expected 160 orbit sheets and 20 first-person strips, found {len(images)}")
         for image in images:
             expected_dimensions = (4096, 512) if "first_person_8f" in image.name else (2048, 2048)
             if png_dimensions(image) != expected_dimensions:
@@ -76,10 +76,6 @@ def build_index(output: Path, actions: list[str], config_hash: str) -> dict[str,
         "remaining_scopes": ["admitted", "live_runtime"],
         "remaining_layers": [
             "wireframe",
-            "skeleton",
-            "hand_socket_alignment",
-            "accumulated_weapon_path",
-            "collision_proxy_overlay",
         ],
         "first_person_output": "8_frame_4096x512_strip_from_live_camera_matrices",
     }

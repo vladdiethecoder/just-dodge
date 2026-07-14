@@ -157,15 +157,15 @@
     },
     "qa_capture_binary": {
       "path": "src/bin/pvp005_capture.rs",
-      "sha256": "bc1ff3277382b1a93ad172c2fa5d76fd899c26bed306f19d93fdf2aa83c1d000"
+      "sha256": "f9c6c382e5d20c8a4c8138cc823993a26cdebe2176f04f890db8c414f6996833"
     },
     "qa_mrt_shader": {
       "path": "src/pvp005_qa.wgsl",
-      "sha256": "c57a52eb93cf9731c912e1d6b3e9bfce4dbcd9030a8393f8797cc398cc837906"
+      "sha256": "fc0c29b5fb95dad9537589cd16ff4d147575102f55a1d3ff8d81346dd625083b"
     },
     "qa_orchestrator": {
       "path": "tools/qa/run_pvp005_visual_harness.py",
-      "sha256": "bfa673f91a3378ceac4fb1bb52aaedd0e08c015bc763b3d0067942bdd075474f"
+      "sha256": "cfab8138e7f31028ff8bd1a3bb2b57a09fcf620cc5e78574d06f7694e96ce25a"
     },
     "qa_render_workflow": {
       "path": ".github/workflows/pvp005-visual.yml",

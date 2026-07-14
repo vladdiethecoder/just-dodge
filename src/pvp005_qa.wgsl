@@ -97,3 +97,8 @@ fn actor_fs(input: VertexOutput) -> FragmentOutput {
 fn weapon_fs(input: VertexOutput) -> FragmentOutput {
     return outputs(input, vec3<f32>(0.0, 1.0, 0.0));
 }
+
+@fragment
+fn wire_fs(_input: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(0.0, 1.0, 1.0, 1.0);
+}
