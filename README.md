@@ -6,11 +6,11 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 
 ## Project Status
 
-- Stage: PLAYABLE-PROOF construction on clean `main`; the requested packaged vertical-slice gate has not passed.
+- Stage: PLAYABLE-PROOF construction on clean `main`; the local package gate passes, but the requested complete vertical-slice gate has not passed.
 - Selected runtime path: `main::App` → `milestone3::Session/Match` → `m3_cleanbox` → `cleanbox/duel_world/duel_physics` → `PhysicalContactBatch` → immutable `milestone3::Snapshot` → renderer/UI/replay.
 - Verified baseline: deterministic three-action M3 truth, 120 Hz cleanbox reduction, 100 replay reconstructions, frame-342 truth hash `d1a3cc1bfb9c2f67`, fmt/warning-denying clippy/check, 233 all-target tests in a hydrated clean mirror, 237 tests in the current tree, complete truth-isolated Menu-to-Replay runtime flow, release binary launch, and static integrity of the 24-bone armored duelist.
 - Isolated foundations, not live gameplay: post-Reveal ARDY proposals, quantized motion-plan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, and independent-joint active-ragdoll tracking.
-- Open PLAYABLE-PROOF path: reproducible package/repo verification and real keyboard/mouse cadence proof; admitted Strike/Block/Grab motion; coupled articulated physics; pose-derived contact and sword sockets; camera/readability; truth-driven presentation; five human packaged matches; canonical media and machine-readable evidence.
+- Open PLAYABLE-PROOF path: admitted Strike/Block/Grab motion; coupled articulated physics; pose-derived contact and sword sockets; camera/readability; truth-driven presentation (including the newly exposed Replay-footer overlap); five human packaged matches; canonical media and machine-readable evidence.
 - Distribution boundary: runtime asset source identity is recorded, but complete redistribution-rights records are not; this does not halt technical development and does block redistribution claims.
 
 ## Quick Links

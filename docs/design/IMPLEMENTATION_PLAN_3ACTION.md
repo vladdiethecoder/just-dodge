@@ -228,7 +228,7 @@ Implementation history was consolidated onto `main`. The status below distinguis
 - `RUSTFLAGS='-Dwarnings' cargo build --locked --release --bin just-dodge --bin m3_match` passes.
 - Release launch initializes the Vulkan renderer/UI and writes a terminal replay under deterministic autoplay; `m3_match --verify` reconstructs frame 342/hash `d1a3cc1bfb9c2f67`.
 - Runtime-flow regressions prove Menu/Establishing truth isolation and Replay reconstruction without terminal-session mutation; release Menu and Result captures are recorded locally.
-- `cargo fmt --check` and warning-denying clippy now pass. Package verification, live keyboard/mouse flow evidence, and canonical-media verification do not pass yet.
+- `cargo fmt --check`, warning-denying clippy, two byte-identical local package assemblies, complete manifest verification, packaged replay reconstruction, `/tmp` launch, and automated OS-level keyboard/mouse cadence pass. Five human matches and canonical-media verification do not pass yet.
 
 ## Known Limitations
 
@@ -236,4 +236,4 @@ Implementation history was consolidated onto `main`. The status below distinguis
 - The current active-ragdoll tracker advances independent joint/root states; it does not yet implement parent-child coupling, gravity, limits, balance, ground, grips, or shared-world contacts.
 - M3 contact is reduced from action-authored cleanbox geometry, not pose-derived weapon/guard/body proxies.
 - The first-person sword uses an independent camera/action transform rather than the posed hand socket used by CCD/contact.
-- Normal gameplay lacks a verified package, human-match evidence, calibrated motion/contact/camera metrics, and canonical media.
+- Normal gameplay lacks human-match evidence, calibrated motion/contact/camera metrics, and canonical media. The first Replay capture also shows its footer overlapping stale Plan instructions.

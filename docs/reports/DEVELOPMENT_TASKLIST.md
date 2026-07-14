@@ -2,8 +2,8 @@
 
 Branch: `main`, based on clean-checkout gate revision `f41cde635c607b33bbf04c2dd4621222359df73f`; one worktree.
 Last updated: 2026-07-14
-Active implementation unit: `PVP-004-PACKAGED-INTERACTION-CADENCE`.
-Current mechanical blockers: no package/repo verifier or real keyboard/mouse package evidence, bind-pose runtime, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-002 closed fmt/clippy, lockfile, and clean-checkout artifact hydration gates; PVP-003 closed the truth-isolated mechanical Menu-to-Replay flow.
+Active implementation unit: `PVP-005-ADMITTED-THREE-ACTION-MOTION`.
+Current mechanical blockers: bind-pose runtime, no admitted readable Strike/Block/Grab source set, action-authored rather than pose-derived cleanbox geometry, independent weapon transform, Replay-footer overlap, no calibrated camera/readability evidence, and no canonical packaged human-play evidence. PVP-004 closed the reproducible local package and automated OS input-path gates; it did not establish five human matches or public redistribution rights.
 
 The Phase A/B tables below preserve detailed task history. The controlling PLAYABLE-PROOF order is now: reconcile → clean-checkout gates → full runtime flow → packaged interaction/cadence proof → admitted motion plans → coupled articulated physics → pose/socket contact → camera/readability → truth-driven presentation → human/package evidence.
 
@@ -183,4 +183,4 @@ Parallel (no truth risk, can run alongside B.1–B.5):
   D.4  D.5
 ```
 
-**Current unit: PVP-004-PACKAGED-INTERACTION-CADENCE.** PVP-003 added and mechanically verified Menu → Establishing → Observe → Plan → Commit/Reveal → Resolve → Consequence → Replan → Result → validated Replay, rematch, menu return, exit, and duel-only cursor capture without changing live combat truth. Add a reproducible release package plus fail-closed package/repo verifier, then record real keyboard/mouse launch-to-restart cadence before motion promotion.
+**Current unit: PVP-005-ADMITTED-THREE-ACTION-MOTION.** PVP-004 now builds two byte-identical local packages, validates complete SHA-256 coverage, reconstructs packaged replay truth, launches outside the repo cwd, and exercises the actual OS input event path through Replay/rematch/menu/quit. Admit readable, provenance-recorded Strike/Block/Grab source motion before any live-pose promotion; five human packaged matches remain a later gate.

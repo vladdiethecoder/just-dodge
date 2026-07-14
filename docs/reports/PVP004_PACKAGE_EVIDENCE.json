@@ -1,0 +1,35 @@
+{
+  "schema": "just-dodge-pvp004-package-evidence-v1",
+  "evaluated_revision": "b60878d0fe25589a388822e77158e390c766fc5e",
+  "package_status": "local_technical_pass",
+  "public_redistribution_cleared": false,
+  "package_bytes": 184144387,
+  "package_files_including_manifest": 14,
+  "manifest_payloads": 13,
+  "assemblies_compared": 2,
+  "assemblies_byte_identical": true,
+  "tests_passed": 237,
+  "replay": {
+    "frames": 343,
+    "terminal_frame": 342,
+    "truth_hash": "d1a3cc1bfb9c2f67"
+  },
+  "sha256": {
+    "aggregate_verifier_log": "4f21e82e383eda72e0523afda0d51faaa21cd4ca2b135b131d7a30d6744dbebf",
+    "package_manifest": "82042b7d13e3e3d273e6b54da61f90c1555f09a344f0f05371e62dd40ef53944",
+    "os_input_runtime_log": "9e8d65fe9a632f7d84ca608830f061b93d97550e50b10ef659dbf760690ba503",
+    "packaged_result_frame": "0d899d5e12d3dd5ecab3514dcb6aac8c3458923161bd369990102a822344b9fb",
+    "packaged_replay_frame": "4d4b881551d48ddca9b007dc89e48fdb70b2c5ccc6decb272cc92ab6454ce877"
+  },
+  "input_path": {
+    "kind": "automated_os_uinput",
+    "stages": ["Menu", "Establishing", "Plan", "Result", "Replay", "Rematch", "Menu", "Quit"],
+    "human_matches_proven": 0
+  },
+  "open_findings": [
+    "Replay footer overlaps stale Plan instructions",
+    "opponent remains in bind pose",
+    "public redistribution rights are incomplete",
+    "five human packaged matches are absent"
+  ]
+}

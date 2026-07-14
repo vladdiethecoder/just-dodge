@@ -11,6 +11,7 @@ Source revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 - Isolated post-Reveal ARDY service, quantized motion-plan/replan schema, replay receipts, active-ragdoll tracking core, official G1 articulation model, and deterministic hinge projection.
 - Tracked `Cargo.lock`, a 13-file MotionBricks runtime checksum manifest, and a fail-closed clean-checkout artifact hydrator.
 - Truth-isolated outer runtime flow for Menu, Establishing, all duel phases, Result, validated Replay playback, rematch, menu return, exit, and cursor capture/release.
+- Reproducible local Linux package assembly, complete SHA-256 manifest verifier, aggregate repository gate, runtime asset-root plumbing, and an explicit no-public-redistribution boundary.
 
 ### Changed
 - Runtime C0 loading now uses the armored duelist rather than the old nude carrier.
@@ -25,8 +26,9 @@ Source revision: `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 - Release `just-dodge` launched, initialized the Vulkan renderer/UI, reached terminal state under deterministic autoplay, saved a replay, and the replay independently reconstructed the same hash.
 - Fmt, warning-denying clippy/check, shell validation, runtime-bundle hashes, and 237 all-target tests pass; the pre-flow 233-test baseline also passes in an isolated checkout after exact artifact hydration.
 - Runtime-flow regressions prove Menu and Establishing cannot advance truth, Replay reconstructs the saved record without mutating the terminal live session, and duel-only stages own the captured cursor. Release captures show the Menu and terminal Result surfaces; compositor automation could not inject the Replay hotkey, so human input proof remains open.
+- Two 184,144,387-byte package assemblies are byte-identical and independently pass complete 13-payload manifest validation plus replay reconstruction. A package launched from `/tmp` reached Result; OS-level uinput events exercised Start, action selection/confirmation, Replay, Rematch, Menu, and Quit. This is automated real-input-path evidence, not five human matches.
 
 ### Boundaries
 - `App::current_pose()` still returns bind matrices; ARDY/MotionBricks/active-ragdoll foundations are not wired into live gameplay.
 - The M3 adapter measures action-authored cleanbox targets, not proxies derived from rendered/solved poses; full physics-derived-contact evidence is absent.
-- Package/repo verifiers, five human packaged matches, canonical gameplay media, PBR material support, and distribution-rights closure remain open. A durable remote home for the pinned large-model bundle is still a release operation; the local hydrator requires an explicitly supplied trusted cache.
+- Five human packaged matches, canonical gameplay media, PBR material support, the Replay-footer presentation defect, and distribution-rights closure remain open. A durable remote home for the pinned large-model bundle is still a release operation; the local hydrator requires an explicitly supplied trusted cache.

@@ -26,7 +26,7 @@
 | ARDY/MotionBricks plan packets | Isolated foundation | Provenance/quantization/replay tests exist; no live `App` consumer |
 | Active-ragdoll/G1 articulation | Isolated foundation | Independent-joint tracking and hinge projection tests; no coupled articulated world |
 | Player flow | Live, verified mechanically | Menu → Establishing → duel phases → Result → validated Replay; rematch/menu/quit and duel-only cursor capture are implemented. Real keyboard/mouse package evidence remains open |
-| Package/evidence | Absent | No tracked package pipeline, repo verifier, canonical video, manifest, or gate report |
+| Package/evidence | Local technical package verified | Two byte-identical assemblies, complete SHA-256 coverage, packaged replay reconstruction, `/tmp` launch, and OS-level input cadence pass. Human matches and canonical video remain absent |
 
 ## Fresh baseline gates
 
@@ -39,7 +39,8 @@
 - PASS: the isolated checkout hydrates and verifies all 13 pinned MotionBricks runtime files from an explicit trusted cache, then passes all 233 tests.
 - PASS: runtime-flow truth-isolation and replay tests; release Menu and Result captures; cursor capture/release logs.
 - FAIL: canonical-media verifier (rendering overview, gameplay video, and manifest absent).
-- ABSENT: release package and package/repo verifier.
+- PASS: two byte-identical 184,144,387-byte local package assemblies; complete manifest coverage; packaged replay reconstruction; launch from `/tmp`; OS-level Start → Plan/confirm → Result → Replay → Rematch → Menu → Quit cadence.
+- FAIL: five human packaged matches remain absent. The Replay capture also exposes overlapping footer/Plan instructions, so presentation acceptance remains fail-closed.
 
 ## Historical documents
 
@@ -47,6 +48,6 @@
 
 ## Ordered PLAYABLE-PROOF path
 
-`PVP-001 reconcile active path` → `PVP-002 clean-checkout gates` (passed) → `PVP-003 complete runtime flow` (passed mechanically) → `PVP-004 packaged interaction/cadence proof` → admitted plan packets/motion → coupled articulated physics → pose/socket-derived contact → camera/readability → truth-driven presentation → packaged human matches and canonical evidence.
+`PVP-001 reconcile active path` → `PVP-002 clean-checkout gates` (passed) → `PVP-003 complete runtime flow` (passed mechanically) → `PVP-004 packaged interaction/cadence proof` (passed for local automated input path) → `PVP-005 admitted plan packets/motion` → coupled articulated physics → pose/socket-derived contact → camera/readability → truth-driven presentation → packaged human matches and canonical evidence.
 
 No 13-action, multiplayer, roster, anatomy/FEM, world, store, Supabase, or nonessential asset expansion is admitted before that chain passes.
