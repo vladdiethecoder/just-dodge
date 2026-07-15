@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@1.96.0
+        with:
+          components: rustfmt, clippy
       - run: python3 tools/verify_pvp005_revision_baseline.py
       - run: python3 tools/qa/pvp005_visual_contract.py
       - run: python3 tools/qa/test_pvp005_visual_contract.py
