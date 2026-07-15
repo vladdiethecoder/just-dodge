@@ -8,6 +8,7 @@ pub mod dodge_presentation;
 pub mod duel_physics;
 pub mod duel_world;
 pub mod g1_articulation;
+pub mod g1_hinge_adapter;
 pub mod hinge_projection;
 pub mod hitbox;
 pub mod injury;

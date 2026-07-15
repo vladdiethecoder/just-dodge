@@ -7,7 +7,7 @@
   "evaluation": {
     "revision_rule": "runtime_HEAD_must_be_a_descendant_of_subject_revision",
     "forgelens_sources_must_be_tracked": true,
-    "forgelens_source_tree_sha256": "b42b554f61ac4a33d9db059f23c8da8be281c149a58005f1acdb969d15fa94c6"
+    "forgelens_source_tree_sha256": "ab17addedf08edaed2e8f2d420bd5172ba3061205ffc3d4de427a0b671516067"
   },
   "playable_proof": false,
   "verdict": "blocked_pending_evidence",
@@ -26,12 +26,13 @@
   "forgelens_profile": {
     "tool_profile": "forgelens-phase-a-pvp005/v1",
     "required_files": {
-      "tools/asset_review.py": "d0196f243ee5d35c1f35c406f25beb279d8d609c72ce1084326bc8649d681e71",
-      "tools/asset_review/README.md": "8da1acd1afa2ccd363bad8407a9c90c02c7f03eefda35819d838e0bf728913e9",
-      "tools/asset_review/index.html": "2448bdd2d0e9f1143b9b8026607481bc50e20217927c1e6c71e3aba578d94ccc",
-      "tools/asset_review/styles.css": "82dd25340bb4ae248f8ad2ce75d743b43619eec4055d8a938546eb027f9a3322",
-      "tools/asset_review/app.js": "2307998eea3ba71b75554cc2be80749a20c0a8c8cc920d1f3f835a4c4dad67e8",
-      "tools/qa/test_asset_review.py": "ba856044ec4b3f7683cf4a7ab69955d379bb2ec6a6a8aec800c5e8a7d7cd1b11"
+      "tools/asset_review.py": "e7fa1df6680597db0cf5defb0b432ba32bfb1e7cddcc6acc4a50006e85251bc8",
+      "tools/asset_review/README.md": "f829912c0c97021424cfe9540a3c025059a1bf909cac66f1118f699585959db2",
+      "tools/asset_review/index.html": "1c6bd7406af6cc41ee4401d1b5954b397df87beb240a050f28bb81ff3dd2ccf2",
+      "tools/asset_review/styles.css": "2eb4734aeda7df67a1e571ea50cd45fade2f4b0fb6ecf131e772f016286eb6e6",
+      "tools/asset_review/app.js": "706fe849ce50569a2f67f8f53ad62bcca15e7bd271ad3583619a6658c63c96b2",
+      "tools/qa/test_asset_review.py": "0abfe5e7b884443e9d13fe8771652ebf57565904d8537a4fbb7506b6e833e690",
+      "tools/qa/verify_forgelens_phase_a.py": "70e49ef34643678e4cd3d6550ad8f292e2bcb3444ad1c1d507d411cba37bcf89"
     },
     "browser_authority": {
       "regular_human_browser_required": true,
@@ -43,12 +44,116 @@
     },
     "review_run_binding": [
       "subject_revision",
+      "working_tree_and_staged_diff_hashes",
+      "untracked_inventory_hash",
+      "build_bytes",
       "replay_bytes",
       "replay_verifier_bytes",
       "verifier_stdout",
-      "capture_bytes",
-      "capture_set_hash",
+      "canonical_plan_packet_bytes",
+      "evidence_manifest_bytes",
+      "produced_artifact_bytes",
+      "generation_provider_checkpoint_retarget_and_geometry_bytes",
+      "camera_aov_and_timing_contract",
       "forgelens_tool_profile"
+    ]
+  },
+  "review_spine_contract": {
+    "schema": "just-dodge-forgelens-review-spine-contract-v1",
+    "contract_version": 1,
+    "workflow_revision": "pvp005-w0-review-workflow/v1",
+    "schemas": {
+      "artifact_lineage": "forgelens.artifact-lineage/v1",
+      "review_run_declaration": "forgelens.review-run-declaration/v1",
+      "review_run": "forgelens.review-run/v1",
+      "decision_receipt": "forgelens.decision-receipt/v1",
+      "review_pin": "forgelens.review-pin/v1",
+      "review_pin_receipt": "forgelens.review-pin-receipt/v1",
+      "truth_verification": "forgelens.truth-verification/v1",
+      "evidence_manifest": "forgelens.evidence-manifest/v1",
+      "viewer_context_receipt": "forgelens.viewer-context-receipt/v1",
+      "external_human_decision": "forgelens.external-human-decision/v1",
+      "admission_packet": "forgelens.admission-packet/v1"
+    },
+    "states": [
+      "awaiting_evidence",
+      "awaiting_human",
+      "submitted",
+      "pass",
+      "fail",
+      "superseded",
+      "expired"
+    ],
+    "transitions": {
+      "awaiting_evidence": ["awaiting_human", "superseded", "expired"],
+      "awaiting_human": ["submitted", "superseded", "expired"],
+      "submitted": ["pass", "fail", "superseded", "expired"],
+      "pass": [],
+      "fail": [],
+      "superseded": [],
+      "expired": []
+    },
+    "storage_path": "docs/reports/forgelens_review_runs/<run-id>/",
+    "append_only": true,
+    "dual_durable_decision_head_witnesses": true,
+    "submitted_receipt_binds_review_pin_heads": true,
+    "submitted_receipt_binds_viewer_context_generation": true,
+    "canonical_json": "UTF-8, sorted keys, compact separators, no NaN/Infinity",
+    "decision_receipt_hash_rule": "sha256(canonical receipt object with receiptSha256 omitted)",
+    "pin_receipt_hash_rule": "sha256(canonical pin receipt object with pinReceiptSha256 omitted)",
+    "human_attestation": {
+      "required_for_submitted": true,
+      "browser_actor_server_derived": true,
+      "known_automation_patterns_rejected": true,
+      "self_authorship_rejected": true,
+      "blind_observation_must_precede_label_reveal": true,
+      "browser_and_http_api_cannot_emit_terminal_pass": true,
+      "terminal_pass_requires_tracked_clean_external_human_decision_import": true,
+      "external_human_decision_commit_and_bytes_must_remain_reachable": true,
+      "personhood_claim": "operational-attestation-not-cryptographic-proof"
+    },
+    "pass_eligibility": {
+      "revision_must_be_full_reachable_commit": true,
+      "tool_profile_must_match": true,
+      "code_and_declared_inputs_must_be_tracked_clean": true,
+      "all_bound_lineage_files_must_be_remeasured": true,
+      "truth_must_match_allowlisted_bounded_verifier_execution": true,
+      "verifier_executes_measured_open_file_descriptor": true,
+      "replay_executes_from_measured_open_file_descriptor": true,
+      "full_frame_is_derived_from_bound_camera_dimensions_png_dimensions_and_capture_rect": true,
+      "canonical_plan_manifest_and_produced_artifact_bytes_must_match": true,
+      "stale_pins_block_submission_and_pass": true,
+      "server_derived_pin_context_includes_60hz_120hz_timing": true,
+      "viewer_context_loss_requires_server_recorded_recapture_generation_and_valid_png": true,
+      "file_serving_requires_bound_sha256_and_byte_count": true
+    },
+    "viewer_fail_closed_reasons": [
+      "sparse_accessor",
+      "cubic_spline_animation",
+      "morph_weight_animation",
+      "morph_target",
+      "unsupported_required_extension:<name>",
+      "unsupported_primitive_mode:<mode>",
+      "external_image_uri",
+      "texture_decode_failure"
+    ],
+    "request_limits": {
+      "json_bytes": 1048576,
+      "neural_evidence_encoded_bytes": 25165824,
+      "viewer_recapture_encoded_bytes": 25165824,
+      "request_io_timeout_seconds": 10,
+      "verifier_stdout_stderr_bytes": 262144,
+      "verifier_timeout_seconds": 30
+    },
+    "replay_verifier_allowlist": [
+      {
+        "path": "target/release/m3_match",
+        "sha256": "f281506b33741499fbfe64d32e11ab2682c3419b5ed6d0b42037568dc1f4e09c",
+        "build_command": "cargo build --release --bin m3_match",
+        "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+        "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+        "cargo_lock_sha256": "e53f8705232f9d5941f4b3a5dc4657b2e61990aef6e2cf11e0404495a67e4ac9"
+      }
     ]
   },
   "required_gates": {

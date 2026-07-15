@@ -46,7 +46,79 @@ const state = {
   renderer: null,
   authority: null,
   replayRun: null,
+  activeReviewRun: null,
+  visualEvidence: {status: "not_captured", reason: null, invalidatedAt: null},
 };
+
+function setVisualEvidenceStatus(status, reason = null) {
+  state.visualEvidence = {status, reason, invalidatedAt: new Date().toISOString()};
+  document.documentElement.dataset.forgeLensEvidence = status;
+  const blocked = status === "webgl_context_lost" || status === "viewer_unsupported";
+  if (byId("captureButton")) byId("captureButton").disabled = blocked;
+  if (byId("submitReportButton")) byId("submitReportButton").disabled = blocked || status === "recapture_required";
+  if (byId("submitReportInline")) byId("submitReportInline").disabled = blocked || status === "recapture_required";
+}
+
+let viewerContextQueue = Promise.resolve();
+function blobBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("viewer capture could not be read"));
+    reader.onload = () => resolve(String(reader.result).split(",", 2)[1] || "");
+    reader.readAsDataURL(blob);
+  });
+}
+function recordViewerContextEvent(event, captureBlob = null) {
+  if (!state.activeReviewRun?.runId || !state.activeReviewRun.viewerContext?.headReceiptSha256) return Promise.resolve();
+  viewerContextQueue = viewerContextQueue.catch(() => {}).then(async () => {
+    const body = {
+      runId: state.activeReviewRun.runId,
+      event,
+      expectedPreviousSha256: state.activeReviewRun.viewerContext.headReceiptSha256,
+    };
+    if (captureBlob) body.capturePngBase64 = await blobBase64(captureBlob);
+    const response = await apiFetch("/api/viewer-context", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    const receipt = await response.json();
+    if (!response.ok) throw new Error(receipt.error || `viewer-context HTTP ${response.status}`);
+    const snapshotResponse = await apiFetch(`/api/review-run?runId=${encodeURIComponent(state.activeReviewRun.runId)}`);
+    const snapshot = await snapshotResponse.json();
+    if (!snapshotResponse.ok) throw new Error(snapshot.error || `ReviewRun refresh HTTP ${snapshotResponse.status}`);
+    state.activeReviewRun = snapshot;
+    renderReviewRunGate();
+  });
+  return viewerContextQueue;
+}
+
+class ViewerUnsupportedError extends Error {
+  constructor(reasons) {
+    super(`viewer_unsupported: ${reasons.join(", ")}`);
+    this.name = "ViewerUnsupportedError";
+    this.status = "viewer_unsupported";
+    this.reasons = reasons;
+  }
+}
+
+function inspectViewerEligibility(document) {
+  const reasons = [];
+  if ((document.accessors || []).some(accessor => accessor?.sparse)) reasons.push("sparse_accessor");
+  if ((document.meshes || []).some(mesh => (mesh.primitives || []).some(primitive => (primitive.targets || []).length))) reasons.push("morph_target");
+  for (const mesh of document.meshes || []) {
+    for (const primitive of mesh.primitives || []) {
+      if ((primitive.mode ?? 4) !== 4) reasons.push(`unsupported_primitive_mode:${primitive.mode}`);
+    }
+  }
+  for (const animation of document.animations || []) {
+    if ((animation.samplers || []).some(sampler => (sampler.interpolation || "LINEAR") === "CUBICSPLINE")) reasons.push("cubic_spline_animation");
+    if ((animation.channels || []).some(channel => channel.target?.path === "weights")) reasons.push("morph_weight_animation");
+  }
+  for (const extension of document.extensionsRequired || []) reasons.push(`unsupported_required_extension:${extension}`);
+  if ((document.images || []).some(image => typeof image.uri === "string" && !image.uri.startsWith("data:"))) reasons.push("external_image_uri");
+  return {status: reasons.length ? "viewer_unsupported" : "viewer_supported", reasons: [...new Set(reasons)].sort()};
+}
 
 async function apiFetch(url, options = {}) {
   const method = String(options.method || "GET").toUpperCase();
@@ -252,6 +324,8 @@ async function parseGlb(arrayBuffer, sourceUrl = "") {
     offset += length;
   }
   if (!document || !binary) throw new Error("GLB requires JSON and BIN chunks");
+  const eligibility = inspectViewerEligibility(document);
+  if (eligibility.status === "viewer_unsupported") throw new ViewerUnsupportedError(eligibility.reasons);
 
   const accessor = (index, forceFloat = false) => {
     const spec = document.accessors?.[index];
@@ -369,6 +443,8 @@ class Renderer {
     this.canvas = canvas;
     this.gl = canvas.getContext("webgl2", {antialias: true, alpha: false, preserveDrawingBuffer: true});
     if (!this.gl) throw new Error("WebGL2 is required");
+    this.contextLost = false;
+    this.bindContextEvents();
     this.primary = null; this.comparison = null; this.viewMode = "material"; this.grid = true;
     this.animationPlaying=false; this.animationLoop=true; this.animationSpeed=1;
     this.target=[0,0,0]; this.distance=3; this.yaw=.65; this.pitch=.25; this.radius=1;
@@ -377,6 +453,35 @@ class Renderer {
     this.program=this.createProgram(); this.gridProgram=this.createGridProgram(); this.whiteTexture=this.createWhiteTexture();
     this.bindEvents(); this.resizeObserver=new ResizeObserver(()=>this.resize()); this.resizeObserver.observe(canvas);
     requestAnimationFrame(()=>this.frame());
+  }
+
+  bindContextEvents() {
+    this.canvas.addEventListener("webglcontextlost", event => {
+      event.preventDefault();
+      this.contextLost = true;
+      this.animationPlaying = false;
+      setVisualEvidenceStatus("webgl_context_lost", "WebGL context loss invalidated current visual evidence and benchmark state");
+      recordViewerContextEvent("context_lost").catch(error => toast(error.message, true));
+      document.documentElement.dataset.forgeLensModel = "context-lost";
+      toast("WebGL context lost. Current visual evidence is invalid.", true);
+    });
+    this.canvas.addEventListener("webglcontextrestored", () => {
+      this.contextLost = false;
+      this.primary = null;
+      this.comparison = null;
+      this.gridBuffer = null;
+      this.program = this.createProgram();
+      this.gridProgram = this.createGridProgram();
+      this.whiteTexture = this.createWhiteTexture();
+      setVisualEvidenceStatus("recapture_required", "webgl_context_restored");
+      recordViewerContextEvent("context_restored").catch(error => toast(error.message, true));
+      document.documentElement.dataset.forgeLensModel = "context-restored-reload-required";
+      toast("WebGL restored. Reload and recapture are required before submission.", true);
+      if (state.active && !state.active.local) loadModel(state.active).catch(error => {
+        console.error(error);
+        toast(`Context restore reload failed: ${error.message}`, true);
+      });
+    });
   }
 
   shader(type, source) {
@@ -477,7 +582,9 @@ class Renderer {
         while(gl.getError()!==gl.NO_ERROR){}
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap); gl.generateMipmap(gl.TEXTURE_2D);
         gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);const textureError=gl.getError();bitmap.close();if(textureError!==gl.NO_ERROR)throw new Error(`WebGL texture upload failed (${textureError})`);parsed.textures.push(texture);
-      } catch(error) { console.warn("Texture decode failed",error); parsed.textures.push(null); }
+      } catch {
+        throw new ViewerUnsupportedError([`texture_decode_failure:${parsed.textures.length}`]);
+      }
     }
     parsed.center=parsed.lower.map((value,index)=>(value+parsed.upper[index])/2);
     parsed.radius=Math.max(v3Length(v3Sub(parsed.upper,parsed.lower))/2,.001);
@@ -554,8 +661,9 @@ class Renderer {
     if(!this.gridBuffer)this.gridBuffer=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,this.gridBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);
     gl.useProgram(this.gridProgram);gl.uniformMatrix4fv(gl.getUniformLocation(this.gridProgram,"uViewProjection"),false,this.viewProjection);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);gl.drawArrays(gl.LINES,0,lines.length/3);
   }
-  renderSnapshot() {this.resize();const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.enable(gl.DEPTH_TEST);gl.clearColor(.035,.047,.057,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);const aspect=this.canvas.width/this.canvas.height;this.projection=m4Perspective(Math.PI/4,aspect,Math.max(this.radius*.001,.001),Math.max(this.radius*200,100));this.view=m4LookAt(this.eye(),this.target,[0,1,0]);this.viewProjection=m4Multiply(this.projection,this.view);this.drawGrid();this.drawModel(this.primary);this.drawModel(this.comparison,true);renderPins();}
+  renderSnapshot() {if(this.contextLost)throw new Error("webgl_context_lost");this.resize();const gl=this.gl;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.enable(gl.DEPTH_TEST);gl.clearColor(.035,.047,.057,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);const aspect=this.canvas.width/this.canvas.height;this.projection=m4Perspective(Math.PI/4,aspect,Math.max(this.radius*.001,.001),Math.max(this.radius*200,100));this.view=m4LookAt(this.eye(),this.target,[0,1,0]);this.viewProjection=m4Multiply(this.projection,this.view);this.drawGrid();this.drawModel(this.primary);this.drawModel(this.comparison,true);renderPins();}
   frame() {
+    if(this.contextLost){requestAnimationFrame(()=>this.frame());return;}
     const now=performance.now(),dt=Math.min((now-this.lastFrameTime)/1000,.05),blend=1-Math.exp(-dt*14);this.lastFrameTime=now;
     if(this.primary?.animations?.length&&this.animationPlaying){const clip=this.primary.animations[this.primary.activeAnimation];let next=this.primary.animationTime+dt*this.animationSpeed;if(next>clip.duration){if(this.animationLoop)next=clip.duration?next%clip.duration:0;else{next=clip.duration;this.animationPlaying=false;}}this.primary.animationTime=next;this.updateAnimation(this.primary);updateAnimationUi();}
     this.yaw+=(this.goalYaw-this.yaw)*blend;this.pitch+=(this.goalPitch-this.pitch)*blend;this.distance+=(this.goalDistance-this.distance)*blend;
@@ -583,12 +691,23 @@ function rayTriangle(origin,direction,a,b,c){const edge1=v3Sub(b,a),edge2=v3Sub(
 async function loadModel(record, comparison=false, localBuffer=null) {
   byId("loadingState").hidden=false;
   try {
+    const declaredEligibility = record.metrics?.viewerEligibility;
+    if (declaredEligibility?.status === "viewer_unsupported") {
+      document.documentElement.dataset.forgeLensViewer = "viewer_unsupported";
+      setVisualEvidenceStatus("viewer_unsupported", (declaredEligibility.reasons || []).join(","));
+      throw new ViewerUnsupportedError(declaredEligibility.reasons || ["catalog_declared_unsupported"]);
+    }
     const url=localBuffer?"":fileUrl(record.path);const buffer=localBuffer||await fetch(url).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.arrayBuffer();});
     const parsed=await parseGlb(buffer,url);const model=await state.renderer.upload(parsed);
     if(comparison){state.renderer.comparison=model;state.compare=record;}else{state.renderer.primary=model;state.renderer.comparison=null;if(model.animations.length)state.renderer.updateAnimation(model);state.renderer.frameModel(model,true);state.renderer.goalDistance*=1.55;state.renderer.distance=state.renderer.goalDistance;setupAnimationForModel(model);}
     byId("viewportEmpty").hidden=true;
+    document.documentElement.dataset.forgeLensViewer="viewer_supported";
     document.documentElement.dataset.forgeLensModel=`${model.primitives.length}:${model.animations.length}:${model.skins.length}`;
+    if(state.visualEvidence.status==="not_captured")setVisualEvidenceStatus("ready_for_capture");
     return model;
+  } catch(error) {
+    if(error instanceof ViewerUnsupportedError){document.documentElement.dataset.forgeLensViewer="viewer_unsupported";setVisualEvidenceStatus("viewer_unsupported",error.reasons.join(","));}
+    throw error;
   } finally {byId("loadingState").hidden=true;}
 }
 
@@ -637,8 +756,54 @@ async function selectComparison(record) {
 
 function metricDelta(a,b){const ta=a.metrics?.triangles||0,tb=b.metrics?.triangles||0,ba=a.metrics?.bytes||0,bb=b.metrics?.bytes||0;const signed=value=>`${value>=0?"+":""}${formatNumber(value)}`;return `Δ triangles ${signed(tb-ta)} · Δ size ${signed(Math.round((bb-ba)/1024))} KiB`;}
 
-function renderAssetMetadata(){const metrics=byId("metricsList"),identity=byId("identityList");metrics.replaceChildren();identity.replaceChildren();if(!state.active)return;const m=state.active.metrics||{};for(const [label,value] of [["Triangles",formatNumber(m.triangles)],["Vertices",formatNumber(m.vertices)],["Meshes",formatNumber(m.meshes)],["Primitives",formatNumber(m.primitives)],["Materials",formatNumber(m.materials)],["Textures",formatNumber(m.textures)],["Animations",formatNumber(m.animations)],["Skins",formatNumber(m.skins)],["File size",formatBytes(m.bytes)]])appendMetric(metrics,label,value);for(const [label,value] of [["Family",state.active.family],["Stage",state.active.stage],["Path",state.active.path],["Generator",m.generator||"unknown"],["Extensions",(m.extensions||[]).join(", ")||"none"],["Modified",state.active.modifiedAt]])appendMetric(identity,label,value);}
+function renderAssetMetadata(){const metrics=byId("metricsList"),identity=byId("identityList");metrics.replaceChildren();identity.replaceChildren();if(!state.active)return;const m=state.active.metrics||{},viewer=m.viewerEligibility||{status:"unknown",reasons:[]};for(const [label,value] of [["Triangles",formatNumber(m.triangles)],["Vertices",formatNumber(m.vertices)],["Meshes",formatNumber(m.meshes)],["Primitives",formatNumber(m.primitives)],["Materials",formatNumber(m.materials)],["Textures",formatNumber(m.textures)],["Animations",formatNumber(m.animations)],["Skins",formatNumber(m.skins)],["File size",formatBytes(m.bytes)]])appendMetric(metrics,label,value);for(const [label,value] of [["Family",state.active.family],["Stage",state.active.stage],["Path",state.active.path],["Generator",m.generator||"unknown"],["Extensions",(m.extensions||[]).join(", ")||"none"],["Viewer",viewer.status],["Viewer blockers",(viewer.reasons||[]).join(", ")||"none"],["Modified",state.active.modifiedAt]])appendMetric(identity,label,value);}
 function appendMetric(list,label,value){const row=element("div");row.append(element("dt",null,label),element("dd",null,String(value)));list.append(row);}
+
+function renderReviewRunGate(){
+  const section=byId("reviewRunGate"),snapshot=state.activeReviewRun;
+  section.hidden=!snapshot;
+  if(!snapshot)return;
+  byId("reviewRunState").textContent=snapshot.state;
+  byId("reviewRunState").classList.toggle("is-submitted",["pass","fail"].includes(snapshot.state));
+  const run=snapshot.reviewRun,lineage=run.lineage,eligibility=snapshot.eligibility||{};
+  const metrics=byId("reviewRunMetrics");metrics.replaceChildren();
+  for(const [label,value] of [
+    ["Run",run.runId],
+    ["State",snapshot.state],
+    ["Decision head",snapshot.headReceiptSha256],
+    ["Revision",lineage.code.revision],
+    ["Workflow",lineage.workflowRevision],
+    ["Truth",lineage.truthHash],
+    ["Plan",lineage.canonicalPlanPacket.sha256],
+    ["Evidence manifest",lineage.evidenceManifest.sha256],
+    ["Geometry",lineage.geometryIdentitySha256],
+    ["Pins",snapshot.pins?.length||0],
+    ["Stale pins",(snapshot.pinStatuses||[]).filter(pin=>pin.status==="stale").length],
+    ["Viewer context",`${snapshot.viewerContext?.status||"missing"} · generation ${snapshot.viewerContext?.generation??"?"}`],
+  ])appendMetric(metrics,label,value);
+  const eligible=Boolean(eligibility.eligibleForPass);
+  const status=byId("reviewRunEligibility");
+  status.textContent=eligible
+    ? "PASS-ELIGIBLE · final external human decision still required"
+    : "BLOCKED · admission packet is not pass-eligible";
+  status.classList.toggle("is-eligible",eligible);
+  const blockers=[...new Set([...(eligibility.blockers||[]),...(eligibility.passBlockers||[])])];
+  const list=byId("reviewRunBlockers");list.replaceChildren();
+  for(const blocker of blockers)list.append(element("li",null,blocker.replaceAll("_"," ")));
+  if(!blockers.length)list.append(element("li",null,"No mechanical blocker. Final authority remains an external human operational attestation, not cryptographic proof."));
+}
+
+async function exportActiveReviewRun(){
+  if(!state.activeReviewRun)return;
+  const button=byId("exportReviewRun");button.disabled=true;
+  try{
+    const response=await apiFetch("/api/review-run-export",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({runId:state.activeReviewRun.runId})});
+    const payload=await response.json();if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);
+    byId("reviewRunExportStatus").textContent=`${payload.exportPath} · ${payload.exportFileSha256}`;
+    toast("Immutable admission packet exported");
+  }catch(error){console.error(error);byId("reviewRunExportStatus").textContent=`Export failed: ${error.message}`;toast(`ReviewRun export failed: ${error.message}`,true);}
+  finally{button.disabled=false;}
+}
 
 function renderReplayRun(){
   const section=byId("replayRunSection"),run=state.replayRun;section.hidden=!run;if(!run)return;
@@ -694,7 +859,7 @@ function togglePinMode(force){state.pinMode=force===undefined?!state.pinMode:for
 function scheduleSave(){if(!state.review||!state.active)return;if(state.review.submission){state.review.submission=null;state.review.taskPlan=null;renderReportSubmission();}if(state.active.local){setSaveState("Local review · export only");return;}setSaveState("Saving…","saving");clearTimeout(state.saveTimer);state.saveTimer=setTimeout(saveReview,280);}
 async function saveReview(){try{const response=await apiFetch("/api/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state.review)});const payload=await response.json();if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);state.review=payload;setSaveState("Saved","saved");renderDecision();}catch(error){console.error(error);setSaveState("Save failed","error");toast(`Review save failed: ${error.message}`,true);}}
 
-async function submitReport(){if(!state.review||!state.active)return;if(state.active.local){toast("Local files are export-only",true);return;}if(state.review.decision==="pending"){toast("Choose Approve, Request changes, or Reject before submitting",true);activateTab("review");return;}clearTimeout(state.saveTimer);const buttons=[byId("submitReportButton"),byId("submitReportInline")];buttons.forEach(button=>{button.disabled=true;button.textContent="Submitting…";});let submitted=false;try{const response=await apiFetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state.review)});const payload=await response.json();if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);state.review=payload;submitted=true;setSaveState("Report submitted","saved");renderReview();toast(`Report submitted · ${payload.submission.receiptId}`);setTimeout(()=>window.close(),350);}catch(error){console.error(error);setSaveState("Submission failed","error");toast(`Report submission failed: ${error.message}`,true);}finally{if(!submitted){buttons[0].textContent="Submit report";buttons[1].textContent="Submit human report";renderReportSubmission();}}}
+async function submitReport(){if(!state.review||!state.active)return;if(state.active.local){toast("Local files are export-only",true);return;}if(["webgl_context_lost","recapture_required","viewer_unsupported"].includes(state.visualEvidence.status)){toast("Submission blocked: visual evidence is invalid or unsupported; recapture with an exact viewer",true);return;}if(state.review.decision==="pending"){toast("Choose Approve, Request changes, or Reject before submitting",true);activateTab("review");return;}clearTimeout(state.saveTimer);const buttons=[byId("submitReportButton"),byId("submitReportInline")];buttons.forEach(button=>{button.disabled=true;button.textContent="Submitting…";});let submitted=false;try{const response=await apiFetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state.review)});const payload=await response.json();if(!response.ok)throw new Error(payload.error||`HTTP ${response.status}`);state.review=payload;submitted=true;setSaveState("Report submitted","saved");renderReview();toast(`Report submitted · ${payload.submission.receiptId}`);setTimeout(()=>window.close(),350);}catch(error){console.error(error);setSaveState("Submission failed","error");toast(`Report submission failed: ${error.message}`,true);}finally{if(!submitted){buttons[0].textContent="Submit report";buttons[1].textContent="Submit human report";renderReportSubmission();}}}
 
 function exportBrief(){if(!state.active||!state.review){toast("Select an asset before exporting",true);return;}const m=state.active.metrics||{};const lines=[`# Asset review — ${state.active.family}`,"",`- Artifact: \`${state.active.path}\``,`- Stage: ${state.active.stage}`,`- Decision: **${state.review.decision}**`,`- Triangles: ${formatNumber(m.triangles)}`,`- Vertices: ${formatNumber(m.vertices)}`,`- File size: ${formatBytes(m.bytes)}`,`- Review JSON: \`qa_runs/asset_reviews/${state.active.id}.json\``,"","## Acceptance matrix","",...CHECKS.map(([key,label])=>`- ${label}: ${state.review.checklist[key]||"unchecked"}`),"","## Comments",""];
   if(!state.review.comments.length)lines.push("No comments.");else state.review.comments.forEach((comment,index)=>{lines.push(`${index+1}. **${comment.severity} · ${comment.category} · ${comment.status}** — ${comment.text}${comment.point?` (surface: ${comment.point.world.join(", ")})`:""}`);});
@@ -718,11 +883,12 @@ function setupCommands(){const commands=[
 }
 function setViewMode(mode){state.renderer.viewMode=mode;for(const button of $$('[data-view-mode]'))button.classList.toggle("is-active",button.dataset.viewMode===mode);}
 function activateTab(tab){for(const button of $$(".inspector-tab"))button.classList.toggle("is-active",button.dataset.tab===tab);for(const panel of $$(".tab-content"))panel.classList.toggle("is-active",panel.dataset.tabPanel===tab);}
-function captureViewport(){if(!state.renderer.primary){toast("Load a model before capture",true);return;}state.renderer.renderSnapshot();state.renderer.canvas.toBlob(blob=>{if(blob){downloadBlob(blob,`${state.active?.family||"local-model"}-viewport.png`);toast("Viewport PNG captured");}},"image/png");}
+function captureViewport(){if(!state.renderer.primary){toast("Load a model before capture",true);return;}if(state.renderer.contextLost){toast("Capture blocked: WebGL context is lost",true);return;}try{state.renderer.renderSnapshot();state.renderer.canvas.toBlob(blob=>{if(!blob)return;downloadBlob(blob,`${state.active?.family||"local-model"}-viewport.png`);if(state.visualEvidence.status==="recapture_required"&&state.activeReviewRun){recordViewerContextEvent("recaptured",blob).then(()=>{setVisualEvidenceStatus("captured");toast("Viewport PNG captured and server-bound recapture completed");}).catch(error=>toast(error.message,true));}else{setVisualEvidenceStatus("captured");toast("Viewport PNG captured");}},"image/png");}catch(error){setVisualEvidenceStatus("recapture_required",error.message);toast(`Capture failed: ${error.message}`,true);}}
 
 function bindUi(){
   byId("assetSearch").addEventListener("input",renderLibrary);
   byId("submitReplayReview").addEventListener("click",submitReplayReview);
+  byId("exportReviewRun").addEventListener("click",exportActiveReviewRun);
   for(const chip of $$(".filter-chip"))chip.addEventListener("click",()=>{state.stageFilter=chip.dataset.stage;for(const item of $$(".filter-chip"))item.classList.toggle("is-active",item===chip);renderLibrary();});
   for(const button of $$('[data-view-mode]'))button.addEventListener("click",()=>setViewMode(button.dataset.viewMode));
   byId("gridToggle").addEventListener("click",event=>{state.renderer.grid=!state.renderer.grid;event.currentTarget.classList.toggle("is-active",state.renderer.grid);});
@@ -736,7 +902,7 @@ function bindUi(){
   byId("animationLoop").addEventListener("click",event=>{state.renderer.animationLoop=!state.renderer.animationLoop;event.currentTarget.classList.toggle("is-active",state.renderer.animationLoop);});
   byId("neuralCapture").addEventListener("click",captureNeuralEvidence);
   for(const tab of $$(".inspector-tab"))tab.addEventListener("click",()=>activateTab(tab.dataset.tab));
-  for(const button of $$('[data-decision]'))button.addEventListener("click",()=>{if(!state.review)return;if(button.dataset.decision==="approved"&&state.renderer.primary?.animations?.length&&state.review.neuralMotion?.status!=="pass"){toast("Approval blocked: animation requires a passing neural visual audit",true);return;}state.review.decision=button.dataset.decision;scheduleSave();renderDecision();});
+  for(const button of $$('[data-decision]'))button.addEventListener("click",()=>{if(!state.review)return;if(button.dataset.decision==="approved"&&["webgl_context_lost","recapture_required","viewer_unsupported"].includes(state.visualEvidence.status)){toast("Approval blocked: visual evidence is invalid or unsupported; recapture with an exact viewer",true);return;}if(button.dataset.decision==="approved"&&state.renderer.primary?.animations?.length&&state.review.neuralMotion?.status!=="pass"){toast("Approval blocked: animation requires a passing neural visual audit",true);return;}state.review.decision=button.dataset.decision;scheduleSave();renderDecision();});
   byId("resetChecklist").addEventListener("click",()=>{if(!state.review)return;state.review.checklist={};renderChecklist();scheduleSave();});
   byId("addGeneralComment").addEventListener("click",()=>openComposer());byId("cancelComment").addEventListener("click",closeComposer);
   byId("reportSummary").addEventListener("input",event=>{if(!state.review)return;state.review.reportSummary=event.target.value;scheduleSave();});byId("reportSummary").addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();submitReport();}});
@@ -749,7 +915,7 @@ function bindUi(){
 }
 
 async function init(){
-  try{state.renderer=new Renderer(byId("glCanvas"));window.__forgeLens=state;bindUi();const sessionResponse=await fetch("/api/session",{credentials:"same-origin"});if(!sessionResponse.ok)throw new Error(`Browser authority HTTP ${sessionResponse.status}`);state.authority=await sessionResponse.json();const [response,replayResponse]=await Promise.all([apiFetch("/api/catalog"),apiFetch("/api/replay-run")]);if(!response.ok)throw new Error(`Catalog HTTP ${response.status}`);if(!replayResponse.ok)throw new Error(`Replay HTTP ${replayResponse.status}`);const catalog=await response.json();state.replayRun=await replayResponse.json();renderReplayRun();state.catalog=catalog.assets||[];renderLibrary();const requested=new URLSearchParams(location.search).get("asset")||catalog.initialAsset;const initial=state.catalog.find(record=>record.path===requested)||state.catalog[0];if(initial)await selectAsset(initial);else byId("viewportEmpty").querySelector("p").textContent="No GLB files were indexed under assets/.";}
+  try{state.renderer=new Renderer(byId("glCanvas"));window.__forgeLens=state;bindUi();const sessionResponse=await fetch("/api/session",{credentials:"same-origin"});if(!sessionResponse.ok)throw new Error(`Browser authority HTTP ${sessionResponse.status}`);state.authority=await sessionResponse.json();const [response,replayResponse,activeRunResponse]=await Promise.all([apiFetch("/api/catalog"),apiFetch("/api/replay-run"),apiFetch("/api/active-review-run")]);if(!response.ok)throw new Error(`Catalog HTTP ${response.status}`);if(!replayResponse.ok)throw new Error(`Replay HTTP ${replayResponse.status}`);if(!activeRunResponse.ok)throw new Error(`Active ReviewRun HTTP ${activeRunResponse.status}`);const catalog=await response.json();state.replayRun=await replayResponse.json();state.activeReviewRun=await activeRunResponse.json();renderReplayRun();renderReviewRunGate();state.catalog=catalog.assets||[];renderLibrary();const requested=new URLSearchParams(location.search).get("asset")||catalog.initialAsset;const initial=state.catalog.find(record=>record.path===requested)||state.catalog[0];if(initial)await selectAsset(initial);else byId("viewportEmpty").querySelector("p").textContent="No GLB files were indexed under assets/.";}
   catch(error){console.error(error);toast(`Studio initialization failed: ${error.message}`,true);byId("viewportEmpty").querySelector("h2").textContent="Initialization failed";byId("viewportEmpty").querySelector("p").textContent=error.message;}
 }
 

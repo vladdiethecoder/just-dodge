@@ -134,6 +134,22 @@
       </nav>
 
       <div id="reviewTab" class="tab-content is-active" data-tab-panel="review">
+        <section id="reviewRunGate" class="inspector-section review-run-gate" hidden>
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Immutable admission spine</span>
+              <h2>ReviewRun gate</h2>
+            </div>
+            <span id="reviewRunState" class="submission-status">Not configured</span>
+          </div>
+          <dl id="reviewRunMetrics" class="metrics-list"></dl>
+          <div id="reviewRunEligibility" class="review-run-eligibility"></div>
+          <ul id="reviewRunBlockers" class="review-run-blockers"></ul>
+          <p class="gate-contract">Final approval requires an external human attestation. Browser identity is an operational attestation, not cryptographic proof of personhood.</p>
+          <button id="exportReviewRun" class="ghost-button" type="button">Export admission packet</button>
+          <p id="reviewRunExportStatus" class="report-receipt">No packet exported.</p>
+        </section>
+
         <section class="inspector-section decision-section">
           <div class="section-title-row">
             <div>

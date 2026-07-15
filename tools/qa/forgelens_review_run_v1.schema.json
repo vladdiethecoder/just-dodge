@@ -1,0 +1,594 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://just-dodge.invalid/schemas/forgelens-review-run-v1.schema.json",
+  "title": "ForgeLens ReviewRun v1",
+  "description": "Fail-closed identity contract for one immutable ForgeLens review run. Every root and ArtifactLineage field is required in v1. Nullable values remain required identity statements rather than omitted optional data.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schemaVersion",
+    "contract",
+    "contractSha256",
+    "createdAt",
+    "lineage",
+    "cameraInventory",
+    "aovInventory",
+    "requiredEvidence",
+    "sourceAuthors",
+    "decisionChainHeadSha256",
+    "runId",
+    "runFingerprintSha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "forgelens.review-run/v1"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "contract": {
+      "$ref": "#/$defs/ReviewContract"
+    },
+    "contractSha256": {
+      "$ref": "#/$defs/Sha256"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lineage": {
+      "$ref": "#/$defs/ArtifactLineage"
+    },
+    "cameraInventory": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/Camera"
+      }
+    },
+    "aovInventory": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/Aov"
+      }
+    },
+    "requiredEvidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/RequiredEvidence"
+      }
+    },
+    "sourceAuthors": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/BoundedString"
+      }
+    },
+    "decisionChainHeadSha256": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/Sha256"
+        }
+      ]
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{20}$"
+    },
+    "runFingerprintSha256": {
+      "$ref": "#/$defs/Sha256"
+    }
+  },
+  "x-forgelens-pass-eligibility": {
+    "revision": "lineage.code.revision must be a full 40- or 64-character commit SHA",
+    "reachable": "lineage.code.reachable must be true",
+    "trackedClean": "lineage.code.trackedClean must be true and working/staged/untracked identities must equal their canonical empty hashes",
+    "inputs": "every bound lineage file and produced evidence artifact must declare repositoryState tracked-clean",
+    "drafts": "outside-git, unreachable, dirty, staged, modified, or untracked identities remain structurally valid draft-only ReviewRuns"
+  },
+  "$defs": {
+    "Sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "TruthHash": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{16}|[0-9a-f]{64})$"
+    },
+    "CommitSha": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "BoundedString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "RepositoryPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^(?!/)(?!.*//)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*\\x00)(?!.*/$).+$"
+    },
+    "RepositoryState": {
+      "enum": [
+        "tracked-clean",
+        "tracked-modified",
+        "untracked",
+        "outside-git",
+        "unavailable"
+      ]
+    },
+    "ReviewContract": {
+      "type": "object",
+      "required": [
+        "schema",
+        "contract_version",
+        "workflow_revision",
+        "states",
+        "transitions",
+        "append_only",
+        "human_attestation",
+        "pass_eligibility"
+      ],
+      "properties": {
+        "schema": {
+          "const": "just-dodge-forgelens-review-spine-contract-v1"
+        },
+        "contract_version": {
+          "const": 1
+        },
+        "workflow_revision": {
+          "const": "pvp005-w0-review-workflow/v1"
+        },
+        "states": {
+          "type": "array",
+          "minItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "transitions": {
+          "type": "object"
+        },
+        "append_only": {
+          "const": true
+        },
+        "human_attestation": {
+          "type": "object"
+        },
+        "pass_eligibility": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "const": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "CodeIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "revision",
+        "reachable",
+        "trackedClean",
+        "toolProfileSha256",
+        "workingTreeDiffSha256",
+        "stagedDiffSha256",
+        "untrackedInventorySha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "forgelens.code-identity/v1"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "const": "outside-git"
+            },
+            {
+              "$ref": "#/$defs/CommitSha"
+            }
+          ]
+        },
+        "reachable": {
+          "type": "boolean"
+        },
+        "trackedClean": {
+          "type": "boolean"
+        },
+        "toolProfileSha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "workingTreeDiffSha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "stagedDiffSha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "untrackedInventorySha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      }
+    },
+    "FileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "path",
+        "sha256",
+        "bytes",
+        "repositoryState",
+        "relevantDiffSha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "forgelens.file/v1"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repositoryState": {
+          "$ref": "#/$defs/RepositoryState"
+        },
+        "relevantDiffSha256": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        }
+      }
+    },
+    "TruthVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "commandProfile",
+        "stdoutSha256",
+        "frames",
+        "winner",
+        "replayHash",
+        "verdict"
+      ],
+      "properties": {
+        "schema": {
+          "const": "forgelens.truth-verification/v1"
+        },
+        "commandProfile": {
+          "const": "m3-match-verify-v1"
+        },
+        "stdoutSha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "frames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "winner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "replayHash": {
+          "$ref": "#/$defs/TruthHash"
+        },
+        "verdict": {
+          "const": "PASS"
+        }
+      }
+    },
+    "Generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "checkpoint",
+        "retarget"
+      ],
+      "properties": {
+        "provider": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "retarget": {
+          "$ref": "#/$defs/FileIdentity"
+        }
+      }
+    },
+    "CaptureRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ProducedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "path",
+        "sha256",
+        "bytes",
+        "repositoryState",
+        "relevantDiffSha256",
+        "cameraProfile",
+        "aov",
+        "kind",
+        "frame",
+        "tick60Hz",
+        "physicsTick120Hz",
+        "physicsSubstep",
+        "uncropped",
+        "fullFrame",
+        "width",
+        "height",
+        "captureRect",
+        "geometryIdentitySha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "forgelens.file/v1"
+        },
+        "path": {
+          "$ref": "#/$defs/RepositoryPath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Sha256"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repositoryState": {
+          "$ref": "#/$defs/RepositoryState"
+        },
+        "relevantDiffSha256": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/Sha256"
+            }
+          ]
+        },
+        "cameraProfile": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "aov": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "kind": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tick60Hz": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physicsTick120Hz": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physicsSubstep": {
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "uncropped": {
+          "type": "boolean"
+        },
+        "fullFrame": {
+          "type": "boolean"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "captureRect": {
+          "$ref": "#/$defs/CaptureRect"
+        },
+        "geometryIdentitySha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      }
+    },
+    "Camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "revision",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "profile": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "revision": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        }
+      }
+    },
+    "Aov": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "cameraProfile",
+        "geometryCompatibilityGroup"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "cameraProfile": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "geometryCompatibilityGroup": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      }
+    },
+    "RequiredEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cameraProfile",
+        "aov"
+      ],
+      "properties": {
+        "cameraProfile": {
+          "$ref": "#/$defs/BoundedString"
+        },
+        "aov": {
+          "$ref": "#/$defs/BoundedString"
+        }
+      }
+    },
+    "ArtifactLineage": {
+      "$anchor": "ArtifactLineage",
+      "title": "ArtifactLineage v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "code",
+        "build",
+        "replay",
+        "verifier",
+        "truthHash",
+        "truthVerification",
+        "canonicalPlanPacket",
+        "evidenceManifest",
+        "workflowRevision",
+        "generation",
+        "producedArtifactInventory",
+        "geometry",
+        "geometryIdentitySha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "forgelens.artifact-lineage/v1"
+        },
+        "code": {
+          "$ref": "#/$defs/CodeIdentity"
+        },
+        "build": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "replay": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "verifier": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "truthHash": {
+          "$ref": "#/$defs/TruthHash"
+        },
+        "truthVerification": {
+          "$ref": "#/$defs/TruthVerification"
+        },
+        "canonicalPlanPacket": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "evidenceManifest": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "workflowRevision": {
+          "const": "pvp005-w0-review-workflow/v1"
+        },
+        "generation": {
+          "$ref": "#/$defs/Generation"
+        },
+        "producedArtifactInventory": {
+          "type": "array",
+          "maxItems": 512,
+          "items": {
+            "$ref": "#/$defs/ProducedArtifact"
+          }
+        },
+        "geometry": {
+          "$ref": "#/$defs/FileIdentity"
+        },
+        "geometryIdentitySha256": {
+          "$ref": "#/$defs/Sha256"
+        }
+      }
+    }
+  }
+}

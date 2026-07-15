@@ -62,3 +62,4 @@ GR00T-WholeBodyControl
 # Local, timestamped QA captures and executable logs. Canonical reviewed media
 # is promoted explicitly under docs/media/latest/ with a manifest instead.
 qa_runs/
+/validation_evidence/
