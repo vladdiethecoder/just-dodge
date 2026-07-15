@@ -169,6 +169,7 @@ fn official_navigation_adapter_is_finite_continuous_and_deterministic() {
 /// setup/teardown concurrently. Run this suite as one ordered test to make the
 /// lifecycle deterministic without adding a serial-test dependency.
 #[test]
+#[ignore = "requires the separately provisioned MotionBricks Python bridge environment"]
 fn motion_service_contracts_are_serial_and_complete() {
     strike_generates_finite_frames();
     strike_is_deterministic();

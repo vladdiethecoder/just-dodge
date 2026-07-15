@@ -19,6 +19,10 @@ RUSTFLAGS='-D warnings' cargo test --locked --all-targets -- --test-threads=1
 RUSTFLAGS='-D warnings' cargo test --locked --lib \
     motion_runtime::tests::preloaded_m3_clips_are_finite_rigid_and_cached -- \
     --ignored --exact --test-threads=1
+RUSTFLAGS='-D warnings' cargo test --locked --test c0_official_motion -- \
+    --ignored --exact --test-threads=1
+RUSTFLAGS='-D warnings' cargo test --locked --test motion_service_integration -- \
+    --ignored --exact --test-threads=1
 
 VERIFY_ROOT="$ROOT/target/playable-package-verify"
 rm -rf -- "$VERIFY_ROOT"

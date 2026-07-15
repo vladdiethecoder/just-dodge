@@ -4,6 +4,7 @@ use just_dodge::{asset, motion_service::MotionService};
 const C0_ROOT: &str = "assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked";
 
 #[test]
+#[ignore = "requires the separately provisioned MotionBricks Python bridge environment"]
 fn official_motionbricks_trajectory_calibrates_into_c0_163_joint_skinning() {
     let mesh = asset::load_skinned(&format!("{C0_ROOT}/c0_pose_carrier.bin"))
         .expect("accepted C0 carrier must load");
