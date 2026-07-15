@@ -7,6 +7,8 @@ import ast
 import hashlib
 import json
 import math
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +17,7 @@ SPEC = ROOT / "assets/qa/pvp005_ardy_action_endpoints_v4.json"
 GENERATOR = ROOT / "tools/qa/generate_pvp005_ardy_keypose_candidates.py"
 SCREEN = ROOT / "tools/qa/screen_pvp005_motion_candidates.py"
 ACTIONS = ("strike", "block", "grab")
-KEYPOSE_FRAMES = (0, 4, 7, 16, 30, 40, 51)
+KEYPOSE_FRAMES = (0, 2, 3, 7, 15, 27, 35, 51)
 V4_SCHEMA = "just-dodge-pvp005-ardy-action-endpoints-v4"
 
 
@@ -93,6 +95,20 @@ def main() -> None:
     require(spec.get("playable_proof") is False, "PLAYABLE-PROOF must remain false")
     require("seeds" not in spec and "diffusion_steps" not in spec, "generation controls forbidden in design contract")
     require(V4_SCHEMA not in GENERATOR.read_text(encoding="utf-8"), "current generator unexpectedly accepts endpoint v4")
+    require(constant(GENERATOR, "PVP005_GENERATION_ENABLED") is False, "repository ARDY generator must remain disabled")
+    with tempfile.TemporaryDirectory(prefix="pvp005-ardy-disabled-") as temporary:
+        output = Path(temporary) / "must-not-exist"
+        blocked = subprocess.run(
+            ["python3", str(GENERATOR), "--output", str(output)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        require(blocked.returncode != 0, "disabled ARDY generator unexpectedly succeeded")
+        require("content-addressed authorization certificate" in blocked.stderr, "ARDY disable reason drift")
+        require(not output.exists(), "disabled ARDY generator created output")
     require(float(constant(SCREEN, "MAX_CONTACT_FOOT_DRIFT_M")) <= 0.02, "foot-drift screen weakened")
     require(int(constant(SCREEN, "TELL_FRAMES")) >= 8, "Reveal screen weakened")
 
@@ -120,8 +136,9 @@ def main() -> None:
     actions = spec["actions"]
     require(tuple(actions) == ACTIONS, "action set/order drift")
     final_frame = spec["frames"] - 1
-    margin = spec["global_thresholds"]["support_polygon_margin_m"]
-    single_limit = spec["global_thresholds"]["maximum_single_support_root_distance_m"]
+    single_limit = spec["global_thresholds"]["maximum_single_support_phase_root_excursion_m"]
+    dual_limit = spec["global_thresholds"]["maximum_dual_support_root_travel_m"]
+    clearance_floor = spec["global_thresholds"]["minimum_swing_toe_clearance_m"]
     length_tolerance = spec["global_thresholds"]["maximum_weapon_axis_length_error_m"]
     early_vectors: dict[str, list[float]] = {}
     signatures = set()
@@ -135,25 +152,39 @@ def main() -> None:
         require(all(sample_root(item["root_schedule"], frame) == [0.0, 0.0] for frame in range(8)), f"{action}: first Reveal root drift")
 
         for frame in range(spec["frames"]):
-            root = sample_root(item["root_schedule"], frame)
-            anchors = []
+            planted = 0
             for side in ("left", "right"):
                 contact = contact_at(item["contact_schedule"][side], frame)
                 mode = contact["mode"]
-                require(mode in {"planted_world_anchor", "swing_free", "planted_new_anchor"}, f"{action}/{side}: bad contact mode")
-                if mode == "swing_free":
-                    require("anchor_xz_m" not in contact, f"{action}/{side}: swing carries anchor")
+                require(mode in {"planted_world_anchor", "swing", "planted_new_anchor"}, f"{action}/{side}: bad contact mode")
+                if mode == "swing":
+                    require("anchor_id" not in contact, f"{action}/{side}: swing carries active anchor")
+                    require(contact["from_anchor"] != contact["to_anchor"], f"{action}/{side}: swing does not change anchor")
+                    start, end = contact["frames"]
+                    require(start < contact["apex_frame"] < end, f"{action}/{side}: swing apex leaves interval")
+                    require(contact["toe_clearance_m"] >= clearance_floor, f"{action}/{side}: swing clearance weakened")
+                    require(len(contact["landing_offset_xz_m"]) == 2, f"{action}/{side}: landing offset malformed")
                 else:
-                    require("anchor_xz_m" in contact, f"{action}/{side}: planted contact lacks anchor")
-                    anchors.append(contact["anchor_xz_m"])
-            require(bool(anchors), f"{action}/f{frame}: no support foot")
-            if len(anchors) == 1:
-                require(distance(root, anchors[0]) <= single_limit, f"{action}/f{frame}: root leaves single support")
-            else:
-                for axis in range(2):
-                    lower = min(anchor[axis] for anchor in anchors) - margin
-                    upper = max(anchor[axis] for anchor in anchors) + margin
-                    require(lower <= root[axis] <= upper, f"{action}/f{frame}: root leaves support polygon")
+                    require("anchor_id" in contact, f"{action}/{side}: planted contact lacks immutable anchor ID")
+                    require("anchor_xz_m" not in contact, f"{action}/{side}: hand-authored world anchor forbidden")
+                    planted += 1
+            require(planted >= 1, f"{action}/f{frame}: no support foot")
+
+        for root_phase in item["root_schedule"]:
+            start, end = root_phase["frames"]
+            travel = distance(root_phase["xz_start_m"], root_phase["xz_end_m"])
+            support_counts = [
+                sum(
+                    contact_at(item["contact_schedule"][side], frame)["mode"] != "swing"
+                    for side in ("left", "right")
+                )
+                for frame in range(start, end + 1)
+            ]
+            if travel > dual_limit:
+                require(all(count == 1 for count in support_counts), f"{action}/f{start}-{end}: root translates outside single support")
+                require(travel <= single_limit, f"{action}/f{start}-{end}: single-support root excursion too large")
+            elif any(count == 2 for count in support_counts):
+                require(travel <= dual_limit, f"{action}/f{start}-{end}: dual-support root drift")
 
         poses = item["keyposes"]
         require(tuple(pose["frame"] for pose in poses) == KEYPOSE_FRAMES, f"{action}: keypose frames drift")
@@ -173,12 +204,15 @@ def main() -> None:
                 require(inside(effector, low, high), f"grab/f{pose['frame']}: left effector leaves envelope")
                 require(distance(effector, secondary) >= w0["thresholds"]["minimum_inactive_hand_to_grip_distance_m"], f"grab/f{pose['frame']}: left effector aliases grip")
 
-        reveal = next(pose for pose in poses if pose["frame"] == 7)
-        primary = lerp(reveal["weapon_pommel_root_m"], reveal["weapon_tip_root_m"], right_amount)
-        partner = lerp(reveal["weapon_pommel_root_m"], reveal["weapon_tip_root_m"], left_amount)
-        if item["weapon_ownership"] != "two_hand":
-            partner = reveal["left_effector_root_m"]
-        early_vectors[action] = primary + partner
+        reveal_vectors = []
+        for reveal_frame in (3, 7):
+            reveal = next(pose for pose in poses if pose["frame"] == reveal_frame)
+            primary = lerp(reveal["weapon_pommel_root_m"], reveal["weapon_tip_root_m"], right_amount)
+            partner = lerp(reveal["weapon_pommel_root_m"], reveal["weapon_tip_root_m"], left_amount)
+            if item["weapon_ownership"] != "two_hand":
+                partner = reveal["left_effector_root_m"]
+            reveal_vectors.extend(primary + partner)
+        early_vectors[action] = reveal_vectors
 
     require(len(signatures) == len(ACTIONS), "action-specific root/contact schedules converged")
     minimum = spec["global_thresholds"]["minimum_pairwise_early_keypose_distance_m"]

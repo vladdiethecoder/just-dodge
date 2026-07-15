@@ -13,7 +13,7 @@
   "text_conditioning": false,
   "w0_contract": {
     "path": "assets/qa/pvp005_w0_grip_camera_v1.json",
-    "sha256": "f9b2603b479a8635ab9d8169a0f9ae49e33b91a4c9429562b98a8d879c99d020"
+    "sha256": "17b7117858ce40aeca41fff8f92b6b5352371df6dcb6db9e5c2ecd3a1808f779"
   },
   "failed_iteration_ledger": {
     "path": "docs/reports/PVP005_ARDY_ITERATION_LEDGER.json",
@@ -24,7 +24,7 @@
     "coordinates": "right_handed_meters_actor_root_relative_weapon_and_hand_keyposes_world_space_root_and_foot_anchors",
     "root_interpolation": "piecewise_linear_inclusive_endpoints",
     "planted_world_anchor": "ankle_and_toe_xz_fixed_to_declared_anchor_contact_target_one",
-    "swing_free": "no_world_position_constraint_contact_target_zero",
+    "swing": "declared_from_anchor_to_anchor_with_apex_clearance_and_contact_target_zero",
     "planted_new_anchor": "ankle_and_toe_xz_fixed_to_explicit_new_anchor_contact_target_one",
     "weapon_materialization": "blade_direction_is_normalized_tip_minus_pommel; primary_and_secondary_grips_are_exact_interpolants_at_w0_socket_z",
     "first_reveal_rule": "root_xz_exactly_constant_for_source_frames_zero_through_seven"
@@ -34,7 +34,9 @@
     "maximum_grip_position_error_m": 0.01,
     "maximum_grip_angle_error_degrees": 3.0,
     "maximum_weapon_axis_length_error_m": 0.00001,
-    "maximum_single_support_root_distance_m": 0.35,
+    "maximum_single_support_phase_root_excursion_m": 0.09,
+    "maximum_dual_support_root_travel_m": 0.001,
+    "minimum_swing_toe_clearance_m": 0.04,
     "support_polygon_margin_m": 0.15,
     "minimum_pairwise_early_keypose_distance_m": 0.25,
     "maximum_crop_edge_pixels": 0
@@ -44,27 +46,32 @@
       "intent": "right_weighted_diagonal_chamber_then_forward_downward_cut",
       "weapon_ownership": "two_hand",
       "root_schedule": [
-        {"frames": [0, 7], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
-        {"frames": [8, 30], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.10]},
-        {"frames": [31, 39], "xz_start_m": [0.0, 0.10], "xz_end_m": [0.0, 0.12]},
-        {"frames": [40, 51], "xz_start_m": [0.0, 0.12], "xz_end_m": [0.0, 0.03]}
+        {"frames": [0, 15], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
+        {"frames": [16, 27], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.045]},
+        {"frames": [28, 35], "xz_start_m": [0.0, 0.045], "xz_end_m": [0.0, 0.075]},
+        {"frames": [36, 51], "xz_start_m": [0.0, 0.075], "xz_end_m": [0.0, 0.075]}
       ],
       "contact_schedule": {
-        "left": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_xz_m": [-0.14, 0.0]}],
+        "left": [
+          {"frames": [0, 27], "mode": "planted_world_anchor", "anchor_id": "L0"},
+          {"frames": [28, 35], "mode": "swing", "from_anchor": "L0", "to_anchor": "L1", "landing_offset_xz_m": [0.0, 0.06], "apex_frame": 31, "toe_clearance_m": 0.04},
+          {"frames": [36, 51], "mode": "planted_new_anchor", "anchor_id": "L1"}
+        ],
         "right": [
-          {"frames": [0, 11], "mode": "planted_world_anchor", "anchor_xz_m": [0.14, 0.0]},
-          {"frames": [12, 31], "mode": "swing_free"},
-          {"frames": [32, 51], "mode": "planted_new_anchor", "anchor_xz_m": [0.14, 0.12]}
+          {"frames": [0, 15], "mode": "planted_world_anchor", "anchor_id": "R0"},
+          {"frames": [16, 27], "mode": "swing", "from_anchor": "R0", "to_anchor": "R1", "landing_offset_xz_m": [0.0, 0.12], "apex_frame": 22, "toe_clearance_m": 0.04},
+          {"frames": [28, 51], "mode": "planted_new_anchor", "anchor_id": "R1"}
         ]
       },
-      "event_frames": {"weapon_contact": 30},
+      "event_frames": {"weapon_contact_proposal": 27},
       "keyposes": [
         {"frame": 0, "weapon_pommel_root_m": [-0.5, 1.15, 0.25], "weapon_tip_root_m": [0.4298949, 1.15, -0.989859867]},
-        {"frame": 4, "weapon_pommel_root_m": [-0.5, 1.05, 0.45], "weapon_tip_root_m": [0.24391592, 2.041887894, -0.4798949]},
+        {"frame": 2, "weapon_pommel_root_m": [-0.5, 1.1, 0.35], "weapon_tip_root_m": [0.348947641, 1.319083262, -0.927985697]},
+        {"frame": 3, "weapon_pommel_root_m": [-0.5, 1.075, 0.4], "weapon_tip_root_m": [0.299183068, 1.405696442, -0.886041719]},
         {"frame": 7, "weapon_pommel_root_m": [-0.48, 1.0, 0.48], "weapon_tip_root_m": [0.07793694, 1.74391592, -0.759859867]},
-        {"frame": 16, "weapon_pommel_root_m": [-0.3, 0.8, 0.5], "weapon_tip_root_m": [-0.3, 1.7298949, -0.739859867]},
-        {"frame": 30, "weapon_pommel_root_m": [0.0, 1.2, -0.1], "weapon_tip_root_m": [0.0, 0.2701051, 1.139859867]},
-        {"frame": 40, "weapon_pommel_root_m": [0.05, 1.4, -0.1], "weapon_tip_root_m": [0.05, 0.160140133, 0.8298949]},
+        {"frame": 15, "weapon_pommel_root_m": [-0.3, 0.8, 0.5], "weapon_tip_root_m": [-0.3, 1.7298949, -0.739859867]},
+        {"frame": 27, "weapon_pommel_root_m": [0.0, 1.2, -0.1], "weapon_tip_root_m": [0.0, 0.2701051, 1.139859867]},
+        {"frame": 35, "weapon_pommel_root_m": [0.05, 1.4, -0.1], "weapon_tip_root_m": [0.05, 0.160140133, 0.8298949]},
         {"frame": 51, "weapon_pommel_root_m": [-0.4, 0.9, 0.45], "weapon_tip_root_m": [0.34391592, 1.891887894, -0.4798949]}
       ]
     },
@@ -73,17 +80,18 @@
       "weapon_ownership": "two_hand",
       "root_schedule": [{"frames": [0, 51], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]}],
       "contact_schedule": {
-        "left": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_xz_m": [-0.14, 0.0]}],
-        "right": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_xz_m": [0.14, 0.0]}]
+        "left": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_id": "L0"}],
+        "right": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_id": "R0"}]
       },
       "event_frames": {"guard_window": [18, 34]},
       "keyposes": [
         {"frame": 0, "weapon_pommel_root_m": [0.55, 1.05, -0.1], "weapon_tip_root_m": [-0.689859867, 1.05, 0.8298949]},
-        {"frame": 4, "weapon_pommel_root_m": [0.55, 0.95, 0.18], "weapon_tip_root_m": [-0.937831841, 1.383950953, 0.18]},
+        {"frame": 2, "weapon_pommel_root_m": [0.55, 1.0, 0.04], "weapon_tip_root_m": [-0.778171341, 1.0, 0.83869763]},
+        {"frame": 3, "weapon_pommel_root_m": [0.55, 0.975, 0.11], "weapon_tip_root_m": [-0.817741509, 0.975, 0.838862251]},
         {"frame": 7, "weapon_pommel_root_m": [0.58, 1.1, 0.05], "weapon_tip_root_m": [-0.907831841, 1.1, 0.483950953]},
-        {"frame": 16, "weapon_pommel_root_m": [0.56, 1.12, 0.08], "weapon_tip_root_m": [-0.927831841, 1.12, 0.513950953]},
-        {"frame": 30, "weapon_pommel_root_m": [0.54, 1.1, 0.1], "weapon_tip_root_m": [-0.947831841, 1.1, 0.533950953]},
-        {"frame": 40, "weapon_pommel_root_m": [0.52, 1.06, -0.05], "weapon_tip_root_m": [-0.719859867, 1.06, 0.8798949]},
+        {"frame": 15, "weapon_pommel_root_m": [0.56, 1.12, 0.08], "weapon_tip_root_m": [-0.927831841, 1.12, 0.513950953]},
+        {"frame": 27, "weapon_pommel_root_m": [0.54, 1.1, 0.1], "weapon_tip_root_m": [-0.947831841, 1.1, 0.533950953]},
+        {"frame": 35, "weapon_pommel_root_m": [0.52, 1.06, -0.05], "weapon_tip_root_m": [-0.719859867, 1.06, 0.8798949]},
         {"frame": 51, "weapon_pommel_root_m": [0.5, 1.02, -0.08], "weapon_tip_root_m": [-0.739859867, 1.02, 0.8498949]}
       ]
     },
@@ -91,27 +99,32 @@
       "intent": "open_left_hand_reach_with_right_hand_weapon_held_low_outside",
       "weapon_ownership": "one_hand_right_visible_stow",
       "root_schedule": [
-        {"frames": [0, 7], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
-        {"frames": [8, 30], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.16]},
-        {"frames": [31, 39], "xz_start_m": [0.0, 0.16], "xz_end_m": [0.0, 0.16]},
-        {"frames": [40, 51], "xz_start_m": [0.0, 0.16], "xz_end_m": [0.0, 0.05]}
+        {"frames": [0, 15], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.0]},
+        {"frames": [16, 27], "xz_start_m": [0.0, 0.0], "xz_end_m": [0.0, 0.05]},
+        {"frames": [28, 35], "xz_start_m": [0.0, 0.05], "xz_end_m": [0.0, 0.09]},
+        {"frames": [36, 51], "xz_start_m": [0.0, 0.09], "xz_end_m": [0.0, 0.09]}
       ],
       "contact_schedule": {
-        "left": [{"frames": [0, 51], "mode": "planted_world_anchor", "anchor_xz_m": [-0.14, 0.0]}],
+        "left": [
+          {"frames": [0, 27], "mode": "planted_world_anchor", "anchor_id": "L0"},
+          {"frames": [28, 35], "mode": "swing", "from_anchor": "L0", "to_anchor": "L1", "landing_offset_xz_m": [0.0, 0.07], "apex_frame": 31, "toe_clearance_m": 0.04},
+          {"frames": [36, 51], "mode": "planted_new_anchor", "anchor_id": "L1"}
+        ],
         "right": [
-          {"frames": [0, 9], "mode": "planted_world_anchor", "anchor_xz_m": [0.14, 0.0]},
-          {"frames": [10, 31], "mode": "swing_free"},
-          {"frames": [32, 51], "mode": "planted_new_anchor", "anchor_xz_m": [0.14, 0.16]}
+          {"frames": [0, 15], "mode": "planted_world_anchor", "anchor_id": "R0"},
+          {"frames": [16, 27], "mode": "swing", "from_anchor": "R0", "to_anchor": "R1", "landing_offset_xz_m": [0.0, 0.13], "apex_frame": 22, "toe_clearance_m": 0.04},
+          {"frames": [28, 51], "mode": "planted_new_anchor", "anchor_id": "R1"}
         ]
       },
-      "event_frames": {"left_hand_contact": 30},
+      "event_frames": {"left_hand_contact_proposal": 27},
       "keyposes": [
         {"frame": 0, "weapon_pommel_root_m": [-0.55, 1.05, 0.35], "weapon_tip_root_m": [-1.10793694, 0.30608408, -0.889859867], "left_effector_root_m": [0.16, 1.04, 0.24]},
-        {"frame": 4, "weapon_pommel_root_m": [-0.56, 1.04, 0.36], "weapon_tip_root_m": [-1.11793694, 0.29608408, -0.879859867], "left_effector_root_m": [0.28, 1.1, 0.42]},
+        {"frame": 2, "weapon_pommel_root_m": [-0.555, 1.045, 0.355], "weapon_tip_root_m": [-1.167877555, 0.352181894, -0.888519678], "left_effector_root_m": [0.22, 1.07, 0.33]},
+        {"frame": 3, "weapon_pommel_root_m": [-0.5575, 1.0425, 0.3575], "weapon_tip_root_m": [-1.197402847, 0.375934534, -0.886755537], "left_effector_root_m": [0.25, 1.085, 0.375]},
         {"frame": 7, "weapon_pommel_root_m": [-0.58, 1.02, 0.38], "weapon_tip_root_m": [-1.32391592, 0.46206306, -0.859859867], "left_effector_root_m": [0.38, 1.16, 0.58]},
-        {"frame": 16, "weapon_pommel_root_m": [-0.6, 1.0, 0.4], "weapon_tip_root_m": [-1.34391592, 0.44206306, -0.839859867], "left_effector_root_m": [0.46, 1.18, 0.82]},
-        {"frame": 30, "weapon_pommel_root_m": [-0.58, 1.04, 0.36], "weapon_tip_root_m": [-1.13793694, 0.29608408, -0.879859867], "left_effector_root_m": [0.34, 1.08, 1.02]},
-        {"frame": 40, "weapon_pommel_root_m": [-0.56, 1.06, 0.34], "weapon_tip_root_m": [-1.11793694, 0.31608408, -0.899859867], "left_effector_root_m": [0.24, 1.06, 0.54]},
+        {"frame": 15, "weapon_pommel_root_m": [-0.6, 1.0, 0.4], "weapon_tip_root_m": [-1.34391592, 0.44206306, -0.839859867], "left_effector_root_m": [0.46, 1.18, 0.82]},
+        {"frame": 27, "weapon_pommel_root_m": [-0.58, 1.04, 0.36], "weapon_tip_root_m": [-1.13793694, 0.29608408, -0.879859867], "left_effector_root_m": [0.34, 1.08, 1.02]},
+        {"frame": 35, "weapon_pommel_root_m": [-0.56, 1.06, 0.34], "weapon_tip_root_m": [-1.11793694, 0.31608408, -0.899859867], "left_effector_root_m": [0.24, 1.06, 0.54]},
         {"frame": 51, "weapon_pommel_root_m": [-0.54, 1.06, 0.32], "weapon_tip_root_m": [-1.09793694, 0.31608408, -0.919859867], "left_effector_root_m": [0.14, 1.02, 0.28]}
       ]
     }

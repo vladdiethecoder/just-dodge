@@ -173,7 +173,7 @@
     },
     "ardy_keypose_generator": {
       "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
-      "sha256": "b658e5da4c2d4ba147c76e55287cca9f5c17fa79a0edec3f4b813d7e66ade222"
+      "sha256": "81ab9547faed2028aee32e69a4a2f0246700e54b315de2261391f2623c64e905"
     },
     "ardy_keypose_iteration_1": {
       "path": "assets/qa/pvp005_ardy_keyposes_v1.json",

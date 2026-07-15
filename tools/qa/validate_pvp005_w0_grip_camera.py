@@ -111,7 +111,13 @@ def main() -> None:
     left = weapon["left_grip_socket_m"]
     separation = math.sqrt(sum((a - b) ** 2 for a, b in zip(right, left)))
     require(abs(separation - weapon["grip_socket_separation_m"]) <= 1.0e-9, "W0 grip spacing drift")
-    require(weapon["bounds_min_m"][2] <= left[2] < right[2] <= 0.0, "W0 sockets leave the physical grip")
+    clearance = weapon["minimum_anchor_clearance_m"]
+    for name, limits in (("core", weapon["grip_core_z_m"]), ("wrap", weapon["grip_wrap_z_m"])):
+        for side, socket in (("left", left), ("right", right)):
+            require(
+                limits[0] + clearance <= socket[2] <= limits[1] - clearance,
+                f"W0 {side} socket leaves {name} with required clearance",
+            )
 
     actions = spec["actions"]
     require(tuple(actions) == ACTIONS, "W0 action set/order drift")
@@ -143,11 +149,14 @@ def main() -> None:
         assert_camera_contains(orbit, corners(envelope["min"], envelope["max"], [0.0, 0.0, 0.0]), f"orbit {azimuth}")
 
     first_person = spec["first_person_camera"] | {"crop_margin_px": margin}
-    assert_camera_contains(
-        first_person,
-        corners(envelope["min"], envelope["max"], first_person["opponent_root_m"]),
-        "first-person",
-    )
+    require(first_person["preflight_vertical_fov_degrees"] == [60.0, 70.0, 85.0], "first-person FOV preflight drift")
+    for vertical_fov in first_person["preflight_vertical_fov_degrees"]:
+        camera = first_person | {"vertical_fov_degrees": vertical_fov}
+        assert_camera_contains(
+            camera,
+            corners(envelope["min"], envelope["max"], camera["opponent_root_m"]),
+            f"first-person/{vertical_fov}",
+        )
 
     receipt_info = spec["source_failure_receipt"]
     receipt_path = ROOT / receipt_info["path"]

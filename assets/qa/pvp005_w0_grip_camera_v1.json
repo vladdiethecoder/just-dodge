@@ -15,9 +15,12 @@
     "local_forward_axis": "+Z",
     "bounds_min_m": [-0.1400000006, -0.0250000004, -0.3519999981],
     "bounds_max_m": [0.1400000006, 0.0250000004, 1.1978248358],
-    "right_grip_socket_m": [0.0, 0.0, -0.12],
-    "left_grip_socket_m": [0.0, 0.0, -0.28],
-    "grip_socket_separation_m": 0.16
+    "grip_core_z_m": [-0.27, -0.025],
+    "grip_wrap_z_m": [-0.271528721, -0.023471281],
+    "right_grip_socket_m": [0.0, 0.0, -0.105],
+    "left_grip_socket_m": [0.0, 0.0, -0.265],
+    "grip_socket_separation_m": 0.16,
+    "minimum_anchor_clearance_m": 0.005
   },
   "thresholds": {
     "maximum_active_grip_position_error_m": 0.01,
@@ -75,6 +78,7 @@
     "opponent_root_m": [0.0, 0.0, -4.0],
     "aim_point_m": [0.0, 1.2, -4.0],
     "vertical_fov_degrees": 70.0,
+    "preflight_vertical_fov_degrees": [60.0, 70.0, 85.0],
     "near_m": 0.1,
     "far_m": 100.0,
     "projection": "fixed_duel_camera_not_candidate_autofit"

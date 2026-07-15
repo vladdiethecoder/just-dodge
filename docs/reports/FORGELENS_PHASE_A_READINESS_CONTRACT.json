@@ -1,8 +1,14 @@
 {
   "schema": "just-dodge-forgelens-phase-a-readiness-v1",
+  "contract_version": 1,
   "phase": "A",
   "subject_revision": "3a88f4a79b6f8d08941ffe8da22b4985b32e28e1",
   "subject_ref": "refs/heads/pvp-005-readable-live-motion",
+  "evaluation": {
+    "revision_rule": "runtime_HEAD_must_be_a_descendant_of_subject_revision",
+    "forgelens_sources_must_be_tracked": true,
+    "forgelens_source_tree_sha256": "b42b554f61ac4a33d9db059f23c8da8be281c149a58005f1acdb969d15fa94c6"
+  },
   "playable_proof": false,
   "verdict": "blocked_pending_evidence",
   "authority": {
@@ -50,9 +56,10 @@
       "required": true,
       "status": "contract_only_not_admission",
       "visual_contract_path": "assets/qa/pvp005_visual_harness_v1.json",
-      "visual_contract_sha256": "6427ed04e3ce6cd1cffdb81c9921e6ccc3e31b1d4691745ddbfc3b647aeb32d4",
+      "visual_contract_sha256": "fec6cfe8f19d5c353961b1d1fc10f5a9642c73a8d29481476a878874b98a40f9",
       "candidate_receipt_path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
       "candidate_receipt_sha256": "3725510a3c57d01f8d430b83e951b2068daa7e5d90f7d192c80f7916b84ee054",
+      "historical_receipt_visual_contract_sha256": "3317801ee19eff8fc996d1145def42157a331028e5dd31c2afb86725cc1f727c",
       "required_repeat_count": 2,
       "required_exact_repeat": true,
       "observed_exact_repeat": true,

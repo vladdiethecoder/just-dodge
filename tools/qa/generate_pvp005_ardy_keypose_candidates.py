@@ -13,12 +13,12 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SPEC = ROOT / "assets/qa/pvp005_ardy_keyposes_v1.json"
 DEFAULT_ARDY = Path(os.environ.get("JUST_DODGE_ARDY_ROOT", "/run/media/vdubrov/NVMe-Storage1/ardy"))
+PVP005_GENERATION_ENABLED = False
+GENERATION_DISABLED_MESSAGE = "PVP-005 ARDY generation is disabled pending a content-addressed authorization certificate"
 
 
 def sha256(path: Path) -> str:
@@ -129,6 +129,11 @@ def build_constraints(model, keyframes: list[dict[str, object]], device: str):
 
 
 def main() -> None:
+    if not PVP005_GENERATION_ENABLED:
+        raise SystemExit(GENERATION_DISABLED_MESSAGE)
+
+    import numpy as np
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spec", type=Path, default=DEFAULT_SPEC)
     parser.add_argument("--ardy-root", type=Path, default=DEFAULT_ARDY)

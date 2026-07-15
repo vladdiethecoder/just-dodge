@@ -28,6 +28,7 @@ jobs:
       - run: python3 tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
       - run: node --check tools/asset_review/app.js
       - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
       - run: RUSTFLAGS=-Dwarnings cargo check --locked --all-targets
       - run: RUSTFLAGS=-Dwarnings cargo test --locked --all-targets
       - run: cargo test --locked --lib milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash -- --nocapture

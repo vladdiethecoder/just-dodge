@@ -27,6 +27,16 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def tree_sha256(paths: list[str]) -> str:
+    digest = hashlib.sha256()
+    for relative in sorted(paths):
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update((ROOT / relative).read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def git(*arguments: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ("git", *arguments),
@@ -41,6 +51,7 @@ def git(*arguments: str) -> subprocess.CompletedProcess[str]:
 def main() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
     require(contract.get("schema") == "just-dodge-forgelens-phase-a-readiness-v1", "bad Phase-A schema")
+    require(contract.get("contract_version") == 1, "Phase-A contract version drift")
     require(contract.get("phase") == "A", "Phase-A identity drift")
     require(contract.get("subject_revision") == EXPECTED_SUBJECT, "subject revision drift")
     require(contract.get("playable_proof") is False, "PLAYABLE-PROOF must remain false")
@@ -58,10 +69,15 @@ def main() -> None:
     require(authority["ardy"] == "kinematic_proposal_only", "ARDY authority drift")
 
     profile = contract["forgelens_profile"]
+    required_files = list(profile["required_files"])
     for relative, expected in profile["required_files"].items():
         path = ROOT / relative
         require(path.is_file(), f"missing ForgeLens file: {relative}")
         require(sha256(path) == expected, f"ForgeLens file hash drift: {relative}")
+        require(git("ls-files", "--error-unmatch", "--", relative).returncode == 0, f"untracked ForgeLens source: {relative}")
+    evaluation = contract["evaluation"]
+    require(evaluation["forgelens_sources_must_be_tracked"] is True, "ForgeLens tracking requirement weakened")
+    require(tree_sha256(required_files) == evaluation["forgelens_source_tree_sha256"], "ForgeLens source-tree hash drift")
     browser = profile["browser_authority"]
     require(all(browser.values()), "ForgeLens browser authority weakened")
 
@@ -75,6 +91,7 @@ def main() -> None:
     require(sha256(visual_contract) == harness["visual_contract_sha256"], "visual contract hash drift")
     require(sha256(receipt_path) == harness["candidate_receipt_sha256"], "candidate receipt hash drift")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    require(receipt["visual_contract_sha256"] == harness["historical_receipt_visual_contract_sha256"], "historical receipt/config binding drift")
     require(receipt["exact_repeat_pass"] is True, "deterministic repeat evidence missing")
     require(receipt["pass"] is False, "snapshot must not claim candidate admission")
 
