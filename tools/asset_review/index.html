@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>ForgeLens — Just Dodge Asset Review</title>
+  <link rel="stylesheet" href="/styles.css?v=23">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" aria-label="ForgeLens home">
+      <span class="brand-mark" aria-hidden="true">FL</span>
+      <span>ForgeLens</span>
+      <span class="product-tag">Just Dodge</span>
+    </div>
+    <div class="asset-context">
+      <span id="familyCrumb" class="muted">Asset pipeline</span>
+      <span class="crumb-separator">/</span>
+      <strong id="assetCrumb">Select an asset</strong>
+      <span id="saveState" class="save-state">No review loaded</span>
+    </div>
+    <div class="top-actions">
+      <button id="commandButton" class="ghost-button" type="button" title="Open command palette (Ctrl+K)"><kbd>Ctrl K</kbd> Commands</button>
+      <label class="ghost-button file-button" title="Inspect a local GLB without uploading it">
+        Open GLB
+        <input id="fileInput" type="file" accept=".glb,model/gltf-binary">
+      </label>
+      <button id="exportButton" class="ghost-button" type="button">Export brief</button>
+      <button id="submitReportButton" class="primary-button" type="button">Submit report</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="library-panel" aria-label="Asset library">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Repository index</span>
+          <h1>Asset pipeline</h1>
+        </div>
+        <span id="assetCount" class="count-badge">0</span>
+      </div>
+      <label class="search-box">
+        <span aria-hidden="true">⌕</span>
+        <input id="assetSearch" type="search" placeholder="Filter assets, versions, stages" autocomplete="off">
+      </label>
+      <div class="filter-row" role="group" aria-label="Asset stage filter">
+        <button class="filter-chip is-active" type="button" data-stage="all">All</button>
+        <button class="filter-chip" type="button" data-stage="Generated">Generate</button>
+        <button class="filter-chip" type="button" data-stage="DCC">DCC</button>
+        <button class="filter-chip" type="button" data-stage="Runtime">Runtime</button>
+      </div>
+      <div id="assetList" class="asset-list" role="listbox" aria-label="Indexed assets"></div>
+      <div class="library-footer">
+        <span>Loopback only</span>
+        <span>No asset mutation</span>
+      </div>
+    </aside>
+
+    <main class="review-workspace">
+      <section class="pipeline-strip" aria-label="Selected asset pipeline">
+        <div class="pipeline-title">
+          <span class="eyebrow">Version lineage</span>
+          <strong id="pipelineFamily">No family selected</strong>
+        </div>
+        <div id="pipelineStages" class="pipeline-stages"></div>
+      </section>
+
+      <section class="viewport-panel" aria-label="Interactive 3D viewport">
+        <div class="viewport-toolbar" role="toolbar" aria-label="Viewport tools">
+          <div class="tool-group">
+            <button class="tool-button is-active" type="button" data-view-mode="material">Material</button>
+            <button class="tool-button" type="button" data-view-mode="clay">Clay</button>
+            <button class="tool-button" type="button" data-view-mode="normals">Normals</button>
+            <button class="tool-button" type="button" data-view-mode="wireframe">Wire</button>
+          </div>
+          <span class="toolbar-divider"></span>
+          <div class="tool-group">
+            <button id="gridToggle" class="tool-button is-active" type="button">Grid</button>
+            <button id="compareToggle" class="tool-button" type="button" disabled>Compare</button>
+            <button id="pinTool" class="tool-button pin-tool" type="button">Add surface pin</button>
+          </div>
+          <span class="toolbar-spacer"></span>
+          <button id="resetCamera" class="tool-button" type="button">Frame object</button>
+          <button id="captureButton" class="tool-button" type="button">Capture PNG</button>
+        </div>
+
+        <div id="viewport" class="viewport">
+          <canvas id="glCanvas" aria-label="3D model viewport"></canvas>
+          <div id="pinLayer" class="pin-layer" aria-live="polite"></div>
+          <div id="viewportEmpty" class="viewport-empty">
+            <span class="empty-glyph" aria-hidden="true">◇</span>
+            <h2>Select a repository GLB</h2>
+            <p>Orbit with drag · pan with Shift+drag · zoom with wheel</p>
+          </div>
+          <div id="loadingState" class="loading-state" hidden>
+            <span class="loading-bar"></span>
+            <span>Reading model geometry…</span>
+          </div>
+          <div class="axis-cue" aria-hidden="true"><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span></div>
+          <div class="viewport-help">LMB orbit · Shift+LMB pan · Wheel dolly · P pin</div>
+        </div>
+
+        <div id="animationBar" class="animation-bar" hidden>
+          <button id="animationPlay" class="animation-play" type="button" aria-label="Play animation">▶</button>
+          <label class="clip-select"><span>Clip</span><select id="animationClip"></select></label>
+          <input id="animationTimeline" class="animation-timeline" type="range" min="0" max="1" step="0.001" value="0" aria-label="Animation timeline">
+          <output id="animationTime">0.00 / 0.00s</output>
+          <label class="speed-select"><span>Speed</span><select id="animationSpeed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+          <button id="animationLoop" class="tool-button is-active" type="button">Loop</button>
+          <button id="neuralCapture" class="neural-button" type="button">Prepare neural gate</button>
+        </div>
+
+        <div class="comparison-tray">
+          <div class="comparison-slot">
+            <span class="slot-label">A · Active</span>
+            <strong id="activeSlot">—</strong>
+          </div>
+          <span class="comparison-arrow" aria-hidden="true">↔</span>
+          <div class="comparison-slot comparison-drop" id="compareSlot" tabindex="0" role="button">
+            <span class="slot-label">B · Compare</span>
+            <strong id="compareSlotText">Choose another version</strong>
+          </div>
+          <div id="comparisonDelta" class="comparison-delta">Select “Compare” on a library item</div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector-panel" aria-label="Asset inspector">
+      <nav class="inspector-tabs" aria-label="Inspector views">
+        <button class="inspector-tab is-active" type="button" data-tab="review">Review</button>
+        <button class="inspector-tab" type="button" data-tab="details">Details</button>
+        <button class="inspector-tab" type="button" data-tab="evidence">Evidence</button>
+      </nav>
+
+      <div id="reviewTab" class="tab-content is-active" data-tab-panel="review">
+        <section class="inspector-section decision-section">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Design decision</span>
+              <h2>Review state</h2>
+            </div>
+            <span id="openCommentCount" class="count-badge">0</span>
+          </div>
+          <div class="decision-grid" role="group" aria-label="Review decision">
+            <button type="button" data-decision="approved">Approve</button>
+            <button type="button" data-decision="changes-requested">Request changes</button>
+            <button type="button" data-decision="rejected">Reject</button>
+          </div>
+        </section>
+
+        <section class="inspector-section">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Acceptance matrix</span>
+              <h2>Design gates</h2>
+            </div>
+            <button id="resetChecklist" class="text-button" type="button">Reset</button>
+          </div>
+          <div id="checklist" class="checklist"></div>
+        </section>
+
+        <section id="neuralGateSection" class="inspector-section neural-gate-section" hidden>
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Neural animation acceptance</span>
+              <h2>Motion quality gate</h2>
+            </div>
+            <span id="neuralGateStatus" class="neural-status">Not evaluated</span>
+          </div>
+          <p class="gate-contract">A human decision cannot pass animation until a neural visual audit covers semantic intent, temporal coherence, contacts, balance, deformation, weapon grip, and physical plausibility.</p>
+          <div id="neuralCriteria" class="neural-criteria"></div>
+          <div id="neuralSummary" class="neural-summary">Use “Prepare neural gate” to save a deterministic eight-frame evidence sheet for Hermes vision review.</div>
+        </section>
+
+        <section class="inspector-section comments-section">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Spatial feedback</span>
+              <h2>Comments</h2>
+            </div>
+            <button id="addGeneralComment" class="small-button" type="button">Add note</button>
+          </div>
+          <div id="commentComposer" class="comment-composer" hidden>
+            <div id="composerPoint" class="composer-point">General comment</div>
+            <textarea id="commentText" rows="4" maxlength="8000" placeholder="State the observed defect and the measurable correction…"></textarea>
+            <div class="composer-fields">
+              <label>Discipline<select id="commentCategory"></select></label>
+              <label>Severity<select id="commentSeverity"></select></label>
+            </div>
+            <div class="composer-actions">
+              <button id="cancelComment" class="ghost-button" type="button">Cancel</button>
+              <button id="saveComment" class="primary-button" type="button">Save comment</button>
+            </div>
+          </div>
+          <div id="commentList" class="comment-list"></div>
+        </section>
+
+        <section class="inspector-section report-submit-section">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Human handoff</span>
+              <h2>Submit report</h2>
+            </div>
+            <span id="reportSubmissionStatus" class="submission-status">Draft</span>
+          </div>
+          <label class="report-summary-label" for="reportSummary">Summary for the team</label>
+          <textarea id="reportSummary" rows="4" maxlength="8000" placeholder="Summarize the decision and highest-priority correction. Detailed observations remain in comments."></textarea>
+          <p id="reportReceipt" class="report-receipt">Choose a decision, then submit this review directly.</p>
+          <p id="reportPlanStatus" class="report-plan-status">Task planning starts after submission.</p>
+          <button id="submitReportInline" class="primary-button submit-report-button" type="button">Submit human report</button>
+        </section>
+      </div>
+
+      <div id="detailsTab" class="tab-content" data-tab-panel="details">
+        <section class="inspector-section">
+          <span class="eyebrow">Measured from GLB</span>
+          <h2>Technical profile</h2>
+          <dl id="metricsList" class="metrics-list"></dl>
+        </section>
+        <section class="inspector-section">
+          <span class="eyebrow">Provenance</span>
+          <h2>Artifact identity</h2>
+          <dl id="identityList" class="metrics-list"></dl>
+        </section>
+        <section id="replayRunSection" class="inspector-section" hidden>
+          <span class="eyebrow">Revision-bound workflow</span>
+          <h2>Replay ReviewRun</h2>
+          <dl id="replayRunMetrics" class="metrics-list"></dl>
+          <p id="replayRunScope" class="report-receipt"></p>
+          <div id="replayCaptureGrid" class="evidence-grid"></div>
+          <label class="report-summary-label" for="replayDecision">Human decision</label>
+          <select id="replayDecision">
+            <option value="changes-requested">Request changes</option>
+            <option value="approved">Approve evidence</option>
+            <option value="rejected">Reject evidence</option>
+          </select>
+          <label class="report-summary-label" for="replaySummary">Review summary</label>
+          <textarea id="replaySummary" rows="3" maxlength="8000" placeholder="Review the bound replay, verifier, truth hash, and captures."></textarea>
+          <p id="replayReceipt" class="report-receipt">Not submitted.</p>
+          <button id="submitReplayReview" class="primary-button" type="button">Submit replay review</button>
+        </section>
+      </div>
+
+      <div id="evidenceTab" class="tab-content" data-tab-panel="evidence">
+        <section class="inspector-section evidence-section">
+          <div class="section-title-row">
+            <div>
+              <span class="eyebrow">Pipeline evidence</span>
+              <h2>Reference & QA views</h2>
+            </div>
+            <span id="evidenceCount" class="count-badge">0</span>
+          </div>
+          <div id="evidenceGrid" class="evidence-grid"></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <dialog id="commandDialog" class="command-dialog">
+    <form method="dialog">
+      <div class="command-search">
+        <span aria-hidden="true">⌕</span>
+        <input id="commandSearch" type="search" placeholder="Type a command…" autocomplete="off">
+        <kbd>Esc</kbd>
+      </div>
+      <div id="commandList" class="command-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="imageDialog" class="image-dialog">
+    <form method="dialog">
+      <button class="image-close" aria-label="Close evidence image">×</button>
+      <img id="imageDialogPreview" alt="Expanded pipeline evidence">
+      <p id="imageDialogCaption"></p>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js?v=23"></script>
+</body>
+</html>

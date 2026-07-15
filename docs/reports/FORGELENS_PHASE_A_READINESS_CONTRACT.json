@@ -1,0 +1,120 @@
+{
+  "schema": "just-dodge-forgelens-phase-a-readiness-v1",
+  "phase": "A",
+  "subject_revision": "3a88f4a79b6f8d08941ffe8da22b4985b32e28e1",
+  "subject_ref": "refs/heads/pvp-005-readable-live-motion",
+  "playable_proof": false,
+  "verdict": "blocked_pending_evidence",
+  "authority": {
+    "forgelens": "evidence_capture_and_human_review_only",
+    "ardy": "kinematic_proposal_only",
+    "motionbricks": "presentation_transition_candidate_only",
+    "combat_truth": "deterministic_physics_only"
+  },
+  "prohibitions": {
+    "additional_candidate_motion_generation": true,
+    "visual_acceptance_claim": true,
+    "runtime_motion_promotion": true,
+    "bind_pose_or_independent_weapon_fallback_as_evidence": true
+  },
+  "forgelens_profile": {
+    "tool_profile": "forgelens-phase-a-pvp005/v1",
+    "required_files": {
+      "tools/asset_review.py": "d0196f243ee5d35c1f35c406f25beb279d8d609c72ce1084326bc8649d681e71",
+      "tools/asset_review/README.md": "8da1acd1afa2ccd363bad8407a9c90c02c7f03eefda35819d838e0bf728913e9",
+      "tools/asset_review/index.html": "2448bdd2d0e9f1143b9b8026607481bc50e20217927c1e6c71e3aba578d94ccc",
+      "tools/asset_review/styles.css": "82dd25340bb4ae248f8ad2ce75d743b43619eec4055d8a938546eb027f9a3322",
+      "tools/asset_review/app.js": "2307998eea3ba71b75554cc2be80749a20c0a8c8cc920d1f3f835a4c4dad67e8",
+      "tools/qa/test_asset_review.py": "ba856044ec4b3f7683cf4a7ab69955d379bb2ec6a6a8aec800c5e8a7d7cd1b11"
+    },
+    "browser_authority": {
+      "regular_human_browser_required": true,
+      "loopback_only": true,
+      "one_use_bootstrap": true,
+      "http_only_same_site_cookie": true,
+      "origin_csrf_required_for_mutation": true,
+      "server_derived_human_actor": true
+    },
+    "review_run_binding": [
+      "subject_revision",
+      "replay_bytes",
+      "replay_verifier_bytes",
+      "verifier_stdout",
+      "capture_bytes",
+      "capture_set_hash",
+      "forgelens_tool_profile"
+    ]
+  },
+  "required_gates": {
+    "deterministic_harness": {
+      "required": true,
+      "status": "contract_only_not_admission",
+      "visual_contract_path": "assets/qa/pvp005_visual_harness_v1.json",
+      "visual_contract_sha256": "6427ed04e3ce6cd1cffdb81c9921e6ccc3e31b1d4691745ddbfc3b647aeb32d4",
+      "candidate_receipt_path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
+      "candidate_receipt_sha256": "3725510a3c57d01f8d430b83e951b2068daa7e5d90f7d192c80f7916b84ee054",
+      "required_repeat_count": 2,
+      "required_exact_repeat": true,
+      "observed_exact_repeat": true,
+      "observed_candidate_pass": false
+    },
+    "uncropped_evidence": {
+      "required": true,
+      "status": "blocked",
+      "maximum_allowed_crop_failures": 0,
+      "observed_orbit_crop_failures": {
+        "strike": 256,
+        "block": 110,
+        "grab": 156
+      },
+      "observed_first_person_crop_failures": {
+        "strike": 16,
+        "block": 16,
+        "grab": 16
+      },
+      "required_evidence": "complete_actor_and_weapon_in_every_orbit_view_and_every_first_eight_frame_duel_camera_strip"
+    },
+    "coherent_grip": {
+      "required": true,
+      "status": "blocked",
+      "maximum_socket_error_m": 0.01,
+      "observed_left_grip_error_range_m": {
+        "strike": [0.2888852, 0.35161707],
+        "block": [0.45207036, 0.49611142],
+        "grab": [0.5082262, 0.6848229]
+      }
+    },
+    "canonical_media": {
+      "required": true,
+      "status": "blocked",
+      "verifier": "tools/verify_latest_media.py",
+      "required_paths": [
+        "docs/media/latest/rendering-overview.png",
+        "docs/media/latest/gameplay-demo.mp4",
+        "docs/media/latest/manifest.json",
+        "docs/media/latest/README.md"
+      ],
+      "observed_missing": [
+        "docs/media/latest/rendering-overview.png",
+        "docs/media/latest/gameplay-demo.mp4",
+        "docs/media/latest/manifest.json"
+      ]
+    },
+    "blinded_human": {
+      "required": true,
+      "status": "blocked",
+      "acceptance_packet": "docs/reports/PVP005_ACCEPTANCE_PACKET.json",
+      "observed_acceptance_packet_present": false,
+      "minimum_judgments_per_action": 20,
+      "minimum_accuracy_per_action": 0.8,
+      "maximum_pairwise_confusion": 0.2,
+      "required_actions": ["strike", "block", "grab"],
+      "first_six_frames_only": true
+    }
+  },
+  "promotion_rule": "Every required gate must pass on one revision-bound ForgeLens ReviewRun before motion admission or visual acceptance. A missing, stale, cropped, noncanonical, unblinded, or cross-revision artifact fails closed.",
+  "next_units": [
+    "W0_COHERENT_GRIP_CAMERA_FRAMING",
+    "ARDY_ACTION_SPECIFIC_ROOT_CONTACT_KEYPOSE_REDESIGN"
+  ]
+}
