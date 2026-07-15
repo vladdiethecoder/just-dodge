@@ -15,6 +15,10 @@ python3 tools/qa/pvp005_visual_contract.py
 python3 tools/qa/test_pvp005_visual_contract.py
 RUSTFLAGS='-D warnings' cargo clippy --locked --all-targets -- -D warnings
 RUSTFLAGS='-D warnings' cargo test --locked --all-targets -- --test-threads=1
+(cd assets && sha256sum --check motionbricks_runtime.sha256)
+RUSTFLAGS='-D warnings' cargo test --locked --lib \
+    motion_runtime::tests::preloaded_m3_clips_are_finite_rigid_and_cached -- \
+    --ignored --exact --test-threads=1
 
 VERIFY_ROOT="$ROOT/target/playable-package-verify"
 rm -rf -- "$VERIFY_ROOT"

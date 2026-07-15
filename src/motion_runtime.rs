@@ -179,6 +179,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires the separately hydrated, manifest-verified MotionBricks artifact bundle"]
     fn preloaded_m3_clips_are_finite_rigid_and_cached() {
         let runtime = MotionRuntime::load(concat!(env!("CARGO_MANIFEST_DIR"), "/assets"))
             .expect("M3 source cache must load valid local artifacts and clips");
