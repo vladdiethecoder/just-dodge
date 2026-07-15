@@ -29,6 +29,7 @@ mod input;
 mod motion;
 mod motion_plan;
 mod motion_service;
+mod neural_plan;
 mod renderer;
 mod replay;
 mod retarget;
