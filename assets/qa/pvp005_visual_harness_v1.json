@@ -173,7 +173,7 @@
     },
     "ardy_keypose_generator": {
       "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
-      "sha256": "81ab9547faed2028aee32e69a4a2f0246700e54b315de2261391f2623c64e905"
+      "sha256": "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7"
     },
     "ardy_keypose_iteration_1": {
       "path": "assets/qa/pvp005_ardy_keyposes_v1.json",
@@ -185,7 +185,7 @@
     },
     "ardy_candidate_screen": {
       "path": "tools/qa/screen_pvp005_motion_candidates.py",
-      "sha256": "2b81a623b21b5b1c622f6abf2c1caf68209e11168255ab9683ec09642a4b8190"
+      "sha256": "2e408bf5be88d70006bd59e7c33fbebf57eafd6398ece64bc2c0a25db1899bb4"
     },
     "permanent_adversarial_contract": {
       "path": "docs/quality/ADVERSARIAL_VISUAL_CONTRACT.md",

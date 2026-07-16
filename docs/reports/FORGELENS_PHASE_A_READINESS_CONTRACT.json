@@ -148,7 +148,7 @@
     "replay_verifier_allowlist": [
       {
         "path": "target/release/m3_match",
-        "sha256": "f281506b33741499fbfe64d32e11ab2682c3419b5ed6d0b42037568dc1f4e09c",
+        "sha256": "6b61eb630dd2a978ec10308b3ca313722c0a80c3fc5c691979b4ec92d9875bd2",
         "build_command": "cargo build --release --bin m3_match",
         "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
         "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
@@ -161,7 +161,7 @@
       "required": true,
       "status": "contract_only_not_admission",
       "visual_contract_path": "assets/qa/pvp005_visual_harness_v1.json",
-      "visual_contract_sha256": "fec6cfe8f19d5c353961b1d1fc10f5a9642c73a8d29481476a878874b98a40f9",
+      "visual_contract_sha256": "595ce5d29f5fd161b5f8ff65a484f24450763c111b26bf6b2188dce86149ee77",
       "candidate_receipt_path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
       "candidate_receipt_sha256": "3725510a3c57d01f8d430b83e951b2068daa7e5d90f7d192c80f7916b84ee054",
       "historical_receipt_visual_contract_sha256": "3317801ee19eff8fc996d1145def42157a331028e5dd31c2afb86725cc1f727c",
