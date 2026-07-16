@@ -1,0 +1,90 @@
+{
+  "schema": "just-dodge-pvp005-ardy-v4-generation-receipt-v1",
+  "status": "rejected_before_admission",
+  "authority": "offline_motion_proposal_only",
+  "runtime_admitted": false,
+  "visual_accepted": false,
+  "playable_proof": false,
+  "batch": {
+    "generated_candidates": 6,
+    "actions": [
+      "strike",
+      "block",
+      "grab"
+    ],
+    "seeds": [
+      2026071541,
+      2026071542
+    ],
+    "diffusion_steps": 10,
+    "constraint_weight": 3.0,
+    "text_conditioning": false
+  },
+  "provenance": {
+    "spec_path": "assets/qa/pvp005_ardy_action_endpoints_v4.json",
+    "spec_sha256": "df935369635034cbff346ad829a44cc85c929318865db0183e241af53bba074b",
+    "materialized_sha256": "06f7bbf2a600ce5068bdc9d73e35eabf9905762859a06fbe22c728bb36337a1c",
+    "authorization_path": "assets/qa/pvp005_ardy_v4_generation_authorization_v1.json",
+    "authorization_sha256": "3fbd63da8501b50b04266643ffa41bb609267e8ee4f0c6be56fa3153459de0a7",
+    "generator_path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
+    "generator_sha256": "5f7950e66f2e08b76c6ec23a3c6c9937b6fe92cd610dc5dbf12fc4ee1670faeb",
+    "ardy_source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+    "model": "ARDY-G1-RP-25FPS-Horizon52",
+    "model_snapshot": "059b8007df0ba194a006a877b59a563955ac7b70",
+    "generation_manifest_path": "validation_evidence/pvp005-ardy-v4-generation-20260716T001310Z/generation_manifest.json",
+    "generation_manifest_sha256": "12b4b8390c8713092e07a16df439cce92e2c862b86dc5e579acaaae1433ec271",
+    "candidate_screen_path": "validation_evidence/pvp005-ardy-v4-screen-20260716T001310Z/candidate_screen.json",
+    "candidate_screen_sha256": "bcb72c9c4a4f5dae29d00cd20c7a1ddc693c00850fc04efa55ee207339c958b0"
+  },
+  "structural_screen": {
+    "strike_passed": 0,
+    "block_passed": 0,
+    "grab_passed": 0,
+    "expected_per_action": 2,
+    "max_observed_angular_step_rad": 3.081496238708496,
+    "max_observed_joint_step_m": 0.29733672738075256,
+    "max_observed_contact_foot_drift_m": 0.24371296167373657,
+    "limits": {
+      "max_angular_step_rad": 0.7,
+      "max_joint_step_m": 0.2,
+      "max_contact_foot_drift_m": 0.02
+    }
+  },
+  "constraint_residual_screen": {
+    "root_xz_residual_m_range": [
+      0.024394,
+      0.105777
+    ],
+    "hand_keypose_residual_m_range": [
+      0.478751,
+      1.018326
+    ],
+    "planted_foot_residual_m_range": [
+      0.054752,
+      0.133389
+    ],
+    "predicted_contact_mismatch_fraction_range": [
+      0.0,
+      0.192
+    ]
+  },
+  "blind_visual_screen": {
+    "first_eight_action_distinction": false,
+    "strike_reads_as_coherent_overhead_strike": false,
+    "block_reads_as_stationary_guard_or_indeterminate": true,
+    "grab_reads_as_coherent_weapon_retained_lunge": false,
+    "common_observation": "both candidates per action remain near-static with minor upper-limb repositioning and insufficient whole-body action progression"
+  },
+  "mechanism": {
+    "position_constraint_path": "ARDY global-position constraints populate local_joints_positions features",
+    "rendered_pose_path": "ARDY inverse defaults to posed_joints_from=rotations and reconstructs joints from generated rotation channels",
+    "contact_path": "ARDY create_conditions does not materialize foot_contact constraints, so foot contacts remain model predictions",
+    "official_postprocess_boundary": "pinned ARDY scripts/generate.py disables postprocessing for G1 because it does not work well for this model"
+  },
+  "decision": {
+    "same_path_more_seeds": "forbidden",
+    "same_position_only_conditioning_path": "halted",
+    "runtime_promotion": "forbidden",
+    "next_falsifier": "provide rotation-aware or full-body constraints whose compiled motion mask covers the rotation channels used by FK, and prove sub-centimeter hand/foot endpoint residuals plus declared contact parity before another visual candidate batch"
+  }
+}

@@ -581,6 +581,9 @@ impl Session {
     }
 
     pub fn tick(&mut self) {
+        if self.game.snapshot().phase == Phase::MatchResult {
+            return;
+        }
         self.game.tick();
         self.replay.hash_trace.push(self.game.truth_hash());
     }
@@ -892,6 +895,31 @@ mod tests {
         );
         assert_eq!(session.game.snapshot().phase, Phase::Observe);
         assert_eq!(session.game.snapshot().seed, 99);
+    }
+
+    #[test]
+    fn terminal_session_does_not_append_post_result_replay_ticks() {
+        let mut session = Session::new(0x4d33);
+        while session.game.snapshot().phase != Phase::MatchResult {
+            resolve_exchange(&mut session, Action::Strike, Action::Grab);
+            while matches!(
+                session.game.snapshot().phase,
+                Phase::Consequence | Phase::Observe
+            ) {
+                session.tick();
+            }
+        }
+
+        let terminal = session.game.snapshot().clone();
+        let terminal_hash = session.game.truth_hash();
+        let terminal_trace_len = session.replay.hash_trace.len();
+        for _ in 0..8 {
+            session.tick();
+        }
+
+        assert_eq!(session.game.snapshot(), &terminal);
+        assert_eq!(session.game.truth_hash(), terminal_hash);
+        assert_eq!(session.replay.hash_trace.len(), terminal_trace_len);
     }
 
     #[test]

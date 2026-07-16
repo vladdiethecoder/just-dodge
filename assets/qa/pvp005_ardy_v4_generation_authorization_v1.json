@@ -1,0 +1,37 @@
+{
+  "schema": "just-dodge-pvp005-ardy-v4-generation-authorization-v1",
+  "status": "authorized_one_bounded_offline_probe_batch",
+  "authorization_basis": "project_owner_instruction: proceed through the next stages of our game development",
+  "authorized_by": "project_owner",
+  "issued_utc": "2026-07-16T00:13:10Z",
+  "one_shot": true,
+  "output_path": "validation_evidence/pvp005-ardy-v4-generation-20260716T001310Z",
+  "spec_path": "assets/qa/pvp005_ardy_action_endpoints_v4.json",
+  "spec_sha256": "df935369635034cbff346ad829a44cc85c929318865db0183e241af53bba074b",
+  "generator_path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
+  "generator_sha256": "5f7950e66f2e08b76c6ec23a3c6c9937b6fe92cd610dc5dbf12fc4ee1670faeb",
+  "materialized_sha256": "06f7bbf2a600ce5068bdc9d73e35eabf9905762859a06fbe22c728bb36337a1c",
+  "condition_sha256": {
+    "strike": "ea8f7392445479d4c52a2ab7bb1b0de4c78be6f01f8cce253d722f5f85f10866",
+    "block": "8f3c62ad915ea91588ed82edf46c61092ff2703ce303204d3c252ec1b4a4de53",
+    "grab": "65c9e03a2bec2f85dcb141a85c098bae8d2efbb8fb8ab9202ced3d6aba0a565c"
+  },
+  "ardy_source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+  "model": "ARDY-G1-RP-25FPS-Horizon52",
+  "actions": [
+    "strike",
+    "block",
+    "grab"
+  ],
+  "seeds": [
+    2026071541,
+    2026071542
+  ],
+  "diffusion_steps": 10,
+  "constraint_weight": 3.0,
+  "max_candidates": 6,
+  "text_conditioning": false,
+  "runtime_admission": false,
+  "truth_authority": false,
+  "playable_proof": false
+}

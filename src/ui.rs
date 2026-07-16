@@ -7,7 +7,7 @@
 use crate::input::{Action, PlanInput};
 use bytemuck::{Pod, Zeroable};
 use glam::Vec2;
-use just_dodge::milestone3::{Phase, Side, Snapshot};
+use just_dodge::milestone3::{BodyRegion, ContactSurface, Phase, Side, Snapshot};
 use just_dodge::runtime_flow::{ESTABLISHING_TICKS, FlowStage};
 
 const GLYPH_W: f32 = 5.0;
@@ -54,6 +54,148 @@ pub struct UiFrame<'a> {
     pub establishing_remaining: u16,
     pub width: u32,
     pub height: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FeedbackTone {
+    Reveal,
+    Whiff,
+    Guard,
+    PlayerHit,
+    OpponentHit,
+}
+
+impl FeedbackTone {
+    const fn color(self) -> [f32; 4] {
+        match self {
+            Self::Reveal => [1.0, 0.82, 0.24, 1.0],
+            Self::Whiff => [0.78, 0.82, 0.9, 1.0],
+            Self::Guard => [0.25, 0.72, 1.0, 1.0],
+            Self::PlayerHit => [0.35, 1.0, 0.48, 1.0],
+            Self::OpponentHit => [1.0, 0.3, 0.25, 1.0],
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ExchangeFeedback {
+    matchup: String,
+    headline: String,
+    detail: String,
+    tone: FeedbackTone,
+}
+
+fn action_label(action: Action) -> &'static str {
+    match action {
+        Action::Strike => "STRIKE",
+        Action::Block => "BLOCK",
+        Action::Grab => "GRAB",
+    }
+}
+
+fn region_label(region: BodyRegion) -> &'static str {
+    match region {
+        BodyRegion::Head => "HEAD",
+        BodyRegion::Torso => "TORSO",
+        BodyRegion::Arms => "ARMS",
+    }
+}
+
+fn phase_banner_text(
+    snapshot: &Snapshot,
+    flow_stage: FlowStage,
+    establishing_remaining: u16,
+) -> String {
+    let phase_duration = phase_duration_frames(snapshot.phase);
+    let remaining = (phase_duration.saturating_sub(u32::from(snapshot.phase_frame))) as f32 / 60.0;
+    match flow_stage {
+        FlowStage::Menu => "Menu".to_string(),
+        FlowStage::Establishing => {
+            format!("Establishing  {:.1}s", establishing_remaining as f32 / 60.0)
+        }
+        FlowStage::Plan => "Plan  Choose your action".to_string(),
+        FlowStage::Replan => format!("Replan  {remaining:.1}s"),
+        FlowStage::Result => "Result".to_string(),
+        FlowStage::Replay => format!("Replay  frame {}", snapshot.frame),
+        _ => format!("{flow_stage:?}  {remaining:.1}s"),
+    }
+}
+
+fn should_show_plan_prompt(snapshot: &Snapshot, flow_stage: FlowStage) -> bool {
+    snapshot.phase == Phase::Plan && flow_stage == FlowStage::Plan
+}
+
+fn exchange_feedback(snapshot: &Snapshot, flow_stage: FlowStage) -> Option<ExchangeFeedback> {
+    let (player_action, opponent_action) = snapshot.revealed?;
+    let matchup = format!(
+        "YOU {}  /  OPPONENT {}",
+        action_label(player_action),
+        action_label(opponent_action)
+    );
+    let reveal_pending = matches!(flow_stage, FlowStage::Reveal | FlowStage::Resolve)
+        || (flow_stage == FlowStage::Replay
+            && matches!(snapshot.phase, Phase::Reveal | Phase::Resolve));
+    if reveal_pending {
+        return Some(ExchangeFeedback {
+            matchup,
+            headline: "ACTIONS REVEALED".to_string(),
+            detail: "PHYSICAL CONTACT PENDING".to_string(),
+            tone: FeedbackTone::Reveal,
+        });
+    }
+
+    let resolved = matches!(flow_stage, FlowStage::Consequence | FlowStage::Result)
+        || (flow_stage == FlowStage::Replay
+            && matches!(snapshot.phase, Phase::Consequence | Phase::MatchResult));
+    if !resolved {
+        return None;
+    }
+
+    let Some(contact) = snapshot.last_contact else {
+        return Some(ExchangeFeedback {
+            matchup,
+            headline: "WHIFF".to_string(),
+            detail: "NO CONTACT".to_string(),
+            tone: FeedbackTone::Whiff,
+        });
+    };
+    if contact.surface == ContactSurface::Guard {
+        return Some(ExchangeFeedback {
+            matchup,
+            headline: "GUARD CONTACT".to_string(),
+            detail: "NO INJURY".to_string(),
+            tone: FeedbackTone::Guard,
+        });
+    }
+
+    let (headline, tone) = match contact.attacker {
+        Side::Player => ("YOU HIT OPPONENT", FeedbackTone::PlayerHit),
+        Side::Opponent => ("OPPONENT HIT YOU", FeedbackTone::OpponentHit),
+    };
+    let expected_defender = contact.attacker.other();
+    let detail = snapshot
+        .last_injury
+        .filter(|(defender, injury)| {
+            *defender == expected_defender
+                && injury.region == contact.region
+                && injury.severity == contact.severity
+        })
+        .map_or_else(
+            || "BODY CONTACT CONFIRMED".to_string(),
+            |(_, injury)| {
+                format!(
+                    "{} INJURY +{}",
+                    region_label(injury.region),
+                    injury.severity
+                )
+            },
+        );
+    Some(ExchangeFeedback {
+        matchup,
+        headline: headline.to_string(),
+        detail,
+        tone,
+    })
 }
 
 fn build_font_atlas() -> Vec<u8> {
@@ -494,18 +636,7 @@ impl UiRenderer {
             _ => [0.2, 0.2, 0.2, 0.9],
         };
         self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, 28.0), phase_color);
-        let phase_duration = phase_duration_frames(snapshot.phase);
-        let remaining =
-            (phase_duration.saturating_sub(u32::from(snapshot.phase_frame))) as f32 / 60.0;
-        let phase_label = match flow_stage {
-            FlowStage::Menu => "Menu".to_string(),
-            FlowStage::Establishing => {
-                format!("Establishing  {:.1}s", establishing_remaining as f32 / 60.0)
-            }
-            FlowStage::Replan => format!("Replan  {:.1}s", remaining),
-            FlowStage::Replay => format!("Replay  frame {}", snapshot.frame),
-            _ => format!("{flow_stage:?}  {remaining:.1}s"),
-        };
+        let phase_label = phase_banner_text(snapshot, flow_stage, establishing_remaining);
         let label_w = phase_label.len() as f32 * GLYPH_ADV * 2.0;
         self.text(
             Vec2::new((w - label_w) / 2.0, 8.0),
@@ -585,7 +716,7 @@ impl UiRenderer {
         }
 
         // --- Plan / commit prompts ---
-        if snapshot.phase == Phase::Plan {
+        if should_show_plan_prompt(snapshot, flow_stage) {
             if !snapshot.player.committed {
                 let prompt = "Choose 1 Strike 2 Block 3 Grab  Space/Enter confirm";
                 let pw = prompt.len() as f32 * GLYPH_ADV * 1.5;
@@ -607,22 +738,6 @@ impl UiRenderer {
             }
         }
 
-        // --- Result text (during Reveal/Resolve/Consequence) ---
-        if !matches!(
-            flow_stage,
-            FlowStage::Menu | FlowStage::Establishing | FlowStage::Result
-        ) && let Some((player_action, opponent_action)) = snapshot.revealed
-        {
-            let result = format!("{:?} vs {:?}", player_action, opponent_action);
-            let rw = result.len() as f32 * GLYPH_ADV * 3.0;
-            self.text(
-                Vec2::new((w - rw) / 2.0, h / 2.0 - 20.0),
-                &result,
-                3.0,
-                [1.0, 0.9, 0.2, 1.0],
-            );
-        }
-
         // --- Match over overlay ---
         if flow_stage == FlowStage::Result {
             self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.84]);
@@ -635,7 +750,7 @@ impl UiRenderer {
                 .unwrap_or("Match Result");
             let mw = winner.len() as f32 * GLYPH_ADV * 4.0;
             self.text(
-                Vec2::new((w - mw) / 2.0, h / 2.0 - 55.0),
+                Vec2::new((w - mw) / 2.0, h / 2.0 - 118.0),
                 winner,
                 4.0,
                 [1.0, 0.8, 0.2, 1.0],
@@ -643,10 +758,49 @@ impl UiRenderer {
             let prompt = "P Replay   R Rematch   Esc Menu   Q Quit";
             let prompt_w = prompt.len() as f32 * GLYPH_ADV * 1.6;
             self.text(
-                Vec2::new((w - prompt_w) / 2.0, h / 2.0 + 25.0),
+                Vec2::new((w - prompt_w) / 2.0, h / 2.0 + 92.0),
                 prompt,
                 1.6,
                 [0.9, 0.9, 0.9, 1.0],
+            );
+        }
+
+        // --- Public, truth-derived exchange feedback ---
+        if let Some(feedback) = exchange_feedback(snapshot, flow_stage) {
+            let panel_w = (w - 40.0).min(720.0);
+            let panel_h = 116.0;
+            let panel = Vec2::new((w - panel_w) / 2.0, h / 2.0 - 54.0);
+            self.rect(
+                panel,
+                Vec2::new(panel_w, panel_h),
+                [0.01, 0.015, 0.025, 0.86],
+            );
+
+            let matchup_scale = 1.55;
+            let matchup_w = feedback.matchup.len() as f32 * GLYPH_ADV * matchup_scale;
+            self.text(
+                Vec2::new((w - matchup_w) / 2.0, panel.y + 13.0),
+                &feedback.matchup,
+                matchup_scale,
+                [0.9, 0.9, 0.9, 1.0],
+            );
+
+            let headline_scale = 3.0;
+            let headline_w = feedback.headline.len() as f32 * GLYPH_ADV * headline_scale;
+            self.text(
+                Vec2::new((w - headline_w) / 2.0, panel.y + 43.0),
+                &feedback.headline,
+                headline_scale,
+                feedback.tone.color(),
+            );
+
+            let detail_scale = 1.7;
+            let detail_w = feedback.detail.len() as f32 * GLYPH_ADV * detail_scale;
+            self.text(
+                Vec2::new((w - detail_w) / 2.0, panel.y + 87.0),
+                &feedback.detail,
+                detail_scale,
+                [0.82, 0.86, 0.92, 1.0],
             );
         }
 
@@ -746,6 +900,26 @@ fn phase_duration_frames(phase: Phase) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use just_dodge::milestone3::{
+        Action as M3Action, BodyRegion, ContactSurface, Fighter, Injury, Outcome, PhysicalContact,
+    };
+
+    fn snapshot(phase: Phase) -> Snapshot {
+        Snapshot {
+            seed: 7,
+            frame: 20,
+            exchange: 1,
+            phase,
+            phase_frame: 0,
+            player: Fighter::fresh(),
+            opponent: Fighter::fresh(),
+            revealed: None,
+            last_contact: None,
+            last_outcome: None,
+            last_injury: None,
+            winner: None,
+        }
+    }
 
     #[test]
     fn font_atlas_builds_without_crash() {
@@ -766,5 +940,129 @@ mod tests {
         assert!(char_uv(' ').is_some());
         // Out-of-range char returns None and will render as a block.
         assert!(char_uv('☃').is_none());
+    }
+
+    #[test]
+    fn plan_banner_is_untimed_and_hides_stale_exchange_truth() {
+        let mut value = snapshot(Phase::Plan);
+        value.revealed = Some((M3Action::Strike, M3Action::Grab));
+        value.last_contact = Some(PhysicalContact {
+            attacker: Side::Opponent,
+            surface: ContactSurface::Body,
+            region: BodyRegion::Head,
+            severity: 2,
+        });
+        value.last_outcome = Some(Outcome::OpponentWins);
+
+        assert_eq!(
+            phase_banner_text(&value, FlowStage::Plan, 0),
+            "Plan  Choose your action"
+        );
+        assert_eq!(exchange_feedback(&value, FlowStage::Plan), None);
+        assert!(should_show_plan_prompt(&value, FlowStage::Plan));
+        assert!(!should_show_plan_prompt(&value, FlowStage::Replay));
+    }
+
+    #[test]
+    fn reveal_reports_public_actions_without_reusing_stale_contact() {
+        let mut value = snapshot(Phase::Reveal);
+        value.revealed = Some((M3Action::Strike, M3Action::Grab));
+        value.last_contact = Some(PhysicalContact {
+            attacker: Side::Opponent,
+            surface: ContactSurface::Body,
+            region: BodyRegion::Head,
+            severity: 2,
+        });
+        value.last_outcome = Some(Outcome::OpponentWins);
+
+        assert_eq!(
+            exchange_feedback(&value, FlowStage::Reveal),
+            Some(ExchangeFeedback {
+                matchup: "YOU STRIKE  /  OPPONENT GRAB".to_string(),
+                headline: "ACTIONS REVEALED".to_string(),
+                detail: "PHYSICAL CONTACT PENDING".to_string(),
+                tone: FeedbackTone::Reveal,
+            })
+        );
+    }
+
+    #[test]
+    fn consequence_calls_missing_measured_contact_a_whiff() {
+        let mut value = snapshot(Phase::Consequence);
+        value.revealed = Some((M3Action::Strike, M3Action::Grab));
+        value.last_outcome = Some(Outcome::Clash);
+
+        let feedback = exchange_feedback(&value, FlowStage::Consequence).unwrap();
+        assert_eq!(feedback.headline, "WHIFF");
+        assert_eq!(feedback.detail, "NO CONTACT");
+        assert_eq!(feedback.tone, FeedbackTone::Whiff);
+    }
+
+    #[test]
+    fn guard_role_overrides_action_labels_in_feedback() {
+        let mut value = snapshot(Phase::Consequence);
+        value.revealed = Some((M3Action::Strike, M3Action::Grab));
+        value.last_contact = Some(PhysicalContact {
+            attacker: Side::Player,
+            surface: ContactSurface::Guard,
+            region: BodyRegion::Torso,
+            severity: 2,
+        });
+        value.last_outcome = Some(Outcome::Clash);
+
+        let feedback = exchange_feedback(&value, FlowStage::Consequence).unwrap();
+        assert_eq!(feedback.headline, "GUARD CONTACT");
+        assert_eq!(feedback.detail, "NO INJURY");
+        assert_eq!(feedback.tone, FeedbackTone::Guard);
+    }
+
+    #[test]
+    fn body_role_reports_attacker_region_and_measured_injury() {
+        let mut value = snapshot(Phase::Consequence);
+        value.revealed = Some((M3Action::Strike, M3Action::Grab));
+        value.last_contact = Some(PhysicalContact {
+            attacker: Side::Player,
+            surface: ContactSurface::Body,
+            region: BodyRegion::Torso,
+            severity: 2,
+        });
+        value.last_outcome = Some(Outcome::PlayerWins);
+        value.last_injury = Some((
+            Side::Opponent,
+            Injury {
+                region: BodyRegion::Torso,
+                severity: 2,
+            },
+        ));
+
+        let feedback = exchange_feedback(&value, FlowStage::Consequence).unwrap();
+        assert_eq!(feedback.headline, "YOU HIT OPPONENT");
+        assert_eq!(feedback.detail, "TORSO INJURY +2");
+        assert_eq!(feedback.tone, FeedbackTone::PlayerHit);
+    }
+
+    #[test]
+    fn body_feedback_does_not_invent_injury_from_an_inconsistent_snapshot() {
+        let mut value = snapshot(Phase::Consequence);
+        value.revealed = Some((M3Action::Grab, M3Action::Strike));
+        value.last_contact = Some(PhysicalContact {
+            attacker: Side::Opponent,
+            surface: ContactSurface::Body,
+            region: BodyRegion::Arms,
+            severity: 1,
+        });
+        value.last_outcome = Some(Outcome::OpponentWins);
+        value.last_injury = Some((
+            Side::Opponent,
+            Injury {
+                region: BodyRegion::Arms,
+                severity: 1,
+            },
+        ));
+
+        let feedback = exchange_feedback(&value, FlowStage::Consequence).unwrap();
+        assert_eq!(feedback.headline, "OPPONENT HIT YOU");
+        assert_eq!(feedback.detail, "BODY CONTACT CONFIRMED");
+        assert_eq!(feedback.tone, FeedbackTone::OpponentHit);
     }
 }

@@ -1,6 +1,6 @@
 {
   "schema": "just-dodge-pvp005-ardy-action-endpoints-v4",
-  "status": "design_validated_generation_forbidden",
+  "status": "generator_ready_certificate_required",
   "authority": "offline_kinematic_proposal_constraints_only",
   "playable_proof": false,
   "source_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
@@ -9,7 +9,7 @@
   "frames": 52,
   "shipping_fps": 60,
   "generation_authorized": false,
-  "generator_accepts_schema": false,
+  "generator_accepts_schema": true,
   "text_conditioning": false,
   "w0_contract": {
     "path": "assets/qa/pvp005_w0_grip_camera_v1.json",
@@ -132,7 +132,9 @@
   "authorization_requirements": [
     "v4_static_validator_passes",
     "w0_grip_camera_contract_passes",
-    "future_generator_materializes_declared_contact_modes_without_dense_bilateral_foot_constraints",
+    "materializer_and_sparse_condition_builder_receipts_pass",
+    "normalized_condition_tensor_hashes_match_pinned_release",
+    "content_addressed_one_batch_generation_certificate_matches_generator_and_output",
     "future_screen_preserves_twenty_millimeter_foot_drift_and_first_eight_reveal_frames",
     "future_candidate_harness_records_zero_crop_and_action_specific_grip_roles",
     "canonical_media_and_blinded_human_gates_pass_before_admission"

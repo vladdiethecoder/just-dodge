@@ -15,9 +15,6 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from motionbricks_service.generate import _pack_413_frames
-
-
 PARENTS = (-1, 0, 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15,
            16, 17, 18, 19, 20, 21, 22, 23, 24, 17, 26, 27, 28, 29, 30, 31, 32)
 ACTIONS = ("strike", "block", "grab")
@@ -130,6 +127,8 @@ def semantic_metrics(action: str, positions: np.ndarray, event: int) -> dict[str
 
 
 def inspect(path: Path, action: str, output: Path) -> tuple[dict, np.ndarray]:
+    from motionbricks_service.generate import _pack_413_frames
+
     archive = np.load(path)
     required = ("posed_joints", "global_rot_mats", "root_positions", "foot_contacts")
     missing = [name for name in required if name not in archive]
@@ -277,7 +276,10 @@ def main() -> int:
         type=Path,
         default=ROOT / "qa_runs/pvp005_motion_admission/screen",
     )
+    parser.add_argument("--expected-per-action", type=int, default=8)
     args = parser.parse_args()
+    if args.expected_per_action <= 0:
+        raise SystemExit("--expected-per-action must be positive")
     args.root = args.root.resolve()
     args.output = args.output.resolve()
     if args.output.exists():
@@ -286,6 +288,7 @@ def main() -> int:
 
     report = {
         "schema": "just-dodge-pvp005-candidate-screen-v2",
+        "expected_per_action": args.expected_per_action,
         "readability_window": {
             "basis": "first_player_visible_reveal_frames",
             "frame_indices": list(range(TELL_FRAMES)),
@@ -303,8 +306,10 @@ def main() -> int:
     }
     for action in ACTIONS:
         paths = sorted((args.root / action).glob(f"{action}_*.npz"))
-        if len(paths) != 8:
-            raise RuntimeError(f"expected exactly 8 {action} candidates, got {len(paths)}")
+        if len(paths) != args.expected_per_action:
+            raise RuntimeError(
+                f"expected exactly {args.expected_per_action} {action} candidates, got {len(paths)}"
+            )
         rows = [inspect(path, action, args.output) for path in paths]
         report["actions"][action] = [metric for metric, _ in rows]
         draw_sheet(action, rows, args.output / f"{action}_tell_front.png", side=False)
@@ -319,7 +324,7 @@ def main() -> int:
         for action, values in report["actions"].items()
     }
     print(json.dumps({"structural_pass": counts, "report_sha256": digest(report_path)}, sort_keys=True))
-    passed = all(count == 8 for count in counts.values())
+    passed = all(count == args.expected_per_action for count in counts.values())
     print(f"PVP005_CANDIDATE_SCREEN={'PASS' if passed else 'FAIL'}")
     return 0 if passed else 1
 
