@@ -342,7 +342,7 @@ impl ApplicationHandler for App {
                     device,
                     queue,
                     config,
-                    false,
+                    renderer::SceneProfile::Duel,
                     &self.runtime_assets,
                 ));
                 self.ui_renderer = Some(ui::UiRenderer::new(device, queue, config));

@@ -819,7 +819,13 @@ async fn run() {
         color_space: wgpu::SurfaceColorSpace::Auto,
         desired_maximum_frame_latency: 2,
     };
-    let mut renderer = renderer::Renderer::new(&device, &queue, &config, true, &assets);
+    let mut renderer = renderer::Renderer::new(
+        &device,
+        &queue,
+        &config,
+        renderer::SceneProfile::Capture,
+        &assets,
+    );
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("PVP005 QA MRT shader"),
         source: wgpu::ShaderSource::Wgsl(include_str!("../pvp005_qa.wgsl").into()),

@@ -608,7 +608,7 @@ impl ApplicationHandler for GameLoopApp {
                 device,
                 queue,
                 config,
-                false,
+                renderer::SceneProfile::FlatArena,
                 std::path::Path::new(&self.assets_root),
             ));
         }
@@ -839,7 +839,7 @@ fn run_shot(ticks: u64, out_dir: &str) {
         &device,
         &queue,
         &config,
-        false,
+        renderer::SceneProfile::FlatArena,
         std::path::Path::new(&assets_root),
     );
 

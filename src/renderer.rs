@@ -90,6 +90,39 @@ pub struct SkinnedObject {
     pub model: Mat4,
 }
 
+/// Explicit scene-content profile for a `Renderer`. This replaces the ambiguous
+/// `minimal_scene` bool, which conflated "no arena props" with "no ground plane,
+/// no contact shadows, single carrier" and forced callers to guess. Each profile
+/// names a real configuration a caller needs, so scene content is chosen by
+/// intent, not by a flag whose side effects must be memorized.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SceneProfile {
+    /// Full duel arena: props (rock/gate/pillars) + ground plane + contact
+    /// shadows + both skinned carriers. Used by the shipped game.
+    Duel,
+    /// Flat verification arena: ground plane + contact shadows + both carriers,
+    /// but NO props. Used by the debug-mannequin game loop for spacing QA.
+    FlatArena,
+    /// Bare capture scene: no props, no ground, no contact shadows, a single
+    /// zero-positioned carrier. Used by headless capture harnesses.
+    Capture,
+}
+
+impl SceneProfile {
+    const fn props(self) -> bool {
+        matches!(self, Self::Duel)
+    }
+    const fn ground(self) -> bool {
+        matches!(self, Self::Duel | Self::FlatArena)
+    }
+    const fn contact_shadows(self) -> bool {
+        matches!(self, Self::Duel | Self::FlatArena)
+    }
+    const fn single_carrier(self) -> bool {
+        matches!(self, Self::Capture)
+    }
+}
+
 pub struct Renderer {
     pub pipeline: wgpu::RenderPipeline,
     pub skin_pipeline: wgpu::RenderPipeline,
@@ -471,7 +504,7 @@ impl Renderer {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         config: &wgpu::SurfaceConfiguration,
-        minimal_scene: bool,
+        scene: SceneProfile,
         assets: &Path,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -784,7 +817,7 @@ impl Renderer {
         // --- Build all rigid objects ---
         let mut objects = Vec::new();
 
-        if !minimal_scene {
+        if scene.props() {
             // Frame the duel instead of placing hero assets behind the camera.
             struct ObjCfg {
                 bin: &'static str,
@@ -876,7 +909,7 @@ impl Renderer {
         }
 
         // --- Ground plane ---
-        if !minimal_scene {
+        if scene.ground() {
             {
                 let (gv, gi, gc) = build_procedural_ground(device);
                 let (gtv, gts) = build_ground_texture(device, queue);
@@ -921,9 +954,7 @@ impl Renderer {
             }
         }
 
-        let contact_shadow_indices = if minimal_scene {
-            None
-        } else {
+        let contact_shadow_indices = if scene.contact_shadows() {
             let first = objects.len();
             objects.push(build_contact_shadow_object(
                 device,
@@ -940,6 +971,8 @@ impl Renderer {
                 "Opponent Contact Shadow",
             ));
             Some([first, first + 1])
+        } else {
+            None
         };
 
         // --- Skinned C0 armored-duelist carriers ---
@@ -959,7 +992,7 @@ impl Renderer {
             "C0 armored duelist must preserve the accepted 24-bone humanoid contract"
         );
         let bone_parents = mesh.bones.iter().map(|bone| bone.parent).collect();
-        let positions: Vec<glam::Vec3> = if minimal_scene {
+        let positions: Vec<glam::Vec3> = if scene.single_carrier() {
             vec![glam::Vec3::ZERO]
         } else {
             vec![glam::vec3(0.0, 0.0, 1.0), glam::vec3(0.0, 0.0, -1.0)]
