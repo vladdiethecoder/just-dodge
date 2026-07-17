@@ -1,0 +1,36 @@
+{
+  "schema": "just-dodge.component-manifest.v1",
+  "asset_id": "jd_duelist_001",
+  "canonical": {
+    "units": "meters",
+    "target_height_m": 1.8,
+    "forward_axis": "+Z",
+    "bone_count": 24,
+    "weapon_socket": "weapon_r",
+    "max_signed_penetration_mm": 0.5,
+    "untextured_slice": true
+  },
+  "components": [
+    {"id": "body_anatomy_carrier", "kind": "body", "skinned": true, "socket": null},
+    {"id": "helmet_head", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "torso_cuirass", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "pauldron_l", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "pauldron_r", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "vambrace_l", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "vambrace_r", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "gauntlet_l", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "gauntlet_r", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "belt_fauld", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "greave_l", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "greave_r", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "boot_l", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "boot_r", "kind": "armor", "skinned": false, "socket": null},
+    {"id": "sword_blade", "kind": "weapon", "skinned": false, "socket": "weapon_r"},
+    {"id": "sword_guard", "kind": "weapon", "skinned": false, "socket": "weapon_r"},
+    {"id": "sword_grip", "kind": "weapon", "skinned": false, "socket": "weapon_r"},
+    {"id": "sword_pommel", "kind": "weapon", "skinned": false, "socket": "weapon_r"},
+    {"id": "scabbard", "kind": "weapon", "skinned": false, "socket": null},
+    {"id": "fracture_proxies", "kind": "proxy", "skinned": false, "socket": null},
+    {"id": "collision_damage_proxies", "kind": "proxy", "skinned": false, "socket": null}
+  ]
+}
