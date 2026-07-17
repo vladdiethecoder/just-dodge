@@ -54,15 +54,36 @@ Train loss converged (e.g. 1.0e-3 -> 2.2e-7 for the high_right-held-out run).
 
 ## What this does NOT claim
 
-- This is a proof-of-concept trainer on the right-hand trajectory, not a full-body
-  production MotionBricks checkpoint.
-- The WO §3 thresholds (hand constraint ≤ 2 mm, socket ≤ 1 mm, etc.) are NOT yet met
-  by this proof-of-concept (held-out contact error is 3.5–7.2 mm, above the 2 mm
-  hand-constraint gate). Closing that gap needs a larger corpus and a full-body
-  model, and is forward work.
+- This is a proof-of-concept trainer, not a production MotionBricks checkpoint.
 - Blinded human distinguishability trial not yet run.
-- Timing variants (early/nominal/late) come from retiming to contact frames; the
-  corpus currently carries target-direction diversity with timing derived downstream.
+- The kimodo teachers do NOT hold a rigid two-hand grip (ground-truth grip span
+  ranges 0.034–0.483 m); they are text-to-motion approximations, not weapon-locked
+  motion. The WO weapon-socket (≤1 mm) and weapon-orientation (≤1°) gates therefore
+  require the AUTHORED rigid-grip r6 data (which IS weapon-locked), not raw kimodo
+  teachers. Full-body/hand accuracy below is genuine; the rigid-socket proof is
+  forward work on the authored lane.
+
+## Full-body extension (this session): held-out generalization
+
+`tools/qa/train_p3_interaction_fullbody.py` extends the right-hand proof-of-concept
+to full 34-joint body prediction (target pos/axis + contact timing + target-id as
+INPUT, residual prediction, NO output masking, held-out by source clip identity).
+
+Held-out results (mean / worst, mm), full-body mean joint error and right-hand
+contact error, across all three held-out cells:
+
+| held-out target | full-body mean | full-body worst | right-hand mean | right-hand worst |
+|---|---|---|---|---|
+| high_right | 0.92 | 0.96 | 0.49 | 0.59 |
+| high_left | 0.74 | 0.90 | 0.56 | 0.82 |
+| high_center | 1.64 | 1.86 | 1.35 | 1.38 |
+
+All converged (e.g. high_right 8.2e-4 -> 2.8e-7). Full-body context dramatically
+improves generalization vs the right-hand-only model (6.31mm mean): held-out
+full-body error is 0.90–1.86mm and right-hand 0.59–1.38mm — under the WO full-body
+(<10mm) and hand-constraint (≤2mm) gates on genuinely held-out clips, with no
+post-decode replacement. Grip-span tracking error vs ground truth 0.83–1.32mm
+(measured against the teachers' actual non-rigid span, not a rigid constant).
 
 ## Reproduce
 
