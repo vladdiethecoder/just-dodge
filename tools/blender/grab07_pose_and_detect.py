@@ -290,10 +290,17 @@ def render_views(cameras: list[dict], image_dir: Path, suffix: str) -> list[str]
         target = game_to_blender() @ Vector(camera_spec["target_m"])
         up = game_to_blender().to_3x3() @ Vector(camera_spec["up"])
         camera.location = eye
-        # The runtime uses the explicitly registered world-space eye/target/up.
-        # After the fixed game->Blender axis conversion all registered cameras
-        # retain Blender's +Y camera-up convention.
-        camera.rotation_euler = (target - eye).to_track_quat("-Z", "Y").to_euler()
+        # Build the camera basis directly so the registered top-view up vector
+        # is respected too; bpy's to_track_quat accepts only axis names.
+        forward = (target - eye).normalized()
+        right = forward.cross(up).normalized()
+        corrected_up = right.cross(forward).normalized()
+        camera.matrix_world = Matrix((
+            (right.x, corrected_up.x, -forward.x, eye.x),
+            (right.y, corrected_up.y, -forward.y, eye.y),
+            (right.z, corrected_up.z, -forward.z, eye.z),
+            (0.0, 0.0, 0.0, 1.0),
+        ))
         camera_data.type = "PERSP"
         camera_data.sensor_fit = "VERTICAL"
         camera_data.angle_y = math.radians(float(camera_spec["fov_deg"]))
