@@ -49,6 +49,8 @@ ASSETS=(
     rune_pillar.bin
     rune_pillar_0.jpg
     source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin
+    source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin
+    source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim
     weapons/w0_sword_assembled.bin
 )
 for relative in "${ASSETS[@]}"; do
