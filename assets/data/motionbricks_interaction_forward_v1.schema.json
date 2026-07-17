@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "just-dodge.motionbricks-interaction-forward-v1.schema.json",
+  "title": "Just Dodge ARDY to MotionBricks Interaction Forward Proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "proposal_id", "ardy_source_sha256", "ardy_checkpoint_sha256", "motionbricks_interaction_checkpoint_sha256", "normalization_sha256", "source_rig_sha256", "seed", "action", "weapon", "stance", "horizon_frames", "context_frame", "fk_targets", "outcome_authority", "runtime_admitted", "proposal_sha256"],
+  "properties": {
+    "schema": {"const": "just-dodge.motionbricks.interaction-forward/v1"},
+    "proposal_id": {"$ref": "#/$defs/Identifier"},
+    "ardy_source_sha256": {"$ref": "#/$defs/Sha256"},
+    "ardy_checkpoint_sha256": {"$ref": "#/$defs/Sha256"},
+    "motionbricks_interaction_checkpoint_sha256": {"$ref": "#/$defs/Sha256"},
+    "normalization_sha256": {"$ref": "#/$defs/Sha256"},
+    "source_rig_sha256": {"$ref": "#/$defs/Sha256"},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+    "action": {"$ref": "#/$defs/ShortText"},
+    "weapon": {"$ref": "#/$defs/ShortText"},
+    "stance": {"$ref": "#/$defs/ShortText"},
+    "horizon_frames": {"type": "integer", "minimum": 1, "maximum": 256},
+    "context_frame": {"anyOf": [{"type": "null"}, {"type": "array", "minItems": 34, "maxItems": 34, "items": {"$ref": "#/$defs/Matrix4"}}]},
+    "fk_targets": {"type": "array", "minItems": 1, "maxItems": 8704, "items": {"$ref": "#/$defs/FkTarget"}},
+    "outcome_authority": {"const": "deterministic_physics_only"},
+    "runtime_admitted": {"const": false},
+    "proposal_sha256": {"$ref": "#/$defs/Sha256"}
+  },
+  "$defs": {
+    "Sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "Identifier": {"type": "string", "minLength": 1, "maxLength": 160},
+    "ShortText": {"type": "string", "minLength": 1, "maxLength": 48},
+    "Finite": {"type": "number"},
+    "Vector3": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/Finite"}},
+    "Rotation3": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/Vector3"}, "description": "Must be validated by the typed parser as an orthonormal, determinant +1 SO(3) matrix."},
+    "Matrix4Row": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/Finite"}},
+    "Matrix4": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/Matrix4Row"}, "description": "Must be validated by the typed parser as a homogeneous rigid transform."},
+    "FkTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame_offset", "joint_index", "position_m", "rotation_matrix"],
+      "properties": {
+        "frame_offset": {"type": "integer", "minimum": 0, "maximum": 255},
+        "joint_index": {"type": "integer", "minimum": 0, "maximum": 33},
+        "position_m": {"$ref": "#/$defs/Vector3"},
+        "rotation_matrix": {"$ref": "#/$defs/Rotation3"}
+      }
+    }
+  },
+  "x-authority": "Offline kinematic conditioning only. Deterministic articulated physics remains the authority for contact, force, balance, injury, and outcomes."
+}

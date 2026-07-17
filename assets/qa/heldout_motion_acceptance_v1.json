@@ -1,0 +1,62 @@
+{
+  "schema": "just-dodge-heldout-interaction-cases-v1",
+  "authority": "offline kinematic/visual acceptance only; deterministic physics owns contact, force, injury, and outcome",
+  "thresholds": {
+    "max_foot_drift_m": 0.02,
+    "max_grip_error_m": 0.01,
+    "max_contact_timing_error_frames": 2,
+    "max_contact_distance_m": 0.01,
+    "minimum_visual_quality_score": 1.0,
+    "minimum_visual_confidence": 0.8
+  },
+  "cases": [
+    {
+      "id": "parry_high_left_early",
+      "condition": {
+        "opponent_intent": "Strike",
+        "response_intent": "Parry",
+        "attack_height": "high",
+        "attack_side": "left",
+        "contact_timing": "early",
+        "target_role": "Weapon",
+        "reach_band": "close"
+      },
+      "expected_contact_frame": 18,
+      "candidate_path": "parry_high_left_early.npz",
+      "observer_path": "parry_high_left_early.observer.json",
+      "visual_review_path": "parry_high_left_early.visual.json"
+    },
+    {
+      "id": "dodge_low_right_late",
+      "condition": {
+        "opponent_intent": "Strike",
+        "response_intent": "Dodge",
+        "attack_height": "low",
+        "attack_side": "right",
+        "contact_timing": "late",
+        "target_role": "Legs",
+        "reach_band": "long"
+      },
+      "expected_contact_frame": 42,
+      "candidate_path": "dodge_low_right_late.npz",
+      "observer_path": "dodge_low_right_late.observer.json",
+      "visual_review_path": "dodge_low_right_late.visual.json"
+    },
+    {
+      "id": "grab_mid_center_nominal",
+      "condition": {
+        "opponent_intent": "Grab",
+        "response_intent": "Grab",
+        "attack_height": "mid",
+        "attack_side": "center",
+        "contact_timing": "nominal",
+        "target_role": "Body",
+        "reach_band": "close"
+      },
+      "expected_contact_frame": 30,
+      "candidate_path": "grab_mid_center_nominal.npz",
+      "observer_path": "grab_mid_center_nominal.observer.json",
+      "visual_review_path": "grab_mid_center_nominal.visual.json"
+    }
+  ]
+}

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Render dynamic combat demo frames as skeleton contact sheets for visual QA.
+"""Render quarantined exploratory-only 162-example demo frames.
 
-Reads the demo summary and produces PNG contact sheets showing the skeleton
-trajectory for each (move, variant) pair. Pure matplotlib, no GPU required.
+The source demo is invalid for production/admission evidence: it is not a
+verified typed interaction-conditioned MotionBricks forward path. Output stays
+in its ignored quarantine directory and must not support runtime, promotion,
+or replay/truth claims. See docs/evidence_quarantine/DYNAMIC_COMBAT_DEMO_162_INVALID.md.
 """
 from __future__ import annotations
 
@@ -15,7 +17,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-OUT_ROOT = Path("/home/vdubrov/Projects/r6k-dynamic-combat-demo")
+OUT_ROOT = Path("/run/media/vdubrov/NVMe-Storage1/Just Dodge/validation_evidence/quarantine/dynamic-combat-demo-162-invalid-exploratory-20260717")
 FRAMES = 64
 
 # G1 34-joint parent chain (simplified for skeleton plotting)

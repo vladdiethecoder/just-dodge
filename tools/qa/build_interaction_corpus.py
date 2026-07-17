@@ -123,6 +123,29 @@ def build_variants(move: dict) -> list[dict]:
     return variants
 
 
+def heldout_training_condition(example: dict) -> dict:
+    """Project a corpus example into the finite condition axes used by the hold-out gate.
+
+    This deliberately records only training-time interaction axes. It contains no
+    generated motion and cannot be used as a runtime asset or truth/contact input.
+    """
+    try:
+        height, side, timing = example["variant_id"].split("_", 2)
+    except (KeyError, ValueError) as error:
+        raise ValueError(f"cannot derive held-out condition from variant {example.get('variant_id')!r}") from error
+    reach_m = float(example["reach_mm"]) / 1000.0
+    reach_band = "close" if reach_m <= 1.10 else "medium" if reach_m <= 1.70 else "long"
+    return {
+        "opponent_intent": str(example["opponent_intent"]),
+        "response_intent": str(example["actor_intent"]),
+        "attack_height": height,
+        "attack_side": side,
+        "contact_timing": timing,
+        "target_role": str(example["target_role"]),
+        "reach_band": reach_band,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True, type=Path)
@@ -142,11 +165,24 @@ def main() -> int:
             example["example_sha256"] = sha256_bytes(canonical_json(example))
             records.append(example)
 
+    conditions = sorted(
+        {canonical_json(heldout_training_condition(record)).decode("utf-8"): heldout_training_condition(record) for record in records}.values(),
+        key=canonical_json,
+    )
+    heldout_training_manifest = {
+        "schema": "just-dodge-interaction-training-manifest-v1",
+        "authority": "training-condition provenance only; no motion/runtime/truth authority",
+        "conditions": conditions,
+    }
+    heldout_training_path = args.out / "heldout_training_manifest.json"
+    heldout_training_path.write_bytes(canonical_json(heldout_training_manifest) + b"\n")
     manifest = {
         "schema": "interaction-corpus-manifest.v1",
         "count": len(records),
         "move_ids": [m["id"] for m in moves],
         "examples": records,
+        "heldout_training_manifest_path": heldout_training_path.name,
+        "heldout_training_manifest_sha256": sha256_bytes(heldout_training_path.read_bytes()),
     }
     manifest["manifest_sha256"] = sha256_bytes(canonical_json(manifest))
     (args.out / "interaction_corpus.json").write_bytes(canonical_json(manifest) + b"\n")

@@ -7,7 +7,7 @@
   },
   "contract_version": 1,
   "evaluation": {
-    "forgelens_source_tree_sha256": "e853dcaa3ffd58dac6e84c6524031d113f9ad92fb2672c58ea723ec598016f01",
+    "forgelens_source_tree_sha256": "c7bbb6ccdc805f4014b6bc25342f5c6af62491446157bde7f7d4dd4b490a2037",
     "forgelens_sources_must_be_tracked": true,
     "revision_rule": "runtime_HEAD_must_be_a_descendant_of_subject_revision"
   },
@@ -22,11 +22,11 @@
     },
     "required_files": {
       "tools/asset_review.py": "3bdef713b92e8d40ae21208e015570cfda73bb7223d6828478dd420f86e8daf0",
-      "tools/asset_review/README.md": "3e78aacddde08297a6e9f06c164535eef650091e4d87bfe0c8b7549a82669714",
-      "tools/asset_review/app.js": "1ffcf2ae22819bf9a2c15c2c074202df78637fbbf33db60fb500806b980c20c2",
-      "tools/asset_review/index.html": "81e819ec2b7caf1f68618340b1c7dc6145f5f38e6d61755b61ad073d93ec3ede",
-      "tools/asset_review/styles.css": "952e07173c5f1d0ed99f7f4bfd741d189c47120384737dfdb430f45af65a637b",
-      "tools/qa/test_asset_review.py": "dd60aac141237761fa8fcdf2a1ee34ab0c7232b06c652913a8392b66e604efe6",
+      "tools/asset_review/README.md": "dd26184b4989180893cb5d1635cf1df9c257332cbc1a8b2d8a1b260d4c61e3fa",
+      "tools/asset_review/app.js": "a1ca9f7d6a929e26d1686fbaa8c9f9269ab7783c2a3d9b67729a1b72d88b6991",
+      "tools/asset_review/index.html": "a7bdb9f750e21097c21edcce596c632c4f33afb614602bfe1fb4463524d86021",
+      "tools/asset_review/styles.css": "60a94eeb055629fd8b7d2593fc575875d6fbc45b3cb9229e3535ba4dfcf1c9fe",
+      "tools/qa/test_asset_review.py": "268c8194ce9823127be4ca4db4eb55b27d8815128bd431f6a43708ffbddac22e",
       "tools/qa/verify_forgelens_phase_a.py": "70e49ef34643678e4cd3d6550ad8f292e2bcb3444ad1c1d507d411cba37bcf89"
     },
     "review_run_binding": [

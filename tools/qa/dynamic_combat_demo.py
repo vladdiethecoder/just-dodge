@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Dynamic interaction-conditioned combat demo for Just Dodge.
+"""QUARANTINED EXPLORATORY-ONLY 162-example combat demo — NOT production evidence.
 
-Generates a diverse corpus of (intent, opponent-geometry, physical-state)
-examples, trains a single MotionBricks interaction extension to track all of
-them, and proves the model produces different motion for different opponents.
+This script produces synthetic in-process targets and hard-masked constraint
+outputs. Its zero-error measurements are therefore not evidence that the typed
+interaction-conditioned MotionBricks forward path works. It must not be used
+for runtime admission, model promotion, production claims, or replay/truth
+validation. See docs/evidence_quarantine/DYNAMIC_COMBAT_DEMO_162_INVALID.md.
 
-The output is QA evidence only: no runtime assets, no clips, no baked animation.
+Any generated output is written only to the ignored quarantine evidence path.
 """
 from __future__ import annotations
 
@@ -31,7 +33,7 @@ REPO = Path("/run/media/vdubrov/NVMe-Storage1/Just Dodge")
 MB_DIR = Path("/run/media/vdubrov/NVMe-Storage1/gr00t/motionbricks")
 BATCH_SPEC = REPO / "assets/data/r6k_move_batch.json"
 CORPUS_TOOL = REPO / "tools/qa/build_interaction_corpus.py"
-OUT_ROOT = Path("/home/vdubrov/Projects/r6k-dynamic-combat-demo")
+OUT_ROOT = REPO / "validation_evidence/quarantine/dynamic-combat-demo-162-invalid-exploratory-20260717"
 SEED = 2026071701
 FRAMES = 64
 FPS = 30

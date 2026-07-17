@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "just-dodge.motionbricks-interaction-certificate-v1.schema.json",
+  "title": "Just Dodge MotionBricks Offline Interaction Certificate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "certificate_id", "authorization_scope", "proposal_sha256", "generator_sha256", "ardy_source_sha256", "ardy_checkpoint_sha256", "motionbricks_interaction_checkpoint_sha256", "normalization_sha256", "source_rig_sha256", "seed", "outcome_authority", "runtime_admitted", "certificate_sha256"],
+  "properties": {
+    "schema": {"const": "just-dodge.motionbricks.interaction-certificate/v1"},
+    "certificate_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "authorization_scope": {"const": "offline_motionbricks_generation"},
+    "proposal_sha256": {"$ref": "#/$defs/Sha256"},
+    "generator_sha256": {"$ref": "#/$defs/Sha256"},
+    "ardy_source_sha256": {"$ref": "#/$defs/Sha256"},
+    "ardy_checkpoint_sha256": {"$ref": "#/$defs/Sha256"},
+    "motionbricks_interaction_checkpoint_sha256": {"$ref": "#/$defs/Sha256"},
+    "normalization_sha256": {"$ref": "#/$defs/Sha256"},
+    "source_rig_sha256": {"$ref": "#/$defs/Sha256"},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615},
+    "outcome_authority": {"const": "deterministic_physics_only"},
+    "runtime_admitted": {"const": false},
+    "certificate_sha256": {"$ref": "#/$defs/Sha256"}
+  },
+  "$defs": {"Sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+  "x-authority": "A certificate authorizes only the exact content-addressed offline proposal; it cannot admit runtime playback or outcome authority."
+}

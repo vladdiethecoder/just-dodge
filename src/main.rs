@@ -221,9 +221,10 @@ struct App {
     c0_reference_skin: Vec<Mat4>,
     /// Verified world-space ANM1 transfer for C0 idle staging and radial Move.
     c0_walk_skins: Vec<Vec<Mat4>>,
-    /// Immutable R6 Strike presentation for QA/lab only; production player mode
-    /// must not consume a baked clip path.
-    hero_strike: Option<hero_strike::HeroStrikePresentation>,
+    /// Immutable R6 Strike presentation shared by the live runtime and QA lab.
+    /// It remains presentation-only and can only feed cleanbox through the
+    /// measured target boundary.
+    hero_strike: hero_strike::HeroStrikePresentation,
     /// Built-in read-only falsification view for the current motion stack.
     motion_frontier_lab: Option<motion_frontier_lab::MotionFrontierLab>,
     /// Exact truth snapshot captured before the lab starts; any mutation fails closed.
@@ -237,6 +238,7 @@ struct App {
     flow: runtime_flow::RuntimeFlow,
     cursor_captured: bool,
     replay_saved: bool,
+    replay_verified: bool,
     /// QA-only deterministic driver. It uses the same input/session path as
     /// keyboard selection; it is never the default launch mode.
     autoplay: bool,
@@ -249,7 +251,6 @@ struct App {
     window_size: (u32, u32),
     benchmark_frame_limit: Option<usize>,
     benchmark_frame_ms: Vec<f64>,
-    qa_motion: bool,
 }
 
 type CombatUpdate = (
@@ -437,10 +438,8 @@ impl ApplicationHandler for App {
                         self.window_size.1,
                         sorted.len()
                     );
-                    if let (Some(lab), Some(hero)) =
-                        (self.motion_frontier_lab.as_ref(), self.hero_strike.as_ref())
-                    {
-                        let metrics = hero.motion_lab_metrics(lab.frame());
+                    if let Some(lab) = self.motion_frontier_lab.as_ref() {
+                        let metrics = self.hero_strike.motion_lab_metrics(lab.frame());
                         assert_eq!(
                             Some(self.session.game.snapshot()),
                             self.motion_lab_truth_baseline.as_ref(),
@@ -464,6 +463,12 @@ impl ApplicationHandler for App {
                     && self.replay_saved
                     && self.session.game.snapshot().phase == m3::Phase::MatchResult
                 {
+                    if !self.replay_verified {
+                        eprintln!(
+                            "--verify failed: saved replay did not reproduce the live truth hash"
+                        );
+                        std::process::exit(1);
+                    }
                     event_loop.exit();
                 }
             }
@@ -536,6 +541,7 @@ impl App {
         self.cleanbox_world = m3_cleanbox::M3CleanboxWorld::new();
         self.ai = m3::SeededAi::new(seed);
         self.replay_saved = false;
+        self.replay_verified = false;
         self.fixed_step_clock = FixedStepClock::default();
         self.last_frame_time = Instant::now();
         self.input = input::InputState::default();
@@ -616,12 +622,7 @@ impl App {
                 "Motion Frontier Lab mutated deterministic combat truth"
             );
             self.input.reset_plan();
-            let player_joints = self
-                .hero_strike
-                .as_ref()
-                .expect("Motion Frontier Lab requires hero strike QA presentation")
-                .armored_skin(frame)
-                .to_vec();
+            let player_joints = self.hero_strike.armored_skin(frame).to_vec();
             return Some((
                 snapshot,
                 plan,
@@ -708,11 +709,69 @@ impl App {
                         "only live duel stages may advance combat truth"
                     );
                     let roots = self.session.game.snapshot();
-                    let player_root = fighter_root(roots, m3::Side::Player);
-                    let opponent_root = fighter_root(roots, m3::Side::Opponent);
-                    self.cleanbox_world
-                        .submit_resolve_packet(&mut self.session, player_root, opponent_root)
-                        .expect("M3 Resolve cleanbox packet must be valid");
+                    if roots.phase == m3::Phase::Resolve {
+                        let Some((player_action, opponent_action)) = roots.revealed else {
+                            eprintln!(
+                                "Resolve has no revealed actions; refusing to fabricate a measured packet"
+                            );
+                            self.session.tick();
+                            continue;
+                        };
+                        let player_root = fighter_root(roots, m3::Side::Player);
+                        let opponent_root = fighter_root(roots, m3::Side::Opponent);
+                        let player_strike_frame = hero_strike_frame(roots, m3::Side::Player)
+                            .unwrap_or(hero_strike::CONTACT_FRAME);
+                        let opponent_strike_frame = hero_strike_frame(roots, m3::Side::Opponent)
+                            .unwrap_or(hero_strike::CONTACT_FRAME);
+                        // The two physics targets are adjacent R6 frames, so the
+                        // cleanbox CCD observes the same contact transition the
+                        // renderer displays at the second (contact) frame.
+                        let player_first = measured_fighter_frame(
+                            &self.hero_strike,
+                            duel_physics::Fighter::Player,
+                            player_action,
+                            player_root,
+                            player_strike_frame.saturating_sub(1),
+                            0,
+                        );
+                        let player_second = measured_fighter_frame(
+                            &self.hero_strike,
+                            duel_physics::Fighter::Player,
+                            player_action,
+                            player_root,
+                            player_strike_frame,
+                            1,
+                        );
+                        let opponent_first = measured_fighter_frame(
+                            &self.hero_strike,
+                            duel_physics::Fighter::Opponent,
+                            opponent_action,
+                            opponent_root,
+                            opponent_strike_frame.saturating_sub(1),
+                            0,
+                        );
+                        let opponent_second = measured_fighter_frame(
+                            &self.hero_strike,
+                            duel_physics::Fighter::Opponent,
+                            opponent_action,
+                            opponent_root,
+                            opponent_strike_frame,
+                            1,
+                        );
+                        self.cleanbox_world
+                            .submit_measured_resolve_packet(
+                                &mut self.session,
+                                duel_world::DuelWorldTarget {
+                                    player: player_first.as_target(),
+                                    opponent: opponent_first.as_target(),
+                                },
+                                duel_world::DuelWorldTarget {
+                                    player: player_second.as_target(),
+                                    opponent: opponent_second.as_target(),
+                                },
+                            )
+                            .expect("M3 Resolve measured presentation packet must be valid");
+                    }
                     self.session.tick();
                 }
             }
@@ -723,7 +782,7 @@ impl App {
 
         // Save replay once on match end.
         if live_snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
-            self.save_replay();
+            self.replay_verified = self.save_replay();
             self.replay_saved = true;
             if self
                 .flow
@@ -811,11 +870,7 @@ impl App {
             .as_ref()
             .is_some_and(|lab| lab.presentation_off());
         let motion_lab_panel = self.motion_frontier_lab.as_ref().map(|lab| {
-            let hero = self
-                .hero_strike
-                .as_ref()
-                .expect("Motion Frontier Lab requires hero strike QA presentation");
-            let metrics = hero.motion_lab_metrics(lab.frame());
+            let metrics = self.hero_strike.motion_lab_metrics(lab.frame());
             ui::MotionLabPanel {
                 frame: lab.frame(),
                 frame_count: motion_frontier_lab::LAB_FRAME_COUNT,
@@ -892,9 +947,8 @@ impl App {
             };
             let weapon_model = self
                 .hero_strike
-                .as_ref()
-                .expect("weapon presentation requires hero strike QA presentation")
-                .weapon_world(weapon_frame, weapon_actor_model);
+                .sample(weapon_frame, weapon_actor_model)
+                .weapon_transform;
             renderer.update_first_person_weapon(queue, &proj_view, weapon_model);
 
             let opp_model = if cinematic_replay {
@@ -910,9 +964,8 @@ impl App {
             };
             let opponent_weapon_model = self
                 .hero_strike
-                .as_ref()
-                .expect("weapon presentation requires hero strike QA presentation")
-                .weapon_world(opponent_weapon_frame, opp_model);
+                .sample(opponent_weapon_frame, opp_model)
+                .weapon_transform;
             renderer.update_opponent_weapon(queue, &proj_view, opponent_weapon_model);
 
             // --- Animation pose ---
@@ -921,11 +974,7 @@ impl App {
 
             if let Some(frame) = motion_lab_frame {
                 let lab_model = motion_frontier_lab_actor_model(player_root);
-                let segments = self
-                    .hero_strike
-                    .as_ref()
-                    .expect("Motion Frontier Lab requires hero strike QA presentation")
-                    .motion_lab_segments(frame, lab_model);
+                let segments = self.hero_strike.motion_lab_segments(frame, lab_model);
                 renderer.update_debug_segments(device, &segments);
             } else if self.show_debug {
                 renderer.update_debug_bones(device, &player_joints);
@@ -1086,20 +1135,10 @@ impl App {
     ) -> (Vec<Mat4>, Vec<Mat4>) {
         let sample = |side| {
             if cinematic_replay && let Some(frame) = cinematic_action_frame(snapshot, side) {
-                return self
-                    .hero_strike
-                    .as_ref()
-                    .expect("cinematic replay requires hero strike QA presentation")
-                    .armored_skin(frame)
-                    .to_vec();
+                return self.hero_strike.sample(frame, Mat4::IDENTITY).skin.to_vec();
             }
             if let Some(frame) = hero_strike_frame(snapshot, side) {
-                return self
-                    .hero_strike
-                    .as_ref()
-                    .expect("strike presentation requires hero strike QA presentation")
-                    .armored_skin(frame)
-                    .to_vec();
+                return self.hero_strike.sample(frame, Mat4::IDENTITY).skin.to_vec();
             }
             let action = snapshot.revealed.map(|revealed| match side {
                 m3::Side::Player => revealed.0,
@@ -1119,28 +1158,57 @@ impl App {
                     .get(index)
                     .cloned()
                     .unwrap_or_else(|| self.c0_reference_skin.clone())
-            } else if self.motion_frontier_lab.is_some()
-                || self.autoplay
-                || self.verify
-                || self.qa_motion
-            {
-                self.c0_reference_skin.clone()
             } else {
-                panic!("normal Player mode has no admitted production motion path")
+                self.c0_reference_skin.clone()
             }
         };
         (sample(m3::Side::Player), sample(m3::Side::Opponent))
     }
 
-    fn save_replay(&self) {
+    fn save_replay(&self) -> bool {
         let ts = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let path = PathBuf::from(format!("/tmp/just_dodge_m3_replay_{}.ron", ts));
+        let path = PathBuf::from(format!("/tmp/just_dodge_m3_replay_{ts}.ron"));
         match self.session.replay.save(&path) {
-            Ok(_) => eprintln!("Replay saved to {}", path.display()),
-            Err(e) => eprintln!("Failed to save replay: {}", e),
+            Ok(()) => match m3::verify_replay_file(&path) {
+                Ok(verification)
+                    if verification.final_frame == self.session.game.snapshot().frame
+                        && verification.truth_hash == self.session.game.truth_hash() =>
+                {
+                    eprintln!(
+                        "RUNTIME_REPLAY_HASH_VERIFIED replay={} hashes={} frame={} hash={:016x}",
+                        path.display(),
+                        verification.frames,
+                        verification.final_frame,
+                        verification.truth_hash,
+                    );
+                    true
+                }
+                Ok(verification) => {
+                    eprintln!(
+                        "Replay parity failure replay={} expected_frame={} actual_frame={} expected_hash={:016x} actual_hash={:016x}",
+                        path.display(),
+                        self.session.game.snapshot().frame,
+                        verification.final_frame,
+                        self.session.game.truth_hash(),
+                        verification.truth_hash,
+                    );
+                    false
+                }
+                Err(error) => {
+                    eprintln!(
+                        "Replay hash verification failed {}: {error}",
+                        path.display()
+                    );
+                    false
+                }
+            },
+            Err(error) => {
+                eprintln!("Failed to save replay {}: {error}", path.display());
+                false
+            }
         }
     }
 }
@@ -1289,11 +1357,8 @@ fn measured_fighter_frame(
         return cleanbox::action_frame(fighter, m3_cleanbox::target_action(action), root, substep);
     }
     let actor_model = hero_actor_model(fighter, root);
-    cleanbox::FighterFrame::measured(
-        hero.weapon_world(hero_frame, actor_model),
-        Vec::new(),
-        hero.body_proxies_world(hero_frame, actor_model),
-    )
+    let sample = hero.sample(hero_frame, actor_model);
+    cleanbox::FighterFrame::measured(sample.weapon_transform, Vec::new(), sample.body_proxies())
 }
 
 fn hero_actor_model(fighter: duel_physics::Fighter, root: Vec3) -> Mat4 {
@@ -1700,13 +1765,6 @@ fn main() {
         .any(|argument| argument == "--motion-frontier-lab")
         || motion_lab_frame.is_some()
         || motion_lab_context;
-    let qa_motion_enabled = motion_lab_enabled
-        || arguments.iter().any(|argument| argument == "--qa-motion")
-        || arguments.iter().any(|argument| argument == "--verify")
-        || arguments.iter().any(|argument| argument == "--autoplay")
-        || arguments
-            .windows(2)
-            .any(|pair| pair[0] == "--benchmark-frames");
     let motion_lab_frame = motion_lab_frame.unwrap_or(0);
     assert!(
         motion_lab_frame < motion_frontier_lab::LAB_FRAME_COUNT,
@@ -1762,18 +1820,13 @@ fn main() {
         .map(|frame| asset::retarget_world_animation_frame(&c0_source, &c0_mesh, frame))
         .collect::<std::io::Result<Vec<_>>>()
         .expect("C0 world-space walking clip must retarget without geometry explosion");
-    let hero_strike = qa_motion_enabled.then(|| {
-        hero_strike::HeroStrikePresentation::load(&PathBuf::from(&assets), &c0_mesh)
-            .expect("PVP005-R6 hero Strike must load for QA lab before match start")
-    });
+    let hero_strike = hero_strike::HeroStrikePresentation::load(&PathBuf::from(&assets), &c0_mesh)
+        .expect("PVP005-R6 hero Strike must load before live match start");
     let dodge_presentation = None;
     let session = m3::Session::new(0x4D33_0000_0000_0000);
     let motion_lab_truth_baseline = motion_lab_enabled.then(|| session.game.snapshot().clone());
     if motion_lab_enabled {
-        let hero = hero_strike
-            .as_ref()
-            .expect("Motion Frontier Lab requires hero strike QA presentation");
-        let metrics = hero.motion_lab_metrics(motion_lab_frame);
+        let metrics = hero_strike.motion_lab_metrics(motion_lab_frame);
         eprintln!(
             "MOTION_FRONTIER_LAB_START frame={} max_target_error_m={:.9} mean_target_error_m={:.9} planted_foot_drift_m={:.9} grip_error_m={:.9} truth_frame={} requested=unavailable ardy=unavailable target=available tracker=available runtime_admission=false",
             motion_lab_frame,
@@ -1829,6 +1882,7 @@ fn main() {
         },
         cursor_captured: false,
         replay_saved: false,
+        replay_verified: false,
         autoplay,
         verify,
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
@@ -1838,7 +1892,6 @@ fn main() {
         window_size,
         benchmark_frame_limit,
         benchmark_frame_ms: Vec::new(),
-        qa_motion: arguments.iter().any(|argument| argument == "--qa-motion"),
     };
     if telemetry_enabled {
         eprintln!("telemetry: writing to /tmp/just_dodge_tlm.jsonl");

@@ -1373,6 +1373,12 @@ class AssetReviewTests(unittest.TestCase):
         self.assertIn('apiFetch("/api/active-review-run")', app_source)
         self.assertIn("eligibleForPass", app_source)
         self.assertIn("operational attestation, not cryptographic proof", app_source)
+        self.assertIn('id="reviewRunFail"', html)
+        self.assertIn('id="reviewRunSupersede"', html)
+        self.assertIn('transitionActiveReviewRun("fail")', app_source)
+        self.assertIn('transitionActiveReviewRun("superseded")', app_source)
+        self.assertNotIn('transitionActiveReviewRun("pass")', app_source)
+        self.assertIn("model.radius*6", app_source)
 
     def test_safe_repo_path_rejects_traversal_and_absolute_paths(self) -> None:
         self.assertEqual(

@@ -270,6 +270,11 @@ kbd { color: var(--muted); border: 1px solid var(--line-strong); background: rgb
 .review-run-eligibility.is-eligible { color: var(--success); }
 .review-run-blockers { display: grid; gap: 3px; margin: 0 0 10px; padding: 0; list-style: none; }
 .review-run-blockers li { border-left: 2px solid rgba(216,106,103,.5); padding: 4px 7px; background: rgba(216,106,103,.045); color: #d6a3a1; font: 9px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
+.review-run-gate #reviewRunTransitionReason { width: 100%; resize: vertical; min-height: 54px; border: 1px solid var(--line); background: #090b0d; color: var(--ink); border-radius: 4px; padding: 7px; line-height: 1.4; }
+.review-run-transition-actions { display: flex; gap: 7px; margin-top: 8px; }
+.review-run-transition-actions button { flex: 1; min-height: 29px; font-size: 10px; }
+.review-run-fail-button { border-color: rgba(216,106,103,.5); background: rgba(216,106,103,.1); color: #eeaaa6; }
+.review-run-fail-button:hover { border-color: rgba(216,106,103,.8); background: rgba(216,106,103,.18); }
 .report-summary-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; }
 #reportSummary { width: 100%; resize: vertical; min-height: 82px; border: 1px solid var(--line); background: #090b0d; color: var(--ink); border-radius: 4px; padding: 8px; line-height: 1.45; }
 .report-receipt { min-height: 30px; margin: 8px 0; color: var(--dim); font: 9px/1.5 ui-monospace, monospace; overflow-wrap: anywhere; }

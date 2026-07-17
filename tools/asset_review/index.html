@@ -176,6 +176,13 @@
           <div id="reviewRunEligibility" class="review-run-eligibility"></div>
           <ul id="reviewRunBlockers" class="review-run-blockers"></ul>
           <p class="gate-contract">Final approval requires an external human attestation. Browser identity is an operational attestation, not cryptographic proof of personhood.</p>
+          <label id="reviewRunTransitionReasonLabel" class="report-summary-label" for="reviewRunTransitionReason">Terminal transition reason</label>
+          <textarea id="reviewRunTransitionReason" rows="2" maxlength="8000" placeholder="Record why this immutable ReviewRun must fail or be superseded."></textarea>
+          <div id="reviewRunTransitionActions" class="review-run-transition-actions">
+            <button id="reviewRunFail" class="review-run-fail-button" type="button">Fail ReviewRun</button>
+            <button id="reviewRunSupersede" class="ghost-button" type="button">Supersede ReviewRun</button>
+          </div>
+          <p id="reviewRunTransitionStatus" class="report-receipt">No terminal browser transition is available for this state.</p>
           <button id="exportReviewRun" class="ghost-button" type="button">Export admission packet</button>
           <p id="reviewRunExportStatus" class="report-receipt">No packet exported.</p>
         </section>

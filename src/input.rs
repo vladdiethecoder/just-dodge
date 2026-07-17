@@ -134,6 +134,9 @@ impl InputState {
     /// Process a mouse button event.
     pub fn handle_mouse_button(&mut self, button: MouseButton, pressed: bool) {
         if button == MouseButton::Left && pressed {
+            // Live first-person ingress selects the same M3 action that the
+            // numbered Plan controls select; commit remains explicit.
+            self.selected_action = Some(Action::Strike);
             self.fire_action = Some(Action::Strike);
         }
     }
@@ -264,6 +267,15 @@ mod tests {
         assert_eq!(plan.selected_action, Some(Action::Strike));
         assert!(plan.confirmed);
         assert!(plan.toggle_debug);
+    }
+
+    #[test]
+    fn left_click_selects_live_strike_without_implicit_commit() {
+        let mut input = InputState::default();
+        input.handle_mouse_button(MouseButton::Left, true);
+        let plan = input.plan_input();
+        assert_eq!(plan.selected_action, Some(Action::Strike));
+        assert!(!plan.confirmed);
     }
 
     #[test]

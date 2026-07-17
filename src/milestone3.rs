@@ -577,6 +577,14 @@ pub struct Replay {
     pub hash_trace: Vec<u64>,
 }
 
+/// Replay verification result for a persisted M3 recording.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ReplayVerification {
+    pub frames: usize,
+    pub final_frame: u32,
+    pub truth_hash: u64,
+}
+
 impl Replay {
     pub fn new(seed: u64) -> Self {
         Self {
@@ -728,6 +736,16 @@ pub fn replay(replay: &Replay) -> Result<Match, ReplayError> {
         trace_index += 1;
     }
     Ok(game)
+}
+
+pub fn verify_replay_file(path: &std::path::Path) -> Result<ReplayVerification, ReplayError> {
+    let recorded = Replay::load(path)?;
+    let replayed = replay(&recorded)?;
+    Ok(ReplayVerification {
+        frames: recorded.hash_trace.len(),
+        final_frame: replayed.snapshot().frame,
+        truth_hash: replayed.truth_hash(),
+    })
 }
 
 fn verify_hash(game: &Match, replay: &Replay, trace_index: usize) -> Result<(), ReplayError> {
@@ -1041,6 +1059,39 @@ mod tests {
         let replayed = replay(&session.replay).unwrap();
         assert_eq!(replayed.snapshot(), session.game.snapshot());
         assert_eq!(replayed.truth_hash(), session.game.truth_hash());
+    }
+
+    #[test]
+    fn persisted_replay_verification_rejects_hash_trace_corruption() {
+        let mut session = Session::new(0x004d_3377);
+        while session.game.snapshot().phase != Phase::MatchResult {
+            resolve_exchange(&mut session, Action::Strike, Action::Grab);
+            while matches!(
+                session.game.snapshot().phase,
+                Phase::Consequence | Phase::Observe
+            ) {
+                session.tick();
+            }
+        }
+
+        let path = std::env::temp_dir().join(format!(
+            "just_dodge_m3_replay_verification_{}.ron",
+            std::process::id()
+        ));
+        session.replay.save(&path).unwrap();
+        let verification = verify_replay_file(&path).unwrap();
+        assert_eq!(verification.final_frame, session.game.snapshot().frame);
+        assert_eq!(verification.truth_hash, session.game.truth_hash());
+        assert_eq!(verification.frames, session.replay.hash_trace.len());
+
+        let mut corrupted = Replay::load(&path).unwrap();
+        corrupted.hash_trace[0] ^= 1;
+        corrupted.save(&path).unwrap();
+        assert!(matches!(
+            verify_replay_file(&path),
+            Err(ReplayError::HashMismatch { frame: 0, .. })
+        ));
+        std::fs::remove_file(path).unwrap();
     }
 
     #[test]

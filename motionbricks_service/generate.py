@@ -14,6 +14,8 @@ import numpy as np
 import pyron
 import torch
 
+from .interaction_forward import apply_fk_targets, parse_authorized_request
+
 _SERVICE: dict | None = None
 _OFFICIAL_SERVICE: dict | None = None
 
@@ -736,4 +738,57 @@ def generate_clip(
         # This prevents the VQVAE from drifting across the arena during generation.
         frames[:, 0:3] = frames[0, 0:3]
 
+    return frames.tobytes()
+
+
+def generate_interaction_clip(
+    proposal_document: dict,
+    certificate_document: dict,
+) -> bytes:
+    """Generate one certificate-authorized offline interaction-conditioned clip.
+
+    The accepted document carries sparse global SO(3) FK targets. This adapter
+    is intentionally unavailable to normal runtime action dispatch: callers
+    must present a content-addressed ARDY proposal and exact offline-only
+    certificate before the GPU service is initialized.
+    """
+    proposal, _certificate = parse_authorized_request(proposal_document, certificate_document)
+    svc = init_service()
+    assert svc["ready"]
+
+    torch.manual_seed(proposal.seed)
+    torch.cuda.manual_seed_all(proposal.seed)
+    np.random.seed(proposal.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    feature_window = _load_primitive(proposal.action, proposal.weapon, proposal.stance)
+    device = svc["device"]
+    motion_rep = svc["motion_rep"]
+    target_out = motion_rep.inverse(
+        torch.from_numpy(feature_window[None]).to(device),
+        is_normalized=True,
+        return_quat=False,
+        return_all=False,
+    )
+    target_positions, target_rotations = apply_fk_targets(
+        target_out["posed_joints"],
+        target_out["global_joint_rots"],
+        proposal,
+    )
+
+    context = None
+    if proposal.context_frame is not None:
+        context = np.asarray([proposal.context_frame], dtype=np.float32)
+    context_positions, context_rotations = _context_to_transforms(context, svc)
+    prediction = _run_inference(
+        context_positions,
+        context_rotations,
+        target_positions,
+        target_rotations,
+        svc,
+    )
+    frames = _to_413_frames(prediction, motion_rep)
+    if not np.isfinite(frames).all():
+        raise RuntimeError("Authorized interaction clip contains non-finite values")
     return frames.tobytes()

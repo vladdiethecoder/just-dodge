@@ -43,6 +43,27 @@ pub struct HeroStrikePresentation {
     weapon_local: Vec<Mat4>,
 }
 
+/// One authoritative render-and-physics sample of the admitted Strike stream.
+///
+/// The renderer consumes `skin` and `weapon_transform`; the measured cleanbox
+/// target consumes `weapon_transform` and `body_proxies`. Keeping them in one
+/// value prevents QA and live runtime from selecting independent frame data.
+#[derive(Debug)]
+pub struct HeroStrikeSample<'a> {
+    presentation: &'a HeroStrikePresentation,
+    index: usize,
+    actor_model: Mat4,
+    pub skin: &'a [Mat4],
+    pub weapon_transform: Mat4,
+}
+
+impl HeroStrikeSample<'_> {
+    pub fn body_proxies(&self) -> Vec<HitboxProxy> {
+        self.presentation
+            .body_proxies_world(self.index, self.actor_model)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct MotionLabMetrics {
     pub max_target_error_m: f32,
@@ -255,6 +276,19 @@ impl HeroStrikePresentation {
         }
         extract_body_proxies(&[world])
     }
+
+    /// Sample the exact pose, weapon socket, and collision proxy set for one
+    /// Strike frame in the actor's world transform.
+    pub fn sample(&self, index: usize, actor_model: Mat4) -> HeroStrikeSample<'_> {
+        let index = index.min(FRAME_COUNT - 1);
+        HeroStrikeSample {
+            presentation: self,
+            index,
+            actor_model,
+            skin: self.armored_skin(index),
+            weapon_transform: self.weapon_world(index, actor_model),
+        }
+    }
 }
 
 fn track_with_coupled_articulation(targets: &[[Mat4; 34]]) -> Vec<[Mat4; 34]> {
@@ -460,6 +494,32 @@ mod tests {
                 left_error < 0.01,
                 "left grip frame {index}, error={left_error}"
             );
+        }
+    }
+
+    #[test]
+    fn shared_sample_keeps_pose_weapon_and_body_proxies_on_one_frame() {
+        let (presentation, _) = load();
+        let actor_model = Mat4::from_translation(Vec3::new(2.0, 0.0, -3.0));
+        for frame in [0, CONTACT_FRAME, FRAME_COUNT - 1] {
+            let sample = presentation.sample(frame, actor_model);
+            assert_eq!(sample.skin, presentation.armored_skin(frame));
+            assert_eq!(
+                sample.weapon_transform.to_cols_array(),
+                presentation
+                    .weapon_world(frame, actor_model)
+                    .to_cols_array()
+            );
+            let body_proxies = sample.body_proxies();
+            assert_eq!(body_proxies.len(), 24);
+            for (joint, proxy) in body_proxies.iter().enumerate() {
+                assert_eq!(proxy.bone_index, joint);
+                let expected = actor_model * presentation.armored_world(frame)[joint];
+                assert_eq!(
+                    proxy.world_transform.to_cols_array(),
+                    expected.to_cols_array()
+                );
+            }
         }
     }
 

@@ -563,7 +563,7 @@ class Renderer {
     if(this.canvas.width!==width||this.canvas.height!==height){this.canvas.width=width;this.canvas.height=height;}
   }
   frameModel(model=this.primary, immediate=false) {
-    if(!model)return; this.radius=model.radius; this.goalTarget=model.center.slice(); this.goalDistance=Math.max(model.radius*2.65,.01); this.goalYaw=.65; this.goalPitch=.28;
+    if(!model)return; this.radius=model.radius; this.goalTarget=model.center.slice(); this.goalDistance=Math.max(model.radius*6,.01); this.goalYaw=.65; this.goalPitch=.28;
     if(immediate){this.target=[...this.goalTarget];this.distance=this.goalDistance;this.yaw=this.goalYaw;this.pitch=this.goalPitch;}
   }
   async upload(parsed) {
@@ -700,7 +700,7 @@ async function loadModel(record, comparison=false, localBuffer=null) {
     }
     const url=localBuffer?"":fileUrl(record.path);const buffer=localBuffer||await fetch(url).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.arrayBuffer();});
     const parsed=await parseGlb(buffer,url);const model=await state.renderer.upload(parsed);
-    if(comparison){state.renderer.comparison=model;state.compare=record;}else{state.renderer.primary=model;state.renderer.comparison=null;if(model.animations.length)state.renderer.updateAnimation(model);state.renderer.frameModel(model,true);state.renderer.goalDistance*=1.55;state.renderer.distance=state.renderer.goalDistance;setupAnimationForModel(model);}
+    if(comparison){state.renderer.comparison=model;state.compare=record;}else{state.renderer.primary=model;state.renderer.comparison=null;if(model.animations.length)state.renderer.updateAnimation(model);state.renderer.frameModel(model,true);setupAnimationForModel(model);}
     byId("viewportEmpty").hidden=true;
     document.documentElement.dataset.forgeLensViewer="viewer_supported";
     document.documentElement.dataset.forgeLensModel=`${model.primitives.length}:${model.animations.length}:${model.skins.length}`;
@@ -792,6 +792,28 @@ function renderReviewRunGate(){
   const list=byId("reviewRunBlockers");list.replaceChildren();
   for(const blocker of blockers)list.append(element("li",null,blocker.replaceAll("_"," ")));
   if(!blockers.length)list.append(element("li",null,"No mechanical blocker. Final authority remains an external human operational attestation, not cryptographic proof."));
+  const terminal=snapshot.state==="submitted", supersedable=["awaiting_evidence","awaiting_human","submitted"].includes(snapshot.state);
+  const reason=byId("reviewRunTransitionReason"),reasonLabel=byId("reviewRunTransitionReasonLabel"),actions=byId("reviewRunTransitionActions"),transitionStatus=byId("reviewRunTransitionStatus");
+  actions.hidden=!terminal&&!supersedable;reason.hidden=!terminal&&!supersedable;reasonLabel.hidden=!terminal&&!supersedable;
+  byId("reviewRunFail").disabled=!terminal;byId("reviewRunSupersede").disabled=!supersedable;
+  transitionStatus.textContent=terminal
+    ? "Fail is available to this authenticated browser session. Pass remains import-only and requires a tracked-clean external human decision."
+    : supersedable
+      ? "Supersede is available to retire this immutable run before it reaches a terminal decision."
+      : "This ReviewRun is terminal. Its append-only decision chain cannot be edited or extended.";
+}
+
+async function transitionActiveReviewRun(targetState){
+  const snapshot=state.activeReviewRun,reason=byId("reviewRunTransitionReason").value.trim();
+  if(!snapshot)return;
+  if(!reason){toast("A terminal transition reason is required",true);byId("reviewRunTransitionReason").focus();return;}
+  const buttons=[byId("reviewRunFail"),byId("reviewRunSupersede")];buttons.forEach(button=>{button.disabled=true;});
+  try{
+    const response=await apiFetch("/api/review-run-transition",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({runId:snapshot.runId,targetState,expectedPreviousSha256:snapshot.headReceiptSha256,details:{reason}})});
+    const receipt=await response.json();if(!response.ok)throw new Error(receipt.error||`HTTP ${response.status}`);
+    const refreshed=await apiFetch(`/api/review-run?runId=${encodeURIComponent(snapshot.runId)}`);const next=await refreshed.json();if(!refreshed.ok)throw new Error(next.error||`ReviewRun refresh HTTP ${refreshed.status}`);
+    state.activeReviewRun=next;byId("reviewRunTransitionReason").value="";byId("reviewRunTransitionStatus").textContent=`Immutable ${targetState} receipt ${receipt.receiptSha256}`;renderReviewRunGate();toast(`ReviewRun transitioned to ${targetState}`);
+  }catch(error){console.error(error);byId("reviewRunTransitionStatus").textContent=`Transition failed: ${error.message}`;toast(`ReviewRun transition failed: ${error.message}`,true);renderReviewRunGate();}
 }
 
 async function exportActiveReviewRun(){
@@ -919,6 +941,8 @@ function bindUi(){
   byId("assetSearch").addEventListener("input",renderLibrary);
   byId("submitReplayReview").addEventListener("click",submitReplayReview);
   byId("exportReviewRun").addEventListener("click",exportActiveReviewRun);
+  byId("reviewRunFail").addEventListener("click",()=>transitionActiveReviewRun("fail"));
+  byId("reviewRunSupersede").addEventListener("click",()=>transitionActiveReviewRun("superseded"));
   for(const chip of $$(".filter-chip"))chip.addEventListener("click",()=>{state.stageFilter=chip.dataset.stage;for(const item of $$(".filter-chip"))item.classList.toggle("is-active",item===chip);renderLibrary();});
   for(const button of $$('[data-view-mode]'))button.addEventListener("click",()=>setViewMode(button.dataset.viewMode));
   byId("gridToggle").addEventListener("click",event=>{state.renderer.grid=!state.renderer.grid;event.currentTarget.classList.toggle("is-active",state.renderer.grid);});
