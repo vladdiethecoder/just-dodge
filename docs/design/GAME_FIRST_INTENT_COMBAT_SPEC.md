@@ -121,8 +121,50 @@ cancel, idle (+ clinch sub-menu).
   weapon-hand/opponent/injury/momentum/speed/velocity conditions into
   MotionBricks so it generates fitting motion). NO post-decode position/rotation
   replacement passed off as learned conditioning. ARDY supplies intent proposals
-  + richer token primitives (limb states, weapon hand, contact/clearance,
-  momentum/speed/velocity). Grounding research running (deleg_5a23797f).
+  + richer token primitives. Grounding research complete (deleg_5a23797f,
+  primary-sourced from local GR00T-WholeBodyControl repo + ARDY repo + papers).
+
+### MotionBricks / ARDY capability verdict (primary-source, 2026-07-17)
+
+OFFICIAL RELEASES SUPPORT:
+- MotionBricks: root (continuous, non-VQ) + full-pose keyframe conditioning via
+  `local_poses`/`has_local_poses` + `global/local_root_values` + masks; learned
+  keyframe in-betweening (decoder target conditions replace hidden features via
+  learned projections, NOT decoded-joint rewriting). VQ tokenizer: 256-D code, 8
+  heads, 4 frames/token @ 30Hz. Public G1 wrapper is first-4-context + last-4-
+  target frames (per-FRAME mask, not per-joint).
+- ARDY: masked sparse joint position/rotation constraint conditioning
+  (`root2d`, `fullbody`, `left/right-hand`, `left/right-foot`, `end-effector`)
+  compiled to `observed_motion` + per-feature `motion_mask`; learned constraint
+  infilling (root infilled before root transformer; two-stage diffusion
+  root-then-body). Text accepted (gated Llama-3-8B encoder).
+
+NOT IN OFFICIAL RELEASE (require new masked condition packet + retraining; do
+NOT fake with post-decode replacement):
+- clearance / swept-weapon-volume / obstacle-SDF / hitbox condition;
+- categorical limb-state (free/braced/holding/impaired/unavailable);
+- weapon-hand state (two-hand grip, draw/sheath, socket attachment);
+- opponent state / paired-agent conditioning (ARDY model card: "not aware of
+  objects in the scene"); momentum/speed/velocity as explicit condition tokens.
+The defensible precedent for the extension is ARDY's masked explicit-motion
+conditioning (concat observed constraints + masks into generation tokens; train
+both root and body stages). Proposed condition packet `C[t]` per the research.
+
+CHECKPOINTS/LICENSES: MotionBricks code Apache-2.0, weights NVIDIA Open Model
+License (G1 preview ckpts: vqvae/pose/root step=2000000 + G1-clip). ARDY code
+Apache-2.0, weights NVIDIA Open Model Agreement (ARDY-Core-RP-20FPS-Horizon40/8,
+ARDY-G1-RP-25FPS-Horizon52/8; G1 326M params).
+
+LATENCY (neither may block the 120Hz truth tick):
+- MotionBricks: vendor claims 2ms / 15000 FPS (hardware unspecified; UNVERIFIED
+  for Just Dodge). Smallest useful unit 4 frames@30Hz=133ms (token), segments
+  12-64 frames.
+- ARDY: measured RTX 4090 4-step 33ms / 10-step 63ms for a 2s window = strictly
+  a buffered async planner (spans ~4/8 truth ticks).
+Decision: MotionBricks/ARDY run as an ASYNC buffered plan service, pre-
+generating per-intent at plan-phase lock and predicting next intent's motion;
+the 120Hz truth tick NEVER waits on inference. If motion isn't ready, hold last
+pose (presentation only; truth unaffected).
 
 ## 8. Build architecture
 
