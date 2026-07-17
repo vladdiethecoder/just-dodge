@@ -190,9 +190,9 @@
       "sha256": "0a480a29b9751f038d4cbfd5f31a4b288049f66f4ad726c84574d9973ed8a480"
     },
     "retargeter": {
-      "bytes": 8821,
+      "bytes": 16090,
       "path": "src/motion_retarget.rs",
-      "sha256": "8e58f1ba2c9ef9349716095adece522da697cf7fe938f980bdadd88a63e0d8f8"
+      "sha256": "c15bc25ac6c3f7b028822c666e5dba76cc5f18e00f8e41805960bb7a59de6e0a"
     }
   },
   "generation": {

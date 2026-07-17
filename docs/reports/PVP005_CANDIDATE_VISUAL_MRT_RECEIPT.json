@@ -1,19 +1,64 @@
 {
-  "schema": "just-dodge-pvp005-candidate-visual-mrt-receipt-v1",
-  "revision": "d84950f34d4a9e8fe9b08d4c47670bb4d88fea43",
-  "revision_reachable_on": "origin/pvp-005-readable-live-motion",
+  "actions": {
+    "block": {
+      "first_person_crop_failures": 16,
+      "first_person_samples": 16,
+      "first_person_visibility_failures": 0,
+      "left_grip_error_max_m": 0.49611142,
+      "left_grip_error_min_m": 0.45207036,
+      "orbit_crop_failures": 110,
+      "orbit_samples": 256,
+      "orbit_visibility_failures": 0,
+      "pass": false,
+      "right_socket_error_max_m": 1.4901161e-08
+    },
+    "grab": {
+      "first_person_crop_failures": 16,
+      "first_person_samples": 16,
+      "first_person_visibility_failures": 0,
+      "left_grip_error_max_m": 0.6848229,
+      "left_grip_error_min_m": 0.5082262,
+      "orbit_crop_failures": 156,
+      "orbit_samples": 256,
+      "orbit_visibility_failures": 0,
+      "pass": false,
+      "right_socket_error_max_m": 2.9802322e-08
+    },
+    "strike": {
+      "first_person_crop_failures": 16,
+      "first_person_samples": 16,
+      "first_person_visibility_failures": 0,
+      "left_grip_error_max_m": 0.35161707,
+      "left_grip_error_min_m": 0.2888852,
+      "orbit_crop_failures": 256,
+      "orbit_samples": 256,
+      "orbit_visibility_failures": 0,
+      "pass": false,
+      "right_socket_error_max_m": 1.4901161e-08
+    }
+  },
   "candidate_manifest_sha256": "0943680512230b50366366bb69182131595311a5823f281e5ba035dec9a64755",
-  "visual_contract_sha256": "3317801ee19eff8fc996d1145def42157a331028e5dd31c2afb86725cc1f727c",
-  "visual_index_sha256": "c22eb9f364712a3b5de7640d29c41393216770843e217676d5f4413387bd959e",
-  "repeat_visual_index_sha256": "c22eb9f364712a3b5de7640d29c41393216770843e217676d5f4413387bd959e",
+  "claim_boundary": "Candidate-scope diagnostic receipt only. It is not motion admission, human readability evidence, or live-runtime playback evidence.",
   "exact_repeat_pass": true,
+  "next_atomic_unit": "Redesign the action constraints/key poses around a physically coherent W0 grip policy: two-hand grip for Strike/Block and an explicit visible stow/one-hand policy for Grab; generate fixed seeds and rerun the unchanged pinned harness before blind review.",
+  "pass": false,
+  "remaining_layers": [],
+  "remaining_scopes": [
+    "admitted",
+    "live_runtime"
+  ],
+  "rendered_image_count": 540,
   "renderer": {
-    "backend": "Vulkan",
     "adapter": "NVIDIA GeForce RTX 5090",
-    "orbit_tile_px": [512, 512],
-    "orbit_sheet_px": [2048, 2048],
-    "first_person_strip_px": [4096, 512],
-    "backgrounds": ["charcoal", "offwhite"],
+    "backend": "Vulkan",
+    "backgrounds": [
+      "charcoal",
+      "offwhite"
+    ],
+    "first_person_strip_px": [
+      4096,
+      512
+    ],
     "implemented_layers": [
       "beauty",
       "silhouette",
@@ -25,50 +70,20 @@
       "hand_socket_alignment",
       "accumulated_weapon_path",
       "collision_proxy_overlay"
+    ],
+    "orbit_sheet_px": [
+      2048,
+      2048
+    ],
+    "orbit_tile_px": [
+      512,
+      512
     ]
   },
-  "rendered_image_count": 540,
-  "actions": {
-    "strike": {
-      "orbit_samples": 256,
-      "orbit_crop_failures": 256,
-      "orbit_visibility_failures": 0,
-      "first_person_samples": 16,
-      "first_person_crop_failures": 16,
-      "first_person_visibility_failures": 0,
-      "right_socket_error_max_m": 0.000000014901161,
-      "left_grip_error_min_m": 0.2888852,
-      "left_grip_error_max_m": 0.35161707,
-      "pass": false
-    },
-    "block": {
-      "orbit_samples": 256,
-      "orbit_crop_failures": 110,
-      "orbit_visibility_failures": 0,
-      "first_person_samples": 16,
-      "first_person_crop_failures": 16,
-      "first_person_visibility_failures": 0,
-      "right_socket_error_max_m": 0.000000014901161,
-      "left_grip_error_min_m": 0.45207036,
-      "left_grip_error_max_m": 0.49611142,
-      "pass": false
-    },
-    "grab": {
-      "orbit_samples": 256,
-      "orbit_crop_failures": 156,
-      "orbit_visibility_failures": 0,
-      "first_person_samples": 16,
-      "first_person_crop_failures": 16,
-      "first_person_visibility_failures": 0,
-      "right_socket_error_max_m": 0.000000029802322,
-      "left_grip_error_min_m": 0.5082262,
-      "left_grip_error_max_m": 0.6848229,
-      "pass": false
-    }
-  },
-  "pass": false,
-  "claim_boundary": "Candidate-scope diagnostic receipt only. It is not motion admission, human readability evidence, or live-runtime playback evidence.",
-  "remaining_layers": [],
-  "remaining_scopes": ["admitted", "live_runtime"],
-  "next_atomic_unit": "Redesign the action constraints/key poses around a physically coherent W0 grip policy: two-hand grip for Strike/Block and an explicit visible stow/one-hand policy for Grab; generate fixed seeds and rerun the unchanged pinned harness before blind review."
+  "repeat_visual_index_sha256": "c22eb9f364712a3b5de7640d29c41393216770843e217676d5f4413387bd959e",
+  "revision": "d84950f34d4a9e8fe9b08d4c47670bb4d88fea43",
+  "revision_reachable_on": "origin/pvp-005-readable-live-motion",
+  "schema": "just-dodge-pvp005-candidate-visual-mrt-receipt-v1",
+  "visual_contract_sha256": "ffc67b6f8027ad795deced1761a738a928bcd11ab3beb7d7909c6b65b282841c",
+  "visual_index_sha256": "c22eb9f364712a3b5de7640d29c41393216770843e217676d5f4413387bd959e"
 }

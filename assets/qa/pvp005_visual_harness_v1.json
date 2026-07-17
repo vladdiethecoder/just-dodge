@@ -1,42 +1,223 @@
 {
-  "schema": "just-dodge-pvp005-visual-harness-v1",
-  "contract_version": 1,
-  "renderer": {
-    "backend": "VULKAN",
-    "beauty_format": "Rgba8UnormSrgb",
-    "diagnostic_format": "Rgba8Unorm",
-    "depth_format": "Depth32Float",
-    "color_space": "sRGB",
-    "auto_exposure": false,
-    "fog": false,
-    "depth_of_field": false,
-    "bloom": false,
-    "motion_blur": false,
-    "film_grain": false,
-    "lighting": {
-      "kind": "fixed_neutral_three_point",
-      "ambient": 0.42,
-      "key_direction": [0.45, 0.8, 0.38],
-      "key_intensity": 0.38,
-      "fill_direction": [-0.65, 0.35, 0.3],
-      "fill_intensity": 0.12,
-      "rim_direction": [0.2, 0.25, -0.95],
-      "rim_intensity": 0.18
+  "background": {
+    "declared_prepass_samples_srgb8": {
+      "actor": [
+        185,
+        132,
+        76
+      ],
+      "weapon": [
+        48,
+        56,
+        64
+      ]
+    },
+    "expected_selection": {
+      "dark": "charcoal",
+      "light": "offwhite",
+      "mode": "paired"
+    },
+    "minimum_edge_contrast_ratio": 4.5,
+    "minimum_passing_edge_fraction": 0.95,
+    "palette_srgb8": {
+      "charcoal": [
+        11,
+        13,
+        18
+      ],
+      "cobalt": [
+        29,
+        78,
+        216
+      ],
+      "cyan": [
+        6,
+        182,
+        212
+      ],
+      "green": [
+        22,
+        163,
+        74
+      ],
+      "magenta": [
+        192,
+        38,
+        211
+      ],
+      "offwhite": [
+        244,
+        241,
+        232
+      ],
+      "orange": [
+        234,
+        88,
+        12
+      ]
+    },
+    "palette_version": "pvp005-matte-v1",
+    "selection_algorithm": "maximin_oklab_then_wcag_edge_contrast_v1"
+  },
+  "bound_inputs": {
+    "ardy_candidate_screen": {
+      "path": "tools/qa/screen_pvp005_motion_candidates.py",
+      "sha256": "2e408bf5be88d70006bd59e7c33fbebf57eafd6398ece64bc2c0a25db1899bb4"
+    },
+    "ardy_constraint_architecture_v3": {
+      "path": "assets/qa/pvp005_ardy_constraint_architecture_v3.json",
+      "sha256": "776182c59ec9802b6f3e546fa786c0d0322b16456fa6fa03ee8659d60703493e"
+    },
+    "ardy_constraint_architecture_validator": {
+      "path": "tools/qa/validate_pvp005_constraint_architecture.py",
+      "sha256": "22eac101c004ebe60851b23f45358539832a6dc4ab5a561fddfd5687b53f8f05"
+    },
+    "ardy_iteration_failure_ledger": {
+      "path": "docs/reports/PVP005_ARDY_ITERATION_LEDGER.json",
+      "sha256": "e474c0909415f41aa7436f5597c647e166bb224d904a815efa0fb3d84a79b438"
+    },
+    "ardy_keypose_generator": {
+      "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
+      "sha256": "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7"
+    },
+    "ardy_keypose_iteration_1": {
+      "path": "assets/qa/pvp005_ardy_keyposes_v1.json",
+      "sha256": "62d0db4a8c350859abd347ab82a64679fa7849cd6793e9bf858f5fde602db022"
+    },
+    "ardy_keypose_iteration_2": {
+      "path": "assets/qa/pvp005_ardy_keyposes_v2.json",
+      "sha256": "fb9648329fa86e6a165d081c4a770cf60cf103fa489b7271c1a223096554b87c"
+    },
+    "candidate_manifest": {
+      "path": "assets/motion/pvp005_candidates/manifest.json",
+      "sha256": "d6a21c59efb7506d6ccf8f80489d128b253aa0c300bdc7cacb646e64e93eecaf"
+    },
+    "carrier": {
+      "path": "assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin",
+      "sha256": "36a9c4e41f7e33ff58d68c10aa59a6b6cdbfb7e0384e0402e520801c205a1c7e"
+    },
+    "debug_shader": {
+      "path": "src/debug.wgsl",
+      "sha256": "e25867c2e3839fa7effca8894330c70bbd6884da7af41d8a139039477641b410"
+    },
+    "motionbricks_admission_report": {
+      "path": "docs/reports/PVP005_MOTIONBRICKS_ADMISSION.json",
+      "sha256": "ada14ec84086ec463403f5b22f6b8e1f82e9ec3e7e5870daadc92aab4489c286"
+    },
+    "motionbricks_release_inventory_tool": {
+      "path": "tools/qa/inventory_motionbricks_release.py",
+      "sha256": "3fdad4f3dbb3d836eabdca5b267dc89d20f4fc2b7a5d5cd3153b5c23db51e0dd"
+    },
+    "neural_plan_packet": {
+      "path": "src/neural_plan.rs",
+      "sha256": "549736708dcc701bf873fe87e6326783c2bd220a7e9fd8035e49667cbb34a097"
+    },
+    "neural_plan_replay": {
+      "path": "src/replay.rs",
+      "sha256": "d1adee2838dbb3ba5437638ce612f1662624702c3e6393921b3ff3d5168275d5"
+    },
+    "permanent_adversarial_contract": {
+      "path": "docs/quality/ADVERSARIAL_VISUAL_CONTRACT.md",
+      "sha256": "51f64128db301dddbdf8edb8bfce45e6f4924aea8d7381b014d34a97929934c7"
+    },
+    "permanent_adversarial_thresholds": {
+      "path": "docs/quality/ADVERSARIAL_VISUAL_THRESHOLDS.v1.json",
+      "sha256": "e17e9c05a6e47b05c36cfdae9d084a6ecc8137086d762bc5773f3aa513f73092"
+    },
+    "qa_capture_binary": {
+      "path": "src/bin/pvp005_capture.rs",
+      "sha256": "bc1803612a5a9807a1bea39e61c03b77279d2ee909f1206ca5cb10d8d321c4c9"
+    },
+    "qa_mrt_shader": {
+      "path": "src/pvp005_qa.wgsl",
+      "sha256": "fc0c29b5fb95dad9537589cd16ff4d147575102f55a1d3ff8d81346dd625083b"
+    },
+    "qa_orchestrator": {
+      "path": "tools/qa/run_pvp005_visual_harness.py",
+      "sha256": "cfab8138e7f31028ff8bd1a3bb2b57a09fcf620cc5e78574d06f7694e96ce25a"
+    },
+    "qa_render_workflow": {
+      "path": ".github/workflows/pvp005-visual.yml",
+      "sha256": "3cd44c93fdfc5f80cce509c9ea45363cb9c640246ee78f037e705e65329caf26"
+    },
+    "rigid_shader": {
+      "path": "src/shader.wgsl",
+      "sha256": "d75bb78eb1c5a80cb88feef6981e3b9186b7abdc4d5245327fe32f74619e45ab"
+    },
+    "skin_shader": {
+      "path": "src/skin.wgsl",
+      "sha256": "db4e8389b2be0c5c6ef177d50ad56e32dfcb0674bd314c66eced965e48dc9023"
+    },
+    "weapon": {
+      "path": "assets/weapons/w0_sword_assembled.bin",
+      "sha256": "e1ba7788cafcb2a156ff2bcdcda4d24f1811c8d50fc2a9a7a5d18ac77919831d"
     }
   },
   "cadence": {
+    "human_gate_frame_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "reveal_frame_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
     "shipping_fps": 60,
-    "reveal_frame_indices": [0, 1, 2, 3, 4, 5, 6, 7],
-    "human_gate_frame_indices": [0, 1, 2, 3, 4, 5],
     "source_resampling": "linear_translation_and_renormalized_6d_rotation"
   },
+  "contract_version": 1,
+  "first_person": {
+    "aim_direction": [
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "audio": false,
+    "eye_m": [
+      0.0,
+      1.62,
+      1.0
+    ],
+    "far_m": 100.0,
+    "hud": false,
+    "near_m": 0.1,
+    "opponent_root_m": [
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "output_height_px": 2048,
+    "output_width_px": 2048,
+    "vertical_fov_degrees": 70.0
+  },
+  "layers": [
+    "beauty",
+    "silhouette",
+    "object_id",
+    "normals",
+    "depth",
+    "wireframe",
+    "skeleton",
+    "hand_socket_alignment",
+    "accumulated_weapon_path",
+    "collision_proxy_overlay"
+  ],
   "orbit": {
-    "sheet_width_px": 2048,
-    "sheet_height_px": 2048,
-    "grid_columns": 4,
-    "grid_rows": 4,
-    "tile_width_px": 512,
-    "tile_height_px": 512,
+    "aim_point_m": [
+      0.0,
+      0.9,
+      0.0
+    ],
     "azimuth_degrees": [
       0.0,
       22.5,
@@ -55,173 +236,76 @@
       315.0,
       337.5
     ],
-    "radius_m": 3.2,
+    "crop_margin_px": 8,
     "eye_height_m": 0.9,
-    "aim_point_m": [0.0, 0.9, 0.0],
-    "vertical_fov_degrees": 45.0,
-    "near_m": 0.1,
     "far_m": 100.0,
-    "crop_margin_px": 8
-  },
-  "first_person": {
-    "output_width_px": 2048,
-    "output_height_px": 2048,
-    "eye_m": [0.0, 1.62, 1.0],
-    "aim_direction": [0.0, 0.0, -1.0],
-    "opponent_root_m": [0.0, 0.0, -1.0],
-    "vertical_fov_degrees": 70.0,
+    "grid_columns": 4,
+    "grid_rows": 4,
     "near_m": 0.1,
-    "far_m": 100.0,
-    "hud": false,
-    "audio": false
+    "radius_m": 3.2,
+    "sheet_height_px": 2048,
+    "sheet_width_px": 2048,
+    "tile_height_px": 512,
+    "tile_width_px": 512,
+    "vertical_fov_degrees": 45.0
   },
-  "background": {
-    "selection_algorithm": "maximin_oklab_then_wcag_edge_contrast_v1",
-    "minimum_edge_contrast_ratio": 4.5,
-    "minimum_passing_edge_fraction": 0.95,
-    "palette_version": "pvp005-matte-v1",
-    "palette_srgb8": {
-      "charcoal": [11, 13, 18],
-      "offwhite": [244, 241, 232],
-      "cobalt": [29, 78, 216],
-      "cyan": [6, 182, 212],
-      "magenta": [192, 38, 211],
-      "green": [22, 163, 74],
-      "orange": [234, 88, 12]
-    },
-    "declared_prepass_samples_srgb8": {
-      "actor": [185, 132, 76],
-      "weapon": [48, 56, 64]
-    },
-    "expected_selection": {
-      "mode": "paired",
-      "dark": "charcoal",
-      "light": "offwhite"
-    }
+  "regression": {
+    "approved_gpu_masked_perceptual": true,
+    "baseline_overwrite_requires_new_acceptance_packet": true,
+    "baseline_overwrite_requires_reason": true,
+    "pinned_machine_exact_sha256": true
   },
-  "layers": [
-    "beauty",
-    "silhouette",
-    "object_id",
-    "normals",
-    "depth",
-    "wireframe",
-    "skeleton",
-    "hand_socket_alignment",
-    "accumulated_weapon_path",
-    "collision_proxy_overlay"
+  "renderer": {
+    "auto_exposure": false,
+    "backend": "VULKAN",
+    "beauty_format": "Rgba8UnormSrgb",
+    "bloom": false,
+    "color_space": "sRGB",
+    "depth_format": "Depth32Float",
+    "depth_of_field": false,
+    "diagnostic_format": "Rgba8Unorm",
+    "film_grain": false,
+    "fog": false,
+    "lighting": {
+      "ambient": 0.42,
+      "fill_direction": [
+        -0.65,
+        0.35,
+        0.3
+      ],
+      "fill_intensity": 0.12,
+      "key_direction": [
+        0.45,
+        0.8,
+        0.38
+      ],
+      "key_intensity": 0.38,
+      "kind": "fixed_neutral_three_point",
+      "rim_direction": [
+        0.2,
+        0.25,
+        -0.95
+      ],
+      "rim_intensity": 0.18
+    },
+    "motion_blur": false
+  },
+  "required_scopes": [
+    "candidate",
+    "admitted",
+    "live_runtime"
   ],
+  "schema": "just-dodge-pvp005-visual-harness-v1",
   "thresholds": {
-    "max_planted_foot_drift_m": 0.02,
-    "max_ground_penetration_m": 0.01,
-    "max_sword_socket_position_error_m": 0.01,
-    "max_sword_socket_angle_error_degrees": 3.0,
     "max_frozen_packet_decode_ms": 16.0,
-    "minimum_masked_ssim": 0.995,
+    "max_ground_penetration_m": 0.01,
+    "max_planted_foot_drift_m": 0.02,
+    "max_sword_socket_angle_error_degrees": 3.0,
+    "max_sword_socket_position_error_m": 0.01,
     "maximum_masked_mean_absolute_error": 0.00392156862745098,
     "maximum_pairwise_confusion": 0.2,
     "minimum_human_accuracy_per_action": 0.8,
-    "minimum_human_judgments_per_action": 20
-  },
-  "regression": {
-    "pinned_machine_exact_sha256": true,
-    "approved_gpu_masked_perceptual": true,
-    "baseline_overwrite_requires_reason": true,
-    "baseline_overwrite_requires_new_acceptance_packet": true
-  },
-  "required_scopes": ["candidate", "admitted", "live_runtime"],
-  "bound_inputs": {
-    "candidate_manifest": {
-      "path": "assets/motion/pvp005_candidates/manifest.json",
-      "sha256": "0943680512230b50366366bb69182131595311a5823f281e5ba035dec9a64755"
-    },
-    "carrier": {
-      "path": "assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin",
-      "sha256": "36a9c4e41f7e33ff58d68c10aa59a6b6cdbfb7e0384e0402e520801c205a1c7e"
-    },
-    "weapon": {
-      "path": "assets/weapons/w0_sword_assembled.bin",
-      "sha256": "e1ba7788cafcb2a156ff2bcdcda4d24f1811c8d50fc2a9a7a5d18ac77919831d"
-    },
-    "skin_shader": {
-      "path": "src/skin.wgsl",
-      "sha256": "9fb0d66d5c17b60296980ec850c14dc4216b2d540336c6c49097b5890d4421eb"
-    },
-    "rigid_shader": {
-      "path": "src/shader.wgsl",
-      "sha256": "777c80f530339be84a2b7bcfa363f38ba1ae99741f0a201c816145d60e3da3f2"
-    },
-    "debug_shader": {
-      "path": "src/debug.wgsl",
-      "sha256": "e25867c2e3839fa7effca8894330c70bbd6884da7af41d8a139039477641b410"
-    },
-    "qa_capture_binary": {
-      "path": "src/bin/pvp005_capture.rs",
-      "sha256": "bc1803612a5a9807a1bea39e61c03b77279d2ee909f1206ca5cb10d8d321c4c9"
-    },
-    "qa_mrt_shader": {
-      "path": "src/pvp005_qa.wgsl",
-      "sha256": "fc0c29b5fb95dad9537589cd16ff4d147575102f55a1d3ff8d81346dd625083b"
-    },
-    "qa_orchestrator": {
-      "path": "tools/qa/run_pvp005_visual_harness.py",
-      "sha256": "cfab8138e7f31028ff8bd1a3bb2b57a09fcf620cc5e78574d06f7694e96ce25a"
-    },
-    "qa_render_workflow": {
-      "path": ".github/workflows/pvp005-visual.yml",
-      "sha256": "3cd44c93fdfc5f80cce509c9ea45363cb9c640246ee78f037e705e65329caf26"
-    },
-    "ardy_keypose_generator": {
-      "path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
-      "sha256": "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7"
-    },
-    "ardy_keypose_iteration_1": {
-      "path": "assets/qa/pvp005_ardy_keyposes_v1.json",
-      "sha256": "62d0db4a8c350859abd347ab82a64679fa7849cd6793e9bf858f5fde602db022"
-    },
-    "ardy_keypose_iteration_2": {
-      "path": "assets/qa/pvp005_ardy_keyposes_v2.json",
-      "sha256": "fb9648329fa86e6a165d081c4a770cf60cf103fa489b7271c1a223096554b87c"
-    },
-    "ardy_candidate_screen": {
-      "path": "tools/qa/screen_pvp005_motion_candidates.py",
-      "sha256": "2e408bf5be88d70006bd59e7c33fbebf57eafd6398ece64bc2c0a25db1899bb4"
-    },
-    "permanent_adversarial_contract": {
-      "path": "docs/quality/ADVERSARIAL_VISUAL_CONTRACT.md",
-      "sha256": "51f64128db301dddbdf8edb8bfce45e6f4924aea8d7381b014d34a97929934c7"
-    },
-    "permanent_adversarial_thresholds": {
-      "path": "docs/quality/ADVERSARIAL_VISUAL_THRESHOLDS.v1.json",
-      "sha256": "e17e9c05a6e47b05c36cfdae9d084a6ecc8137086d762bc5773f3aa513f73092"
-    },
-    "ardy_iteration_failure_ledger": {
-      "path": "docs/reports/PVP005_ARDY_ITERATION_LEDGER.json",
-      "sha256": "e474c0909415f41aa7436f5597c647e166bb224d904a815efa0fb3d84a79b438"
-    },
-    "ardy_constraint_architecture_v3": {
-      "path": "assets/qa/pvp005_ardy_constraint_architecture_v3.json",
-      "sha256": "776182c59ec9802b6f3e546fa786c0d0322b16456fa6fa03ee8659d60703493e"
-    },
-    "ardy_constraint_architecture_validator": {
-      "path": "tools/qa/validate_pvp005_constraint_architecture.py",
-      "sha256": "22eac101c004ebe60851b23f45358539832a6dc4ab5a561fddfd5687b53f8f05"
-    },
-    "motionbricks_release_inventory_tool": {
-      "path": "tools/qa/inventory_motionbricks_release.py",
-      "sha256": "3fdad4f3dbb3d836eabdca5b267dc89d20f4fc2b7a5d5cd3153b5c23db51e0dd"
-    },
-    "motionbricks_admission_report": {
-      "path": "docs/reports/PVP005_MOTIONBRICKS_ADMISSION.json",
-      "sha256": "ada14ec84086ec463403f5b22f6b8e1f82e9ec3e7e5870daadc92aab4489c286"
-    },
-    "neural_plan_packet": {
-      "path": "src/neural_plan.rs",
-      "sha256": "549736708dcc701bf873fe87e6326783c2bd220a7e9fd8035e49667cbb34a097"
-    },
-    "neural_plan_replay": {
-      "path": "src/replay.rs",
-      "sha256": "d1adee2838dbb3ba5437638ce612f1662624702c3e6393921b3ff3d5168275d5"
-    }
+    "minimum_human_judgments_per_action": 20,
+    "minimum_masked_ssim": 0.995
   }
 }

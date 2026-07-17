@@ -1,92 +1,119 @@
 {
-  "schema": "just-dodge-pvp005-w0-grip-camera-v1",
-  "contract_version": 1,
-  "authority": "presentation_constraint_only_no_motion_generation",
-  "playable_proof": false,
-  "source_failure_receipt": {
-    "path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
-    "sha256": "3725510a3c57d01f8d430b83e951b2068daa7e5d90f7d192c80f7916b84ee054",
-    "revision": "d84950f34d4a9e8fe9b08d4c47670bb4d88fea43",
-    "pass": false
-  },
-  "weapon": {
-    "path": "assets/weapons/w0_sword_assembled.bin",
-    "sha256": "e1ba7788cafcb2a156ff2bcdcda4d24f1811c8d50fc2a9a7a5d18ac77919831d",
-    "local_forward_axis": "+Z",
-    "bounds_min_m": [-0.1400000006, -0.0250000004, -0.3519999981],
-    "bounds_max_m": [0.1400000006, 0.0250000004, 1.1978248358],
-    "grip_core_z_m": [-0.27, -0.025],
-    "grip_wrap_z_m": [-0.271528721, -0.023471281],
-    "right_grip_socket_m": [0.0, 0.0, -0.105],
-    "left_grip_socket_m": [0.0, 0.0, -0.265],
-    "grip_socket_separation_m": 0.16,
-    "minimum_anchor_clearance_m": 0.005
-  },
-  "thresholds": {
-    "maximum_active_grip_position_error_m": 0.01,
-    "maximum_active_grip_angle_error_degrees": 3.0,
-    "minimum_inactive_hand_to_grip_distance_m": 0.1,
-    "maximum_crop_edge_pixels": 0,
-    "crop_margin_px": 8,
-    "minimum_actor_pixels": 1,
-    "minimum_weapon_pixels": 1
-  },
   "actions": {
     "strike": {
-      "weapon_ownership": "two_hand",
-      "right_hand_role": "primary_grip",
       "left_hand_role": "secondary_grip",
-      "required_active_sockets": ["right_grip_socket_m", "left_grip_socket_m"],
+      "required_active_sockets": [
+        "right_grip_socket_m",
+        "left_grip_socket_m"
+      ],
+      "right_hand_role": "primary_grip",
+      "weapon_ownership": "two_hand",
       "weapon_visibility": "complete_weapon_all_required_views"
     },
     "block": {
-      "weapon_ownership": "two_hand",
-      "right_hand_role": "primary_grip",
       "left_hand_role": "secondary_grip",
-      "required_active_sockets": ["right_grip_socket_m", "left_grip_socket_m"],
+      "required_active_sockets": [
+        "right_grip_socket_m",
+        "left_grip_socket_m"
+      ],
+      "right_hand_role": "primary_grip",
+      "weapon_ownership": "two_hand",
       "weapon_visibility": "complete_weapon_all_required_views"
     },
     "grab": {
-      "weapon_ownership": "one_hand_right_visible_stow",
-      "right_hand_role": "primary_grip",
       "left_hand_role": "grab_contact_effector_not_a_grip",
-      "required_active_sockets": ["right_grip_socket_m"],
+      "required_active_sockets": [
+        "right_grip_socket_m"
+      ],
       "required_inactive_socket_clearance": "left_grip_socket_m",
-      "weapon_zone": "right_exterior_guard_outside_torso",
-      "weapon_visibility": "complete_weapon_all_required_views"
+      "right_hand_role": "primary_grip",
+      "weapon_ownership": "one_hand_right_visible_stow",
+      "weapon_visibility": "complete_weapon_all_required_views",
+      "weapon_zone": "right_exterior_guard_outside_torso"
     }
   },
+  "authority": "presentation_constraint_only_no_motion_generation",
   "canonical_action_envelope_relative_to_actor_root_m": {
-    "min": [-1.4, -0.1, -1.4],
-    "max": [1.4, 2.7, 1.8],
+    "max": [
+      1.4,
+      2.7,
+      1.8
+    ],
+    "min": [
+      -1.4,
+      -0.1,
+      -1.4
+    ],
     "rule": "actor_and_complete_weapon_must_remain_inside_for_every_required_reveal_frame"
   },
-  "orbit_camera": {
-    "output_px": [512, 512],
-    "azimuth_degrees": [0.0, 22.5, 45.0, 67.5, 90.0, 112.5, 135.0, 157.5, 180.0, 202.5, 225.0, 247.5, 270.0, 292.5, 315.0, 337.5],
-    "radius_m": 8.2,
-    "eye_height_m": 1.2,
-    "aim_point_m": [0.0, 1.2, 0.0],
-    "vertical_fov_degrees": 45.0,
-    "near_m": 0.1,
-    "far_m": 100.0,
-    "projection": "fixed_not_candidate_autofit"
-  },
+  "contract_version": 1,
   "first_person_camera": {
-    "output_px": [2048, 2048],
-    "eye_m": [0.0, 1.62, 1.0],
-    "opponent_root_m": [0.0, 0.0, -4.0],
-    "aim_point_m": [0.0, 1.2, -4.0],
-    "vertical_fov_degrees": 70.0,
-    "preflight_vertical_fov_degrees": [60.0, 70.0, 85.0],
-    "near_m": 0.1,
+    "aim_point_m": [
+      0.0,
+      1.2,
+      -4.0
+    ],
+    "eye_m": [
+      0.0,
+      1.62,
+      1.0
+    ],
     "far_m": 100.0,
-    "projection": "fixed_duel_camera_not_candidate_autofit"
+    "near_m": 0.1,
+    "opponent_root_m": [
+      0.0,
+      0.0,
+      -4.0
+    ],
+    "output_px": [
+      2048,
+      2048
+    ],
+    "preflight_vertical_fov_degrees": [
+      60.0,
+      70.0,
+      85.0
+    ],
+    "projection": "fixed_duel_camera_not_candidate_autofit",
+    "vertical_fov_degrees": 70.0
   },
-  "required_frames": {
-    "reveal_indices_at_60hz": [0, 1, 2, 3, 4, 5, 6, 7],
-    "human_gate_indices_at_60hz": [0, 1, 2, 3, 4, 5]
+  "generation_enabled": false,
+  "orbit_camera": {
+    "aim_point_m": [
+      0.0,
+      1.2,
+      0.0
+    ],
+    "azimuth_degrees": [
+      0.0,
+      22.5,
+      45.0,
+      67.5,
+      90.0,
+      112.5,
+      135.0,
+      157.5,
+      180.0,
+      202.5,
+      225.0,
+      247.5,
+      270.0,
+      292.5,
+      315.0,
+      337.5
+    ],
+    "eye_height_m": 1.2,
+    "far_m": 100.0,
+    "near_m": 0.1,
+    "output_px": [
+      512,
+      512
+    ],
+    "projection": "fixed_not_candidate_autofit",
+    "radius_m": 8.2,
+    "vertical_fov_degrees": 45.0
   },
+  "playable_proof": false,
   "promotion_requirements": [
     "all_active_grip_errors_within_threshold",
     "grab_left_hand_proven_not_bound_to_weapon",
@@ -97,6 +124,76 @@
     "canonical_media_verifier_pass",
     "blinded_human_gate_pass"
   ],
-  "generation_enabled": false,
-  "visual_acceptance": false
+  "required_frames": {
+    "human_gate_indices_at_60hz": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "reveal_indices_at_60hz": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "schema": "just-dodge-pvp005-w0-grip-camera-v1",
+  "source_failure_receipt": {
+    "pass": false,
+    "path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
+    "revision": "d84950f34d4a9e8fe9b08d4c47670bb4d88fea43",
+    "sha256": "33d93067454c4485f06ce0ecc6d39f795746f4f83e8d7db1189edcc1982d768a"
+  },
+  "thresholds": {
+    "crop_margin_px": 8,
+    "maximum_active_grip_angle_error_degrees": 3.0,
+    "maximum_active_grip_position_error_m": 0.01,
+    "maximum_crop_edge_pixels": 0,
+    "minimum_actor_pixels": 1,
+    "minimum_inactive_hand_to_grip_distance_m": 0.1,
+    "minimum_weapon_pixels": 1
+  },
+  "visual_acceptance": false,
+  "weapon": {
+    "bounds_max_m": [
+      0.1400000006,
+      0.0250000004,
+      1.1978248358
+    ],
+    "bounds_min_m": [
+      -0.1400000006,
+      -0.0250000004,
+      -0.3519999981
+    ],
+    "grip_core_z_m": [
+      -0.27,
+      -0.025
+    ],
+    "grip_socket_separation_m": 0.16,
+    "grip_wrap_z_m": [
+      -0.271528721,
+      -0.023471281
+    ],
+    "left_grip_socket_m": [
+      0.0,
+      0.0,
+      -0.265
+    ],
+    "local_forward_axis": "+Z",
+    "minimum_anchor_clearance_m": 0.005,
+    "path": "assets/weapons/w0_sword_assembled.bin",
+    "right_grip_socket_m": [
+      0.0,
+      0.0,
+      -0.105
+    ],
+    "sha256": "e1ba7788cafcb2a156ff2bcdcda4d24f1811c8d50fc2a9a7a5d18ac77919831d"
+  }
 }

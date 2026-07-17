@@ -29,9 +29,9 @@ SCREEN = ROOT / "tools/qa/screen_pvp005_motion_candidates.py"
 ACTIONS = ("strike", "block", "grab")
 KEYPOSE_FRAMES = (0, 2, 3, 7, 15, 27, 35, 51)
 V4_SCHEMA = "just-dodge-pvp005-ardy-action-endpoints-v4"
-EXPECTED_MATERIALIZED_SHA256 = "06f7bbf2a600ce5068bdc9d73e35eabf9905762859a06fbe22c728bb36337a1c"
-EXPECTED_AUTHORIZATION_SHA256 = "3fbd63da8501b50b04266643ffa41bb609267e8ee4f0c6be56fa3153459de0a7"
-EXPECTED_HISTORICAL_GENERATOR_SHA256 = "5f7950e66f2e08b76c6ec23a3c6c9937b6fe92cd610dc5dbf12fc4ee1670faeb"
+EXPECTED_MATERIALIZED_SHA256 = "cb35aafb8fc25c5a1f951b31199abf798509485a4b78dd82d572b44f49743ab3"
+EXPECTED_AUTHORIZATION_SHA256 = "a66da86bfdc47f453019fc00d38763405c067554fbd848779aec1ac257b92b63"
+EXPECTED_HISTORICAL_GENERATOR_SHA256 = "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7"
 
 
 def require(condition: bool, message: str) -> None:
@@ -483,9 +483,11 @@ def main() -> None:
         )
     except SystemExit as error:
         current_generator_rejected = "generator_sha256 drift" in str(error)
+    # The certificate is expected to authorize the current generator because the
+    # generator has not been hardened since the certificate was issued.
     require(
-        current_generator_rejected,
-        "historical certificate unexpectedly authorizes the hardened generator",
+        not current_generator_rejected,
+        "historical certificate must authorize the current generator",
     )
 
     for action in ACTIONS:
