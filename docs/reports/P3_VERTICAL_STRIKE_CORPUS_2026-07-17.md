@@ -96,6 +96,35 @@ here. Ad-hoc harness `/tmp/hermes-verify-p3-kimodo.py` (removed after run).
    slide, replay/truth agreement) are forward work.
 2. Blinded human distinguishability trial (all 9 from full-res motion) not yet run.
 
+## DECIDED: adapt-path falsified (2026-07-17, this session)
+
+The train-vs-adapt question is now answered by measurement, not preference. The
+existing interaction checkpoint (`hero_strike.motionbricks.interaction`, a
+"trained temporal residual extension with HARD sparse/dense constraint channels")
+depends on post-decode FK replacement (`apply_fk_targets`) to hit its targets —
+exactly the mechanism the WO forbids calling learned conditioning.
+
+Adapt-path test (ad-hoc harness, since removed): fed each cell's authored FK
+targets to `generate_interaction_clip` as CONDITIONING INPUT with the post-decode
+replacement removed, and measured the generated prediction independent of the
+input target. Result across all 9 cells:
+
+- prediction is a genuine generation (passthrough=false), valid SO(3) (~1e-7),
+  32-frame clip.
+- interaction hand error vs authored target: 1126–1313 mm.
+
+The checkpoint produces a plausible generic strike transition but does NOT reach
+the conditioned target/timing. Removing the forbidden post-decode mask exposes
+that the current checkpoint does not generalize from target conditioning.
+
+Conclusion: genuine interaction-conditioning REQUIRES training a checkpoint on
+target-directed data (the train-path). Adapt-path via the existing hard-mask
+checkpoint is not admissible. The 9 authored trajectories are valid teachers, but
+9 clips are too few to train a generalizing generator without synthetic padding
+(forbidden). The honest next unit is building a larger REAL target-directed
+vertical-Strike corpus (kimodo/ARDY target-directed clips with distinct source
+identity), then fine-tuning MotionBricks with a clip-separated held-out split.
+
 ## Reproduce
 
 ```
