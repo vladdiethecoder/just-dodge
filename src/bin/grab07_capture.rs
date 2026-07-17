@@ -317,6 +317,32 @@ fn fmt_vec3(value: Vec3) -> String {
     format!("[{:.9},{:.9},{:.9}]", value.x, value.y, value.z)
 }
 
+/// Serialize glam's column-major matrix as an explicitly documented row-major
+/// JSON array.  Keeping the layout at the capture boundary avoids making every
+/// offline consumer guess how `Mat4::to_cols_array` is ordered.
+fn fmt_mat4_row_major(value: Mat4) -> String {
+    let columns = value.to_cols_array();
+    format!(
+        "[{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9},{:.9}]",
+        columns[0],
+        columns[4],
+        columns[8],
+        columns[12],
+        columns[1],
+        columns[5],
+        columns[9],
+        columns[13],
+        columns[2],
+        columns[6],
+        columns[10],
+        columns[14],
+        columns[3],
+        columns[7],
+        columns[11],
+        columns[15],
+    )
+}
+
 fn sha256_bytes(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
@@ -943,6 +969,98 @@ fn worst_json(output: &CaptureOutput) -> String {
     )
 }
 
+fn pose_bones_json(mesh: &SkinnedMeshData) -> String {
+    mesh.bones
+        .iter()
+        .enumerate()
+        .map(|(index, bone)| {
+            format!(
+                concat!(
+                    "{{\"index\":{},\"name\":{},\"parent_index\":{},",
+                    "\"rest_local_matrix_row_major\":{},",
+                    "\"inverse_bind_matrix_row_major\":{}}}"
+                ),
+                index,
+                json_string(&bone.name),
+                bone.parent,
+                fmt_mat4_row_major(bone.rest_local),
+                fmt_mat4_row_major(bone.inverse_bind),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn fighter_pose_json(role: &str, model: Mat4, skin: &[Mat4], mesh: &SkinnedMeshData) -> String {
+    assert_eq!(
+        skin.len(),
+        mesh.bones.len(),
+        "capture skin/bone count mismatch"
+    );
+    let game_skin = skin
+        .iter()
+        .map(|matrix| fmt_mat4_row_major(*matrix))
+        .collect::<Vec<_>>()
+        .join(",");
+    let world_skin = skin
+        .iter()
+        .map(|matrix| fmt_mat4_row_major(model * *matrix))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{\"role\":{},\"root_model_matrix_row_major\":{},",
+            "\"skin_matrices_game_space_row_major\":[{}],",
+            "\"world_skin_matrices_row_major\":[{}],\"bones\":[{}]}}"
+        ),
+        json_string(role),
+        fmt_mat4_row_major(model),
+        game_skin,
+        world_skin,
+        pose_bones_json(mesh),
+    )
+}
+
+/// The offline geometry worker consumes this exact skinning stream.  `skin`
+/// matches the renderer contract (`joint_world_game * inverse_bind`) and
+/// `world_skin` includes the fighter model transform used by the renderer.
+/// Matrices are explicitly row-major in JSON, while the runtime itself uses
+/// glam's column-major `Mat4` values.
+fn worst_pose_json(
+    output: &CaptureOutput,
+    presentation: &PresentationAssets,
+    mesh_hash: &str,
+) -> String {
+    let snapshot = &output.worst.snapshot;
+    let player_root = root_vec(snapshot, Side::Player);
+    let opponent_root = root_vec(snapshot, Side::Opponent);
+    let player_model = fighter_model(player_root, opponent_root);
+    let opponent_model = fighter_model(opponent_root, player_root);
+    let player_skin = presentation.skin_for(snapshot.locked[0], snapshot.truth_frame);
+    let opponent_skin = presentation.skin_for(snapshot.locked[1], snapshot.truth_frame);
+    format!(
+        concat!(
+            "{{\"schema\":\"grab07-worst-substep-pose-v1\",",
+            "\"physics_tick\":{},\"render_frame\":{},\"truth_frame\":{},",
+            "\"matrix_layout\":\"row_major\",",
+            "\"skin_matrix_semantics\":\"skin_game=joint_world_game_space*inverse_bind; world_skin=root_model*skin_game\",",
+            "\"source_skin\":{},\"source_skin_sha256\":{},\"fighters\":[{},{}]}}\n"
+        ),
+        output.worst.physics_tick,
+        output.worst.physics_tick / 2,
+        snapshot.truth_frame,
+        json_string(MANNEQUIN_SKIN),
+        json_string(mesh_hash),
+        fighter_pose_json("player", player_model, &player_skin, &presentation.mesh),
+        fighter_pose_json(
+            "opponent",
+            opponent_model,
+            &opponent_skin,
+            &presentation.mesh
+        ),
+    )
+}
+
 fn prepare_output(out: &Path) {
     fs::create_dir_all(out).expect("create Grab-07 output directory");
     for name in [
@@ -953,6 +1071,7 @@ fn prepare_output(out: &Path) {
         "receipt.json",
         "determinism.json",
         "worst_substep.json",
+        "worst_substep_pose.json",
     ] {
         let _ = fs::remove_file(out.join(name));
     }
@@ -1014,6 +1133,13 @@ fn main() {
         first.findings_jsonl, second.findings_jsonl,
         "two fresh contact findings must be byte-identical"
     );
+    let presentation = PresentationAssets::load(&assets);
+    let first_pose_json = worst_pose_json(&first, &presentation, &mesh_hash);
+    let second_pose_json = worst_pose_json(&second, &presentation, &mesh_hash);
+    assert_eq!(
+        first_pose_json, second_pose_json,
+        "two fresh worst-substep pose exports must be byte-identical"
+    );
 
     prepare_output(&out);
     fs::write(out.join("capture.jsonl"), &first.capture_jsonl).expect("write capture.jsonl");
@@ -1030,6 +1156,8 @@ fn main() {
     .expect("write cameras.json");
     fs::write(out.join("worst_substep.json"), worst_json(&first))
         .expect("write posed worst-substep state");
+    fs::write(out.join("worst_substep_pose.json"), first_pose_json)
+        .expect("write posed worst-substep skin matrices");
     render_views(&assets, &first.worst, &out.join("images"));
     build_receipt(&out);
 
