@@ -386,6 +386,64 @@ class ReviewRunSchemaTests(unittest.TestCase):
         self.assertFalse(pass_ok)
         self.assertTrue(any("provider" in error and "tracked-clean" in error for error in pass_errors), pass_errors)
 
+    def test_pass_gate_rejects_quarantined_162_demo_evidence(self) -> None:
+        run = clean_review_run()
+        run["lineage"]["evidenceManifest"] = file_identity(
+            "validation_evidence/quarantine/dynamic-combat-demo-162-invalid-exploratory-20260717/demo_summary.json",
+            "6" * 64,
+        )
+        refresh_identity(run)
+
+        draft_ok, draft_errors = self.validator.validate_review_run(run)
+        pass_ok, pass_errors = self.validator.validate_pass_eligibility(run)
+
+        self.assertTrue(draft_ok, draft_errors)
+        self.assertFalse(pass_ok)
+        self.assertTrue(
+            any("invalid-evidence" in error and "quarantined" in error for error in pass_errors),
+            pass_errors,
+        )
+
+    def test_pass_gate_rejects_mocked_synthetic_evidence(self) -> None:
+        for marker_path in (
+            "qa/evidence/mocked_vlm_receipt.json",
+            "qa/evidence/synthetic_contact_sheet.png",
+            "qa/evidence/1x1_probe.png",
+        ):
+            run = clean_review_run()
+            run["lineage"]["producedArtifactInventory"][0]["path"] = marker_path
+            refresh_identity(run)
+
+            pass_ok, pass_errors = self.validator.validate_pass_eligibility(run)
+
+            self.assertFalse(pass_ok, marker_path)
+            self.assertTrue(
+                any("invalid-evidence" in error and "mocked/synthetic" in error for error in pass_errors),
+                (marker_path, pass_errors),
+            )
+
+    def test_pass_gate_rejects_developer_machine_and_absolute_paths(self) -> None:
+        # Absolute paths are already rejected structurally; this exercises
+        # structurally-valid repository-relative paths that still carry a
+        # developer-machine or mounted-volume marker.
+        for bad_path in (
+            "gr00t/motionbricks/checkpoints/motionbricks.ckpt",
+            "third_party/vdubrov_local/cache/motion.onnx",
+        ):
+            run = clean_review_run()
+            run["lineage"]["build"]["path"] = bad_path
+            refresh_identity(run)
+
+            draft_ok, draft_errors = self.validator.validate_review_run(run)
+            pass_ok, pass_errors = self.validator.validate_pass_eligibility(run)
+
+            self.assertTrue(draft_ok, (bad_path, draft_errors))
+            self.assertFalse(pass_ok, bad_path)
+            self.assertTrue(
+                any("invalid-evidence" in error and "developer-machine" in error for error in pass_errors),
+                (bad_path, pass_errors),
+            )
+
     def test_wrong_version_and_malformed_file_hash_fail_closed(self) -> None:
         wrong_version = clean_review_run()
         wrong_version["schemaVersion"] = 2

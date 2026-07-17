@@ -555,10 +555,101 @@ def _validate_structure(value: Any) -> list[str]:
     return errors
 
 
+# Invalid-evidence quarantine (Work Order JD-RC0 §1/§2). Any lineage path that
+# references quarantined, mocked, synthetic, or developer-machine evidence is not
+# promotable. Structural validation still accepts the record as a draft; only the
+# pass/promotion gate rejects it. Substring matching is case-insensitive.
+QUARANTINE_PATH_MARKERS = (
+    "validation_evidence/quarantine/",
+    "docs/evidence_quarantine/",
+    "/quarantine/",
+    "dynamic-combat-demo-162",
+    "dynamic_combat_demo",
+    "render_dynamic_combat_frames",
+)
+MOCKED_OR_SYNTHETIC_MARKERS = (
+    "mock",
+    "synthetic",
+    "placeholder",
+    "fake",
+    "stub",
+    "1x1",
+)
+DEVELOPER_MACHINE_PATH_MARKERS = (
+    "/home/",
+    "/users/",
+    "c:\\users\\",
+    "/run/media/",
+    "/mnt/",
+    "nvme-storage",
+    "vdubrov",
+    "gr00t/",
+)
+
+
+def _iter_lineage_paths(lineage: dict[str, Any]) -> list[tuple[str, str]]:
+    """Collect (role, repository path) for every bound lineage file identity."""
+    roles: list[tuple[str, Any]] = [
+        ("build", lineage.get("build")),
+        ("replay", lineage.get("replay")),
+        ("verifier", lineage.get("verifier")),
+        ("canonicalPlanPacket", lineage.get("canonicalPlanPacket")),
+        ("evidenceManifest", lineage.get("evidenceManifest")),
+        ("geometry", lineage.get("geometry")),
+    ]
+    generation = lineage.get("generation")
+    if isinstance(generation, dict):
+        roles.extend(
+            (
+                ("generation.provider", generation.get("provider")),
+                ("generation.checkpoint", generation.get("checkpoint")),
+                ("generation.retarget", generation.get("retarget")),
+            )
+        )
+    produced = lineage.get("producedArtifactInventory")
+    if isinstance(produced, list):
+        roles.extend(
+            (f"producedArtifactInventory[{index}]", artifact)
+            for index, artifact in enumerate(produced)
+        )
+    collected: list[tuple[str, str]] = []
+    for role, identity in roles:
+        if isinstance(identity, dict) and isinstance(identity.get("path"), str):
+            collected.append((role, identity["path"]))
+    return collected
+
+
+def _quarantine_evidence_errors(lineage: dict[str, Any]) -> list[str]:
+    """Reject any lineage bound to quarantined, mocked, synthetic, or
+    developer-machine evidence. Promotion must be from real, repository-tracked,
+    non-quarantined artifacts only."""
+    errors: list[str] = []
+    for role, path in _iter_lineage_paths(lineage):
+        lowered = path.lower()
+        if any(marker in lowered for marker in QUARANTINE_PATH_MARKERS):
+            errors.append(
+                f"invalid-evidence: lineage input {role!r} path {path!r} is quarantined exploratory-only evidence and cannot be promoted"
+            )
+        elif any(marker in lowered for marker in MOCKED_OR_SYNTHETIC_MARKERS):
+            errors.append(
+                f"invalid-evidence: lineage input {role!r} path {path!r} references mocked/synthetic evidence and cannot be promoted"
+            )
+        if (
+            path.startswith("/")
+            or path.startswith("~")
+            or any(marker in lowered for marker in DEVELOPER_MACHINE_PATH_MARKERS)
+        ):
+            errors.append(
+                f"invalid-evidence: lineage input {role!r} path {path!r} is a developer-machine or absolute path, not repository-relative evidence"
+            )
+    return errors
+
+
 def _pass_eligibility_errors(value: dict[str, Any]) -> list[str]:
     lineage = value["lineage"]
     code = lineage["code"]
     errors: list[str] = []
+    errors.extend(_quarantine_evidence_errors(lineage))
     revision = code.get("revision")
     if not isinstance(revision, str) or _COMMIT_SHA_RE.fullmatch(revision) is None:
         errors.append("draft-only: lineage.code.revision must bind a full commit SHA for pass eligibility")

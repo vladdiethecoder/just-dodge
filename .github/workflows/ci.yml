@@ -19,9 +19,10 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: python3 tools/verify_pvp005_revision_baseline.py
+      - run: python3 tools/qa/enforce_evidence_quarantine.py
       - run: python3 tools/qa/pvp005_visual_contract.py
       - run: python3 tools/qa/test_pvp005_visual_contract.py
-      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
+      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/enforce_evidence_quarantine.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
       - run: python3 -m json.tool tools/qa/forgelens_review_run_v1.schema.json >/dev/null
       - run: python3 tools/qa/test_asset_review.py -v
       - run: python3 tools/qa/test_forgelens_review_run_schema.py
