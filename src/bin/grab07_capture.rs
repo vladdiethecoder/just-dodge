@@ -23,7 +23,7 @@ use just_dodge::{
         AirState, ClinchIntent, Intent, PlanEvent, PlanPhase, PlanSnapshot, PlanStatus,
         StrikeVariant,
     },
-    renderer,
+    motion, motion_retarget, renderer,
     truth::{Action, Side},
 };
 use sha2::{Digest, Sha256};
@@ -88,6 +88,7 @@ struct CaptureOutput {
 struct PresentationAssets {
     mesh: SkinnedMeshData,
     reference_skin: Vec<Mat4>,
+    grab_skins: Vec<Vec<Mat4>>,
     walk_skins: Vec<Vec<Mat4>>,
     run_skins: Vec<Vec<Mat4>>,
 }
@@ -109,6 +110,24 @@ impl PresentationAssets {
         let local: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
         let reference_skin = asset::reference_pose_skin_matrices(&mesh, &local)
             .expect("C0 reference pose must skin");
+        let grab_frames = motion::load_g1_frames(
+            assets_root
+                .join(MOTION)
+                .to_str()
+                .expect("UTF-8 Grab-07 motion path"),
+        )
+        .expect("Grab-07 requires a valid G1 source clip");
+        assert!(
+            !grab_frames.is_empty(),
+            "Grab-07 source clip must contain at least one frame"
+        );
+        let grab_skins = grab_frames
+            .iter()
+            .map(|frame| {
+                motion_retarget::retarget_g1_frame_to_armored_skin(&mesh, &grab_frames[0], frame)
+                    .expect("Grab-07 G1 frame must retarget to the C0 mannequin")
+            })
+            .collect();
         let walk = asset::load_skeletal_animation(
             assets_root
                 .join(WALK_ANIMATION)
@@ -124,6 +143,7 @@ impl PresentationAssets {
         )
         .expect("Grab-07 requires C0 running animation");
         Self {
+            grab_skins,
             walk_skins: animation_skins(&mesh, &walk),
             run_skins: animation_skins(&mesh, &run),
             mesh,
@@ -133,6 +153,16 @@ impl PresentationAssets {
 
     fn skin_for(&self, intent: Option<Intent>, truth_frame: u64) -> Vec<Mat4> {
         match intent {
+            Some(Intent::Grab) | Some(Intent::Clinch { .. }) => {
+                // The clip samples at 25 Hz; map deterministic 60 Hz truth time
+                // directly to source time. This remains presentation-only.
+                let source_frame = std::env::var("GRAB07_SOURCE_FRAME")
+                    .ok()
+                    .and_then(|value| value.parse::<usize>().ok())
+                    .map(|frame| frame.min(self.grab_skins.len() - 1))
+                    .unwrap_or_else(|| truth_frame as usize * 25 / 60 % self.grab_skins.len());
+                self.grab_skins[source_frame].clone()
+            }
             Some(Intent::Move { .. }) => sample_skin(&self.walk_skins, truth_frame)
                 .unwrap_or_else(|| self.reference_skin.clone()),
             Some(Intent::Dodge { .. }) => sample_skin(&self.run_skins, truth_frame)
@@ -1104,14 +1134,17 @@ fn build_receipt(out: &Path) {
 
 fn main() {
     let mut no_determinism = false;
+    let mut skip_render = false;
     let mut out_dir = None::<PathBuf>;
     for argument in std::env::args().skip(1) {
         if argument == "--no-determinism" {
             no_determinism = true;
+        } else if argument == "--skip-render" {
+            skip_render = true;
         } else if out_dir.is_none() {
             out_dir = Some(PathBuf::from(argument));
         } else {
-            panic!("usage: grab07_capture [--no-determinism] [OUT_DIR]");
+            panic!("usage: grab07_capture [--no-determinism] [--skip-render] [OUT_DIR]");
         }
     }
     let out = out_dir.unwrap_or_else(|| PathBuf::from("qa_runs/grab07_promotion"));
@@ -1179,7 +1212,9 @@ fn main() {
         )
         .expect("write posed secure-grab skin matrices");
     }
-    render_views(&assets, &first.worst, &out.join("images"));
+    if !skip_render {
+        render_views(&assets, &first.worst, &out.join("images"));
+    }
     build_receipt(&out);
 
     let secure = first

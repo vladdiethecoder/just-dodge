@@ -393,6 +393,7 @@ def main() -> int:
     parser.add_argument("--out-dir", required=True, type=Path)
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument("--min-depth-m", type=float, default=0.0001)
+    parser.add_argument("--no-render", action="store_true", help="measure the exact posed mesh pair without emitting Blender review images")
     args = parser.parse_args(argv)
 
     pose = json.loads(args.pose.read_text(encoding="utf-8"))
@@ -415,6 +416,31 @@ def main() -> int:
     findings = run_pair_detect(pair_module, player_vertices, opponent_vertices, source, player_hand_ids, args.min_depth_m)
     before_metrics = metrics(findings)
     clearance_m = visible_surface_clearance_m(player_vertices, player_hand_ids, opponent_vertices, source["triangles"])
+    if args.no_render:
+        report = {
+            "schema": "grab07-posed-pair-detect-v1",
+            "runtime_admitted": False,
+            "promoted": False,
+            "physics_tick": pose["physics_tick"],
+            "render_frame": pose["render_frame"],
+            "pose_path": str(args.pose),
+            "pose_sha256": sha256_file(args.pose),
+            "source_skin": str(args.source_skin),
+            "source_skin_sha256": source_sha256,
+            "matrix_layout": pose["matrix_layout"],
+            "object_pair": ["PlayerMannequin.hand", "OpponentMannequin.body"],
+            "source_triangles": len(source["triangles"]),
+            "player_hand_triangles": len(player_hand_ids),
+            "metrics": before_metrics,
+            "visible_surface_clearance_m": clearance_m,
+            "findings_sha256": canonical_sha256(findings),
+            "findings": findings[:200],
+            "views": {"before": [], "detected": []},
+            "verdict": "measurement-only posed hand-to-body triangle/clearance probe",
+        }
+        report_path.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+        print(f"GRAB07_POSE_DETECT=PASS tick={pose['physics_tick']} findings={before_metrics['findings_count']} max_mm={before_metrics['max_penetration_mm']:.6f} clearance_m={clearance_m:.9f} report={report_path}")
+        return 0
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     player_object = make_mesh("PlayerMannequin", player_vertices, source["triangles"], (0.23, 0.52, 0.92, 1.0))
