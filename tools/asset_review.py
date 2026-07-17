@@ -517,6 +517,53 @@ def measure_glb(path: Path) -> dict[str, Any]:
     }
 
 
+_MESH_DOCTOR_DIR = "qa_runs/p4_mesh_doctor"
+
+
+def _mesh_doctor_report(root: Path, asset: str) -> dict[str, Any]:
+    """Load Mesh Doctor detection findings for an asset, if present.
+
+    Maps an asset path to its detection report(s) under qa_runs/p4_mesh_doctor/.
+    Returns the report JSON (schema just-dodge-forgelens-mesh-doctor-*) or a
+    not-available payload. This is a READ surface for the ForgeLens Mesh Doctor UI;
+    detection itself runs in the Blender worker (tools/blender/mesh_doctor_*).
+    """
+    stem = Path(asset).stem
+    # candidate report filenames written by the Blender workers (prefer pair
+    # reports for multi-part assets; fall back to self-intersection)
+    candidates = [
+        root / _MESH_DOCTOR_DIR / f"{stem}_self_intersect.json",
+        root / _MESH_DOCTOR_DIR / "w0_pair_Guard_BladeAndTang.json" if "w0" in asset or "sword" in asset else None,
+        root / _MESH_DOCTOR_DIR / "c0_self_intersect.json" if "c0" in asset or "duelist" in asset else None,
+    ]
+    found = None
+    for cand in candidates:
+        if cand is not None and cand.is_file():
+            found = cand
+            break
+    if found is None:
+        return {
+            "available": False,
+            "asset": asset,
+            "note": "no Mesh Doctor detection report for this asset; run tools/blender/mesh_doctor_detect.py",
+        }
+    try:
+        report = json.loads(found.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Mesh Doctor report unreadable: {found}: {exc}") from exc
+    clusters = report.get("clusters") or report.get("findings") or []
+    return {
+        "available": True,
+        "asset": asset,
+        "report_path": str(found.relative_to(root)),
+        "schema": report.get("schema"),
+        "runtime_admitted": report.get("runtime_admitted", False),
+        "count": report.get("clusters_count", report.get("findings_count", len(clusters))),
+        "clusters": clusters[:200],
+        "scope_note": report.get("scope_note", ""),
+    }
+
+
 def asset_family(relative: Path) -> str:
     parts = relative.parts
     if "meshy" in parts:
@@ -4777,6 +4824,13 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
                 asset = urllib.parse.unquote(asset)
                 safe_repo_path(self.context.root, asset)
                 self._send_json(self.context.reviews.load(asset))
+                return
+            if route == "/api/mesh-doctor":
+                self._require_authority(mutation=False)
+                asset = query.get("asset", [""])[0]
+                asset = urllib.parse.unquote(asset)
+                safe_repo_path(self.context.root, asset)
+                self._send_json(_mesh_doctor_report(self.context.root, asset))
                 return
             if route.startswith("/file/"):
                 self._require_authority(mutation=False)

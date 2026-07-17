@@ -326,3 +326,8 @@ dialog::backdrop { background: rgba(2,3,4,.72); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.mesh-doctor-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.mesh-doctor-table th,.mesh-doctor-table td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid rgba(255,255,255,.07)}
+.mesh-doctor-table th{font-weight:600;color:#9fb0bd}
+.mesh-doctor-table button{padding:.15rem .5rem;font-size:.78rem}

@@ -48,6 +48,7 @@ const state = {
   replayRun: null,
   activeReviewRun: null,
   motionLab: null,
+  meshDoctor: null,
   visualEvidence: {status: "not_captured", reason: null, invalidatedAt: null},
 };
 
@@ -748,6 +749,7 @@ async function selectAsset(record) {
   history.replaceState(null,"",`?asset=${encodeURIComponent(record.path)}`);setSaveState("Loading review…");
   try {await loadModel(record);const response=await apiFetch(`/api/review?asset=${encodeURIComponent(record.path)}`);if(!response.ok)throw new Error(`Review HTTP ${response.status}`);state.review=await response.json();setSaveState(state.review.updatedAt?"Review loaded":"Unsaved review",state.review.updatedAt?"saved":"");renderReview();}
   catch(error){console.error(error);setSaveState("Load failed","error");toast(error.message,true);}
+  loadMeshDoctor(record);
 }
 
 async function selectComparison(record) {
@@ -930,6 +932,50 @@ function renderMotionLab(){
   const plots=byId("motionPlots");plots.replaceChildren();for(const [key,label] of [["fkResidual","FK residual"],["footDrift","Foot drift"],["com","COM"],["grip","Grip"],["weaponPath","Weapon path"]]){const card=element("article","motion-plot"),head=element("div","motion-plot-head");head.append(element("span",null,label),element("small",null,lab.metrics[key].unit));const canvas=document.createElement("canvas");card.append(head,canvas);plots.append(card);drawMotionPlot(canvas,lab.metrics[key].series);}
   const events=byId("motionEvents");events.replaceChildren();for(const receipt of snapshot.events){const row=element("article","motion-event");row.append(element("strong",null,`${receipt.sequence} · ${receipt.eventType}`),element("span",null,receipt.eventType==="annotation"?`${receipt.reviewerKind} · F${receipt.frame} · ${receipt.jointId}/${receipt.objectId}`:`${receipt.reviewerKind} · ${receipt.action}`),element("p",null,receipt.text||receipt.comment||""),element("code",null,receipt.eventSha256));events.append(row);}if(!snapshot.events.length)events.append(element("p","muted","No append-only Motion Lab events recorded."));
 }
+
+// ---------------------------------------------------------------------------
+// Mesh Doctor surface (penetration findings, geometry-anchored cluster table)
+async function loadMeshDoctor(record){
+  state.meshDoctor=null;
+  renderMeshDoctor();
+  try{
+    const response=await apiFetch(`/api/mesh-doctor?asset=${encodeURIComponent(record.path)}`);
+    if(!response.ok)throw new Error(`Mesh Doctor HTTP ${response.status}`);
+    state.meshDoctor=await response.json();
+  }catch(error){console.error(error);state.meshDoctor={available:false,asset:record.path,note:error.message};}
+  renderMeshDoctor();
+}
+function renderMeshDoctor(){
+  const status=byId("meshDoctorStatus"),meta=byId("meshDoctorMeta"),table=byId("meshDoctorTable"),rows=byId("meshDoctorRows"),count=byId("meshDoctorCount");
+  rows.replaceChildren();meta.replaceChildren();
+  const report=state.meshDoctor;
+  if(!report){status.textContent="Load a model to inspect Mesh Doctor findings.";status.hidden=false;table.hidden=true;count.textContent="0";return;}
+  if(!report.available){status.textContent=report.note||"No Mesh Doctor report for this asset.";status.hidden=false;table.hidden=true;count.textContent="0";return;}
+  const clusters=[...(report.clusters||[])].sort((a,b)=>(a.signed_depth_m??0)-(b.signed_depth_m??0));
+  count.textContent=String(report.count??clusters.length);
+  status.hidden=true;table.hidden=false;
+  meta.append(element("p","muted",`${report.count??clusters.length} findings · ${report.schema||"mesh-doctor"} · ${report.scope_note||""}`));
+  clusters.forEach((cluster,index)=>{
+    const row=element("tr");
+    const depth=((cluster.signed_depth_m??0)*1000).toFixed(2);
+    const pair=(cluster.object_pair||[]).join(" ↔ ");
+    const tris=(cluster.triangle_ids||[]).join(", ");
+    const point=(cluster.world_point||[]).map(value=>Number(value).toFixed(3)).join(", ");
+    row.append(element("td",null,String(index+1)),element("td",null,depth),element("td",null,pair),element("td",null,tris),element("td",null,point));
+    const action=element("td");
+    const focus=element("button",null,"Pin");
+    focus.type="button";
+    focus.addEventListener("click",()=>{
+      if(!state.renderer?.primary||!cluster.world_point)return;
+      // geometry-anchored: fly camera to the cluster world point
+      state.renderer.target=[...cluster.world_point];
+      state.renderer.radius=Math.max(state.renderer.radius*0.3,0.05);
+      toast(`Focused Mesh Doctor cluster ${index+1} at ${point}`);
+    });
+    action.append(focus);row.append(action);rows.append(row);
+  });
+}
+
 async function loadMotionLab(){const response=await apiFetch("/api/motion-lab");if(response.status===404){state.motionLab=null;renderMotionLab();return;}const payload=await response.json();if(!response.ok)throw new Error(payload.error||`Motion Lab HTTP ${response.status}`);state.motionLab=payload;renderMotionLab();}
 async function appendMotionAnnotation(event){event.preventDefault();const snapshot=state.motionLab;if(!snapshot)return;const text=byId("motionAnnotationText").value.trim();const coordinates=[byId("motionWorldX"),byId("motionWorldY"),byId("motionWorldZ")].map(input=>Number(input.value));if(!text||coordinates.some(value=>!Number.isFinite(value))){toast("Motion Lab annotations require text and finite world coordinates",true);return;}const lab=snapshot.motionLab,button=$("button[type=submit]",byId("motionAnnotationForm"));button.disabled=true;try{const response=await apiFetch("/api/motion-lab-annotation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({motionLabId:lab.motionLabId,sourceSha256:snapshot.source.sha256,reviewerKind:byId("motionReviewerKind").value,text,revision:lab.revision,frame:motionFrame(),jointId:byId("motionJointId").value.trim(),objectId:byId("motionObjectId").value.trim(),worldPoint:coordinates})});const payload=await response.json();if(!response.ok)throw new Error(payload.error||`Motion Lab annotation HTTP ${response.status}`);byId("motionAnnotationText").value="";await loadMotionLab();toast("Append-only Motion Lab annotation recorded");}catch(error){console.error(error);toast(error.message,true);}finally{button.disabled=false;}}
 
