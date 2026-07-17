@@ -58,6 +58,28 @@ Distinctness (not label swaps): minimum pairwise mean-abs difference of the
 right-hand target trajectory across the 9 cells = 15.6 mm. Contact-region
 right-hand X lands at −0.28 / 0.0 / +0.28 for the three targets (nominal timing).
 
+## Mechanical proofs (validate_p3_vertical_strike_mechanics.py, this session)
+
+Final solve: `--steps 4000 --hand-weight 600 --foot-weight 600`. Per-cell measured
+properties (WO §3 mechanical bounds, no opponent model required):
+
+| property | result | bound |
+|---|---|---|
+| SO(3) local/global orth+det error | 6.0e-7 – 7.6e-7 | exact (finite, orthonormal, det +1) |
+| independent FK recompute error | 0.00 m | — |
+| planted-foot slide (within planted window) | 0.14 – 0.73 mm | ≤ 5 mm |
+| grip span deviation from 0.160 m | 0.18 – 0.39 mm | ≤ 2 mm |
+| impact timing error | 0 frames (all 9) | ± 1 tick |
+
+`P3_MECH_PROOF cells=9 failures=0`.
+
+During validation a genuine single-cell defect was found and fixed, not hidden:
+`high_right:early` initially showed 6.43 mm left-foot slide in the recovery window
+[36,51] (the builder's endpoint metric passed it; the slide was mid-window). Raising
+the planted-foot solve weight to 600 re-authored it to 0.14 mm. All 9 cells were then
+re-solved uniformly at foot-weight 600; slide is now ≤ 0.73 mm everywhere. This is
+recorded as a falsification-and-repair, not a threshold change.
+
 ## Harness falsification recorded (valuable negative result)
 
 A naive kimodo `EndEffectorConstraintSet` with an arbitrary target point and an
@@ -78,7 +100,9 @@ here. Ad-hoc harness `/tmp/hermes-verify-p3-kimodo.py` (removed after run).
 
 ```
 python3 tools/qa/build_p3_vertical_strike_corpus.py \
-  --out qa_runs/p3_vertical_strike_corpus --steps 4000 --hand-weight 600
+  --out qa_runs/p3_vertical_strike_corpus \
+  --steps 4000 --hand-weight 600 --foot-weight 600
+python3 tools/qa/validate_p3_vertical_strike_mechanics.py
 ```
 
 Requires the pinned ARDY source tree at `/run/media/vdubrov/NVMe-Storage1/ardy`

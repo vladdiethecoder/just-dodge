@@ -97,6 +97,8 @@ def main() -> int:
     parser.add_argument("--lr", type=float, default=None, help="author learning rate")
     parser.add_argument("--hand-weight", type=float, default=None,
                         help="hand/grip endpoint loss weight")
+    parser.add_argument("--foot-weight", type=float, default=None,
+                        help="planted-foot loss weight")
     args = parser.parse_args()
 
     base = json.loads(BASE_SPEC.read_text(encoding="utf-8"))
@@ -136,7 +138,8 @@ def main() -> int:
                 cmd = [sys.executable, str(BUILDER), "--spec", str(spec_path),
                        "--trajectory-output", str(traj), "--proof-output", str(proof)]
                 for flag, val in (("--steps", args.steps), ("--lr", args.lr),
-                                  ("--hand-weight", args.hand_weight)):
+                                  ("--hand-weight", args.hand_weight),
+                                  ("--foot-weight", args.foot_weight)):
                     if val is not None:
                         cmd += [flag, str(val)]
                 proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)

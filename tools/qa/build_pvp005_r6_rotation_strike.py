@@ -296,6 +296,7 @@ def solve_rotation_trajectory(
     steps: int = OPTIMIZATION_STEPS,
     lr: float = 0.025,
     hand_weight: float = 300.0,
+    foot_weight: float = 180.0,
 ):
     import torch
 
@@ -352,7 +353,7 @@ def solve_rotation_trajectory(
             limit_loss = limit_loss + torch.relu(angles[:, column] - high).square().mean()
         loss = (
             hand_weight * hand_loss
-            + 180.0 * foot_loss
+            + foot_weight * foot_loss
             + 30.0 * smoothness
             + 0.4 * regularization
             + 2_000.0 * floor_loss
@@ -585,6 +586,8 @@ def main() -> None:
                         help="Adam learning rate (default %(default)s)")
     parser.add_argument("--hand-weight", type=float, default=300.0,
                         help="hand/grip endpoint loss weight (default %(default)s)")
+    parser.add_argument("--foot-weight", type=float, default=180.0,
+                        help="planted-foot loss weight (default %(default)s)")
     args = parser.parse_args()
 
     trajectory_output = args.trajectory_output.resolve()
@@ -626,6 +629,7 @@ def main() -> None:
     solved = solve_rotation_trajectory(
         skeleton, action, source_archive["local_rot_mats"], nodes,
         steps=args.steps, lr=args.lr, hand_weight=args.hand_weight,
+        foot_weight=args.foot_weight,
     )
     device = "cuda:0"
     model = load_pinned_model(args.ardy_root.resolve(), device)
