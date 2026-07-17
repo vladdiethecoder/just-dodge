@@ -805,6 +805,37 @@ fn fnv1a(bytes: &[u8]) -> u64 {
 mod tests {
     use super::*;
 
+    // --- Shared staging fixtures -------------------------------------------------
+    // Centralize the fighter-separation invariants so no test hand-places roots
+    // with ad-hoc magic numbers. `planar_distance_upper_bound` is MANHATTAN
+    // (|dx|+|dz|), so two fighters at symmetric roots ±D on Z are 2D apart.
+    // Reach/feasibility constants come from the production code, not re-derived
+    // per test, so a tuning change updates every test consistently.
+    const fn symmetric(d: i32) -> [RootPosition; 2] {
+        [RootPosition::new(0, 0, d), RootPosition::new(0, 0, -d)]
+    }
+
+    /// The farthest symmetric separation at which a Grab is still feasible:
+    /// distance <= GRAB_REACH_MM + ROOT_SPEED_MM_PER_TICK * grab frame cost.
+    fn grab_feasible_phase() -> PlanPhase {
+        // 2D <= 650 + 100*20 = 2650 => D <= 1325. Use D=1200 (2400mm) with margin.
+        let [player, opponent] = symmetric(1_200);
+        PlanPhase::with_roots(player, opponent)
+    }
+
+    /// A separation where both fighters whiff every attack (no contact, no
+    /// negative_on_hit interrupt offer). Well beyond weapon + body reach.
+    fn whiff_phase() -> PlanPhase {
+        let [player, opponent] = symmetric(4_000);
+        PlanPhase::with_roots(player, opponent)
+    }
+
+    /// A close separation where a strike is guaranteed to make contact.
+    fn contact_phase() -> PlanPhase {
+        let [player, opponent] = symmetric(200);
+        PlanPhase::with_roots(player, opponent)
+    }
+
     fn move_intent(dir: MoveDirection, distance_mm: u16, auto_correct: bool) -> Intent {
         Intent::Move {
             dir,
@@ -848,16 +879,9 @@ mod tests {
     fn window_stops_at_earliest_live_actionability_not_minimum_animation_length() {
         // Player Strike iasa_at=14; opponent Grab iasa_at=16 (later), so the
         // window stops at the PLAYER's earliest actionability (tick 14), proving
-        // live-actionability, not min(anim_length)=18. planar_distance_upper_bound
-        // is MANHATTAN (|dx|+|dz|): symmetric roots ±D on Z give 2D. Grab is
-        // feasible iff 2D <= GRAB_REACH(650) + 100*frame_cost(20)=2000 => 2650,
-        // i.e. 2D<=2650 (D<=1325); and it must stay out of clinch (>650) through
-        // the 14-tick window (Grab closes 1400mm): 2D-1400>650 => D>1025. D=1200
-        // (2400mm apart) satisfies both.
-        let mut phase = PlanPhase::with_roots(
-            RootPosition::new(0, 0, 1_200),
-            RootPosition::new(0, 0, -1_200),
-        );
+        // live-actionability, not min(anim_length)=18. Grab must be feasible (see
+        // grab_feasible_phase) and stay out of clinch through the window.
+        let mut phase = grab_feasible_phase();
         let player = Intent::Strike {
             variant: StrikeVariant::Thrust,
         };
@@ -886,12 +910,8 @@ mod tests {
         let strike = Intent::Strike {
             variant: StrikeVariant::Thrust,
         };
-        let mut hit =
-            PlanPhase::with_roots(RootPosition::new(0, 0, 200), RootPosition::new(0, 0, -200));
-        let mut whiff = PlanPhase::with_roots(
-            RootPosition::new(0, 0, 4_000),
-            RootPosition::new(0, 0, -4_000),
-        );
+        let mut hit = contact_phase();
+        let mut whiff = whiff_phase();
         lock(&mut hit, strike, Intent::Idle);
         lock(&mut whiff, strike, Intent::Idle);
         let hit_events = hit.simulate_to_boundary().unwrap();
@@ -947,12 +967,8 @@ mod tests {
         // Busy (non-IOOT) branch: both fighters whiff at long range (no contact,
         // no negative_on_hit interrupt offer). Player Thrust has iasa_at=14 and
         // reaches Ready first; opponent Slash has iasa_at=17 and is non-IOOT, so
-        // it stays busy and cannot submit. 4000mm is the established whiff range
-        // (see hit_cancel_shortens_window_compared_with_a_whiff).
-        let mut busy = PlanPhase::with_roots(
-            RootPosition::new(0, 0, 4_000),
-            RootPosition::new(0, 0, -4_000),
-        );
+        // it stays busy and cannot submit.
+        let mut busy = whiff_phase();
         lock(
             &mut busy,
             Intent::Strike {
