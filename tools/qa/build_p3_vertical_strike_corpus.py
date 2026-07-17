@@ -92,6 +92,11 @@ def main() -> int:
     parser.add_argument("--cells", nargs="*", default=None,
                         help="subset like high_left:early; default all 9")
     parser.add_argument("--dry-run", action="store_true", help="write specs only, no solve")
+    parser.add_argument("--steps", type=int, default=None,
+                        help="optimization steps forwarded to the author (tighter solve)")
+    parser.add_argument("--lr", type=float, default=None, help="author learning rate")
+    parser.add_argument("--hand-weight", type=float, default=None,
+                        help="hand/grip endpoint loss weight")
     args = parser.parse_args()
 
     base = json.loads(BASE_SPEC.read_text(encoding="utf-8"))
@@ -128,10 +133,13 @@ def main() -> int:
                 proof = args.out / "proofs" / f"{target}_{timing}.json"
                 traj.parent.mkdir(parents=True, exist_ok=True)
                 proof.parent.mkdir(parents=True, exist_ok=True)
-                proc = subprocess.run(
-                    [sys.executable, str(BUILDER), "--spec", str(spec_path),
-                     "--trajectory-output", str(traj), "--proof-output", str(proof)],
-                    cwd=ROOT, capture_output=True, text=True)
+                cmd = [sys.executable, str(BUILDER), "--spec", str(spec_path),
+                       "--trajectory-output", str(traj), "--proof-output", str(proof)]
+                for flag, val in (("--steps", args.steps), ("--lr", args.lr),
+                                  ("--hand-weight", args.hand_weight)):
+                    if val is not None:
+                        cmd += [flag, str(val)]
+                proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
                 entry["builder_returncode"] = proc.returncode
                 if proc.returncode == 0 and proof.is_file():
                     pdata = json.loads(proof.read_text(encoding="utf-8"))

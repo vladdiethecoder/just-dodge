@@ -29,27 +29,30 @@ reported error) is NOT the P3 result and remains exploratory-only.
 
 ## Validated evidence (measured, this session)
 
-All 9 cells authored with `PVP005_R6_ROTATION_PROOF=PASS`. Per-cell metrics:
+All 9 cells authored with `PVP005_R6_ROTATION_PROOF=PASS`. Final solve:
+`--steps 4000 --hand-weight 600` (a tighter solve; thresholds were NOT weakened).
+Per-cell metrics:
 
 | cell | hand mm | foot mm | grip deg | grip pos mm |
 |---|---|---|---|---|
-| high_left:early | 1.11 | 3.19 | 0.283 | 1.11 |
-| high_left:nominal | 1.29 | 4.37 | 0.199 | 1.29 |
-| high_left:late | 1.76 | 3.15 | 0.286 | 1.76 |
-| high_center:early | 1.01 | 2.67 | 0.181 | 1.01 |
-| high_center:nominal | 1.18 | 3.36 | 0.196 | 1.18 |
-| high_center:late | 1.86 | 3.74 | 0.315 | 1.86 |
-| high_right:early | 0.83 | 2.49 | 0.214 | 0.83 |
-| high_right:nominal | 0.94 | 2.19 | 0.199 | 0.94 |
-| high_right:late | 1.20 | 2.61 | 0.226 | 1.20 |
+| high_left:early | 0.50 | 2.98 | 0.134 | 0.50 |
+| high_left:nominal | 0.60 | 4.03 | 0.097 | 0.60 |
+| high_left:late | 0.83 | 2.98 | 0.140 | 0.83 |
+| high_center:early | 0.46 | 2.65 | 0.094 | 0.46 |
+| high_center:nominal | 0.53 | 3.28 | 0.096 | 0.53 |
+| high_center:late | 0.71 | 2.66 | 0.130 | 0.71 |
+| high_right:early | 0.43 | 4.31 | 0.106 | 0.43 |
+| high_right:nominal | 0.56 | 2.08 | 0.100 | 0.56 |
+| high_right:late | 0.58 | 2.58 | 0.110 | 0.58 |
 
 WO thresholds: hand ≤ 2 mm, planted foot ≤ 5 mm, grip angle ≤ 1°, grip pos ≤ 1 mm.
 
-- hand endpoint: 9/9 within 2 mm
-- planted foot: 9/9 within 5 mm
-- grip angle: 9/9 within 1°
-- grip position: 4/9 within 1 mm; 5/9 exceed (max 1.86 mm) — HONEST GAP, not
-  weakened, not hidden. See "Open gaps" below.
+- hand endpoint: 9/9 within 2 mm (worst 0.83 mm)
+- planted foot: 9/9 within 5 mm (worst 4.31 mm)
+- grip angle: 9/9 within 1° (worst 0.14°)
+- grip position: 9/9 within 1 mm (worst 0.83 mm) — the earlier 5/9 over-threshold
+  gap (up to 1.86 mm at the default 1500-step solve) is CLOSED by the tighter
+  solve, not by weakening the threshold. No joint-limit violations in any cell.
 
 Distinctness (not label swaps): minimum pairwise mean-abs difference of the
 right-hand target trajectory across the 9 cells = 15.6 mm. Contact-region
@@ -65,19 +68,17 @@ here. Ad-hoc harness `/tmp/hermes-verify-p3-kimodo.py` (removed after run).
 
 ## Open gaps (not claimed)
 
-1. Grip-position 1 mm threshold: 5/9 cells exceed (up to 1.86 mm). This is an
-   authoring-tolerance gap in the optimization solve, to be tightened (more
-   steps / tighter grip loss weight) before any quality admission. Not waived.
-2. These are AUTHORED conditioning targets, not yet a trained interaction-
+1. These are AUTHORED conditioning targets, not yet a trained interaction-
    conditioned MotionBricks checkpoint. Training + clip-separated held-out
    evaluation + the remaining WO §3 proofs (SO(3), FK, socket, timing, no foot
    slide, replay/truth agreement) are forward work.
-3. Blinded human distinguishability trial (all 9 from full-res motion) not yet run.
+2. Blinded human distinguishability trial (all 9 from full-res motion) not yet run.
 
 ## Reproduce
 
 ```
-python3 tools/qa/build_p3_vertical_strike_corpus.py --out qa_runs/p3_vertical_strike_corpus
+python3 tools/qa/build_p3_vertical_strike_corpus.py \
+  --out qa_runs/p3_vertical_strike_corpus --steps 4000 --hand-weight 600
 ```
 
 Requires the pinned ARDY source tree at `/run/media/vdubrov/NVMe-Storage1/ardy`

@@ -288,7 +288,15 @@ def maximum_angular_step(global_rotations) -> float:
     return float(torch.acos(((trace - 1.0) * 0.5).clamp(-1.0, 1.0)).max())
 
 
-def solve_rotation_trajectory(skeleton, action: dict, source_local: np.ndarray, nodes):
+def solve_rotation_trajectory(
+    skeleton,
+    action: dict,
+    source_local: np.ndarray,
+    nodes,
+    steps: int = OPTIMIZATION_STEPS,
+    lr: float = 0.025,
+    hand_weight: float = 300.0,
+):
     import torch
 
     torch.manual_seed(0)
@@ -308,14 +316,17 @@ def solve_rotation_trajectory(skeleton, action: dict, source_local: np.ndarray, 
     )
     foot_indices = [6, 7, 13, 14]
     delta = torch.zeros((FRAMES, 34, 3), dtype=dtype, requires_grad=True)
-    optimizer = torch.optim.Adam([delta], lr=0.025)
+    optimizer = torch.optim.Adam([delta], lr=lr)
+    # Scale LR-decay milestones to the requested step count (same 8/15 and 4/5
+    # fractions as the 1500-step baseline).
+    milestones = [max(1, int(steps * 8 / 15)), max(1, int(steps * 4 / 5))]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[800, 1_200], gamma=0.2
+        optimizer, milestones=milestones, gamma=0.2
     )
     best = None
     best_score = float("inf")
 
-    for iteration in range(OPTIMIZATION_STEPS + 1):
+    for iteration in range(steps + 1):
         optimizer.zero_grad()
         local = torch.matrix_exp(skew(delta)) @ base
         global_rotations, positions, _ = skeleton.fk(local, root)
@@ -340,7 +351,7 @@ def solve_rotation_trajectory(skeleton, action: dict, source_local: np.ndarray, 
             limit_loss = limit_loss + torch.relu(low - angles[:, column]).square().mean()
             limit_loss = limit_loss + torch.relu(angles[:, column] - high).square().mean()
         loss = (
-            300.0 * hand_loss
+            hand_weight * hand_loss
             + 180.0 * foot_loss
             + 30.0 * smoothness
             + 0.4 * regularization
@@ -568,6 +579,12 @@ def main() -> None:
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--trajectory-output", type=Path, required=True)
     parser.add_argument("--proof-output", type=Path, required=True)
+    parser.add_argument("--steps", type=int, default=OPTIMIZATION_STEPS,
+                        help="optimization steps (default %(default)s; raise for tighter solve)")
+    parser.add_argument("--lr", type=float, default=0.025,
+                        help="Adam learning rate (default %(default)s)")
+    parser.add_argument("--hand-weight", type=float, default=300.0,
+                        help="hand/grip endpoint loss weight (default %(default)s)")
     args = parser.parse_args()
 
     trajectory_output = args.trajectory_output.resolve()
@@ -607,7 +624,8 @@ def main() -> None:
     skeleton = G1Skeleton34()
     nodes = parse_g1_hinges(ROOT / "src/g1_articulation.rs")
     solved = solve_rotation_trajectory(
-        skeleton, action, source_archive["local_rot_mats"], nodes
+        skeleton, action, source_archive["local_rot_mats"], nodes,
+        steps=args.steps, lr=args.lr, hand_weight=args.hand_weight,
     )
     device = "cuda:0"
     model = load_pinned_model(args.ardy_root.resolve(), device)
