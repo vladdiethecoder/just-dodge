@@ -215,6 +215,23 @@ def metrics(findings: list[dict]) -> dict:
     }
 
 
+def visible_surface_clearance_m(player_vertices: list[Vector], player_hand_ids: list[int], opponent_vertices: list[Vector], triangles: list[tuple[int, int, int]]) -> float:
+    """Minimum hand-vertex to opponent-body-surface distance (m). This is the
+    visible surface clearance: positive when the hand does not touch the body.
+    Uses a BVH nearest-point query per hand vertex against the opponent mesh.
+    """
+    from mathutils.bvhtree import BVHTree
+
+    bvh = BVHTree.FromPolygons([tuple(v) for v in opponent_vertices], [tuple(t) for t in triangles])
+    hand_vertex_ids = sorted({index for tri in player_hand_ids for index in triangles[tri]})
+    best = math.inf
+    for vertex_index in hand_vertex_ids:
+        _location, _normal, _face_index, distance = bvh.find_nearest(player_vertices[vertex_index])
+        if distance is not None and distance < best:
+            best = distance
+    return 0.0 if best is math.inf else round(best, 9)
+
+
 def make_mesh(name: str, vertices: list[Vector], triangles: list[tuple[int, int, int]], color: tuple[float, float, float, float]) -> bpy.types.Object:
     mesh = bpy.data.meshes.new(name + "Mesh")
     mesh.from_pydata([tuple(vertex) for vertex in vertices], [], triangles)
@@ -397,6 +414,7 @@ def main() -> int:
     pair_module = pair_detector_module()
     findings = run_pair_detect(pair_module, player_vertices, opponent_vertices, source, player_hand_ids, args.min_depth_m)
     before_metrics = metrics(findings)
+    clearance_m = visible_surface_clearance_m(player_vertices, player_hand_ids, opponent_vertices, source["triangles"])
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     player_object = make_mesh("PlayerMannequin", player_vertices, source["triangles"], (0.23, 0.52, 0.92, 1.0))
@@ -499,6 +517,7 @@ def main() -> int:
         "player_hand_triangles": len(player_hand_ids),
         "min_depth_m": args.min_depth_m,
         "metrics": before_metrics,
+        "visible_surface_clearance_m": clearance_m,
         "offending_triangle_pair": findings[0]["triangle_ids"] if findings else None,
         "findings_sha256": canonical_sha256(findings),
         "findings": findings[:200],

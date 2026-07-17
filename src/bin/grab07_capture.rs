@@ -81,6 +81,7 @@ struct CaptureOutput {
     contact_substeps: Vec<u64>,
     worst: PoseSample,
     worst_depth: f32,
+    secure_grab: Option<PoseSample>,
     final_truth_hash: u64,
 }
 
@@ -501,6 +502,7 @@ fn simulate(revision: &str, mesh_hash: &str) -> CaptureOutput {
     let mut contact_substeps = Vec::new();
     let mut worst_depth = -1.0_f32;
     let mut worst = None::<PoseSample>;
+    let mut secure_grab_sample = None::<PoseSample>;
 
     for truth_tick in 0..96_u64 {
         if phase.status() == PlanStatus::Planning {
@@ -585,6 +587,9 @@ fn simulate(revision: &str, mesh_hash: &str) -> CaptureOutput {
                 snapshot: snapshot.clone(),
                 physics_tick,
             };
+            if phase_label == CapturePhase::SecureGrab && secure_grab_sample.is_none() {
+                secure_grab_sample = Some(pose.clone());
+            }
             capture_lines.push(capture_record(
                 &snapshot,
                 phase_label,
@@ -669,6 +674,7 @@ fn simulate(revision: &str, mesh_hash: &str) -> CaptureOutput {
         contact_substeps,
         worst,
         worst_depth,
+        secure_grab: secure_grab_sample,
         final_truth_hash: phase.truth_hash(),
     }
 }
@@ -1026,12 +1032,12 @@ fn fighter_pose_json(role: &str, model: Mat4, skin: &[Mat4], mesh: &SkinnedMeshD
 /// `world_skin` includes the fighter model transform used by the renderer.
 /// Matrices are explicitly row-major in JSON, while the runtime itself uses
 /// glam's column-major `Mat4` values.
-fn worst_pose_json(
-    output: &CaptureOutput,
+fn sample_pose_json(
+    sample: &PoseSample,
     presentation: &PresentationAssets,
     mesh_hash: &str,
 ) -> String {
-    let snapshot = &output.worst.snapshot;
+    let snapshot = &sample.snapshot;
     let player_root = root_vec(snapshot, Side::Player);
     let opponent_root = root_vec(snapshot, Side::Opponent);
     let player_model = fighter_model(player_root, opponent_root);
@@ -1046,8 +1052,8 @@ fn worst_pose_json(
             "\"skin_matrix_semantics\":\"skin_game=joint_world_game_space*inverse_bind; world_skin=root_model*skin_game\",",
             "\"source_skin\":{},\"source_skin_sha256\":{},\"fighters\":[{},{}]}}\n"
         ),
-        output.worst.physics_tick,
-        output.worst.physics_tick / 2,
+        sample.physics_tick,
+        sample.physics_tick / 2,
         snapshot.truth_frame,
         json_string(MANNEQUIN_SKIN),
         json_string(mesh_hash),
@@ -1059,6 +1065,14 @@ fn worst_pose_json(
             &presentation.mesh
         ),
     )
+}
+
+fn worst_pose_json(
+    output: &CaptureOutput,
+    presentation: &PresentationAssets,
+    mesh_hash: &str,
+) -> String {
+    sample_pose_json(&output.worst, presentation, mesh_hash)
 }
 
 fn prepare_output(out: &Path) {
@@ -1158,6 +1172,13 @@ fn main() {
         .expect("write posed worst-substep state");
     fs::write(out.join("worst_substep_pose.json"), first_pose_json)
         .expect("write posed worst-substep skin matrices");
+    if let Some(secure_grab) = &first.secure_grab {
+        fs::write(
+            out.join("secure_grab_pose.json"),
+            sample_pose_json(secure_grab, &presentation, &mesh_hash),
+        )
+        .expect("write posed secure-grab skin matrices");
+    }
     render_views(&assets, &first.worst, &out.join("images"));
     build_receipt(&out);
 
