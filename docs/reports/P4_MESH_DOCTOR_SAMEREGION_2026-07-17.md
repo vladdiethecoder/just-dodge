@@ -26,9 +26,10 @@ count is reported but not targeted.
 Ran on C0 armored duelist (revision 597c48f). Receipt:
 `qa_runs/p4_mesh_doctor/c0_sameregion_receipt.json` (gitignored).
 
-- same_region_history: 447 -> 423 -> 422 -> 420 (monotone, efficacy-gated, converged=True)
-- cross_region_history: 263 -> 262 -> 262 -> 262 (untargeted, stable — no new
-  penetrations driven into adjacent regions)
+- same_region_history (6 iters): 447 -> 423 -> 422 -> 420 (monotone, converged=True)
+- same_region_history (20 iters): 447 -> 423 -> 422 -> 420 -> 411 (continues to
+  decrease; converges toward a floor as remaining folds are deeper/tighter)
+- cross_region_history: 263 -> 262 (untargeted, stable — no new penetrations)
 - Non-destructive: corrective shape key `meshdoctor_sameregion_repair` on a copy;
   new immutable candidate + receipt. promoted=False.
 
