@@ -15,22 +15,39 @@ JD-RC0-MESHDOCTOR-GRAB07-003 (that unit's hand-authored approach is rejected).
 
 ## 1. Core loop (Yomi-Hustle-style)
 
-- Simultaneous-lock turn forecast: both players lock an intent each plan phase;
+- Simultaneous-lock turn forecast: both fighters lock an intent each plan phase;
   the engine resolves the interleaved result deterministically, freezes at the
   phase boundary, both pick the next intent.
-- Re-prompt cadence: based on the fastest move used in the duel (exact rule
-  pending YOMIH research, deleg_5f675007).
-- Goal-directed intents, not fixed animations. Example: to Grab an out-of-reach
-  opponent the engine auto-runs into reach, then grabs.
-- Frame cost: FIXED per action family (Strike/Block/Grab canonical cost, tuned
-  by data).
-- Feasibility: re-evaluated MID-EXECUTION at each plan-phase boundary; if the
-  goal can't be achieved in-cost, the engine does NOT lock into a whiff — it
-  re-prompts (continue / feint / cancel).
-- Feint: BOTH cheap cancel-feint AND committed feint actions.
-- Cancel: costs a fixed penalty (frames or a vulnerable window) to prevent spam.
-- Emergent brutal combos: cancel-into rules + free chaining at phase boundaries
-  + juggles (launched/airborne opponents re-struck before landing).
+- Re-prompt cadence (CORRECTED by YOMIH primary-source research, deleg_5f675007,
+  installed PCK 502/502 GDScripts): the window is NOT a fixed "fastest move"
+  duration. It is a LIVE tick-by-tick simulation that stops at the FIRST
+  actionability event of either fighter:
+    `while not (p1.state_interruptable or p2.state_interruptable): tick()`
+  Actionability fires at a state's IASA frame, an explicit interrupt frame,
+  animation end, OR a hit-cancel becoming available (`iasa_on_hit`). So
+  whiff/hit/block/parry/landing all change the window length — there is no
+  static per-pair forecast duration. "Fastest move" = earliest CURRENTLY
+  reachable actionability under the resolved interaction, not nominal length.
+- Ready vs Interrupt: at the first ready point the game freezes; the other
+  fighter is offered an action only if it is in an interruptible/IOOT action,
+  feinting, or negative-on-hit state — otherwise it stays busy.
+- Recovery is DERIVED, not authored as `total - startup - active`: effective
+  recovery = next qualifying IASA / interrupt-frame / anim-end, adjusted by
+  hit/block/hitlag/landing/dynamic-IASA/cancel-type.
+- Per-move data = a STATE + one or more HITBOXES. State: `anim_length`,
+  `iasa_at`, `interrupt_frames[]`, `iasa_on_hit`, IOOT flag, cancel-category
+  strings, feint fields. Hitbox: `start_tick`, `active_ticks`, damage/hitstun/
+  hitlag, cancel/combo scaling, block/chip/plus, knockback/knockdown, target
+  eligibility. Implement this split, not a rigid startup/active/recovery record.
+- Goal-directed movement is PARAMETERIZED intent (`{Distance, AutoCorrect}`),
+  NOT a persistent "approach until contact" command: a committed state that
+  continues to its IASA/end unless hit-cancelled, Free-Cancelled, IOOT-
+  interrupted, or Whiff-Cancelled. Dash IASA scales from requested distance;
+  AutoCorrect re-aims toward the opponent. A whiff does NOT early-cancel.
+- Feint (YOMIH "Free"): base cast has 2 charges; a feinting action adds broad
+  Grounded/Aerial cancel categories at the opponent's actionability point.
+  Whiff Cancel is a distinct 2-frame state consuming 75% Burst, attack-only
+  follow-ups (no movement/defense).
 
 ## 2. Fighters, arena, camera, control
 
