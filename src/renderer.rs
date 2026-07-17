@@ -999,13 +999,21 @@ impl Renderer {
                     resource: sub.as_entire_binding(),
                 }],
             });
-            let texture_path = std::env::var_os("JUST_DODGE_C0_BASE_COLOR")
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|| {
-                    assets.join("source/meshy/c0_armored_duelist_001/textures/base_color.png")
-                });
-            let (_texture, stv, sts) =
-                load_texture(device, queue, texture_path.to_string_lossy().as_ref());
+            // The debug-mannequin loop deliberately uses an untextured neutral
+            // carrier so joint/weight defects stay readable. Legacy paths keep
+            // their explicit asset texture behavior.
+            let (stv, sts) = if std::env::var_os("JUST_DODGE_C0_FLAT_COLOR").is_some() {
+                build_solid_texture(device, queue, [184, 190, 198, 255])
+            } else {
+                let texture_path = std::env::var_os("JUST_DODGE_C0_BASE_COLOR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| {
+                        assets.join("source/meshy/c0_armored_duelist_001/textures/base_color.png")
+                    });
+                let (_texture, view, sampler) =
+                    load_texture(device, queue, texture_path.to_string_lossy().as_ref());
+                (view, sampler)
+            };
             let stbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("C0 armored-duelist TBG"),
                 layout: &texture_bgl,

@@ -12,9 +12,11 @@ pub mod plan_phase;
 
 pub use clinch::{ClinchIntent, ClinchResolution, ClinchState};
 pub use combo::{AirState, ComboState, GRAVITY_MM_PER_TICK_SQUARED, LAUNCH_VELOCITY_MM_PER_TICK};
-pub use intent::{Intent, MoveDirection, StrikeVariant};
+pub use intent::{
+    Hitbox, Intent, MoveDirection, MoveParameters, State, StrikeVariant, TargetEligibility,
+};
 pub use plan_phase::{
-    CANCEL_PENALTY_FRAMES, GRAB_REACH_MM, PlanError, PlanEvent, PlanPhase, PlanSnapshot,
-    PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RepromptOption, RepromptReason,
-    RootPosition,
+    ActionabilityReason, CANCEL_PENALTY_FRAMES, GRAB_REACH_MM, InterruptOfferReason, PlanError,
+    PlanEvent, PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK,
+    RepromptOption, RepromptReason, RootPosition,
 };

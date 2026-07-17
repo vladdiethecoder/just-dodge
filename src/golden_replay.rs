@@ -215,6 +215,8 @@ impl GoldenScenario {
                 Intent::Grab,
                 Intent::Move {
                     dir: MoveDirection::Approach,
+                    distance_mm: 600,
+                    auto_correct: true,
                 },
                 Intent::Dodge {
                     dir: MoveDirection::Retreat,

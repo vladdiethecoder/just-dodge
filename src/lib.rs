@@ -27,6 +27,7 @@ pub mod motion_retarget;
 pub mod motion_runtime;
 #[cfg(feature = "motion-inference")]
 pub mod motion_service;
+pub mod motion_service_async;
 pub mod neural_plan;
 pub mod renderer;
 pub mod replay;

@@ -59,9 +59,7 @@ impl ScriptKind {
 }
 
 const AGGRESSIVE: [Intent; 10] = [
-    Intent::Move {
-        dir: MoveDirection::Approach,
-    },
+    Intent::move_standard(MoveDirection::Approach),
     Intent::Grab,
     Intent::Strike {
         variant: StrikeVariant::Thrust,
@@ -86,9 +84,7 @@ const DEFENSIVE: [Intent; 10] = [
     Intent::Clinch {
         sub: ClinchIntent::Tech,
     },
-    Intent::Move {
-        dir: MoveDirection::Retreat,
-    },
+    Intent::move_standard(MoveDirection::Retreat),
     Intent::Idle,
     Intent::Feint,
     Intent::Clinch {
@@ -107,9 +103,7 @@ const MIXED: [Intent; 10] = [
     Intent::Strike {
         variant: StrikeVariant::Slash,
     },
-    Intent::Move {
-        dir: MoveDirection::LateralLeft,
-    },
+    Intent::move_standard(MoveDirection::LateralLeft),
     Intent::Block,
     Intent::Grab,
     Intent::Dodge {
