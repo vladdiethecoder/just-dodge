@@ -49,6 +49,7 @@ ASSETS=(
     rune_pillar.bin
     rune_pillar_0.jpg
     source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin
+    source/meshy/c0_armored_duelist_001/textures/base_color.png
     source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin
     source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim
     motion/pvp005_r6k/hero_strike.motionbricks.interaction.413.f32
