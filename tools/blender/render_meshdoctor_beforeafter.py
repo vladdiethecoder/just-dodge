@@ -17,13 +17,20 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import os
+
 import bpy
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "assets/source/meshy/c0_armored_duelist_001/model.glb"
 CANDIDATE = ROOT / "qa_runs/p4_mesh_doctor/c0_sr20_candidate.glb"
-OUT_DIR = ROOT / "qa_runs/p4_mesh_doctor/visual_evidence"
+OUT_DIR = Path(
+    os.environ.get(
+        "MESHDOCTOR_EVIDENCE_OUT_DIR",
+        str(ROOT / "qa_runs/p4_mesh_doctor/visual_evidence"),
+    )
+)
 
 
 def look_at(cam: bpy.types.Object, target: Vector) -> None:
