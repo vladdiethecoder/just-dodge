@@ -31,6 +31,7 @@ jobs:
       - run: python3 tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
       - run: python3 tools/qa/test_heldout_motion_acceptance.py
       - run: python3 tools/qa/test_interaction_partition_leakage.py
+      - run: python3 -m py_compile tools/qa/mesh_promotion_gate.py tools/blender/mesh_doctor_detect.py tools/blender/mesh_doctor_pair_detect.py tools/blender/mesh_doctor_sameregion_repair.py tools/blender/mesh_doctor_global_repair.py
       - run: bash tools/qa/validate_gltf_assets.sh
       - run: node --check tools/asset_review/app.js
       - run: cargo fmt --check
