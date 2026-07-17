@@ -35,3 +35,6 @@ jobs:
       - run: RUSTFLAGS=-Dwarnings cargo check --locked --all-targets
       - run: RUSTFLAGS=-Dwarnings cargo test --locked --all-targets
       - run: cargo test --locked --lib milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash -- --nocapture
+      # Shipped-executable guard: the no-default-features build must stay clean so the
+      # packaged just-dodge never links a generative model or Python (JD-RC0 contract).
+      - run: RUSTFLAGS=-Dwarnings cargo check --locked --no-default-features --bin just-dodge --bin m3_match
