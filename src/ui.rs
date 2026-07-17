@@ -1187,30 +1187,136 @@ impl UiRenderer {
 
         match flow_stage {
             FlowStage::Menu => {
-                self.rect(Vec2::ZERO, Vec2::new(w, h), [0.015, 0.02, 0.035, 1.0]);
+                // AAA-style main menu: dark radial-gradient feel, glowing gold title,
+                // gradient primary button, glassy secondary buttons.
+                self.rect(Vec2::ZERO, Vec2::new(w, h), [0.039, 0.039, 0.059, 1.0]);
+
+                // Subtle radial vignette (two nested rects to fake the gradient)
+                let cx = w * 0.5;
+                let cy = h * 0.5;
+                let max_r = (w * w + h * h).sqrt() * 0.5;
+                for i in 0..6 {
+                    let t = i as f32 / 6.0;
+                    let r = max_r * t;
+                    let alpha = 0.03 * (1.0 - t);
+                    self.rect(
+                        Vec2::new(cx - r, cy - r),
+                        Vec2::new(r * 2.0, r * 2.0),
+                        [0.08, 0.07, 0.12, alpha],
+                    );
+                }
+
+                // Title
                 let title = "JUST DODGE";
-                let title_w = title.len() as f32 * GLYPH_ADV * 5.0;
+                let title_scale = 8.0;
+                let title_w = title.len() as f32 * GLYPH_ADV * title_scale;
+                let title_x = (w - title_w) / 2.0;
+                let title_y = h * 0.28;
+                // Glow layers
+                for (scale, alpha) in [(title_scale * 1.15, 0.08), (title_scale * 1.05, 0.15)] {
+                    let gw = title.len() as f32 * GLYPH_ADV * scale;
+                    let gx = (w - gw) / 2.0;
+                    let gy = title_y - (scale - title_scale) * GLYPH_H * 0.5;
+                    self.text(Vec2::new(gx, gy), title, scale, [0.83, 0.68, 0.22, alpha]);
+                }
                 self.text(
-                    Vec2::new((w - title_w) / 2.0, h * 0.36),
+                    Vec2::new(title_x, title_y),
                     title,
-                    5.0,
-                    [0.95, 0.78, 0.24, 1.0],
+                    title_scale,
+                    [0.83, 0.68, 0.22, 1.0],
                 );
-                let subtitle = "A deterministic three-action duel";
-                let subtitle_w = subtitle.len() as f32 * GLYPH_ADV * 1.8;
+
+                // Subtitle
+                let subtitle = "FIRST-PERSON COMBAT";
+                let subtitle_scale = 2.4;
+                let subtitle_w = subtitle.len() as f32 * GLYPH_ADV * subtitle_scale;
                 self.text(
-                    Vec2::new((w - subtitle_w) / 2.0, h * 0.48),
+                    Vec2::new((w - subtitle_w) / 2.0, h * 0.42),
                     subtitle,
-                    1.8,
-                    [0.78, 0.82, 0.9, 1.0],
+                    subtitle_scale,
+                    [0.78, 0.66, 0.28, 1.0],
                 );
-                let prompt = "Enter or Space to begin   Q Quit";
-                let prompt_w = prompt.len() as f32 * GLYPH_ADV * 1.8;
+
+                // Buttons
+                let btn_w = 480.0;
+                let btn_h = 72.0;
+                let btn_x = (w - btn_w) / 2.0;
+                let btn_start_y = h * 0.52;
+                let btn_gap = 20.0;
+
+                // START MATCH (primary, gradient gold)
+                let start_y = btn_start_y;
+                // Gradient approximation: three stacked rects
+                self.rect(
+                    Vec2::new(btn_x, start_y),
+                    Vec2::new(btn_w, btn_h),
+                    [0.78, 0.66, 0.28, 1.0],
+                );
+                self.rect(
+                    Vec2::new(btn_x, start_y),
+                    Vec2::new(btn_w, btn_h * 0.5),
+                    [0.85, 0.72, 0.30, 1.0],
+                );
+                self.rect(
+                    Vec2::new(btn_x, start_y),
+                    Vec2::new(btn_w, 2.0),
+                    [0.95, 0.85, 0.40, 1.0],
+                );
+                self.rect_outline(
+                    Vec2::new(btn_x, start_y),
+                    Vec2::new(btn_w, btn_h),
+                    [0.83, 0.68, 0.22, 1.0],
+                    2.0,
+                );
+                let start_label = "START MATCH";
+                let start_label_scale = 2.8;
+                let start_label_w = start_label.len() as f32 * GLYPH_ADV * start_label_scale;
                 self.text(
-                    Vec2::new((w - prompt_w) / 2.0, h * 0.62),
-                    prompt,
-                    1.8,
-                    [1.0, 1.0, 1.0, 1.0],
+                    Vec2::new(btn_x + (btn_w - start_label_w) / 2.0, start_y + 22.0),
+                    start_label,
+                    start_label_scale,
+                    [0.04, 0.04, 0.06, 1.0],
+                );
+
+                // Secondary buttons (dark glass)
+                let buttons = [("SETTINGS", 1), ("REPLAYS", 2), ("QUIT", 3)];
+                for (label, idx) in buttons {
+                    let y = btn_start_y + (btn_h + btn_gap) * idx as f32;
+                    self.rect(
+                        Vec2::new(btn_x, y),
+                        Vec2::new(btn_w, btn_h),
+                        [0.16, 0.16, 0.21, 0.85],
+                    );
+                    self.rect(
+                        Vec2::new(btn_x, y),
+                        Vec2::new(btn_w, 2.0),
+                        [1.0, 1.0, 1.0, 0.08],
+                    );
+                    self.rect_outline(
+                        Vec2::new(btn_x, y),
+                        Vec2::new(btn_w, btn_h),
+                        [0.29, 0.29, 0.33, 1.0],
+                        1.0,
+                    );
+                    let label_scale = 2.8;
+                    let label_w = label.len() as f32 * GLYPH_ADV * label_scale;
+                    self.text(
+                        Vec2::new(btn_x + (btn_w - label_w) / 2.0, y + 22.0),
+                        label,
+                        label_scale,
+                        [0.91, 0.88, 0.78, 1.0],
+                    );
+                }
+
+                // Footer
+                let footer = "v0.1.0  |  deterministic combat  |  no fallback animations";
+                let footer_scale = 1.4;
+                let footer_w = footer.len() as f32 * GLYPH_ADV * footer_scale;
+                self.text(
+                    Vec2::new((w - footer_w) / 2.0, h * 0.88),
+                    footer,
+                    footer_scale,
+                    [0.35, 0.33, 0.41, 1.0],
                 );
             }
             FlowStage::Establishing => {
