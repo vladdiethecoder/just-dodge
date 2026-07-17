@@ -1,5 +1,6 @@
 struct Uniforms {
     mvp: mat4x4<f32>,
+    model: mat4x4<f32>,
 }
 
 @group(0) @binding(0)
@@ -26,7 +27,7 @@ struct VertexOutput {
 fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     output.clip_position = uniforms.mvp * vec4<f32>(input.position, 1.0);
-    output.world_normal = normalize(input.normal);
+    output.world_normal = normalize((uniforms.model * vec4<f32>(input.normal, 0.0)).xyz);
     output.frag_uv = input.uv;
     return output;
 }
@@ -34,10 +35,9 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
     let tex_color = textureSample(base_color, base_sampler, input.frag_uv);
-    // Directional light coming FROM above-front so upward-facing ground is lit.
-    let light_dir = normalize(vec3<f32>(0.4, 1.0, 0.3));
-    let diff = max(dot(input.world_normal, light_dir), 0.0);
-    let ambient = 0.45;
-    let intensity = ambient + diff * 0.55;
+    let n = normalize(input.world_normal);
+    let key = abs(dot(n, normalize(vec3<f32>(-0.35, 0.82, 0.45))));
+    let hemisphere = 0.5 + 0.5 * n.y;
+    let intensity = 0.70 + 0.38 * key + 0.12 * hemisphere;
     return vec4<f32>(tex_color.rgb * intensity, 1.0);
 }

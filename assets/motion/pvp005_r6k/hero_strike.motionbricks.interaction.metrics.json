@@ -1,0 +1,32 @@
+{
+  "architecture": "trained MotionBricks temporal residual interaction extension with hard sparse/dense constraint channels",
+  "authority": "motion/stance/retarget/in-between only; no opponent/contact/injury/reaction/outcome inputs or outputs",
+  "checkpoint_sha256": "6e4983708e90a80db6a6fe98b22659580acd5164d3d03cbbf450970dc87a7c30",
+  "duration_s": 2.1333333333333333,
+  "foot_drift_m": {
+    "left_ankle_roll_skel": 0.0,
+    "left_toe_base": 0.0,
+    "right_ankle_roll_skel": 0.0,
+    "right_toe_base": 0.0
+  },
+  "fps": 30,
+  "frames": 64,
+  "generated_actions": {
+    "Block": 0,
+    "Grab": 0,
+    "Strike": 1
+  },
+  "grip_error_max_m": 4.470348358154297e-08,
+  "hand_target_error_max_m": 0.0,
+  "onnx_sha256": "dc67dd498dc50040372144d451b5a455c2f504837c00a3690073912c847605b0",
+  "pack413_sha256": "921cd4c21e83810fd70ab49c36d7500e0c89ea26a55c5e85007a5a0f3da9a7e5",
+  "promoted": false,
+  "runtime_admitted": false,
+  "schema": "just-dodge-r6k-motionbricks-interaction-v1",
+  "seed": 2026071606,
+  "source_ardy_sha256": "1ea11146159f5529c0dad8c33e0f00725058fcbc8ae8f30b80091609c7c86e8f",
+  "source_motionbricks_sha256": "1de671724ca50027ab7b0aa474dac0a8657c555120db41d6a7086a1d956ee985",
+  "status": "pass",
+  "steps": 1200,
+  "target_mse": 5.01251379319001e-05
+}

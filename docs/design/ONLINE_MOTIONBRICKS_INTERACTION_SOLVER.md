@@ -6,11 +6,14 @@ Status: B14W design boundary. Production runtime remains frozen until the probes
 
 - Dodge, Block, Parry, Strike, Grab, and the remaining combat primitives are intents, not animation IDs.
 - No release path selects, preloads, or plays a baked action/variation clip.
+- No fallback clips, pre-baked animations, runtime pose banks, or action-file lookups are permitted in Player mode.
 - ARDy proposes a semantic short-horizon plan from public post-Reveal state.
 - MotionBricks completes locomotion, in-betweening, and sparse-constraint realization; it never declares outcomes.
 - A physics-trained active-ragdoll controller converts the quantized plan into joint-motor targets.
 - The deterministic 120 Hz articulated physical world alone decides hit, guard, whiff, balance, momentum transfer, material failure, and injury.
 - Teacher motion is offline training/QA evidence only. Teacher frames, authored clips, and teacher-file lookups are forbidden runtime inputs.
+- Anime/film combat clips, images, and videos may be used only as legally cleared offline teachers, constraints, or training corpora. They must be converted into MotionBricks conditioning data or plan references; they must never become runtime presentation assets.
+- Kimodo/ARDY may be integrated as planner/proposal systems where useful, but their outputs must enter runtime only through validated hash-bound plan/packet contracts, never as animation playback.
 - Every accepted neural plan or event-driven replan is quantized, assigned a stable ID/hash, and serialized into replay. Replay/networking reuse the packet verbatim instead of rerunning neural inference.
 
 ```text
@@ -261,3 +264,12 @@ Required evidence per case:
 ## Migration boundary
 
 Current `src/motion_runtime.rs` preloads one `Vec<[Mat4; 34]>` for Strike/Block/Grab. It is QA scaffolding and cannot be promoted. Replacement requires ARDy planning, MotionBricks completion, quantized/replayed plan packets, a physics-trained active-ragdoll controller, articulated deterministic simulation, latency probes, closed-loop semantics, and replay verification.
+
+## Production plan boundary
+
+1. Keep R6K hero Strike as the first proof of the MotionBricks interaction stack, not as a permanent special case.
+2. Use anime/film combat clips, images, and videos only to build legally cleared offline teachers, constraints, and training corpora for additional combat arts and moves.
+3. Convert those sources into MotionBricks conditioning data, plan references, or evaluation fixtures; never into runtime clips, fallback animations, or action banks.
+4. Expand the interaction solver so different combat arts/moves are synthesized live from intent + opponent geometry + physical state, then executed and resolved by deterministic physics.
+5. Rebuild the end-of-duel Fight Film as a clear, anime-intense cinematic replay that chains exchanges with directed cameras and continuous timing while remaining presentation-only.
+6. Integrate Kimodo/ARDY where they make sense as planner/proposal systems, but only through validated hash-bound plan/packet contracts; never as baked runtime motion playback.

@@ -1,0 +1,38 @@
+{
+  "schema": "forgelens.motion-lab/v1",
+  "motionLabId": "example-strike-motion-lab",
+  "revision": "b1f704003b7a76ff300fbff76d0583183041848d",
+  "fps": 60,
+  "frameCount": 8,
+  "tracks": {
+    "text": [
+      {"frame": 0, "label": "windup"},
+      {"frame": 3, "label": "commit"},
+      {"frame": 5, "label": "contact"},
+      {"frame": 7, "label": "recovery"}
+    ],
+    "fullBody": [{"frame": 0, "label": "whole-body carrier"}, {"frame": 4, "label": "weight transfer"}],
+    "root": [{"frame": 0, "position": [0.0, 0.0, 0.0]}, {"frame": 4, "position": [0.08, 0.0, 0.16]}, {"frame": 7, "position": [0.12, 0.0, 0.20]}],
+    "endEffectors": [{"frame": 0, "jointId": "right_hand", "position": [0.12, 1.10, 0.25]}, {"frame": 5, "jointId": "right_hand", "position": [0.32, 1.02, 0.72]}],
+    "contacts": [{"frame": 0, "objectId": "left_foot", "state": "planted"}, {"frame": 4, "objectId": "right_foot", "state": "touching"}, {"frame": 6, "objectId": "left_foot", "state": "released"}]
+  },
+  "views": [
+    {"id": "kimodo-teacher", "label": "Kimodo teacher", "frames": [{"frame": 0, "root": [0.0, 0.0, 0.0]}, {"frame": 4, "root": [0.08, 0.0, 0.16]}, {"frame": 7, "root": [0.12, 0.0, 0.20]}]},
+    {"id": "ardy-proposal", "label": "ARDY proposal", "frames": [{"frame": 0, "root": [0.0, 0.0, 0.0]}, {"frame": 4, "root": [0.10, 0.0, 0.14]}, {"frame": 7, "root": [0.15, 0.0, 0.18]}]},
+    {"id": "motionbricks-target", "label": "MotionBricks target", "frames": [{"frame": 0, "root": [0.0, 0.0, 0.0]}, {"frame": 4, "root": [0.08, 0.0, 0.15]}, {"frame": 7, "root": [0.12, 0.0, 0.20]}]},
+    {"id": "physics-execution", "label": "Physics execution", "frames": [{"frame": 0, "root": [0.0, 0.0, 0.0]}, {"frame": 4, "root": [0.079, 0.0, 0.149]}, {"frame": 7, "root": [0.118, 0.0, 0.198]}]}
+  ],
+  "candidates": [
+    {"id": "teacher", "label": "Kimodo teacher", "viewId": "kimodo-teacher"},
+    {"id": "proposal", "label": "ARDY proposal", "viewId": "ardy-proposal"},
+    {"id": "target", "label": "MotionBricks target", "viewId": "motionbricks-target"},
+    {"id": "physics", "label": "Physics execution", "viewId": "physics-execution"}
+  ],
+  "metrics": {
+    "fkResidual": {"unit": "m", "series": [0.002, 0.004, 0.006, 0.008, 0.006, 0.003, 0.002, 0.002]},
+    "footDrift": {"unit": "m", "series": [0.000, 0.001, 0.002, 0.003, 0.003, 0.002, 0.001, 0.001]},
+    "com": {"unit": "m", "series": [0.91, 0.90, 0.89, 0.88, 0.87, 0.88, 0.90, 0.91]},
+    "grip": {"unit": "m", "series": [0.160, 0.160, 0.161, 0.160, 0.160, 0.159, 0.160, 0.160]},
+    "weaponPath": {"unit": "m", "series": [0.12, 0.18, 0.29, 0.43, 0.61, 0.75, 0.80, 0.76]}
+  }
+}

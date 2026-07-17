@@ -96,14 +96,26 @@ impl CleanboxTargetFrame {
 }
 
 #[derive(Debug)]
-struct FighterFrame {
+pub struct FighterFrame {
     weapon_transform: Mat4,
     guard_proxies: Vec<HitboxProxy>,
     body_proxies: Vec<HitboxProxy>,
 }
 
 impl FighterFrame {
-    fn as_target(&self) -> FighterWorldTarget<'_> {
+    pub fn measured(
+        weapon_transform: Mat4,
+        guard_proxies: Vec<HitboxProxy>,
+        body_proxies: Vec<HitboxProxy>,
+    ) -> Self {
+        Self {
+            weapon_transform,
+            guard_proxies,
+            body_proxies,
+        }
+    }
+
+    pub fn as_target(&self) -> FighterWorldTarget<'_> {
         FighterWorldTarget {
             weapon_transform: self.weapon_transform,
             guard_proxies: &self.guard_proxies,
@@ -132,6 +144,10 @@ fn targets_for_substep(
             substep,
         ),
     }
+}
+
+pub fn action_frame(fighter: Fighter, action: Action, root: Vec3, substep: usize) -> FighterFrame {
+    fighter_frame(fighter, action, root, substep)
 }
 
 fn fighter_frame(fighter: Fighter, action: Action, root: Vec3, substep: usize) -> FighterFrame {

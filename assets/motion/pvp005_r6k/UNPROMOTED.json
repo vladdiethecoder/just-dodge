@@ -1,0 +1,28 @@
+{
+  "schema": "just-dodge-pvp005-r6k-staged-motion-v2",
+  "status": "development_runtime_integrated_mechanical_provider_gate_pass_pending_live_visual_determinism_and_owner_gates",
+  "runtime_admitted": false,
+  "development_runtime_integrated": true,
+  "promoted": false,
+  "pushed": false,
+  "teacher_sha256": "c3412394684264381c8c3b5828f607c69878100d52cba0648cbb84aa75202ece",
+  "rotation_bridge_sha256": "f5197151447b21d70dcc36ee8b689bb453044ae5888e300a64f7fd4364a15f94",
+  "ardy_core27_proposal_sha256": "1ea11146159f5529c0dad8c33e0f00725058fcbc8ae8f30b80091609c7c86e8f",
+  "motionbricks_interaction_target_sha256": "921cd4c21e83810fd70ab49c36d7500e0c89ea26a55c5e85007a5a0f3da9a7e5",
+  "motionbricks_interaction_onnx_sha256": "dc67dd498dc50040372144d451b5a455c2f504837c00a3690073912c847605b0",
+  "frames": 64,
+  "fps": 30,
+  "physics_hz": 120,
+  "generated_actions": {
+    "Strike": 1,
+    "Block": 0,
+    "Grab": 0
+  },
+  "authority": {
+    "kimodo": "offline teacher constraints only",
+    "ardy": "offline interactive target proposal only",
+    "motionbricks_interaction": "motion, stance, retarget, and in-between targets only",
+    "rust_articulation": "execution only",
+    "cleanbox": "collision, injury, reaction, and outcome only"
+  }
+}

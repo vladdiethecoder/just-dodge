@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 
 use glam::{Mat4, Vec3, vec3};
-use just_dodge::{m3_cleanbox, milestone3 as m3, runtime_flow};
+use just_dodge::{milestone3 as m3, runtime_flow};
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
@@ -16,6 +18,7 @@ mod active_ragdoll;
 mod ai;
 mod armor;
 mod asset;
+
 mod cleanbox;
 mod combat;
 mod dodge_presentation;
@@ -23,12 +26,19 @@ mod duel_physics;
 mod duel_world;
 mod g1_articulation;
 mod g1_hinge_adapter;
+mod hero_strike;
 mod hinge_projection;
 mod hitbox;
 mod injury;
 mod input;
+mod m3_cleanbox;
+mod milestone3 {
+    pub use just_dodge::milestone3::*;
+}
 mod motion;
+mod motion_frontier_lab;
 mod motion_plan;
+mod motion_retarget;
 mod motion_service;
 mod neural_plan;
 mod renderer;
@@ -114,11 +124,79 @@ impl Camera {
     }
 
     fn proj_view(&self, aspect: f32, player_root: Vec3) -> Mat4 {
+        self.proj_view_with_offset(aspect, player_root, Vec3::ZERO)
+    }
+
+    fn proj_view_with_offset(&self, aspect: f32, player_root: Vec3, eye_offset: Vec3) -> Mat4 {
         let eye = self.eye(player_root);
-        let view = Mat4::look_at_lh(eye, eye + self.forward(), Vec3::Y);
+        let view = Mat4::look_at_lh(eye + eye_offset, eye + self.forward(), Vec3::Y);
         let proj = Mat4::perspective_lh(FIRST_PERSON_FOV_Y_RAD, aspect, 0.1, 100.0);
         proj * view
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DevelopmentCamera {
+    FirstPerson,
+    BirdsEye,
+    LeftQuarter,
+    RightQuarter,
+}
+
+impl DevelopmentCamera {
+    const fn next(self) -> Self {
+        match self {
+            Self::FirstPerson => Self::BirdsEye,
+            Self::BirdsEye => Self::LeftQuarter,
+            Self::LeftQuarter => Self::RightQuarter,
+            Self::RightQuarter => Self::FirstPerson,
+        }
+    }
+
+    const fn label(self) -> &'static str {
+        match self {
+            Self::FirstPerson => "FIRST PERSON",
+            Self::BirdsEye => "BIRD'S EYE",
+            Self::LeftQuarter => "LEFT 3/4",
+            Self::RightQuarter => "RIGHT 3/4",
+        }
+    }
+
+    fn proj_view(
+        self,
+        camera: &Camera,
+        aspect: f32,
+        player_root: Vec3,
+        opponent_root: Vec3,
+    ) -> Mat4 {
+        if self == Self::FirstPerson {
+            return camera.proj_view(aspect, player_root);
+        }
+        let center = (player_root + opponent_root) * 0.5 + Vec3::Y * 0.85;
+        let (eye, up) = match self {
+            Self::BirdsEye => (center + Vec3::Y * 5.8, Vec3::NEG_Z),
+            Self::LeftQuarter => (center + vec3(-4.2, 2.5, 3.8), Vec3::Y),
+            Self::RightQuarter => (center + vec3(4.2, 2.5, 3.8), Vec3::Y),
+            Self::FirstPerson => unreachable!(),
+        };
+        let view = Mat4::look_at_lh(eye, center, up);
+        let proj = Mat4::perspective_lh(55.0_f32.to_radians(), aspect, 0.1, 100.0);
+        proj * view
+    }
+}
+
+fn motion_frontier_lab_actor_model(actor_root: Vec3) -> Mat4 {
+    hero_actor_model(duel_physics::Fighter::Player, actor_root)
+}
+
+fn motion_frontier_lab_proj_view(aspect: f32, actor_root: Vec3) -> Mat4 {
+    let actor_model = motion_frontier_lab_actor_model(actor_root);
+    let forward = actor_model.transform_vector3(Vec3::Z).normalize();
+    let right = Vec3::Y.cross(forward).normalize();
+    let center = actor_root + Vec3::Y * 0.92;
+    let eye = center + forward * 2.65 + right * 0.50 + Vec3::Y * 0.48;
+    let view = Mat4::look_at_lh(eye, center, Vec3::Y);
+    Mat4::perspective_lh(48.0_f32.to_radians(), aspect, 0.1, 100.0) * view
 }
 
 struct App {
@@ -131,15 +209,25 @@ struct App {
     ui_renderer: Option<ui::UiRenderer>,
     runtime_assets: PathBuf,
     camera: Camera,
+    development_camera: DevelopmentCamera,
     start_time: Instant,
     last_frame_time: Instant,
     fixed_step_clock: FixedStepClock,
     input: input::InputState,
     clip_fps: f32,
     first_frame_presented: bool,
-    /// C0 reference-pose skinning matrices. Raw generated motion remains
-    /// rejected until combat-close supplies source-valid clips.
+    /// C0 reference-pose skinning matrices retained as the last geometrically
+    /// safe pose while the replacement articulated pipeline is built.
     c0_reference_skin: Vec<Mat4>,
+    /// Verified world-space ANM1 transfer for C0 idle staging and radial Move.
+    c0_walk_skins: Vec<Vec<Mat4>>,
+    /// Immutable R6 Strike presentation for QA/lab only; production player mode
+    /// must not consume a baked clip path.
+    hero_strike: Option<hero_strike::HeroStrikePresentation>,
+    /// Built-in read-only falsification view for the current motion stack.
+    motion_frontier_lab: Option<motion_frontier_lab::MotionFrontierLab>,
+    /// Exact truth snapshot captured before the lab starts; any mutation fails closed.
+    motion_lab_truth_baseline: Option<m3::Snapshot>,
     /// Optional local-only C0 Dodge presentation. It cannot affect truth.
     dodge_presentation: Option<dodge_presentation::DodgePresentation>,
     // Canonical Milestone 3 simulation; rendering only consumes snapshots.
@@ -152,10 +240,16 @@ struct App {
     /// QA-only deterministic driver. It uses the same input/session path as
     /// keyboard selection; it is never the default launch mode.
     autoplay: bool,
+    verify: bool,
     // Telemetry + locomotion
     telemetry: telemetry::Telemetry,
     player_pos: Vec3,
     show_debug: bool,
+    show_hud: bool,
+    window_size: (u32, u32),
+    benchmark_frame_limit: Option<usize>,
+    benchmark_frame_ms: Vec<f64>,
+    qa_motion: bool,
 }
 
 type CombatUpdate = (
@@ -175,8 +269,15 @@ impl ApplicationHandler for App {
             event_loop
                 .create_window(
                     Window::default_attributes()
-                        .with_title("Just Dodge — 3-Action Prototype")
-                        .with_inner_size(LogicalSize::new(1280.0, 720.0)),
+                        .with_title(if self.motion_frontier_lab.is_some() {
+                            "Just Dodge — Motion Frontier Lab"
+                        } else {
+                            "Just Dodge — Physical Combat Prototype"
+                        })
+                        .with_inner_size(LogicalSize::new(
+                            f64::from(self.window_size.0),
+                            f64::from(self.window_size.1),
+                        )),
                 )
                 .unwrap(),
         );
@@ -315,7 +416,56 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
+                let benchmark_start = Instant::now();
+                let renderer_ready = self.renderer.is_some();
                 self.render_frame();
+                if renderer_ready && self.benchmark_frame_limit.is_some() {
+                    self.benchmark_frame_ms
+                        .push(benchmark_start.elapsed().as_secs_f64() * 1_000.0);
+                }
+                if let Some(limit) = self.benchmark_frame_limit
+                    && self.benchmark_frame_ms.len() >= limit
+                {
+                    let mut sorted = self.benchmark_frame_ms.clone();
+                    sorted.sort_by(f64::total_cmp);
+                    let p95_index = ((sorted.len() * 95).div_ceil(100)).saturating_sub(1);
+                    let p95_ms = sorted[p95_index];
+                    let mean_ms = sorted.iter().sum::<f64>() / sorted.len() as f64;
+                    eprintln!(
+                        "P4_BENCHMARK width={} height={} frames={} mean_ms={mean_ms:.3} p95_ms={p95_ms:.3}",
+                        self.window_size.0,
+                        self.window_size.1,
+                        sorted.len()
+                    );
+                    if let (Some(lab), Some(hero)) =
+                        (self.motion_frontier_lab.as_ref(), self.hero_strike.as_ref())
+                    {
+                        let metrics = hero.motion_lab_metrics(lab.frame());
+                        assert_eq!(
+                            Some(self.session.game.snapshot()),
+                            self.motion_lab_truth_baseline.as_ref(),
+                            "Motion Frontier Lab mutated deterministic combat truth"
+                        );
+                        eprintln!(
+                            "MOTION_FRONTIER_LAB_RECEIPT frame={} max_target_error_m={:.9} mean_target_error_m={:.9} planted_foot_drift_m={:.9} grip_error_m={:.9} truth_frame={} presentation_off={} runtime_admission=false",
+                            lab.frame(),
+                            metrics.max_target_error_m,
+                            metrics.mean_target_error_m,
+                            metrics.planted_foot_drift_m,
+                            metrics.grip_error_m,
+                            self.session.game.snapshot().frame,
+                            lab.presentation_off(),
+                        );
+                    }
+                    event_loop.exit();
+                    return;
+                }
+                if self.verify
+                    && self.replay_saved
+                    && self.session.game.snapshot().phase == m3::Phase::MatchResult
+                {
+                    event_loop.exit();
+                }
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
@@ -435,6 +585,52 @@ impl App {
             self.show_debug = !self.show_debug;
             eprintln!("debug overlay: {}", self.show_debug);
         }
+        if plan.cycle_debug_camera {
+            self.development_camera = self.development_camera.next();
+            eprintln!("development camera: {}", self.development_camera.label());
+        }
+        if plan.toggle_hud {
+            self.show_hud = !self.show_hud;
+            eprintln!("HUD visible: {}", self.show_hud);
+        }
+
+        if let Some(lab) = self.motion_frontier_lab.as_mut() {
+            if plan.lab_toggle_play {
+                lab.toggle_playing();
+            }
+            if plan.lab_previous_frame {
+                lab.step_previous();
+            }
+            if plan.lab_next_frame {
+                lab.step_next();
+            }
+            if plan.lab_toggle_presentation {
+                lab.toggle_presentation();
+            }
+            lab.advance(real_dt);
+            let frame = lab.frame();
+            let snapshot = self.session.game.snapshot().clone();
+            assert_eq!(
+                Some(&snapshot),
+                self.motion_lab_truth_baseline.as_ref(),
+                "Motion Frontier Lab mutated deterministic combat truth"
+            );
+            self.input.reset_plan();
+            let player_joints = self
+                .hero_strike
+                .as_ref()
+                .expect("Motion Frontier Lab requires hero strike QA presentation")
+                .armored_skin(frame)
+                .to_vec();
+            return Some((
+                snapshot,
+                plan,
+                player_joints,
+                self.c0_reference_skin.clone(),
+                0.0,
+                input::PlayerIntent::Idle,
+            ));
+        }
 
         if self.flow.stage(self.session.game.snapshot()) == runtime_flow::FlowStage::Plan {
             let snap = self.session.game.snapshot().clone();
@@ -448,13 +644,27 @@ impl App {
                     self.session
                         .apply(m3::Side::Player, m3::Input::Select(action))
                         .expect("Plan accepts one player action selection");
+                    if action == m3::Action::Move {
+                        let radial_di = if self.autoplay {
+                            self.ai.move_di(snap.exchange)
+                        } else {
+                            plan.radial_di
+                        };
+                        if !radial_di.is_zero() {
+                            self.session
+                                .apply(m3::Side::Player, m3::Input::SetRadialDi(radial_di))
+                                .expect("Plan accepts one radial movement direction");
+                        }
+                    }
                 }
-                if (self.autoplay || plan.confirmed) && player_action.is_some() {
+                let move_ready = player_action != Some(m3::Action::Move)
+                    || !self.session.game.snapshot().player.radial_di.is_zero();
+                if (self.autoplay || plan.confirmed) && player_action.is_some() && move_ready {
                     self.session
                         .apply(m3::Side::Player, m3::Input::Commit)
                         .expect("selected player action commits exactly once");
                 } else if plan.confirmed {
-                    eprintln!("select Strike, Block, or Grab before committing");
+                    eprintln!("select Strike, Block, Grab, or Move with radial direction");
                 }
             }
             if !snap.opponent.committed {
@@ -462,6 +672,14 @@ impl App {
                 self.session
                     .apply(m3::Side::Opponent, m3::Input::Select(action))
                     .expect("seeded AI Plan selection is valid");
+                if action == m3::Action::Move {
+                    self.session
+                        .apply(
+                            m3::Side::Opponent,
+                            m3::Input::SetRadialDi(self.ai.move_di(snap.exchange)),
+                        )
+                        .expect("seeded AI movement direction is valid");
+                }
                 self.session
                     .apply(m3::Side::Opponent, m3::Input::Commit)
                     .expect("seeded AI commits exactly once");
@@ -489,12 +707,11 @@ impl App {
                         self.flow.truth_ticks_allowed(self.session.game.snapshot()),
                         "only live duel stages may advance combat truth"
                     );
+                    let roots = self.session.game.snapshot();
+                    let player_root = fighter_root(roots, m3::Side::Player);
+                    let opponent_root = fighter_root(roots, m3::Side::Opponent);
                     self.cleanbox_world
-                        .submit_resolve_packet(
-                            &mut self.session,
-                            self.player_pos,
-                            vec3(0.0, 0.0, -1.0),
-                        )
+                        .submit_resolve_packet(&mut self.session, player_root, opponent_root)
                         .expect("M3 Resolve cleanbox packet must be valid");
                     self.session.tick();
                 }
@@ -502,11 +719,22 @@ impl App {
         }
 
         let live_snapshot = self.session.game.snapshot().clone();
+        self.player_pos = fighter_root(&live_snapshot, m3::Side::Player);
 
         // Save replay once on match end.
         if live_snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
             self.save_replay();
             self.replay_saved = true;
+            if self
+                .flow
+                .enter_replay(&live_snapshot, self.session.replay.clone())
+                .is_ok()
+            {
+                self.flow
+                    .advance_replay()
+                    .expect("freshly validated fight film must reach its opening action");
+                eprintln!("Player flow: automatic Fight Film");
+            }
         }
 
         let stage = self.flow.stage(&live_snapshot);
@@ -516,8 +744,10 @@ impl App {
             .replay_snapshot()
             .cloned()
             .unwrap_or(live_snapshot);
+        trigger_contact_audio(&snapshot, &self.runtime_assets);
 
-        let (player_joints, opponent_joints) = self.current_pose(&snapshot);
+        let cinematic_replay = stage == runtime_flow::FlowStage::Replay;
+        let (player_joints, opponent_joints) = self.current_pose(&snapshot, cinematic_replay);
         let elapsed = self.start_time.elapsed().as_secs_f32();
         let intent = self.input.intent();
 
@@ -575,6 +805,29 @@ impl App {
         let view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let motion_lab_frame = self.motion_frontier_lab.as_ref().map(|lab| lab.frame());
+        let motion_lab_presentation_off = self
+            .motion_frontier_lab
+            .as_ref()
+            .is_some_and(|lab| lab.presentation_off());
+        let motion_lab_panel = self.motion_frontier_lab.as_ref().map(|lab| {
+            let hero = self
+                .hero_strike
+                .as_ref()
+                .expect("Motion Frontier Lab requires hero strike QA presentation");
+            let metrics = hero.motion_lab_metrics(lab.frame());
+            ui::MotionLabPanel {
+                frame: lab.frame(),
+                frame_count: motion_frontier_lab::LAB_FRAME_COUNT,
+                playing: lab.playing(),
+                presentation_off: lab.presentation_off(),
+                max_target_error_m: metrics.max_target_error_m,
+                mean_target_error_m: metrics.mean_target_error_m,
+                worst_joint: metrics.worst_joint,
+                planted_foot_drift_m: metrics.planted_foot_drift_m,
+                grip_error_m: metrics.grip_error_m,
+            }
+        });
 
         if let Some(renderer) = self.renderer.as_mut() {
             let Some((snapshot, plan, player_joints, opponent_joints, _elapsed, _intent)) = combat
@@ -582,47 +835,112 @@ impl App {
                 return;
             };
 
+            let flow_stage = self.flow.stage(self.session.game.snapshot());
+            let cinematic_replay = flow_stage == runtime_flow::FlowStage::Replay;
             let aspect = config.width as f32 / config.height as f32;
-            let proj_view = self.camera.proj_view(aspect, self.player_pos);
+            let player_root = fighter_root(&snapshot, m3::Side::Player);
+            let opponent_root = fighter_root(&snapshot, m3::Side::Opponent);
+            let first_person_strike_frame =
+                if !cinematic_replay && self.development_camera == DevelopmentCamera::FirstPerson {
+                    hero_strike_frame(&snapshot, m3::Side::Player)
+                } else {
+                    None
+                };
+            let proj_view = if motion_lab_frame.is_some() {
+                motion_frontier_lab_proj_view(aspect, player_root)
+            } else if cinematic_replay {
+                cinematic_replay_proj_view(&snapshot, aspect)
+            } else if self.development_camera == DevelopmentCamera::FirstPerson {
+                self.camera.proj_view_with_offset(
+                    aspect,
+                    player_root,
+                    impact_camera_offset(&snapshot),
+                )
+            } else {
+                self.development_camera
+                    .proj_view(&self.camera, aspect, player_root, opponent_root)
+            };
 
             // --- Now borrow renderer and queue for GPU work ---
             renderer.upload_debug_mvp(queue, &proj_view);
-
-            for obj in renderer.objects.iter() {
-                let mvp = proj_view * obj.model;
-                queue.write_buffer(&obj.uniform_buffer, 0, bytemuck::bytes_of(&[mvp]));
-            }
+            renderer.update_camera(queue, &proj_view);
+            renderer.update_contact_shadows(queue, &proj_view, player_root, opponent_root);
             let correct_model = renderer::skinned_correct_model();
 
-            let player_model = Mat4::from_translation(self.player_pos) * correct_model;
-            renderer.skinned[0].model = player_model;
-            queue.write_buffer(
-                &renderer.skinned[0].uniform_buffer,
-                0,
-                bytemuck::bytes_of(&[proj_view * player_model]),
-            );
+            let player_model = if motion_lab_frame.is_some() {
+                motion_frontier_lab_actor_model(player_root)
+            } else if cinematic_replay {
+                hero_actor_model(duel_physics::Fighter::Player, player_root)
+            } else if first_person_strike_frame.is_some() {
+                first_person_actor_model(&self.camera, player_root)
+            } else {
+                Mat4::from_translation(player_root) * correct_model
+            };
+            renderer.update_skinned_model(queue, 0, &proj_view, player_model);
 
-            let weapon_model = renderer::first_person_weapon_model(
-                self.camera.eye(self.player_pos),
-                self.camera.forward(),
-            ) * action_weapon_presentation(&snapshot);
+            let weapon_frame = if let Some(frame) = motion_lab_frame {
+                frame
+            } else if cinematic_replay {
+                cinematic_action_frame(&snapshot, m3::Side::Player).unwrap_or(0)
+            } else {
+                hero_strike_frame(&snapshot, m3::Side::Player).unwrap_or(0)
+            };
+            let weapon_actor_model = if cinematic_replay || first_person_strike_frame.is_some() {
+                player_model
+            } else {
+                hero_actor_model(duel_physics::Fighter::Player, player_root)
+            };
+            let weapon_model = self
+                .hero_strike
+                .as_ref()
+                .expect("weapon presentation requires hero strike QA presentation")
+                .weapon_world(weapon_frame, weapon_actor_model);
             renderer.update_first_person_weapon(queue, &proj_view, weapon_model);
 
-            let opp_model = Mat4::from_translation(vec3(0.0, 0.0, -1.0)) * correct_model;
-            renderer.skinned[1].model = opp_model;
-            queue.write_buffer(
-                &renderer.skinned[1].uniform_buffer,
-                0,
-                bytemuck::bytes_of(&[proj_view * opp_model]),
-            );
+            let opp_model = if cinematic_replay {
+                hero_actor_model(duel_physics::Fighter::Opponent, opponent_root)
+            } else {
+                Mat4::from_translation(opponent_root) * correct_model
+            };
+            renderer.update_skinned_model(queue, 1, &proj_view, opp_model);
+            let opponent_weapon_frame = if cinematic_replay {
+                cinematic_action_frame(&snapshot, m3::Side::Opponent).unwrap_or(0)
+            } else {
+                hero_strike_frame(&snapshot, m3::Side::Opponent).unwrap_or(0)
+            };
+            let opponent_weapon_model = self
+                .hero_strike
+                .as_ref()
+                .expect("weapon presentation requires hero strike QA presentation")
+                .weapon_world(opponent_weapon_frame, opp_model);
+            renderer.update_opponent_weapon(queue, &proj_view, opponent_weapon_model);
 
             // --- Animation pose ---
             renderer.update_skin_joints_indexed(queue, 0, &player_joints);
             renderer.update_skin_joints_indexed(queue, 1, &opponent_joints);
 
-            if self.show_debug {
+            if let Some(frame) = motion_lab_frame {
+                let lab_model = motion_frontier_lab_actor_model(player_root);
+                let segments = self
+                    .hero_strike
+                    .as_ref()
+                    .expect("Motion Frontier Lab requires hero strike QA presentation")
+                    .motion_lab_segments(frame, lab_model);
+                renderer.update_debug_segments(device, &segments);
+            } else if self.show_debug {
                 renderer.update_debug_bones(device, &player_joints);
             }
+            let impact_lines = if motion_lab_frame.is_some() {
+                Vec::new()
+            } else {
+                impact_burst_lines(&snapshot)
+            };
+            renderer.update_effect_lines(
+                device,
+                &impact_lines,
+                [1.0, 0.95, 0.72],
+                [1.0, 0.30, 0.08],
+            );
 
             // --- Render ---
             let mut encoder =
@@ -636,9 +954,9 @@ impl App {
                         depth_slice: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.55,
-                                g: 0.70,
-                                b: 0.92,
+                                r: 0.025,
+                                g: 0.035,
+                                b: 0.055,
                                 a: 1.0,
                             }),
                             store: wgpu::StoreOp::Store,
@@ -656,17 +974,34 @@ impl App {
                     multiview_mask: None,
                     occlusion_query_set: None,
                 });
-                renderer.render(&mut rpass);
-                renderer.render_first_person_weapon(&mut rpass);
-                renderer.render_skinned_from(&mut rpass, 1);
-                if self.show_debug {
+                if !motion_lab_presentation_off {
+                    renderer.render(&mut rpass);
+                    renderer.render_first_person_weapon(&mut rpass);
+                    if motion_lab_frame.is_some() {
+                        renderer.render_skinned_index(&mut rpass, 0);
+                    } else {
+                        renderer.render_opponent_weapon(&mut rpass);
+                        renderer.render_skinned_from(
+                            &mut rpass,
+                            usize::from(
+                                !cinematic_replay
+                                    && self.development_camera == DevelopmentCamera::FirstPerson,
+                            ),
+                        );
+                    }
+                }
+                if motion_lab_frame.is_some() || self.show_debug {
                     renderer.render_debug_overlay(&mut rpass);
+                }
+                if motion_lab_frame.is_none() && (self.show_debug || !impact_lines.is_empty()) {
                     renderer.render_hitbox_debug(&mut rpass);
                 }
             }
 
             // UI pass: separate render pass so it draws over everything without depth.
-            if let Some(ui_renderer) = self.ui_renderer.as_mut() {
+            if self.show_hud
+                && let Some(ui_renderer) = self.ui_renderer.as_mut()
+            {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("ui pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -688,8 +1023,16 @@ impl App {
                     ui::UiFrame {
                         snapshot: &snapshot,
                         plan: &plan,
-                        flow_stage: self.flow.stage(self.session.game.snapshot()),
+                        flow_stage,
                         establishing_remaining: self.flow.establishing_remaining(),
+                        camera_label: if cinematic_replay {
+                            "FIGHT FILM"
+                        } else {
+                            self.development_camera.label()
+                        },
+                        replay_total_exchanges: self.flow.replay_total_exchanges(),
+                        replay_finished: self.flow.replay_finished(),
+                        motion_lab: motion_lab_panel,
                         width: config.width,
                         height: config.height,
                     },
@@ -736,15 +1079,57 @@ impl App {
         queue.present(surface_texture);
     }
 
-    fn current_pose(&self, _snapshot: &m3::Snapshot) -> (Vec<Mat4>, Vec<Mat4>) {
-        // The admitted source clip failed the ordered raw-source and C0 human
-        // visual gates. Keep its optional local loader available for QA, but do
-        // not promote any source-derived pose into the runtime until a source
-        // selection unit proves readable Dodge semantics before C0 admission.
-        (
-            self.c0_reference_skin.clone(),
-            self.c0_reference_skin.clone(),
-        )
+    fn current_pose(
+        &self,
+        snapshot: &m3::Snapshot,
+        cinematic_replay: bool,
+    ) -> (Vec<Mat4>, Vec<Mat4>) {
+        let sample = |side| {
+            if cinematic_replay && let Some(frame) = cinematic_action_frame(snapshot, side) {
+                return self
+                    .hero_strike
+                    .as_ref()
+                    .expect("cinematic replay requires hero strike QA presentation")
+                    .armored_skin(frame)
+                    .to_vec();
+            }
+            if let Some(frame) = hero_strike_frame(snapshot, side) {
+                return self
+                    .hero_strike
+                    .as_ref()
+                    .expect("strike presentation requires hero strike QA presentation")
+                    .armored_skin(frame)
+                    .to_vec();
+            }
+            let action = snapshot.revealed.map(|revealed| match side {
+                m3::Side::Player => revealed.0,
+                m3::Side::Opponent => revealed.1,
+            });
+            let phase_tick = match snapshot.phase {
+                m3::Phase::Reveal => Some(snapshot.phase_frame),
+                m3::Phase::Resolve => Some(12 + snapshot.phase_frame),
+                m3::Phase::Consequence => Some(13 + snapshot.phase_frame),
+                _ => None,
+            };
+            if action == Some(m3::Action::Move) {
+                let index = phase_tick
+                    .map(|tick| usize::from(tick) % self.c0_walk_skins.len())
+                    .unwrap_or(3);
+                self.c0_walk_skins
+                    .get(index)
+                    .cloned()
+                    .unwrap_or_else(|| self.c0_reference_skin.clone())
+            } else if self.motion_frontier_lab.is_some()
+                || self.autoplay
+                || self.verify
+                || self.qa_motion
+            {
+                self.c0_reference_skin.clone()
+            } else {
+                panic!("normal Player mode has no admitted production motion path")
+            }
+        };
+        (sample(m3::Side::Player), sample(m3::Side::Opponent))
     }
 
     fn save_replay(&self) {
@@ -767,6 +1152,265 @@ fn opponent_dodge_presentation_tick(snapshot: &truth::TruthSnapshot) -> Option<u
     dodge_phase_tick(snapshot.phase, snapshot.phase_frame)
 }
 
+fn hero_strike_frame(snapshot: &m3::Snapshot, side: m3::Side) -> Option<usize> {
+    let action = snapshot.revealed.map(|revealed| match side {
+        m3::Side::Player => revealed.0,
+        m3::Side::Opponent => revealed.1,
+    });
+    (action == Some(m3::Action::Strike))
+        .then(|| hero_strike_phase_frame_index(snapshot.phase, snapshot.phase_frame))
+        .flatten()
+}
+
+fn cinematic_action_frame(snapshot: &m3::Snapshot, side: m3::Side) -> Option<usize> {
+    let action = snapshot
+        .revealed
+        .map(|revealed| match side {
+            m3::Side::Player => revealed.0,
+            m3::Side::Opponent => revealed.1,
+        })
+        .or(match side {
+            m3::Side::Player => snapshot.player.planned,
+            m3::Side::Opponent => snapshot.opponent.planned,
+        })?;
+    if action == m3::Action::Move {
+        return None;
+    }
+    if action == m3::Action::Strike {
+        return hero_strike_phase_frame_index(snapshot.phase, snapshot.phase_frame)
+            .or(Some(hero_strike::CONTACT_FRAME));
+    }
+
+    let (ready, active) = match action {
+        m3::Action::Block => (8, 18),
+        m3::Action::Grab => (6, 26),
+        m3::Action::Strike | m3::Action::Move => unreachable!(),
+    };
+    match snapshot.phase {
+        m3::Phase::Commit => Some(scale_clip_frame(snapshot.phase_frame.min(1), 1, 0, ready)),
+        m3::Phase::Reveal => Some(scale_clip_frame(
+            snapshot.phase_frame.min(11),
+            11,
+            ready,
+            active,
+        )),
+        m3::Phase::Resolve => Some(active),
+        m3::Phase::Consequence => Some(scale_clip_frame_reverse(
+            snapshot.phase_frame.min(17),
+            17,
+            active,
+        )),
+        m3::Phase::MatchResult => Some(active),
+        m3::Phase::Observe | m3::Phase::Plan => None,
+    }
+}
+
+fn cinematic_replay_proj_view(snapshot: &m3::Snapshot, aspect: f32) -> Mat4 {
+    let player_root = fighter_root(snapshot, m3::Side::Player);
+    let opponent_root = fighter_root(snapshot, m3::Side::Opponent);
+    let center = (player_root + opponent_root) * 0.5;
+    let actions = snapshot
+        .revealed
+        .or_else(|| Some((snapshot.player.planned?, snapshot.opponent.planned?)));
+    let focus = match actions {
+        Some((m3::Action::Strike | m3::Action::Grab, _)) => m3::Side::Player,
+        Some((_, m3::Action::Strike | m3::Action::Grab)) => m3::Side::Opponent,
+        _ if snapshot.exchange.is_multiple_of(2) => m3::Side::Player,
+        _ => m3::Side::Opponent,
+    };
+    let cut_sign = if snapshot.exchange.is_multiple_of(2) {
+        1.0
+    } else {
+        -1.0
+    };
+    let base_angle = match focus {
+        m3::Side::Player => std::f32::consts::FRAC_PI_2 - 0.16,
+        m3::Side::Opponent => -std::f32::consts::FRAC_PI_2 + 0.16,
+    };
+    let phase_progress = match snapshot.phase {
+        m3::Phase::Commit => snapshot.phase_frame as f32 / 1.0,
+        m3::Phase::Reveal => snapshot.phase_frame as f32 / 11.0,
+        m3::Phase::Resolve => 1.0,
+        m3::Phase::Consequence => snapshot.phase_frame as f32 / 17.0,
+        m3::Phase::MatchResult => 1.0,
+        m3::Phase::Observe | m3::Phase::Plan => 0.0,
+    }
+    .clamp(0.0, 1.0);
+    let eased = phase_progress * phase_progress * (3.0 - 2.0 * phase_progress);
+    let (angle, radius, height) = match snapshot.phase {
+        m3::Phase::Commit => (base_angle - 0.28 * cut_sign, 5.2 - 0.45 * eased, 2.3),
+        m3::Phase::Reveal => (
+            base_angle + cut_sign * (-0.26 + 0.52 * eased),
+            4.4 - 0.65 * eased,
+            1.8 + 0.16 * (phase_progress * std::f32::consts::PI).sin(),
+        ),
+        m3::Phase::Resolve => (base_angle + 0.42 * cut_sign, 3.35, 1.55),
+        m3::Phase::Consequence => (
+            base_angle + cut_sign * (0.42 - 0.16 * eased),
+            3.35 + 1.15 * eased,
+            1.55 + 0.55 * eased,
+        ),
+        m3::Phase::MatchResult => (base_angle - 0.46 * cut_sign, 5.35, 2.8),
+        m3::Phase::Observe | m3::Phase::Plan => (base_angle, 5.0, 2.3),
+    };
+    let (sin_angle, cos_angle) = angle.sin_cos();
+    let mut eye = center + vec3(sin_angle * radius, height, cos_angle * radius);
+    if matches!(snapshot.phase, m3::Phase::Resolve | m3::Phase::Consequence)
+        && snapshot.phase_frame <= 5
+        && snapshot.last_contact.is_some()
+    {
+        let impulse = 0.025 * (6 - snapshot.phase_frame) as f32 / 6.0;
+        eye += vec3(cut_sign * impulse, -impulse * 0.35, 0.0);
+    }
+    let target = snapshot
+        .last_contact
+        .map_or(center + Vec3::Y * 1.02, |contact| {
+            let defender = fighter_root(snapshot, contact.attacker.other());
+            let height = match contact.region {
+                m3::BodyRegion::Head => 1.62,
+                m3::BodyRegion::Torso => 1.14,
+                m3::BodyRegion::Arms => 1.28,
+            };
+            defender + Vec3::Y * height
+        });
+    let view = Mat4::look_at_lh(eye, target, Vec3::Y);
+    Mat4::perspective_lh(48.0_f32.to_radians(), aspect, 0.1, 100.0) * view
+}
+
+fn measured_fighter_frame(
+    hero: &hero_strike::HeroStrikePresentation,
+    fighter: duel_physics::Fighter,
+    action: m3::Action,
+    root: Vec3,
+    hero_frame: usize,
+    substep: usize,
+) -> cleanbox::FighterFrame {
+    if action != m3::Action::Strike {
+        return cleanbox::action_frame(fighter, m3_cleanbox::target_action(action), root, substep);
+    }
+    let actor_model = hero_actor_model(fighter, root);
+    cleanbox::FighterFrame::measured(
+        hero.weapon_world(hero_frame, actor_model),
+        Vec::new(),
+        hero.body_proxies_world(hero_frame, actor_model),
+    )
+}
+
+fn hero_actor_model(fighter: duel_physics::Fighter, root: Vec3) -> Mat4 {
+    let facing = match fighter {
+        duel_physics::Fighter::Player => Mat4::from_rotation_y(std::f32::consts::PI),
+        duel_physics::Fighter::Opponent => Mat4::IDENTITY,
+    };
+    Mat4::from_translation(root)
+        * facing
+        * Mat4::from_scale_rotation_translation(
+            Vec3::splat(0.9189),
+            glam::Quat::from_rotation_y(-0.47),
+            Vec3::ZERO,
+        )
+}
+
+fn first_person_actor_model(camera: &Camera, player_root: Vec3) -> Mat4 {
+    let forward = camera.forward();
+    let right = Vec3::Y.cross(forward).normalize();
+    Mat4::from_translation(forward * 0.55 + right * 0.10 - Vec3::Y * 0.12)
+        * hero_actor_model(duel_physics::Fighter::Player, player_root)
+}
+
+fn impact_camera_offset(snapshot: &m3::Snapshot) -> Vec3 {
+    if snapshot.phase != m3::Phase::Consequence
+        || snapshot.phase_frame > 5
+        || snapshot.last_contact.is_none()
+    {
+        return Vec3::ZERO;
+    }
+    let strength = 0.032 * (6 - snapshot.phase_frame) as f32 / 6.0;
+    let direction = match snapshot.phase_frame % 4 {
+        0 => vec3(1.0, 0.35, 0.0),
+        1 => vec3(-0.65, -0.25, 0.0),
+        2 => vec3(0.35, -0.5, 0.0),
+        _ => vec3(-0.2, 0.15, 0.0),
+    };
+    direction * strength
+}
+
+static LAST_AUDIO_EXCHANGE: AtomicU32 = AtomicU32::new(u32::MAX);
+
+fn trigger_contact_audio(snapshot: &m3::Snapshot, assets: &std::path::Path) {
+    if snapshot.phase != m3::Phase::Consequence
+        || snapshot.phase_frame != 0
+        || snapshot.last_contact.is_none()
+    {
+        return;
+    }
+    let exchange = snapshot.exchange;
+    if LAST_AUDIO_EXCHANGE.swap(exchange, Ordering::SeqCst) == exchange {
+        return;
+    }
+    let clip = assets.join("audio/r6k_strike_contact.wav");
+    if let Err(error) = Command::new("pw-play").arg(&clip).spawn() {
+        eprintln!("contact audio {} failed: {error}", clip.display());
+    }
+}
+
+fn impact_burst_lines(snapshot: &m3::Snapshot) -> Vec<(Vec3, Vec3)> {
+    if snapshot.phase != m3::Phase::Consequence || snapshot.phase_frame > 8 {
+        return Vec::new();
+    }
+    let Some(contact) = snapshot.last_contact else {
+        return Vec::new();
+    };
+    let target_side = match contact.attacker {
+        m3::Side::Player => m3::Side::Opponent,
+        m3::Side::Opponent => m3::Side::Player,
+    };
+    let root = fighter_root(snapshot, target_side);
+    let local = match contact.region {
+        m3::BodyRegion::Head => vec3(0.0, 1.62, 0.0),
+        m3::BodyRegion::Torso => vec3(0.0, 1.14, 0.0),
+        m3::BodyRegion::Arms => vec3(0.32, 1.26, 0.0),
+    };
+    let center = root + local;
+    let radius = 0.34 * (9 - snapshot.phase_frame) as f32 / 9.0;
+    [
+        vec3(1.0, 0.0, 0.0),
+        vec3(-1.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        vec3(0.0, -1.0, 0.0),
+        vec3(0.7, 0.7, 0.2),
+        vec3(-0.7, 0.7, -0.2),
+        vec3(0.55, -0.35, 0.75),
+        vec3(-0.55, -0.35, 0.75),
+    ]
+    .into_iter()
+    .map(|direction| {
+        let direction = direction.normalize();
+        (center + direction * 0.035, center + direction * radius)
+    })
+    .collect()
+}
+
+/// Map 60 Hz M3 action phases onto the complete 25 Hz 52-frame clip.
+fn hero_strike_phase_frame_index(phase: m3::Phase, phase_frame: u16) -> Option<usize> {
+    match phase {
+        m3::Phase::Commit => Some(scale_clip_frame(phase_frame.min(1), 1, 0, 3)),
+        m3::Phase::Reveal => Some(scale_clip_frame(phase_frame.min(11), 11, 4, 26)),
+        m3::Phase::Resolve => Some(hero_strike::CONTACT_FRAME),
+        m3::Phase::Consequence if phase_frame <= 2 => Some(hero_strike::CONTACT_FRAME),
+        m3::Phase::Consequence => Some(scale_clip_frame(phase_frame.min(17) - 3, 14, 28, 51)),
+        m3::Phase::Observe | m3::Phase::Plan | m3::Phase::MatchResult => None,
+    }
+}
+
+const fn scale_clip_frame(value: u16, denominator: u16, first: usize, last: usize) -> usize {
+    let span = last - first;
+    first + (value as usize * span + denominator as usize / 2) / denominator as usize
+}
+
+const fn scale_clip_frame_reverse(value: u16, denominator: u16, first: usize) -> usize {
+    first - (value as usize * first + denominator as usize / 2) / denominator as usize
+}
+
 fn dodge_phase_tick(phase: truth::Phase, phase_frame: u32) -> Option<u32> {
     let offset = match phase {
         truth::Phase::Commit => 0,
@@ -783,35 +1427,20 @@ const fn counter_action(action: m3::Action) -> m3::Action {
         m3::Action::Strike => m3::Action::Block,
         m3::Action::Block => m3::Action::Grab,
         m3::Action::Grab => m3::Action::Strike,
+        m3::Action::Move => m3::Action::Strike,
     }
 }
 
-/// Visual-only first-person weapon response. The simulation never reads this
-/// transform: it is driven from a read-only canonical snapshot after replay
-/// input and truth advancement have already happened.
-fn action_weapon_presentation(snapshot: &m3::Snapshot) -> Mat4 {
-    let action = snapshot
-        .revealed
-        .map(|(player, _)| player)
-        .or(snapshot.player.planned);
-    let active = matches!(
-        snapshot.phase,
-        m3::Phase::Commit | m3::Phase::Reveal | m3::Phase::Resolve
-    );
-    if !active {
-        return Mat4::IDENTITY;
-    }
-    match action {
-        Some(m3::Action::Strike) => {
-            Mat4::from_translation(vec3(0.0, 0.06, -0.42)) * Mat4::from_rotation_x(-0.28)
-        }
-        Some(m3::Action::Block) => {
-            Mat4::from_translation(vec3(-0.10, 0.24, -0.12)) * Mat4::from_rotation_z(0.35)
-        }
-        Some(m3::Action::Grab) => {
-            Mat4::from_translation(vec3(-0.16, -0.10, -0.20)) * Mat4::from_rotation_y(-0.32)
-        }
-        None => Mat4::IDENTITY,
+fn fighter_root(snapshot: &m3::Snapshot, side: m3::Side) -> Vec3 {
+    let fighter = match side {
+        m3::Side::Player => snapshot.player,
+        m3::Side::Opponent => snapshot.opponent,
+    };
+    let right_m = fighter.displacement_mm[0] as f32 / 1_000.0;
+    let forward_m = fighter.displacement_mm[1] as f32 / 1_000.0;
+    match side {
+        m3::Side::Player => vec3(right_m, 0.0, 1.0 - forward_m),
+        m3::Side::Opponent => vec3(-right_m, 0.0, -1.0 + forward_m),
     }
 }
 
@@ -828,6 +1457,60 @@ mod dodge_presentation_phase_tests {
         assert_eq!(dodge_phase_tick(truth::Phase::Resolve, 0), Some(20));
         assert_eq!(dodge_phase_tick(truth::Phase::Consequence, 29), Some(79));
         assert_eq!(dodge_phase_tick(truth::Phase::Consequence, 100), Some(79));
+    }
+
+    #[test]
+    fn only_revealed_strike_selects_the_r6_pose_stream() {
+        let mut game = m3::Match::new(7);
+        while game.snapshot().phase != m3::Phase::Plan {
+            game.tick();
+        }
+        game.apply(m3::Side::Player, m3::Input::Select(m3::Action::Strike))
+            .unwrap();
+        game.apply(m3::Side::Opponent, m3::Input::Select(m3::Action::Block))
+            .unwrap();
+        game.apply(m3::Side::Player, m3::Input::Commit).unwrap();
+        game.apply(m3::Side::Opponent, m3::Input::Commit).unwrap();
+        while game.snapshot().phase != m3::Phase::Reveal {
+            game.tick();
+        }
+        assert_eq!(
+            hero_strike_frame(game.snapshot(), m3::Side::Player),
+            Some(4)
+        );
+        assert_eq!(hero_strike_frame(game.snapshot(), m3::Side::Opponent), None);
+    }
+
+    #[test]
+    fn cinematic_replay_animates_counters_and_uses_finite_directed_cuts() {
+        let mut game = m3::Match::new(11);
+        while game.snapshot().phase != m3::Phase::Plan {
+            game.tick();
+        }
+        game.apply(m3::Side::Player, m3::Input::Select(m3::Action::Strike))
+            .unwrap();
+        game.apply(m3::Side::Opponent, m3::Input::Select(m3::Action::Block))
+            .unwrap();
+        game.apply(m3::Side::Player, m3::Input::Commit).unwrap();
+        game.apply(m3::Side::Opponent, m3::Input::Commit).unwrap();
+        game.tick();
+        let commit = game.snapshot().clone();
+        assert_eq!(commit.phase, m3::Phase::Commit);
+        assert!(cinematic_action_frame(&commit, m3::Side::Opponent).is_some());
+
+        while game.snapshot().phase != m3::Phase::Reveal {
+            game.tick();
+        }
+        let reveal = game.snapshot().clone();
+        let wide = cinematic_replay_proj_view(&commit, 16.0 / 9.0);
+        let track = cinematic_replay_proj_view(&reveal, 16.0 / 9.0);
+        assert!(wide.is_finite());
+        assert!(track.is_finite());
+        assert_ne!(wide.to_cols_array(), track.to_cols_array());
+        assert_ne!(
+            cinematic_action_frame(&commit, m3::Side::Opponent),
+            cinematic_action_frame(&reveal, m3::Side::Opponent)
+        );
     }
 }
 
@@ -1001,8 +1684,60 @@ fn main() {
         return;
     }
 
+    let motion_lab_frame = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--motion-frontier-lab-frame")
+        .map(|pair| {
+            pair[1]
+                .parse::<usize>()
+                .expect("--motion-frontier-lab-frame must be an integer from 0 to 63")
+        });
+    let motion_lab_context = arguments
+        .iter()
+        .any(|argument| argument == "--motion-frontier-lab-context");
+    let motion_lab_enabled = arguments
+        .iter()
+        .any(|argument| argument == "--motion-frontier-lab")
+        || motion_lab_frame.is_some()
+        || motion_lab_context;
+    let qa_motion_enabled = motion_lab_enabled
+        || arguments.iter().any(|argument| argument == "--qa-motion")
+        || arguments.iter().any(|argument| argument == "--verify")
+        || arguments.iter().any(|argument| argument == "--autoplay")
+        || arguments
+            .windows(2)
+            .any(|pair| pair[0] == "--benchmark-frames");
+    let motion_lab_frame = motion_lab_frame.unwrap_or(0);
+    assert!(
+        motion_lab_frame < motion_frontier_lab::LAB_FRAME_COUNT,
+        "--motion-frontier-lab-frame must be from 0 to 63"
+    );
     let telemetry_enabled = arguments.iter().any(|argument| argument == "--telemetry");
-    let autoplay = arguments.iter().any(|argument| argument == "--autoplay");
+    let benchmark_frame_limit = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--benchmark-frames")
+        .map(|pair| {
+            pair[1]
+                .parse::<usize>()
+                .expect("--benchmark-frames must be a positive integer")
+        });
+    let window_size = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--resolution")
+        .map(|pair| {
+            let (width, height) = pair[1]
+                .split_once('x')
+                .expect("--resolution must use WIDTHxHEIGHT");
+            (
+                width.parse::<u32>().expect("invalid resolution width"),
+                height.parse::<u32>().expect("invalid resolution height"),
+            )
+        })
+        .unwrap_or((1280, 720));
+    let autoplay = !motion_lab_enabled
+        && (arguments.iter().any(|argument| argument == "--autoplay")
+            || benchmark_frame_limit.is_some());
+    let verify = arguments.iter().any(|argument| argument == "--verify");
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
     let c0_skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
@@ -1013,7 +1748,42 @@ fn main() {
     let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
     let c0_reference_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
         .expect("C0 armored duelist bind pose must produce valid skinning matrices");
+    let c0_source = asset::load_skinned(&format!(
+        "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin"
+    ))
+    .expect("C0 source rig required for staging and radial Move");
+    let c0_walk = asset::load_skeletal_animation(&format!(
+        "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim"
+    ))
+    .expect("C0 world-space walking clip required for radial Move");
+    let c0_walk_skins = c0_walk
+        .frames
+        .iter()
+        .map(|frame| asset::retarget_world_animation_frame(&c0_source, &c0_mesh, frame))
+        .collect::<std::io::Result<Vec<_>>>()
+        .expect("C0 world-space walking clip must retarget without geometry explosion");
+    let hero_strike = qa_motion_enabled.then(|| {
+        hero_strike::HeroStrikePresentation::load(&PathBuf::from(&assets), &c0_mesh)
+            .expect("PVP005-R6 hero Strike must load for QA lab before match start")
+    });
     let dodge_presentation = None;
+    let session = m3::Session::new(0x4D33_0000_0000_0000);
+    let motion_lab_truth_baseline = motion_lab_enabled.then(|| session.game.snapshot().clone());
+    if motion_lab_enabled {
+        let hero = hero_strike
+            .as_ref()
+            .expect("Motion Frontier Lab requires hero strike QA presentation");
+        let metrics = hero.motion_lab_metrics(motion_lab_frame);
+        eprintln!(
+            "MOTION_FRONTIER_LAB_START frame={} max_target_error_m={:.9} mean_target_error_m={:.9} planted_foot_drift_m={:.9} grip_error_m={:.9} truth_frame={} requested=unavailable ardy=unavailable target=available tracker=available runtime_admission=false",
+            motion_lab_frame,
+            metrics.max_target_error_m,
+            metrics.mean_target_error_m,
+            metrics.planted_foot_drift_m,
+            metrics.grip_error_m,
+            session.game.snapshot().frame,
+        );
+    }
 
     let event_loop = EventLoop::new().unwrap();
     let mut app = App {
@@ -1026,6 +1796,11 @@ fn main() {
         ui_renderer: None,
         runtime_assets: PathBuf::from(assets),
         camera: Camera::new(),
+        development_camera: if motion_lab_enabled {
+            DevelopmentCamera::LeftQuarter
+        } else {
+            DevelopmentCamera::FirstPerson
+        },
         start_time: Instant::now(),
         last_frame_time: Instant::now(),
         fixed_step_clock: FixedStepClock::default(),
@@ -1033,8 +1808,18 @@ fn main() {
         clip_fps: 30.0,
         first_frame_presented: false,
         c0_reference_skin,
+        c0_walk_skins,
+        hero_strike,
+        motion_frontier_lab: motion_lab_enabled.then(|| {
+            let mut lab = motion_frontier_lab::MotionFrontierLab::new(motion_lab_frame);
+            if motion_lab_context {
+                lab.toggle_presentation();
+            }
+            lab
+        }),
+        motion_lab_truth_baseline,
         dodge_presentation,
-        session: m3::Session::new(0x4D33_0000_0000_0000),
+        session,
         cleanbox_world: m3_cleanbox::M3CleanboxWorld::new(),
         ai: m3::SeededAi::new(0x4D33_0000_0000_0000),
         flow: if autoplay {
@@ -1045,9 +1830,15 @@ fn main() {
         cursor_captured: false,
         replay_saved: false,
         autoplay,
+        verify,
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
         player_pos: vec3(0.0, 0.0, 1.0),
         show_debug: false,
+        show_hud: true,
+        window_size,
+        benchmark_frame_limit,
+        benchmark_frame_ms: Vec::new(),
+        qa_motion: arguments.iter().any(|argument| argument == "--qa-motion"),
     };
     if telemetry_enabled {
         eprintln!("telemetry: writing to /tmp/just_dodge_tlm.jsonl");

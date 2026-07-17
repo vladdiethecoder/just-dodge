@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "just-dodge.media-corpus-abi.v1.schema.json",
+  "title": "Just Dodge Media Corpus ABI v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "source",
+    "rights",
+    "media",
+    "skeleton",
+    "coordinate",
+    "labels",
+    "qa",
+    "admission"
+  ],
+  "properties": {
+    "schema_version": { "const": "media-corpus-abi.v1" },
+    "record_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]*$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "uri", "acquired_utc", "sha256"],
+      "properties": {
+        "kind": { "enum": ["video", "image", "clip", "mocap", "dataset"] },
+        "uri": { "type": "string", "minLength": 1 },
+        "acquired_utc": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "creator": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["training_status", "redistribution_status", "notes"],
+      "properties": {
+        "training_status": { "enum": ["allowed", "conditional", "forbidden", "unknown"] },
+        "redistribution_status": { "enum": ["allowed", "conditional", "forbidden", "unknown"] },
+        "license": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fps", "frame_count"],
+      "properties": {
+        "fps": { "type": "number", "exclusiveMinimum": 0 },
+        "frame_count": { "type": "integer", "minimum": 1 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "duration_seconds": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "skeleton": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "joint_count"],
+      "properties": {
+        "family": { "enum": ["SOMA77", "SOMA30", "G1", "C0", "OTHER"] },
+        "joint_count": { "type": "integer", "minimum": 1 },
+        "joint_names": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["up_axis", "forward_axis", "units"],
+      "properties": {
+        "up_axis": { "enum": ["+Y", "+Z", "-Y", "-Z"] },
+        "forward_axis": { "enum": ["+X", "+Y", "+Z", "-X", "-Y", "-Z"] },
+        "units": { "enum": ["m", "cm", "mm"] }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent_classes", "phase_windows"],
+      "properties": {
+        "intent_classes": {
+          "type": "array",
+          "items": { "enum": ["Strike", "Block", "Dodge", "Parry", "Grab", "Move", "Feint", "Thrust", "Kick", "Other"] }
+        },
+        "phase_windows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "start_frame", "end_frame"],
+            "properties": {
+              "name": { "enum": ["windup", "guard", "contact", "recover", "evade", "counter", "other"] },
+              "start_frame": { "type": "integer", "minimum": 0 },
+              "end_frame": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "contact_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "opponent_relative": { "type": "boolean" }
+      }
+    },
+    "qa": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "notes"],
+      "properties": {
+        "status": { "enum": ["pass", "review", "reject"] },
+        "notes": { "type": "string" },
+        "foot_drift_m": { "type": "number", "minimum": 0 },
+        "grip_error_m": { "type": "number", "minimum": 0 },
+        "finite": { "type": "boolean" }
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime_allowed", "training_allowed", "reason"],
+      "properties": {
+        "runtime_allowed": { "const": false },
+        "training_allowed": { "type": "boolean" },
+        "reason": { "type": "string" }
+      }
+    }
+  }
+}

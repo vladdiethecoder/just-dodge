@@ -47,11 +47,28 @@ pub struct UiRenderer {
     screen_size: (u32, u32),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MotionLabPanel {
+    pub frame: usize,
+    pub frame_count: usize,
+    pub playing: bool,
+    pub presentation_off: bool,
+    pub max_target_error_m: f32,
+    pub mean_target_error_m: f32,
+    pub worst_joint: usize,
+    pub planted_foot_drift_m: f32,
+    pub grip_error_m: f32,
+}
+
 pub struct UiFrame<'a> {
     pub snapshot: &'a Snapshot,
     pub plan: &'a PlanInput,
     pub flow_stage: FlowStage,
     pub establishing_remaining: u16,
+    pub camera_label: &'a str,
+    pub replay_total_exchanges: Option<u16>,
+    pub replay_finished: bool,
+    pub motion_lab: Option<MotionLabPanel>,
     pub width: u32,
     pub height: u32,
 }
@@ -90,6 +107,7 @@ fn action_label(action: Action) -> &'static str {
         Action::Strike => "STRIKE",
         Action::Block => "BLOCK",
         Action::Grab => "GRAB",
+        Action::Move => "MOVE",
     }
 }
 
@@ -204,6 +222,7 @@ fn build_font_atlas() -> Vec<u8> {
         (' ', [0x00, 0x00, 0x00, 0x00, 0x00]),
         ('!', [0x00, 0x00, 0x5F, 0x00, 0x00]),
         ('-', [0x00, 0x08, 0x08, 0x08, 0x00]),
+        ('/', [0x20, 0x10, 0x08, 0x04, 0x02]),
         (':', [0x00, 0x24, 0x00, 0x24, 0x00]),
         ('0', [0x3E, 0x51, 0x49, 0x45, 0x3E]),
         ('1', [0x00, 0x42, 0x7F, 0x40, 0x00]),
@@ -599,6 +618,201 @@ impl UiRenderer {
         }
     }
 
+    fn flush(&self, rpass: &mut wgpu::RenderPass, queue: &wgpu::Queue) {
+        let bytes = bytemuck::cast_slice(&self.vertices);
+        if bytes.len() as u64 > self.vertex_buffer.size() {
+            return;
+        }
+        queue.write_buffer(&self.vertex_buffer, 0, bytes);
+        rpass.set_pipeline(&self.pipeline);
+        rpass.set_bind_group(0, &self.bind_group, &[]);
+        rpass.set_bind_group(1, &self.texture_bind_group, &[]);
+        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(0..bytes.len() as u64));
+        rpass.draw(0..self.vertices.len() as u32, 0..1);
+    }
+
+    fn motion_frontier_lab_overlay(&mut self, panel: MotionLabPanel, w: f32, h: f32) {
+        self.rect(Vec2::ZERO, Vec2::new(w, 54.0), [0.006, 0.010, 0.020, 0.96]);
+        self.text(
+            Vec2::new(20.0, 18.0),
+            "MOTION FRONTIER LAB",
+            2.15,
+            [0.94, 0.96, 1.0, 1.0],
+        );
+        let frame_status = format!(
+            "FRAME {:02}/{:02}  {}  {}",
+            panel.frame,
+            panel.frame_count - 1,
+            if panel.playing { "PLAYING" } else { "PAUSED" },
+            if panel.presentation_off {
+                "TRUTH VIEW"
+            } else {
+                "CONTEXT VIEW"
+            }
+        );
+        self.text(
+            Vec2::new(
+                w - frame_status.len() as f32 * GLYPH_ADV * 1.45 - 20.0,
+                20.0,
+            ),
+            &frame_status,
+            1.45,
+            [0.70, 0.80, 0.92, 1.0],
+        );
+
+        let panel_pos = Vec2::new(18.0, 72.0);
+        let panel_size = Vec2::new(520.0, 292.0);
+        self.rect(panel_pos, panel_size, [0.008, 0.014, 0.026, 0.93]);
+        self.rect_outline(panel_pos, panel_size, [0.18, 0.24, 0.34, 1.0], 1.0);
+        self.text(
+            panel_pos + Vec2::new(16.0, 16.0),
+            "VISIBLE LAYERS",
+            1.45,
+            [0.78, 0.84, 0.92, 1.0],
+        );
+        self.text(
+            panel_pos + Vec2::new(16.0, 45.0),
+            "REQUESTED CONSTRAINTS     UNAVAILABLE",
+            1.30,
+            [0.42, 0.46, 0.54, 1.0],
+        );
+        self.text(
+            panel_pos + Vec2::new(16.0, 67.0),
+            "ARDY GENERATED PROPOSAL   UNAVAILABLE",
+            1.30,
+            [0.42, 0.46, 0.54, 1.0],
+        );
+        self.text(
+            panel_pos + Vec2::new(16.0, 89.0),
+            "MOTIONBRICKS TARGET",
+            1.35,
+            [1.0, 0.20, 0.82, 1.0],
+        );
+        self.text(
+            panel_pos + Vec2::new(16.0, 111.0),
+            "COUPLED TRACKER OUTPUT",
+            1.35,
+            [0.10, 0.88, 1.0, 1.0],
+        );
+        self.text(
+            panel_pos + Vec2::new(16.0, 133.0),
+            "TARGET TO OUTPUT RESIDUAL",
+            1.35,
+            [1.0, 0.72, 0.08, 1.0],
+        );
+        let metrics = [
+            format!(
+                "MAX TARGET ERROR    {:7.2} MM  JOINT {:02}",
+                panel.max_target_error_m * 1000.0,
+                panel.worst_joint
+            ),
+            format!(
+                "MEAN TARGET ERROR   {:7.2} MM",
+                panel.mean_target_error_m * 1000.0
+            ),
+            format!(
+                "PLANTED FOOT DRIFT  {:7.2} MM",
+                panel.planted_foot_drift_m * 1000.0
+            ),
+            format!("GRIP ERROR          {:7.2} MM", panel.grip_error_m * 1000.0),
+        ];
+        for (row, metric) in metrics.iter().enumerate() {
+            self.text(
+                panel_pos + Vec2::new(16.0, 171.0 + row as f32 * 22.0),
+                metric,
+                1.28,
+                [0.82, 0.86, 0.92, 1.0],
+            );
+        }
+        self.text(
+            panel_pos + Vec2::new(16.0, 270.0),
+            "NOT PHYSICS TRUTH   RUNTIME ADMISSION FALSE",
+            1.20,
+            [1.0, 0.42, 0.24, 1.0],
+        );
+
+        let controls = "F4 PLAY/PAUSE   F5 PREV FRAME   F6 NEXT FRAME   F7 PRESENTATION";
+        self.rect(
+            Vec2::new(0.0, h - 48.0),
+            Vec2::new(w, 48.0),
+            [0.006, 0.010, 0.020, 0.96],
+        );
+        self.text(
+            Vec2::new(20.0, h - 29.0),
+            controls,
+            1.45,
+            [0.72, 0.80, 0.90, 1.0],
+        );
+    }
+
+    fn cinematic_overlay(
+        &mut self,
+        snapshot: &Snapshot,
+        total_exchanges: u16,
+        finished: bool,
+        w: f32,
+        h: f32,
+    ) {
+        self.rect(Vec2::ZERO, Vec2::new(w, 52.0), [0.0, 0.0, 0.0, 0.92]);
+        self.rect(
+            Vec2::new(0.0, h - 64.0),
+            Vec2::new(w, 64.0),
+            [0.0, 0.0, 0.0, 0.92],
+        );
+        self.text(
+            Vec2::new(22.0, 19.0),
+            "FIGHT FILM",
+            2.0,
+            [0.95, 0.78, 0.24, 1.0],
+        );
+        let exchange = snapshot
+            .exchange
+            .saturating_add(1)
+            .min(u32::from(total_exchanges));
+        self.text(
+            Vec2::new(w - 214.0, 20.0),
+            &format!("EXCHANGE {exchange}/{total_exchanges}"),
+            1.55,
+            [0.82, 0.88, 0.96, 1.0],
+        );
+        let cut = match snapshot.phase {
+            Phase::Commit => "WIDE",
+            Phase::Reveal => "TRACK",
+            Phase::Resolve => "IMPACT",
+            Phase::Consequence => "FOLLOW THROUGH",
+            Phase::MatchResult => "FINAL FRAME",
+            Phase::Observe | Phase::Plan => "CUT",
+        };
+        self.text(Vec2::new(22.0, h - 50.0), cut, 1.35, [0.42, 0.82, 1.0, 1.0]);
+        if let Some((player, opponent)) = snapshot
+            .revealed
+            .or_else(|| Some((snapshot.player.planned?, snapshot.opponent.planned?)))
+        {
+            self.text(
+                Vec2::new(22.0, h - 28.0),
+                &format!(
+                    "YOU {}  /  RIVAL {}",
+                    action_label(player),
+                    action_label(opponent)
+                ),
+                1.55,
+                [0.94, 0.95, 0.98, 1.0],
+            );
+        }
+        let controls = if finished {
+            "FILM COMPLETE   R REMATCH   ESC MENU"
+        } else {
+            "R REMATCH   ESC MENU"
+        };
+        let controls_w = controls.len() as f32 * GLYPH_ADV * 1.35;
+        self.text(
+            Vec2::new(w - controls_w - 22.0, h - 28.0),
+            controls,
+            1.35,
+            [0.74, 0.78, 0.84, 1.0],
+        );
+    }
+
     pub fn render(
         &mut self,
         rpass: &mut wgpu::RenderPass,
@@ -610,6 +824,10 @@ impl UiRenderer {
             plan,
             flow_stage,
             establishing_remaining,
+            camera_label,
+            replay_total_exchanges,
+            replay_finished,
+            motion_lab,
             width,
             height,
         } = frame;
@@ -627,98 +845,221 @@ impl UiRenderer {
         let h = height as f32;
         let pad = 12.0;
 
-        // --- Phase banner ---
-        let phase_color = match snapshot.phase {
-            Phase::Plan => [0.2, 0.5, 0.9, 1.0],
-            Phase::Reveal => [0.9, 0.6, 0.2, 1.0],
-            Phase::Resolve => [0.9, 0.2, 0.2, 1.0],
-            Phase::MatchResult => [0.25, 0.15, 0.05, 1.0],
-            _ => [0.2, 0.2, 0.2, 0.9],
-        };
-        self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, 28.0), phase_color);
+        if let Some(panel) = motion_lab {
+            self.motion_frontier_lab_overlay(panel, w, h);
+            self.flush(rpass, queue);
+            return;
+        }
+
+        if flow_stage == FlowStage::Replay {
+            self.cinematic_overlay(
+                snapshot,
+                replay_total_exchanges.unwrap_or(1),
+                replay_finished,
+                w,
+                h,
+            );
+            self.flush(rpass, queue);
+            return;
+        }
+
+        // --- Compact phase + condition rail. Keep the duel visible. ---
         let phase_label = phase_banner_text(snapshot, flow_stage, establishing_remaining);
-        let label_w = phase_label.len() as f32 * GLYPH_ADV * 2.0;
+        let phase_w = 292.0;
+        let phase_x = (w - phase_w) * 0.5;
+        self.rect(
+            Vec2::new(phase_x, 12.0),
+            Vec2::new(phase_w, 32.0),
+            [0.018, 0.026, 0.04, 0.92],
+        );
+        self.rect(
+            Vec2::new(phase_x, 42.0),
+            Vec2::new(phase_w, 2.0),
+            match snapshot.phase {
+                Phase::Plan => [0.22, 0.78, 0.95, 1.0],
+                Phase::Reveal => [1.0, 0.72, 0.22, 1.0],
+                Phase::Resolve | Phase::Consequence => [1.0, 0.32, 0.24, 1.0],
+                _ => [0.52, 0.58, 0.68, 1.0],
+            },
+        );
+        let label_w = phase_label.len() as f32 * GLYPH_ADV * 1.55;
         self.text(
-            Vec2::new((w - label_w) / 2.0, 8.0),
+            Vec2::new((w - label_w) / 2.0, 21.0),
             &phase_label,
-            2.0,
-            [1.0, 1.0, 1.0, 1.0],
+            1.55,
+            [0.9, 0.93, 0.98, 1.0],
         );
 
-        // --- Localized-injury bars ---
-        let bar_w = 180.0;
-        let bar_h = 16.0;
-        // Player (left)
-        self.text(Vec2::new(pad, 40.0), "OK", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        if camera_label != "FIRST PERSON" {
+            self.rect(
+                Vec2::new(12.0, h - 116.0),
+                Vec2::new(196.0, 28.0),
+                [0.02, 0.03, 0.05, 0.86],
+            );
+            self.text(
+                Vec2::new(22.0, h - 108.0),
+                &format!("F2 CAMERA  {camera_label}"),
+                1.5,
+                [0.62, 0.82, 1.0, 1.0],
+            );
+        }
+
+        // --- Localized condition meters ---
+        let bar_w = 170.0;
+        let bar_h = 7.0;
+        self.rect(
+            Vec2::new(pad, 12.0),
+            Vec2::new(232.0, 44.0),
+            [0.018, 0.026, 0.04, 0.9],
+        );
+        self.text(
+            Vec2::new(pad + 10.0, 21.0),
+            "YOU",
+            1.7,
+            [0.24, 0.82, 1.0, 1.0],
+        );
+        self.text(
+            Vec2::new(pad + 174.0, 21.0),
+            &format!("INJ {}", snapshot.player.total_injury()),
+            1.3,
+            [0.9, 0.93, 0.98, 1.0],
+        );
         self.bar(
-            Vec2::new(pad + 30.0, 40.0),
+            Vec2::new(pad + 10.0, 44.0),
             Vec2::new(bar_w, bar_h),
             1.0 - snapshot.player.total_injury() as f32 / 5.0,
-            [0.2, 0.1, 0.1, 1.0],
-            [0.9, 0.2, 0.2, 1.0],
-        );
-        self.text(Vec2::new(pad, 62.0), "INJ", 1.5, [1.0, 1.0, 1.0, 1.0]);
-        self.bar(
-            Vec2::new(pad + 30.0, 62.0),
-            Vec2::new(bar_w, bar_h),
-            snapshot.player.total_injury() as f32 / 5.0,
-            [0.1, 0.2, 0.1, 1.0],
-            [0.2, 0.8, 0.2, 1.0],
+            [0.18, 0.07, 0.07, 1.0],
+            [0.24, 0.82, 1.0, 1.0],
         );
 
-        // Opponent (right)
-        let opp_x = w - pad - bar_w - 30.0;
-        self.text(Vec2::new(opp_x, 40.0), "OK", 1.5, [1.0, 1.0, 1.0, 1.0]);
+        let opp_x = w - pad - 232.0;
+        self.rect(
+            Vec2::new(opp_x, 12.0),
+            Vec2::new(232.0, 44.0),
+            [0.018, 0.026, 0.04, 0.9],
+        );
+        self.text(
+            Vec2::new(opp_x + 10.0, 21.0),
+            "RIVAL",
+            1.7,
+            [1.0, 0.62, 0.22, 1.0],
+        );
+        self.text(
+            Vec2::new(opp_x + 174.0, 21.0),
+            &format!("INJ {}", snapshot.opponent.total_injury()),
+            1.3,
+            [0.9, 0.93, 0.98, 1.0],
+        );
         self.bar(
-            Vec2::new(opp_x + 30.0, 40.0),
+            Vec2::new(opp_x + 52.0, 44.0),
             Vec2::new(bar_w, bar_h),
             1.0 - snapshot.opponent.total_injury() as f32 / 5.0,
-            [0.2, 0.1, 0.1, 1.0],
-            [0.9, 0.2, 0.2, 1.0],
-        );
-        self.text(Vec2::new(opp_x, 62.0), "INJ", 1.5, [1.0, 1.0, 1.0, 1.0]);
-        self.bar(
-            Vec2::new(opp_x + 30.0, 62.0),
-            Vec2::new(bar_w, bar_h),
-            snapshot.opponent.total_injury() as f32 / 5.0,
-            [0.1, 0.2, 0.1, 1.0],
-            [0.2, 0.8, 0.2, 1.0],
+            [0.18, 0.07, 0.07, 1.0],
+            [1.0, 0.62, 0.22, 1.0],
         );
 
         if flow_stage == FlowStage::Plan {
-            // --- Action menu (bottom) ---
+            // --- Brutalist action rail (bottom) ---
             let actions = [
-                ("1 Strike", Action::Strike, [0.9, 0.2, 0.2, 0.9]),
-                ("2 Block", Action::Block, [0.2, 0.6, 0.9, 0.9]),
-                ("3 Grab", Action::Grab, [0.3, 0.9, 0.5, 0.9]),
+                ("1  STRIKE", Action::Strike),
+                ("2  BLOCK", Action::Block),
+                ("3  GRAB", Action::Grab),
+                ("4  MOVE", Action::Move),
             ];
-            let btn_w = 140.0;
-            let btn_h = 36.0;
-            let gap = 16.0;
+            let btn_w = 152.0;
+            let btn_h = 48.0;
+            let gap = 8.0;
             let total_w = actions.len() as f32 * btn_w + (actions.len() as f32 - 1.0) * gap;
             let start_x = (w - total_w) / 2.0;
-            let y = h - 90.0;
-            for (i, (label, action, color)) in actions.iter().enumerate() {
+            let y = h - 106.0;
+            self.rect(
+                Vec2::new(start_x - 12.0, y - 12.0),
+                Vec2::new(total_w + 24.0, btn_h + 24.0),
+                [0.012, 0.019, 0.03, 0.88],
+            );
+            for (i, (label, action)) in actions.iter().enumerate() {
                 let x = start_x + i as f32 * (btn_w + gap);
                 let selected = plan.selected_action == Some(*action);
-                self.rect(Vec2::new(x, y), Vec2::new(btn_w, btn_h), *color);
-                if selected {
-                    self.rect_outline(
-                        Vec2::new(x, y),
-                        Vec2::new(btn_w, btn_h),
-                        [1.0, 1.0, 1.0, 1.0],
-                        3.0,
+                self.rect(
+                    Vec2::new(x, y),
+                    Vec2::new(btn_w, btn_h),
+                    if selected {
+                        [0.035, 0.18, 0.24, 0.96]
+                    } else {
+                        [0.025, 0.036, 0.055, 0.96]
+                    },
+                );
+                self.rect_outline(
+                    Vec2::new(x, y),
+                    Vec2::new(btn_w, btn_h),
+                    if selected {
+                        [0.24, 0.82, 1.0, 1.0]
+                    } else {
+                        [0.24, 0.29, 0.36, 1.0]
+                    },
+                    if selected { 2.0 } else { 1.0 },
+                );
+                let tx = x + (btn_w - label.len() as f32 * GLYPH_ADV * 1.6) / 2.0;
+                self.text(
+                    Vec2::new(tx, y + 17.0),
+                    label,
+                    1.6,
+                    if selected {
+                        [0.9, 0.97, 1.0, 1.0]
+                    } else {
+                        [0.68, 0.73, 0.8, 1.0]
+                    },
+                );
+            }
+            if plan.selected_action == Some(Action::Move) {
+                let center = Vec2::new(w * 0.5, y - 72.0);
+                self.rect(
+                    center - Vec2::new(84.0, 60.0),
+                    Vec2::new(168.0, 120.0),
+                    [0.012, 0.019, 0.03, 0.88],
+                );
+                for direction in [
+                    Vec2::new(0.0, -1.0),
+                    Vec2::new(0.707, -0.707),
+                    Vec2::new(1.0, 0.0),
+                    Vec2::new(0.707, 0.707),
+                    Vec2::new(0.0, 1.0),
+                    Vec2::new(-0.707, 0.707),
+                    Vec2::new(-1.0, 0.0),
+                    Vec2::new(-0.707, -0.707),
+                ] {
+                    self.rect(
+                        center + direction * 42.0 - Vec2::splat(4.0),
+                        Vec2::splat(8.0),
+                        [0.30, 0.38, 0.48, 0.94],
                     );
                 }
-                let tx = x + (btn_w - label.len() as f32 * GLYPH_ADV * 1.5) / 2.0;
-                self.text(Vec2::new(tx, y + 10.0), label, 1.5, [1.0, 1.0, 1.0, 1.0]);
+                let radial = Vec2::new(
+                    plan.radial_di.right_q15 as f32 / f32::from(i16::MAX),
+                    -(plan.radial_di.forward_q15 as f32 / f32::from(i16::MAX)),
+                );
+                self.rect(
+                    center + radial * 42.0 - Vec2::splat(7.0),
+                    Vec2::splat(14.0),
+                    [0.24, 0.82, 1.0, 1.0],
+                );
+                self.text(
+                    center + Vec2::new(-39.0, 50.0),
+                    "DIRECTION",
+                    1.2,
+                    [0.62, 0.82, 0.94, 1.0],
+                );
             }
         }
 
         // --- Plan / commit prompts ---
         if should_show_plan_prompt(snapshot, flow_stage) {
             if !snapshot.player.committed {
-                let prompt = "Choose 1 Strike 2 Block 3 Grab  Space/Enter confirm";
+                let prompt = if plan.selected_action == Some(Action::Move) {
+                    "MOVE: WASD / STICK    ENTER CONFIRM"
+                } else {
+                    "ENTER CONFIRM"
+                };
                 let pw = prompt.len() as f32 * GLYPH_ADV * 1.5;
                 self.text(
                     Vec2::new((w - pw) / 2.0, h - 28.0),
@@ -767,41 +1108,81 @@ impl UiRenderer {
 
         // --- Public, truth-derived exchange feedback ---
         if let Some(feedback) = exchange_feedback(snapshot, flow_stage) {
-            let panel_w = (w - 40.0).min(720.0);
-            let panel_h = 116.0;
-            let panel = Vec2::new((w - panel_w) / 2.0, h / 2.0 - 54.0);
+            let reveal = snapshot.phase == Phase::Reveal;
+            let panel_w = if reveal { 500.0 } else { 392.0 };
+            let panel_h = if reveal { 76.0 } else { 94.0 };
+            let panel = if reveal {
+                Vec2::new((w - panel_w) * 0.5, 62.0)
+            } else {
+                Vec2::new(w - panel_w - 20.0, 72.0)
+            };
             self.rect(
                 panel,
                 Vec2::new(panel_w, panel_h),
-                [0.01, 0.015, 0.025, 0.86],
+                [0.008, 0.014, 0.024, 0.9],
             );
+            self.rect(panel, Vec2::new(3.0, panel_h), feedback.tone.color());
 
-            let matchup_scale = 1.55;
-            let matchup_w = feedback.matchup.len() as f32 * GLYPH_ADV * matchup_scale;
+            let matchup_scale = 1.15;
             self.text(
-                Vec2::new((w - matchup_w) / 2.0, panel.y + 13.0),
+                Vec2::new(panel.x + 16.0, panel.y + 10.0),
                 &feedback.matchup,
                 matchup_scale,
-                [0.9, 0.9, 0.9, 1.0],
+                [0.58, 0.66, 0.76, 1.0],
             );
 
-            let headline_scale = 3.0;
-            let headline_w = feedback.headline.len() as f32 * GLYPH_ADV * headline_scale;
+            let headline_scale = if reveal { 2.0 } else { 2.25 };
             self.text(
-                Vec2::new((w - headline_w) / 2.0, panel.y + 43.0),
+                Vec2::new(panel.x + 16.0, panel.y + 32.0),
                 &feedback.headline,
                 headline_scale,
                 feedback.tone.color(),
             );
 
-            let detail_scale = 1.7;
-            let detail_w = feedback.detail.len() as f32 * GLYPH_ADV * detail_scale;
+            let detail_scale = 1.25;
             self.text(
-                Vec2::new((w - detail_w) / 2.0, panel.y + 87.0),
+                Vec2::new(panel.x + 16.0, panel.y + panel_h - 19.0),
                 &feedback.detail,
                 detail_scale,
-                [0.82, 0.86, 0.92, 1.0],
+                [0.72, 0.78, 0.86, 1.0],
             );
+        }
+
+        if snapshot.phase == Phase::Consequence
+            && snapshot.phase_frame <= 8
+            && snapshot.last_contact.is_some()
+        {
+            let alpha = 0.72 - snapshot.phase_frame as f32 * 0.065;
+            let color = [1.0, 0.34, 0.16, alpha];
+            let edge = 5.0;
+            self.rect(Vec2::ZERO, Vec2::new(w, edge), color);
+            self.rect(Vec2::new(0.0, h - edge), Vec2::new(w, edge), color);
+            self.rect(Vec2::ZERO, Vec2::new(edge, h), color);
+            self.rect(Vec2::new(w - edge, 0.0), Vec2::new(edge, h), color);
+            let center = Vec2::new(w * 0.5, h * 0.58);
+            let radius = 42.0 - snapshot.phase_frame as f32 * 3.5;
+            self.rect(
+                center - Vec2::new(radius, 1.5),
+                Vec2::new(radius * 2.0, 3.0),
+                color,
+            );
+            self.rect(
+                center - Vec2::new(1.5, radius),
+                Vec2::new(3.0, radius * 2.0),
+                color,
+            );
+            for offset in [
+                Vec2::new(0.7, 0.7),
+                Vec2::new(-0.7, 0.7),
+                Vec2::new(0.7, -0.7),
+                Vec2::new(-0.7, -0.7),
+            ] {
+                self.rect(
+                    center + offset * radius - Vec2::splat(3.0),
+                    Vec2::splat(6.0),
+                    color,
+                );
+            }
         }
 
         match flow_stage {
@@ -870,19 +1251,7 @@ impl UiRenderer {
             _ => {}
         }
 
-        // Upload and draw
-        let bytes = bytemuck::cast_slice(&self.vertices);
-        if bytes.len() as u64 > self.vertex_buffer.size() {
-            // Should not happen with the current UI; if it does, clamp.
-            return;
-        }
-        queue.write_buffer(&self.vertex_buffer, 0, bytes);
-
-        rpass.set_pipeline(&self.pipeline);
-        rpass.set_bind_group(0, &self.bind_group, &[]);
-        rpass.set_bind_group(1, &self.texture_bind_group, &[]);
-        rpass.set_vertex_buffer(0, self.vertex_buffer.slice(0..bytes.len() as u64));
-        rpass.draw(0..self.vertices.len() as u32, 0..1);
+        self.flush(rpass, queue);
     }
 }
 

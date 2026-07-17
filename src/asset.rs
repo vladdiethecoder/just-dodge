@@ -222,8 +222,9 @@ pub struct SkeletalAnimation {
     pub frames: Vec<Vec<Mat4>>,
 }
 
-/// Load the ANM1 parent-relative matrix format emitted by
-/// `tools/extract_fbx_skinned.py`.
+/// Load one ANM1 matrix sequence. ANM1 historically omitted its matrix-space
+/// tag: callers must use the producing asset contract to distinguish local
+/// reference frames from armature-world animation frames.
 pub fn load_skeletal_animation(path: &str) -> std::io::Result<SkeletalAnimation> {
     let f = File::open(path)?;
     let mut r = BufReader::new(f);
@@ -290,6 +291,89 @@ pub fn reference_pose_skin_matrices(
         .zip(&mesh.bones)
         .map(|(world, bone)| *world * bone.inverse_bind)
         .collect())
+}
+
+/// Transfer an ANM1 world-space frame between two rigs with the same named
+/// hierarchy. World-space rotation deltas are converted back into target-local
+/// rotations while target rest translations/scales preserve armored anatomy.
+pub fn retarget_world_animation_frame(
+    source: &SkinnedMeshData,
+    target: &SkinnedMeshData,
+    source_world_frame: &[Mat4],
+) -> std::io::Result<Vec<Mat4>> {
+    if source.bones.len() != target.bones.len() || source.bones.len() != source_world_frame.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "source, target, and ANM1 frame bone counts differ",
+        ));
+    }
+    for (index, (source_bone, target_bone)) in
+        source.bones.iter().zip(target.bones.iter()).enumerate()
+    {
+        if source_bone.name != target_bone.name || source_bone.parent != target_bone.parent {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("retarget hierarchy mismatch at bone {index}"),
+            ));
+        }
+    }
+
+    let source_rest_world = rest_world_matrices(source)?;
+    let target_rest_world = rest_world_matrices(target)?;
+    let mut desired_world_rotations = Vec::with_capacity(target.bones.len());
+    for index in 0..target.bones.len() {
+        let (_, source_rest_rotation, _) = source_rest_world[index].to_scale_rotation_translation();
+        let (_, source_frame_rotation, _) =
+            source_world_frame[index].to_scale_rotation_translation();
+        let (_, target_rest_rotation, _) = target_rest_world[index].to_scale_rotation_translation();
+        desired_world_rotations
+            .push(source_frame_rotation * source_rest_rotation.inverse() * target_rest_rotation);
+    }
+
+    let (_, _, source_rest_root) = source_rest_world[0].to_scale_rotation_translation();
+    let (_, _, source_frame_root) = source_world_frame[0].to_scale_rotation_translation();
+    let root_displacement = source_frame_root - source_rest_root;
+    let mut target_local = Vec::with_capacity(target.bones.len());
+    for (index, target_bone) in target.bones.iter().enumerate() {
+        let (rest_scale, _, rest_translation) =
+            target_bone.rest_local.to_scale_rotation_translation();
+        let local_rotation = if target_bone.parent < 0 {
+            desired_world_rotations[index]
+        } else {
+            desired_world_rotations[target_bone.parent as usize].inverse()
+                * desired_world_rotations[index]
+        };
+        let translation = if target_bone.parent < 0 {
+            rest_translation + root_displacement
+        } else {
+            rest_translation
+        };
+        target_local.push(Mat4::from_scale_rotation_translation(
+            rest_scale,
+            local_rotation,
+            translation,
+        ));
+    }
+    reference_pose_skin_matrices(target, &target_local)
+}
+
+fn rest_world_matrices(mesh: &SkinnedMeshData) -> std::io::Result<Vec<Mat4>> {
+    let mut world = vec![Mat4::IDENTITY; mesh.bones.len()];
+    for (index, bone) in mesh.bones.iter().enumerate() {
+        world[index] = if bone.parent < 0 {
+            bone.rest_local
+        } else {
+            let parent = bone.parent as usize;
+            if parent >= index {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("bone {index} parent {parent} is not topologically ordered"),
+                ));
+            }
+            world[parent] * bone.rest_local
+        };
+    }
+    Ok(world)
 }
 
 /// Retarget source world-frame rotation deltas onto the accepted C0 reference
@@ -581,6 +665,36 @@ mod tests {
             skin.iter()
                 .any(|matrix| !matrix.abs_diff_eq(Mat4::IDENTITY, 1e-4))
         );
+    }
+
+    #[test]
+    fn meshy_walk_world_frame_retargets_without_exploding_armored_skin() {
+        let root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
+        let source = load_skinned(&format!(
+            "{root}/assets/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin"
+        ))
+        .unwrap();
+        let target = load_skinned(&format!(
+            "{root}/assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin"
+        ))
+        .unwrap();
+        let walk = load_skeletal_animation(&format!(
+            "{root}/assets/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim"
+        ))
+        .unwrap();
+        let skin = retarget_world_animation_frame(&source, &target, &walk.frames[0]).unwrap();
+        assert_eq!(skin.len(), 24);
+        for matrix in skin {
+            assert!(matrix.is_finite());
+            assert!(
+                matrix
+                    .to_cols_array()
+                    .into_iter()
+                    .all(|value| value.abs() < 10.0),
+                "world-space retarget must reject the hierarchy-multiplication explosion"
+            );
+            assert!((0.5..2.0).contains(&matrix.determinant()));
+        }
     }
 
     #[test]

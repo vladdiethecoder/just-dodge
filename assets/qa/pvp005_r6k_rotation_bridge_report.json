@@ -1,0 +1,225 @@
+{
+  "ardy_commit": "693f74d13b3d04a0a22ce127ee79c929dd89756b",
+  "ardy_generation_authorized": false,
+  "ardy_tree": "c430040bbac13d673781f3bce000d82307018727",
+  "authority": "offline_constraints_and_reference_only",
+  "bridge_path": "kimodo_to_ardy_core27_to_c0.bridge.npz",
+  "bridge_sha256": "f519764263e87796323c421bb2d7b2df0674d9f9638c763f6a50076ba3d72c72",
+  "c0_foot_target_error_max_m": 0.01038999749819918,
+  "c0_grip_span_error_max_m": 1.997463421721246e-06,
+  "c0_hand_position_error_max_m": 2.062366453959385e-06,
+  "c0_hand_rotation_error_deg": {
+    "LeftHand": 0.046636100752838264,
+    "RightHand": 0.03324124183170174
+  },
+  "c0_planted_foot_drift_m": {
+    "LeftFoot": 0.007725384054579194,
+    "LeftToeBase": 0.0031663551218309998,
+    "RightFoot": 0.008023387899026832,
+    "RightToeBase": 0.003376273653378493
+  },
+  "c0_source_sha256": "36a9c4e41f7e33ff58d68c10aa59a6b6cdbfb7e0384e0402e520801c205a1c7e",
+  "coordinate_contract": {
+    "c0_asset": "right-handed +Z-up centimetre children under 0.01 root scale",
+    "c0_asset_to_runtime_xyz": [
+      "x",
+      "z",
+      "-y"
+    ],
+    "heading_input": [
+      1.0,
+      0.0
+    ],
+    "runtime": "right-handed Y-up metres, +Z forward",
+    "source_and_core": "right-handed Y-up metres, +Z heading at angle zero"
+  },
+  "finite": true,
+  "forbidden_authority": [
+    "hit",
+    "block_result",
+    "opponent_reaction",
+    "injury",
+    "outcome"
+  ],
+  "ik": {
+    "iterations": 96,
+    "maximum_local_correction_deg": 56.846586912772366,
+    "method": "deterministic batched CCD"
+  },
+  "joint_limit_definition_deg": {
+    "ARDY Core27": {
+      "Head": 130.0,
+      "Hips": 180.0,
+      "LeftArm": 180.0,
+      "LeftFoot": 130.0,
+      "LeftForeArm": 180.0,
+      "LeftHand": 180.0,
+      "LeftHandEnd": 180.0,
+      "LeftHandThumb1": 180.0,
+      "LeftLeg": 175.0,
+      "LeftShoulder": 150.0,
+      "LeftToeBase": 100.0,
+      "LeftUpLeg": 165.0,
+      "Neck": 110.0,
+      "RightArm": 180.0,
+      "RightFoot": 130.0,
+      "RightForeArm": 180.0,
+      "RightHand": 180.0,
+      "RightHandEnd": 180.0,
+      "RightHandThumb1": 180.0,
+      "RightLeg": 175.0,
+      "RightShoulder": 150.0,
+      "RightToeBase": 100.0,
+      "RightUpLeg": 165.0,
+      "Spine": 90.0,
+      "Spine1": 90.0,
+      "Spine2": 90.0,
+      "Spine3": 90.0
+    },
+    "C0": {
+      "Head": 130.0,
+      "Hips": 180.0,
+      "LeftArm": 180.0,
+      "LeftFoot": 130.0,
+      "LeftForeArm": 180.0,
+      "LeftHand": 180.0,
+      "LeftLeg": 175.0,
+      "LeftShoulder": 150.0,
+      "LeftToeBase": 100.0,
+      "LeftUpLeg": 165.0,
+      "RightArm": 180.0,
+      "RightFoot": 130.0,
+      "RightForeArm": 180.0,
+      "RightHand": 180.0,
+      "RightLeg": 175.0,
+      "RightShoulder": 150.0,
+      "RightToeBase": 100.0,
+      "RightUpLeg": 165.0,
+      "Spine": 90.0,
+      "Spine01": 90.0,
+      "Spine02": 90.0,
+      "head_end": 180.0,
+      "headfront": 180.0,
+      "neck": 110.0
+    }
+  },
+  "joint_limit_violations": [],
+  "kimodo_commit": "1aece8c124d73d255ceff5086d983b844c9f4e94",
+  "mapping": {
+    "core27_to_c0": {
+      "Head": "Head",
+      "Hips": "Hips",
+      "LeftArm": "LeftArm",
+      "LeftFoot": "LeftFoot",
+      "LeftForeArm": "LeftForeArm",
+      "LeftHand": "LeftHand",
+      "LeftLeg": "LeftLeg",
+      "LeftShoulder": "LeftShoulder",
+      "LeftToeBase": "LeftToeBase",
+      "LeftUpLeg": "LeftUpLeg",
+      "RightArm": "RightArm",
+      "RightFoot": "RightFoot",
+      "RightForeArm": "RightForeArm",
+      "RightHand": "RightHand",
+      "RightLeg": "RightLeg",
+      "RightShoulder": "RightShoulder",
+      "RightToeBase": "RightToeBase",
+      "RightUpLeg": "RightUpLeg",
+      "Spine": "Spine3",
+      "Spine01": "Spine2",
+      "Spine02": "Spine1",
+      "neck": "Neck"
+    },
+    "soma30_to_core27": {
+      "Head": "Head",
+      "Hips": "Hips",
+      "LeftArm": "LeftArm",
+      "LeftFoot": "LeftFoot",
+      "LeftForeArm": "LeftForeArm",
+      "LeftHand": "LeftHand",
+      "LeftHandEnd": "LeftHandMiddleEnd",
+      "LeftHandThumb1": "LeftHandThumbEnd",
+      "LeftLeg": "LeftShin",
+      "LeftShoulder": "LeftShoulder",
+      "LeftToeBase": "LeftToeBase",
+      "LeftUpLeg": "LeftLeg",
+      "Neck": null,
+      "RightArm": "RightArm",
+      "RightFoot": "RightFoot",
+      "RightForeArm": "RightForeArm",
+      "RightHand": "RightHand",
+      "RightHandEnd": "RightHandMiddleEnd",
+      "RightHandThumb1": "RightHandThumbEnd",
+      "RightLeg": "RightShin",
+      "RightShoulder": "RightShoulder",
+      "RightToeBase": "RightToeBase",
+      "RightUpLeg": "RightLeg",
+      "Spine": null,
+      "Spine1": "Spine1",
+      "Spine2": "Spine2",
+      "Spine3": "Chest"
+    },
+    "soma77_to_soma30": "exact official named subset"
+  },
+  "promoted": false,
+  "quaternion_continuity": {
+    "c0_local": {
+      "hemisphere_corrections": 222,
+      "postcanonical_min_consecutive_dot": 0.13152816891670227
+    },
+    "core27_local": {
+      "hemisphere_corrections": 122,
+      "postcanonical_min_consecutive_dot": 0.13153085112571716
+    },
+    "soma30_local": {
+      "hemisphere_corrections": 122,
+      "postcanonical_min_consecutive_dot": 0.13153085112571716
+    }
+  },
+  "report_sha256": "e086457afe7e5899508d0226c448c1317585e05d59c698efc691ce7f0f1be77e",
+  "rotation_determinants": {
+    "max": 1.0000005945698816,
+    "min": 0.9999993374798605
+  },
+  "roundtrip_fk_endpoint_error_m": {
+    "LeftFoot": 0.0,
+    "LeftHand": 0.0,
+    "LeftHandMiddleEnd": 0.0,
+    "LeftToeBase": 0.0,
+    "RightFoot": 0.0,
+    "RightHand": 0.0,
+    "RightHandMiddleEnd": 0.0,
+    "RightToeBase": 0.0
+  },
+  "roundtrip_fk_endpoint_error_max_m": 0.0,
+  "runtime_admitted": false,
+  "scale_mapping": {
+    "c0_root_scale": [
+      0.00999999954296339,
+      0.009999996974742192,
+      0.010000000254143698
+    ],
+    "c0_to_core_segment_ratios": {
+      "LeftArm": 0.8631449904773587,
+      "LeftFoot": 0.8929540352152703,
+      "LeftForeArm": 0.8639659573709484,
+      "LeftLeg": 0.9637000405643021,
+      "RightArm": 0.8222696719388389,
+      "RightFoot": 0.8761074444696008,
+      "RightForeArm": 0.8931863815742666,
+      "RightLeg": 0.9686119296142515
+    },
+    "method": "shoulder/hip-relative semantic-chain scaling with fixed 0.160 m W0 grip and stationary declared foot anchors",
+    "semantic_target_ratios": {
+      "LeftFoot": 0.9405434940353383,
+      "LeftHand": 0.8824681691145787,
+      "LeftToeBase": 0.9510321225269054,
+      "RightFoot": 0.9328070750570739,
+      "RightHand": 0.8731052272011675,
+      "RightToeBase": 0.9473034672148146
+    }
+  },
+  "schema": "just-dodge-pvp005-r6k-rotation-bridge-v1",
+  "status": "pass",
+  "teacher_sha256": "c3412394684264381c8c3b5828f607c69878100d52cba0648cbb84aa75202ece"
+}

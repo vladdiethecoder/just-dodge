@@ -2085,5 +2085,121 @@ class AssetReviewTests(unittest.TestCase):
         self.assertEqual(store._path(self.asset_path).read_bytes(), persisted_before)
 
 
+    def test_motion_lab_is_repository_bound_append_only_and_api_reviewers_cannot_approve(self) -> None:
+        payload = {
+            "schema": "forgelens.motion-lab/v1",
+            "motionLabId": "r6k-strike-motion-lab",
+            "revision": "b1f704003b7a76ff300fbff76d0583183041848d",
+            "fps": 60,
+            "frameCount": 4,
+            "tracks": {
+                "text": [{"frame": 0, "label": "windup"}],
+                "fullBody": [{"frame": 0, "label": "Kimodo full body"}],
+                "root": [{"frame": 0, "position": [0, 0, 0]}],
+                "endEffectors": [{"frame": 0, "jointId": "right_hand", "position": [0.1, 1.0, 0.2]}],
+                "contacts": [{"frame": 0, "objectId": "left_foot", "state": "planted"}],
+            },
+            "views": [
+                {"id": "kimodo-teacher", "label": "Kimodo teacher", "frames": [{"frame": 0, "root": [0, 0, 0]}]},
+                {"id": "ardy-proposal", "label": "ARDY proposal", "frames": [{"frame": 0, "root": [0.01, 0, 0]}]},
+                {"id": "motionbricks-target", "label": "MotionBricks target", "frames": [{"frame": 0, "root": [0, 0, 0.01]}]},
+                {"id": "physics-execution", "label": "Physics execution", "frames": [{"frame": 0, "root": [0, 0, 0]}]},
+            ],
+            "candidates": [
+                {"id": "teacher", "label": "Teacher", "viewId": "kimodo-teacher"},
+                {"id": "proposal", "label": "Proposal", "viewId": "ardy-proposal"},
+            ],
+            "metrics": {
+                "fkResidual": {"unit": "m", "series": [0.01, 0.02, 0.01, 0.01]},
+                "footDrift": {"unit": "m", "series": [0, 0.001, 0.002, 0.001]},
+                "com": {"unit": "m", "series": [0.9, 0.91, 0.9, 0.89]},
+                "grip": {"unit": "m", "series": [0.16, 0.16, 0.161, 0.16]},
+                "weaponPath": {"unit": "m", "series": [0.1, 0.2, 0.3, 0.4]},
+            },
+        }
+        motion_path = self.root / "tools" / "qa" / "motion_lab_fixture.json"
+        motion_path.parent.mkdir(parents=True, exist_ok=True)
+        motion_path.write_text(json.dumps(payload), encoding="utf-8")
+        loaded = self.module.load_motion_lab(self.root, "tools/qa/motion_lab_fixture.json")
+        self.assertEqual(loaded["motionLabId"], payload["motionLabId"])
+        store = self.module.MotionLabStore(self.root, "tools/qa/motion_lab_fixture.json")
+        snapshot = store.load()
+        self.assertEqual(snapshot["source"]["sha256"], hashlib.sha256(motion_path.read_bytes()).hexdigest())
+        annotation = store.append_annotation(
+            {
+                "motionLabId": payload["motionLabId"],
+                "sourceSha256": snapshot["source"]["sha256"],
+                "reviewerKind": "api",
+                "text": "Foot plant slides after impact.",
+                "revision": payload["revision"],
+                "frame": 2,
+                "jointId": "left_ankle",
+                "objectId": "left_foot",
+                "worldPoint": [0.0, 0.0, 0.1],
+            },
+            actor_id="api-reviewer-fixture",
+        )
+        self.assertEqual(annotation["eventType"], "annotation")
+        self.assertEqual(store.load()["events"][0]["previousEventSha256"], None)
+        with self.assertRaisesRegex(ValueError, "annotation"):
+            store.append_annotation(
+                {**annotation, "eventType": "approved"}, actor_id="api-reviewer-fixture"
+            )
+        human_event_path = self.root / "tools" / "qa" / "motion_lab_human_event.json"
+        human_event_path.write_text(
+            json.dumps(
+                {
+                    "schema": "forgelens.motion-lab-human-event/v1",
+                    "motionLabId": payload["motionLabId"],
+                    "revision": payload["revision"],
+                    "sourceSha256": snapshot["source"]["sha256"],
+                    "reviewerPseudonym": "independent-reviewer",
+                    "action": "changes-requested",
+                    "comment": "Hold admission; foot drift requires correction.",
+                    "decidedAt": "2026-07-16T12:00:00Z",
+                    "attestation": "I independently reviewed this exact Motion Lab payload; this outcome does not approve a ReviewRun.",
+                }
+            ),
+            encoding="utf-8",
+        )
+        human_event = store.import_human_event("tools/qa/motion_lab_human_event.json")
+        self.assertEqual(human_event["eventType"], "human-outcome")
+        self.assertEqual(human_event["action"], "changes-requested")
+        authority = self.module.BrowserAuthority("motion-lab-http")
+        session_token, session = authority.exchange("motion-lab-http")
+        context = self.module.ServerContext(
+            root=self.root,
+            initial_asset=None,
+            catalog=self.module.build_catalog(self.root),
+            reviews=self.module.ReviewStore(self.root),
+            authority=authority,
+            motion_lab=store,
+        )
+        handler = type("MotionLabHandler", (self.module.AssetReviewHandler,), {"context": context})
+        server = self.module.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+        origin = f"http://127.0.0.1:{server.server_port}"
+        headers = {"Cookie": f"{authority.cookie_name}={session_token}", "Origin": origin, "X-ForgeLens-CSRF": session["csrfToken"], "Content-Type": "application/json"}
+        try:
+            connection.request("GET", "/api/motion-lab", headers={"Cookie": headers["Cookie"]})
+            response = connection.getresponse()
+            self.assertEqual(response.status, 200)
+            self.assertEqual(json.loads(response.read().decode("utf-8"))["motionLab"]["motionLabId"], payload["motionLabId"])
+            forbidden = {"motionLabId": payload["motionLabId"], "sourceSha256": snapshot["source"]["sha256"], "reviewerKind": "api", "text": "forged approve", "revision": payload["revision"], "frame": 2, "jointId": "left_ankle", "objectId": "left_foot", "worldPoint": [0, 0, 0], "action": "approved"}
+            connection.request("POST", "/api/motion-lab-annotation", body=json.dumps(forbidden), headers=headers)
+            blocked = connection.getresponse()
+            self.assertEqual(blocked.status, 400)
+            self.assertIn("unknown", blocked.read().decode("utf-8"))
+        finally:
+            connection.close()
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+        with self.assertRaisesRegex(ValueError, "canonical repository-relative"):
+            self.module.load_motion_lab(self.root, "../motion_lab_fixture.json")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,8 @@
 use serde::{Deserialize, Serialize};
 
 pub const TICK_RATE_HZ: u32 = 60;
-pub const ACTIONS: [Action; 3] = [Action::Strike, Action::Block, Action::Grab];
+pub const ACTIONS: [Action; 4] = [Action::Strike, Action::Block, Action::Grab, Action::Move];
+const MOVE_MM_PER_REVEAL_TICK: i32 = 25;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Side {
@@ -29,6 +30,7 @@ pub enum Action {
     Strike,
     Block,
     Grab,
+    Move,
 }
 
 impl Action {
@@ -37,7 +39,28 @@ impl Action {
             Self::Strike => 0,
             Self::Block => 1,
             Self::Grab => 2,
+            Self::Move => 3,
         }
+    }
+}
+
+/// Replay-stable radial directional input. Components are signed Q15 in the
+/// horizontal combat plane; diagonal keyboard input is normalized before it
+/// crosses this authority boundary.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RadialDi {
+    pub right_q15: i16,
+    pub forward_q15: i16,
+}
+
+impl RadialDi {
+    pub const ZERO: Self = Self {
+        right_q15: 0,
+        forward_q15: 0,
+    };
+
+    pub const fn is_zero(self) -> bool {
+        self.right_q15 == 0 && self.forward_q15 == 0
     }
 }
 
@@ -110,6 +133,8 @@ pub struct Injury {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Fighter {
     pub planned: Option<Action>,
+    pub radial_di: RadialDi,
+    pub displacement_mm: [i32; 2],
     pub committed: bool,
     pub head_injury: u8,
     pub torso_injury: u8,
@@ -120,6 +145,8 @@ impl Fighter {
     pub const fn fresh() -> Self {
         Self {
             planned: None,
+            radial_di: RadialDi::ZERO,
+            displacement_mm: [0; 2],
             committed: false,
             head_injury: 0,
             torso_injury: 0,
@@ -147,6 +174,7 @@ impl Fighter {
 
     fn clear_exchange(&mut self) {
         self.planned = None;
+        self.radial_di = RadialDi::ZERO;
         self.committed = false;
     }
 }
@@ -170,6 +198,7 @@ pub struct Snapshot {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Input {
     Select(Action),
+    SetRadialDi(RadialDi),
     Commit,
     Restart { seed: u64 },
 }
@@ -179,6 +208,7 @@ pub enum InputError {
     NotPlanning,
     AlreadyCommitted,
     MissingAction,
+    MissingDirection,
     NotTerminal,
 }
 
@@ -188,6 +218,7 @@ impl std::fmt::Display for InputError {
             Self::NotPlanning => "input is only legal during Plan",
             Self::AlreadyCommitted => "fighter has already committed this exchange",
             Self::MissingAction => "commit requires a selected action",
+            Self::MissingDirection => "Move requires a non-zero radial direction",
             Self::NotTerminal => "restart is only legal after MatchResult",
         };
         f.write_str(message)
@@ -276,10 +307,18 @@ impl Match {
                 fighter.planned = Some(action);
                 Ok(())
             }
+            Input::SetRadialDi(radial_di) => {
+                let fighter = self.fighter_mut(side)?;
+                fighter.radial_di = radial_di;
+                Ok(())
+            }
             Input::Commit => {
                 let fighter = self.fighter_mut(side)?;
                 if fighter.planned.is_none() {
                     return Err(InputError::MissingAction);
+                }
+                if fighter.planned == Some(Action::Move) && fighter.radial_di.is_zero() {
+                    return Err(InputError::MissingDirection);
                 }
                 fighter.committed = true;
                 Ok(())
@@ -296,6 +335,10 @@ impl Match {
         }
         self.snapshot.frame = self.snapshot.frame.saturating_add(1);
         self.snapshot.phase_frame = self.snapshot.phase_frame.saturating_add(1);
+        if self.snapshot.phase == Phase::Reveal {
+            apply_move_tick(&mut self.snapshot.player);
+            apply_move_tick(&mut self.snapshot.opponent);
+        }
 
         if self.snapshot.phase == Phase::Plan
             && self.snapshot.player.committed
@@ -452,6 +495,68 @@ impl SeededAi {
     /// opponent's uncommitted intent to this policy.
     pub const fn choose(&self, public_exchange: u32) -> Action {
         ACTIONS[((self.seed as u32).wrapping_add(public_exchange) % 3) as usize]
+    }
+
+    pub const fn move_di(&self, public_exchange: u32) -> RadialDi {
+        const DIAGONAL_Q15: i16 = 23_170;
+        const DIRECTIONS: [RadialDi; 8] = [
+            RadialDi {
+                right_q15: 0,
+                forward_q15: i16::MAX,
+            },
+            RadialDi {
+                right_q15: DIAGONAL_Q15,
+                forward_q15: DIAGONAL_Q15,
+            },
+            RadialDi {
+                right_q15: i16::MAX,
+                forward_q15: 0,
+            },
+            RadialDi {
+                right_q15: DIAGONAL_Q15,
+                forward_q15: -DIAGONAL_Q15,
+            },
+            RadialDi {
+                right_q15: 0,
+                forward_q15: -i16::MAX,
+            },
+            RadialDi {
+                right_q15: -DIAGONAL_Q15,
+                forward_q15: -DIAGONAL_Q15,
+            },
+            RadialDi {
+                right_q15: -i16::MAX,
+                forward_q15: 0,
+            },
+            RadialDi {
+                right_q15: -DIAGONAL_Q15,
+                forward_q15: DIAGONAL_Q15,
+            },
+        ];
+        DIRECTIONS[((self.seed as u32)
+            .rotate_left(5)
+            .wrapping_add(public_exchange)
+            % 8) as usize]
+    }
+}
+
+fn apply_move_tick(fighter: &mut Fighter) {
+    if fighter.planned != Some(Action::Move) {
+        return;
+    }
+    fighter.displacement_mm[0] =
+        fighter.displacement_mm[0].saturating_add(q15_step(fighter.radial_di.right_q15));
+    fighter.displacement_mm[1] =
+        fighter.displacement_mm[1].saturating_add(q15_step(fighter.radial_di.forward_q15));
+}
+
+fn q15_step(value: i16) -> i32 {
+    let numerator = i32::from(value) * MOVE_MM_PER_REVEAL_TICK;
+    let half = i32::from(i16::MAX) / 2;
+    if numerator >= 0 {
+        (numerator + half) / i32::from(i16::MAX)
+    } else {
+        (numerator - half) / i32::from(i16::MAX)
     }
 }
 
@@ -956,6 +1061,50 @@ mod tests {
             assert_eq!(replayed.snapshot(), expected_snapshot);
             assert_eq!(replayed.truth_hash(), expected_hash);
         }
+    }
+
+    #[test]
+    fn move_requires_radial_di_and_advances_in_replay_stable_millimetres() {
+        let mut session = Session::new(0x4d30_5633);
+        while session.game.snapshot().phase != Phase::Plan {
+            session.tick();
+        }
+        session
+            .apply(Side::Player, Input::Select(Action::Move))
+            .unwrap();
+        assert_eq!(
+            session.apply(Side::Player, Input::Commit),
+            Err(InputError::MissingDirection)
+        );
+        session
+            .apply(
+                Side::Player,
+                Input::SetRadialDi(RadialDi {
+                    right_q15: i16::MAX,
+                    forward_q15: 0,
+                }),
+            )
+            .unwrap();
+        session.apply(Side::Player, Input::Commit).unwrap();
+        session
+            .apply(Side::Opponent, Input::Select(Action::Block))
+            .unwrap();
+        session.apply(Side::Opponent, Input::Commit).unwrap();
+        while session.game.snapshot().phase != Phase::Resolve {
+            session.tick();
+        }
+        assert_eq!(session.game.snapshot().player.displacement_mm, [300, 0]);
+        session
+            .submit_physical_contact(PhysicalContactBatch {
+                truth_frame: session.game.expected_contact_frame().unwrap(),
+                contact: None,
+            })
+            .unwrap();
+        session.tick();
+
+        let replayed = replay(&session.replay).unwrap();
+        assert_eq!(replayed.snapshot(), session.game.snapshot());
+        assert_eq!(replayed.truth_hash(), session.game.truth_hash());
     }
 
     #[test]

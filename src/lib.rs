@@ -2,6 +2,7 @@ pub mod action_matrix;
 pub mod active_ragdoll;
 pub mod armor;
 pub mod asset;
+
 pub mod cleanbox;
 pub mod combat;
 pub mod dodge_presentation;
@@ -9,6 +10,7 @@ pub mod duel_physics;
 pub mod duel_world;
 pub mod g1_articulation;
 pub mod g1_hinge_adapter;
+pub mod hero_strike;
 pub mod hinge_projection;
 pub mod hitbox;
 pub mod injury;

@@ -15,6 +15,29 @@ pub fn retarget_g1_frame_to_armored_skin(
     source_reference: &[Mat4; 34],
     source_frame: &[Mat4; 34],
 ) -> std::io::Result<Vec<Mat4>> {
+    retarget_g1_frame_to_armored_skin_internal(mesh, source_reference, source_frame, None)
+}
+
+pub fn retarget_g1_frame_to_armored_skin_with_foot_targets(
+    mesh: &SkinnedMeshData,
+    source_reference: &[Mat4; 34],
+    source_frame: &[Mat4; 34],
+    foot_targets: [Vec3; 2],
+) -> std::io::Result<Vec<Mat4>> {
+    retarget_g1_frame_to_armored_skin_internal(
+        mesh,
+        source_reference,
+        source_frame,
+        Some(foot_targets),
+    )
+}
+
+fn retarget_g1_frame_to_armored_skin_internal(
+    mesh: &SkinnedMeshData,
+    source_reference: &[Mat4; 34],
+    source_frame: &[Mat4; 34],
+    foot_targets: Option<[Vec3; 2]>,
+) -> std::io::Result<Vec<Mat4>> {
     let target_reference: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
     let mut target_local = asset::calibrated_g1_target_locals(
         source_frame,
@@ -29,9 +52,184 @@ pub fn retarget_g1_frame_to_armored_skin(
         source_reference,
         source_frame,
     )?;
+    close_two_hand_grip(mesh, &mut target_local, 0.160)?;
+    if let Some(targets) = foot_targets {
+        close_planted_feet(mesh, &mut target_local, targets)?;
+    }
+    align_head_forward_with_torso(mesh, &mut target_local)?;
     let skin = asset::reference_pose_skin_matrices(mesh, &target_local)?;
     validate_armored_skin(mesh, &skin)?;
     Ok(skin)
+}
+
+fn align_head_forward_with_torso(
+    mesh: &SkinnedMeshData,
+    target_local: &mut [Mat4],
+) -> std::io::Result<()> {
+    let head = bone_index(mesh, "Head")?;
+    let head_front = bone_index(mesh, "headfront")?;
+    let torso = bone_index(mesh, "Spine02")?;
+    let world = hierarchy_world(mesh, target_local);
+    let torso_forward = world[torso].z_axis.truncate().normalize_or_zero();
+    let head_forward =
+        (translation(world[head_front]) - translation(world[head])).normalize_or_zero();
+    if torso_forward.length_squared() <= 1.0e-8 || head_forward.length_squared() <= 1.0e-8 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "head-forward calibration requires non-degenerate torso and head axes",
+        ));
+    }
+    if head_forward.dot(torso_forward) >= 0.70 {
+        return Ok(());
+    }
+
+    let correction = Quat::from_rotation_arc(head_forward, torso_forward);
+    let (_, head_world_rotation, _) = world[head].to_scale_rotation_translation();
+    let parent = mesh.bones[head].parent;
+    if parent < 0 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Head must have a parent for orientation calibration",
+        ));
+    }
+    let (_, parent_world_rotation, _) = world[parent as usize].to_scale_rotation_translation();
+    let (scale, _, local_translation) = target_local[head].to_scale_rotation_translation();
+    target_local[head] = Mat4::from_scale_rotation_translation(
+        scale,
+        (parent_world_rotation.inverse() * correction * head_world_rotation).normalize(),
+        local_translation,
+    );
+
+    let corrected = hierarchy_world(mesh, target_local);
+    let corrected_head_forward =
+        (translation(corrected[head_front]) - translation(corrected[head])).normalize_or_zero();
+    if corrected_head_forward.dot(torso_forward) < 0.70 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "head-forward calibration did not align Head with Spine02",
+        ));
+    }
+    Ok(())
+}
+
+fn close_planted_feet(
+    mesh: &SkinnedMeshData,
+    target_local: &mut [Mat4],
+    targets: [Vec3; 2],
+) -> std::io::Result<()> {
+    let feet = ["LeftFoot", "RightFoot"];
+    let chains = [["LeftLeg", "LeftUpLeg"], ["RightLeg", "RightUpLeg"]];
+    for _ in 0..96 {
+        for ((foot_name, target), chain) in feet.into_iter().zip(targets).zip(chains) {
+            let foot = bone_index(mesh, foot_name)?;
+            for joint_name in chain {
+                rotate_joint_toward(
+                    mesh,
+                    target_local,
+                    bone_index(mesh, joint_name)?,
+                    foot,
+                    target,
+                )?;
+            }
+        }
+    }
+    let final_world = hierarchy_world(mesh, target_local);
+    for (foot_name, target) in feet.into_iter().zip(targets) {
+        let error = translation(final_world[bone_index(mesh, foot_name)?]).distance(target);
+        if error >= 0.010 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("planted {foot_name} residual {error:.6}m exceeds 0.010m"),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn close_two_hand_grip(
+    mesh: &SkinnedMeshData,
+    target_local: &mut [Mat4],
+    grip_span_m: f32,
+) -> std::io::Result<()> {
+    let left_hand = bone_index(mesh, "LeftHand")?;
+    let right_hand = bone_index(mesh, "RightHand")?;
+    let initial_world = hierarchy_world(mesh, target_local);
+    let left = translation(initial_world[left_hand]);
+    let right = translation(initial_world[right_hand]);
+    let span = right - left;
+    if span.length_squared() < 1.0e-8 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "closed grip requires distinct C0 hand positions",
+        ));
+    }
+    let midpoint = (left + right) * 0.5;
+    let direction = span.normalize();
+    let targets = [
+        ("LeftHand", midpoint - direction * (grip_span_m * 0.5)),
+        ("RightHand", midpoint + direction * (grip_span_m * 0.5)),
+    ];
+    let chains = [
+        ["LeftForeArm", "LeftArm", "LeftShoulder"],
+        ["RightForeArm", "RightArm", "RightShoulder"],
+    ];
+
+    for _ in 0..64 {
+        for ((hand_name, target), chain) in targets.iter().zip(chains) {
+            let hand = bone_index(mesh, hand_name)?;
+            for joint_name in chain {
+                let joint = bone_index(mesh, joint_name)?;
+                rotate_joint_toward(mesh, target_local, joint, hand, *target)?;
+            }
+        }
+    }
+
+    let final_world = hierarchy_world(mesh, target_local);
+    for (hand_name, target) in targets {
+        let hand = bone_index(mesh, hand_name)?;
+        let error = translation(final_world[hand]).distance(target);
+        if error > 0.012 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("closed grip {hand_name} residual {error:.6}m exceeds 0.012m"),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn rotate_joint_toward(
+    mesh: &SkinnedMeshData,
+    local: &mut [Mat4],
+    joint: usize,
+    hand: usize,
+    target: Vec3,
+) -> std::io::Result<()> {
+    let world = hierarchy_world(mesh, local);
+    let joint_position = translation(world[joint]);
+    let to_hand = translation(world[hand]) - joint_position;
+    let to_target = target - joint_position;
+    if to_hand.length_squared() < 1.0e-8 || to_target.length_squared() < 1.0e-8 {
+        return Ok(());
+    }
+    let correction = Quat::from_rotation_arc(to_hand.normalize(), to_target.normalize());
+    let damped = Quat::IDENTITY.slerp(correction, 0.90).normalize();
+    let (_, joint_world_rotation, _) = world[joint].to_scale_rotation_translation();
+    let desired_world_rotation = damped * joint_world_rotation;
+    let parent_world_rotation = if mesh.bones[joint].parent < 0 {
+        Quat::IDENTITY
+    } else {
+        world[mesh.bones[joint].parent as usize]
+            .to_scale_rotation_translation()
+            .1
+    };
+    let (scale, _, local_translation) = local[joint].to_scale_rotation_translation();
+    local[joint] = Mat4::from_scale_rotation_translation(
+        scale,
+        (parent_world_rotation.inverse() * desired_world_rotation).normalize(),
+        local_translation,
+    );
+    Ok(())
 }
 
 fn hierarchy_world(mesh: &SkinnedMeshData, local: &[Mat4]) -> Vec<Mat4> {

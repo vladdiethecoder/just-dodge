@@ -1,5 +1,7 @@
 struct Uniforms {
     mvp: mat4x4<f32>,
+    model: mat4x4<f32>,
+    camera_position: vec4<f32>,
 };
 
 @group(0) @binding(0)
@@ -29,6 +31,7 @@ struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) world_normal: vec3<f32>,
     @location(1) frag_uv: vec2<f32>,
+    @location(2) world_position: vec3<f32>,
 };
 
 @vertex
@@ -58,20 +61,42 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     let skinned_nrm = (skin * vec4<f32>(input.normal, 0.0)).xyz;
 
     output.clip_position = uniforms.mvp * skinned_pos;
-    output.world_normal = normalize(skinned_nrm);
+    let world_position = uniforms.model * skinned_pos;
+    output.world_normal = normalize((uniforms.model * vec4<f32>(skinned_nrm, 0.0)).xyz);
     output.frag_uv = input.uv;
+    output.world_position = world_position.xyz;
     return output;
 }
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let light_dir = normalize(vec3<f32>(0.4, 1.0, 0.3));
+    let light_dir = normalize(vec3<f32>(-0.35, 1.0, -0.25));
     let n = normalize(input.world_normal);
-    let diff = max(dot(n, light_dir), 0.0);
-    let ambient = 0.55;
-    // The C0 carrier binds an explicit 1x1 neutral fallback until its PBR
-    // texture contract is accepted. Textured assets use this same sampled path.
+    let v = normalize(uniforms.camera_position.xyz - input.world_position);
+    let h = normalize(light_dir + v);
     let base = textureSample(base_color, base_sampler, input.frag_uv).rgb;
-    let intensity = ambient + diff * 0.45;
-    return vec4<f32>(base * intensity, 1.0);
+    // The accepted C0 carrier is a fully armoured plate/leather assembly. Until
+    // the cooked format carries per-run ORM textures, use one explicit plate
+    // response rather than the previous non-physical rim-light heuristic.
+    let metallic = 0.72;
+    let roughness = 0.32;
+    let alpha = roughness * roughness;
+    let n_dot_l = max(dot(n, light_dir), 0.0);
+    let n_dot_v = max(dot(n, v), 0.001);
+    let n_dot_h = max(dot(n, h), 0.0);
+    let v_dot_h = max(dot(v, h), 0.0);
+    let alpha2 = alpha * alpha;
+    let denom = n_dot_h * n_dot_h * (alpha2 - 1.0) + 1.0;
+    let distribution = alpha2 / max(3.14159265 * denom * denom, 0.0001);
+    let k = (roughness + 1.0) * (roughness + 1.0) * 0.125;
+    let geometry_v = n_dot_v / (n_dot_v * (1.0 - k) + k);
+    let geometry_l = n_dot_l / (n_dot_l * (1.0 - k) + k);
+    let f0 = mix(vec3<f32>(0.04), base, vec3<f32>(metallic));
+    let fresnel = f0 + (vec3<f32>(1.0) - f0) * pow(1.0 - v_dot_h, 5.0);
+    let specular = distribution * geometry_v * geometry_l * fresnel /
+        max(4.0 * n_dot_v * n_dot_l, 0.001);
+    let diffuse = (vec3<f32>(1.0) - fresnel) * (1.0 - metallic) * base / 3.14159265;
+    let key = (diffuse + specular) * vec3<f32>(3.4, 3.25, 3.05) * n_dot_l;
+    let hemisphere = base * mix(0.055, 0.16, n.y * 0.5 + 0.5);
+    return vec4<f32>(key + hemisphere, 1.0);
 }

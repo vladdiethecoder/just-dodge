@@ -1,0 +1,55 @@
+{
+  "schema": "just-dodge-r6k-move-batch-v1",
+  "authority": "offline constraints/reference only; MotionBricks is the sole runtime motion engine; no provider authors contact, injury, reaction, or outcome",
+  "moves": [
+    {
+      "id": "strike_vertical",
+      "action": "Strike",
+      "prompt": "A skilled person performs one controlled two-handed vertical longsword cut from a high guard through a clear forward air corridor, keeps both feet planted, and recovers to guard.",
+      "key_frames": [0, 18, 32, 48, 62, 76, 89],
+      "grip_centers": [[0.05, 1.34, 0.20], [0.04, 1.76, 0.06], [0.03, 1.91, 0.14], [0.02, 1.69, 0.38], [0.00, 1.36, 0.64], [0.04, 1.43, 0.35], [0.05, 1.34, 0.20]],
+      "grip_axes": [[0.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.80, 0.60], [0.0, 0.20, 0.98], [0.0, -0.55, 0.835], [0.0, 0.50, 0.866], [0.0, 1.0, 0.0]]
+    },
+    {
+      "id": "strike_diagonal",
+      "action": "Strike",
+      "prompt": "A skilled person performs one controlled two-handed diagonal longsword cut from a high right guard down across the body through a clear forward air corridor, keeps both feet planted, and recovers to guard.",
+      "key_frames": [0, 18, 32, 48, 62, 76, 89],
+      "grip_centers": [[0.05, 1.34, 0.20], [-0.10, 1.72, 0.04], [-0.16, 1.86, 0.12], [-0.05, 1.62, 0.36], [0.18, 1.28, 0.58], [0.10, 1.40, 0.32], [0.05, 1.34, 0.20]],
+      "grip_axes": [[0.0, 1.0, 0.0], [-0.30, 0.95, 0.0], [-0.35, 0.85, 0.40], [-0.20, 0.35, 0.91], [0.55, -0.60, 0.58], [0.30, 0.45, 0.84], [0.0, 1.0, 0.0]]
+    },
+    {
+      "id": "thrust",
+      "action": "Thrust",
+      "prompt": "A skilled person performs one committed two-handed longsword thrust straight forward along the blade line from a mid guard, keeps both feet planted, and recovers to guard.",
+      "key_frames": [0, 18, 32, 48, 62, 76, 89],
+      "grip_centers": [[0.05, 1.30, 0.22], [0.04, 1.28, 0.14], [0.03, 1.30, 0.10], [0.02, 1.32, 0.30], [0.02, 1.33, 0.78], [0.04, 1.31, 0.45], [0.05, 1.30, 0.22]],
+      "grip_axes": [[0.0, 0.05, 1.0], [0.0, 0.05, 1.0], [0.0, 0.05, 1.0], [0.0, 0.02, 1.0], [0.0, 0.0, 1.0], [0.0, 0.03, 1.0], [0.0, 0.05, 1.0]]
+    },
+    {
+      "id": "block_high",
+      "action": "Block",
+      "prompt": "A skilled person raises a two-handed longsword into a firm high horizontal block above the head, holds briefly with both feet planted, and returns to guard.",
+      "key_frames": [0, 18, 32, 48, 62, 76, 89],
+      "grip_centers": [[0.05, 1.34, 0.20], [0.04, 1.55, 0.16], [0.03, 1.72, 0.10], [0.02, 1.80, 0.06], [0.02, 1.80, 0.06], [0.04, 1.55, 0.15], [0.05, 1.34, 0.20]],
+      "grip_axes": [[0.0, 1.0, 0.0], [0.9, 0.30, 0.30], [1.0, 0.10, 0.10], [1.0, 0.0, 0.05], [1.0, 0.0, 0.05], [0.9, 0.30, 0.30], [0.0, 1.0, 0.0]]
+    },
+    {
+      "id": "grab",
+      "action": "Grab",
+      "prompt": "A skilled person drops the sword low in one hand and lunges the free hand forward to seize the opponent at close range with a quick step, then recovers stance.",
+      "key_frames": [0, 18, 32, 48, 62, 76, 89],
+      "grip_centers": [[0.05, 1.34, 0.20], [0.06, 1.10, 0.26], [0.05, 0.95, 0.30], [0.04, 0.90, 0.40], [0.04, 0.92, 0.55], [0.05, 1.15, 0.35], [0.05, 1.34, 0.20]],
+      "grip_axes": [[0.0, 1.0, 0.0], [0.0, -0.30, 0.95], [0.0, -0.60, 0.80], [0.0, -0.70, 0.71], [0.0, -0.65, 0.76], [0.0, -0.25, 0.97], [0.0, 1.0, 0.0]]
+    },
+    {
+      "id": "dodge_lateral",
+      "action": "Dodge",
+      "prompt": "A skilled person makes a fast lateral evasive step to the side, lowering the center of mass while keeping the sword in a ready guard, then returns to stance.",
+      "key_frames": [0, 14, 26, 40, 54, 70, 89],
+      "grip_centers": [[0.05, 1.34, 0.20], [0.06, 1.20, 0.22], [0.07, 1.10, 0.24], [0.07, 1.05, 0.26], [0.06, 1.14, 0.24], [0.05, 1.26, 0.21], [0.05, 1.34, 0.20]],
+      "grip_axes": [[0.0, 1.0, 0.0], [0.0, 0.90, 0.44], [0.0, 0.85, 0.53], [0.0, 0.85, 0.53], [0.0, 0.90, 0.44], [0.0, 0.95, 0.31], [0.0, 1.0, 0.0]],
+      "root_dodge": {"direction": [0.45, 0.0, 0.0], "peak_frame": 40}
+    }
+  ]
+}

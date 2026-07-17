@@ -3,7 +3,7 @@
 use glam::Vec3;
 
 use crate::cleanbox;
-use crate::duel_world::{DuelWorld, DuelWorldError};
+use crate::duel_world::{DuelWorld, DuelWorldError, DuelWorldTarget, DuelWorldTruthTick};
 use crate::milestone3 as m3;
 use crate::truth;
 
@@ -54,36 +54,61 @@ impl M3CleanboxWorld {
             opponent_root,
         )
         .map_err(M3CleanboxError::DuelWorld)?;
-        let contact = tick
-            .contact_batch
-            .contact
-            .map(|contact| m3::PhysicalContact {
-                attacker: match contact.attacker {
-                    truth::Side::Player => m3::Side::Player,
-                    truth::Side::Opponent => m3::Side::Opponent,
-                },
-                surface: match contact.surface {
-                    truth::ContactSurface::Body => m3::ContactSurface::Body,
-                    truth::ContactSurface::Guard => m3::ContactSurface::Guard,
-                },
-                region: m3::BodyRegion::Torso,
-                severity: 1,
-            });
-        session
-            .submit_physical_contact(m3::PhysicalContactBatch {
-                truth_frame,
-                contact,
-            })
-            .map_err(M3CleanboxError::Submit)?;
+        submit_tick(session, tick)?;
+        Ok(true)
+    }
+
+    pub fn submit_measured_resolve_packet(
+        &mut self,
+        session: &mut m3::Session,
+        first: DuelWorldTarget<'_>,
+        second: DuelWorldTarget<'_>,
+    ) -> Result<bool, M3CleanboxError> {
+        let Some(truth_frame) = session.game.expected_contact_frame() else {
+            return Ok(false);
+        };
+        self.world.clear_weapon_history();
+        let tick = self
+            .world
+            .step_truth_tick(truth_frame, first, second)
+            .map_err(M3CleanboxError::DuelWorld)?;
+        submit_tick(session, tick)?;
         Ok(true)
     }
 }
 
-const fn target_action(action: m3::Action) -> truth::Action {
+fn submit_tick(session: &mut m3::Session, tick: DuelWorldTruthTick) -> Result<(), M3CleanboxError> {
+    let truth_frame = tick.contact_batch.truth_frame;
+    let contact = tick
+        .contact_batch
+        .contact
+        .map(|contact| m3::PhysicalContact {
+            attacker: match contact.attacker {
+                truth::Side::Player => m3::Side::Player,
+                truth::Side::Opponent => m3::Side::Opponent,
+            },
+            surface: match contact.surface {
+                truth::ContactSurface::Body => m3::ContactSurface::Body,
+                truth::ContactSurface::Guard => m3::ContactSurface::Guard,
+            },
+            region: m3::BodyRegion::Torso,
+            severity: 1,
+        });
+    session
+        .submit_physical_contact(m3::PhysicalContactBatch {
+            truth_frame,
+            contact,
+        })
+        .map_err(M3CleanboxError::Submit)?;
+    Ok(())
+}
+
+pub const fn target_action(action: m3::Action) -> truth::Action {
     match action {
         m3::Action::Strike => truth::Action::Thrust,
         m3::Action::Block => truth::Action::Block,
         m3::Action::Grab => truth::Action::Grab,
+        m3::Action::Move => truth::Action::Dodge,
     }
 }
 

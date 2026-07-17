@@ -1,0 +1,12 @@
+{
+  "provider": "MotionBricks released G1 checkpoints",
+  "action": "Strike",
+  "weapon": "Longsword",
+  "stance": "Top",
+  "match_seed": 5562789964732694528,
+  "provider_seed_u32": 0,
+  "root_lock": true,
+  "frames": 32,
+  "finite": true,
+  "sha256": "1de671724ca50027ab7b0aa474dac0a8657c555120db41d6a7086a1d956ee985"
+}

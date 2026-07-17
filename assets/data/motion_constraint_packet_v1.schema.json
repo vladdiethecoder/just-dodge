@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "just-dodge.motion-constraint-packet.v1.schema.json",
+  "title": "Just Dodge Motion Constraint Packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "source_sha256",
+    "anchor_sha256",
+    "compiler_sha256",
+    "compiler",
+    "intent_classes",
+    "constraints",
+    "outcome_authority",
+    "runtime_playback_allowed",
+    "packet_sha256"
+  ],
+  "properties": {
+    "schema_version": { "const": "motion-constraint-packet.v1" },
+    "record_id": { "type": "string", "minLength": 1 },
+    "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "anchor_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "compiler_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "compiler": { "type": "string", "minLength": 1 },
+    "intent_classes": { "type": "array", "items": { "type": "string" } },
+    "constraints": {},
+    "outcome_authority": { "const": "deterministic_physics_only" },
+    "runtime_playback_allowed": { "const": false },
+    "packet_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

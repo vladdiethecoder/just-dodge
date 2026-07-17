@@ -12,6 +12,7 @@ python3 tools/asset_review.py --asset assets/source/meshy/w0_sword/assembled_001
 python3 tools/asset_review.py --asset assets/source/meshy/c0_armored_duelist_001/model.glb --port 4177 --no-open
 python3 tools/asset_review.py --review-run-declaration docs/reports/my_review_run.json
 python3 tools/asset_review.py --import-human-decision <run-id> docs/reports/human_decisions/<decision>.json
+python3 tools/asset_review.py --motion-lab tools/qa/forgelens_motion_lab_example.json --no-open
 ```
 
 The server binds only to `127.0.0.1`. On startup it prints `ASSET_REVIEW_URL`, `ASSET_REVIEW_ROOT`, and the indexed asset count. The default launch opens the system's regular human browser. `--no-open` is automation-only: never use it when a human decision or visual acceptance is required. In that case ForgeLens must be opened in the user's normal browser, not an agent-automation browser.
@@ -28,6 +29,25 @@ The server binds only to `127.0.0.1`. On startup it prints `ASSET_REVIEW_URL`, `
 - CPU skin evaluation for dependency-free animation playback, clip selection, timeline scrubbing, speed, and looping.
 
 Review JSON is atomically persisted under `qa_runs/asset_reviews/reviews/`. Source assets remain read-only.
+
+## Motion Lab (fail closed)
+
+`--motion-lab <repository-relative-json>` enables the diagnostic Motion Lab. If it is omitted, `GET /api/motion-lab` returns 404; ForgeLens never invents a Kimodo, ARDY, MotionBricks, or physics payload. The configured file must be a regular, non-symlink repository file under 1 MiB with strict duplicate-key/non-finite JSON rejection. Its exact source SHA-256 and bytes are returned with every snapshot; a changed source or an event chain bound to old bytes fails closed.
+
+The `forgelens.motion-lab/v1` payload contains a fixed 1–240 Hz, bounded-frame timeline with five tracks (`text`, `fullBody`, `root`, `endEffectors`, `contacts`), exactly four synchronized ordered views (`kimodo-teacher`, `ardy-proposal`, `motionbricks-target`, `physics-execution`), two or more candidates, and same-length finite series for `fkResidual`, `footDrift`, `com`, `grip`, and `weaponPath`. The included `tools/qa/forgelens_motion_lab_example.json` is a schema/example payload, not provider evidence.
+
+The UI renders draggable timeline pins, synchronized view cards, side-by-side candidate selection with a root-difference overlay, five compact plots, and append-only annotations bound to payload revision, source SHA, frame, joint, object, and world-space point. `POST /api/motion-lab-annotation` accepts only `annotation` receipts; `reviewerKind` may be `human`, `api`, or `inkling`, but it cannot carry approve/reject/request-change. API and Inkling reviewers therefore can annotate only.
+
+Human outcomes are intentionally unavailable over HTTP. An external operator may append a `forgelens.motion-lab-human-event/v1` record with:
+
+```bash
+python3 tools/asset_review.py \
+  --motion-lab tools/qa/forgelens_motion_lab_example.json \
+  --import-motion-lab-human-event docs/reports/my_motion_lab_human_event.json \
+  --no-open
+```
+
+The imported record binds `motionLabId`, revision, source SHA-256, reviewer pseudonym, action (`approved`, `rejected`, or `changes-requested`), comment, timestamp, and the exact statement: `I independently reviewed this exact Motion Lab payload; this outcome does not approve a ReviewRun.` Automation/API/Inkling/Hermes identities are rejected for this import. These receipts are append-only under `qa_runs/asset_reviews/motion_lab/<id>/events/` and are explicitly **not** ReviewRun transitions, terminal passes, or substitutes for the existing tracked-clean external-human ReviewRun decision path.
 
 ## Immutable ReviewRun admission spine
 
@@ -85,12 +105,14 @@ A stable/static sequence is not motion acceptance. Criteria that are not visible
 
 - `GET /api/session` — server-derived loopback browser actor, CSRF token, and expiry.
 - `GET /api/catalog` — measured repository GLB catalog and initial asset.
+- `GET /api/motion-lab` — configured immutable-source Motion Lab snapshot; 404 fail-closed when `--motion-lab` was omitted.
 - `GET /api/active-review-run` — active immutable ReviewRun snapshot or `null`.
 - `GET /api/review-run?runId=<id>` — exact manifest, receipt chain, pins, and eligibility.
 - `GET /api/review?asset=<repo-relative-path>` — normalized persisted review.
 - `POST /api/review` — validate and atomically replace a review.
 - `POST /api/report` — submit a content-bound human report and issue a receipt.
 - `POST /api/report-plan` — persist a receipt-bound task plan only after adversarial verification passes.
+- `POST /api/motion-lab-annotation` — append an annotation receipt only; no action/approval field is accepted.
 - `POST /api/neural-evidence` — validate a PNG data URL, hash it, and persist a contact sheet.
 - `POST /api/review-run` — measure a declaration and create its immutable manifest/initial receipt.
 - `POST /api/review-pin` — append a content-bound pin version before submission.

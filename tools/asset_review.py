@@ -4268,6 +4268,358 @@ def _strict_json_loads(value: str | bytes) -> Any:
     )
 
 
+MOTION_LAB_VIEW_IDS = (
+    "kimodo-teacher",
+    "ardy-proposal",
+    "motionbricks-target",
+    "physics-execution",
+)
+MOTION_LAB_TRACKS = ("text", "fullBody", "root", "endEffectors", "contacts")
+MOTION_LAB_METRICS = ("fkResidual", "footDrift", "com", "grip", "weaponPath")
+MOTION_LAB_ACTIONS = {"approved", "rejected", "changes-requested"}
+
+
+def _motion_lab_id(value: Any, field: str) -> str:
+    value = _bounded_string(value, field, maximum=200)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value):
+        raise ValueError(f"{field} must contain only safe identifier characters")
+    return value
+
+
+def _motion_lab_frame(value: Any, field: str, frame_count: int) -> int:
+    frame = _non_negative_integer(value, field)
+    if frame >= frame_count:
+        raise ValueError(f"{field} is outside the declared Motion Lab frame range")
+    return frame
+
+
+def _motion_lab_vector(value: Any, field: str) -> list[float]:
+    if not isinstance(value, list) or len(value) != 3:
+        raise ValueError(f"{field} must be a three-component vector")
+    result = []
+    for index, component in enumerate(value):
+        if isinstance(component, bool) or not isinstance(component, (int, float)) or not math.isfinite(component):
+            raise ValueError(f"{field}[{index}] must be finite")
+        result.append(float(component))
+    return result
+
+
+def validate_motion_lab(value: Any) -> dict[str, Any]:
+    """Validate the standalone, non-admission Motion Lab payload fail closed."""
+    value = _exact_object_fields(
+        value,
+        "motion lab",
+        {"schema", "motionLabId", "revision", "fps", "frameCount", "tracks", "views", "candidates", "metrics"},
+        {"lineage"},
+    )
+    if value["schema"] != "forgelens.motion-lab/v1":
+        raise ValueError("motion lab schema must be forgelens.motion-lab/v1")
+    motion_lab_id = _motion_lab_id(value["motionLabId"], "motionLabId")
+    revision = _bounded_string(value["revision"], "revision", maximum=64)
+    if not re.fullmatch(r"[0-9a-f]{7,64}", revision):
+        raise ValueError("motion lab revision must be a lowercase hexadecimal revision")
+    fps = _non_negative_integer(value["fps"], "fps")
+    if not 1 <= fps <= 240:
+        raise ValueError("motion lab fps must be within [1, 240]")
+    frame_count = _non_negative_integer(value["frameCount"], "frameCount")
+    if not 1 <= frame_count <= 100_000:
+        raise ValueError("motion lab frameCount must be within [1, 100000]")
+    tracks = _exact_object_fields(value["tracks"], "motion lab tracks", set(MOTION_LAB_TRACKS))
+    normalized_tracks: dict[str, list[dict[str, Any]]] = {}
+    for name in MOTION_LAB_TRACKS:
+        raw_entries = tracks[name]
+        if not isinstance(raw_entries, list) or len(raw_entries) > frame_count:
+            raise ValueError(f"motion lab track {name} must be a bounded list")
+        entries: list[dict[str, Any]] = []
+        for index, raw in enumerate(raw_entries):
+            field = f"tracks.{name}[{index}]"
+            if name in {"text", "fullBody"}:
+                raw = _exact_object_fields(raw, field, {"frame", "label"})
+                entries.append({"frame": _motion_lab_frame(raw["frame"], f"{field}.frame", frame_count), "label": _bounded_string(raw["label"], f"{field}.label", maximum=400)})
+            elif name == "root":
+                raw = _exact_object_fields(raw, field, {"frame", "position"})
+                entries.append({"frame": _motion_lab_frame(raw["frame"], f"{field}.frame", frame_count), "position": _motion_lab_vector(raw["position"], f"{field}.position")})
+            elif name == "endEffectors":
+                raw = _exact_object_fields(raw, field, {"frame", "jointId", "position"})
+                entries.append({"frame": _motion_lab_frame(raw["frame"], f"{field}.frame", frame_count), "jointId": _motion_lab_id(raw["jointId"], f"{field}.jointId"), "position": _motion_lab_vector(raw["position"], f"{field}.position")})
+            else:
+                raw = _exact_object_fields(raw, field, {"frame", "objectId", "state"})
+                state = _bounded_string(raw["state"], f"{field}.state", {"planted", "touching", "airborne", "released"})
+                entries.append({"frame": _motion_lab_frame(raw["frame"], f"{field}.frame", frame_count), "objectId": _motion_lab_id(raw["objectId"], f"{field}.objectId"), "state": state})
+        normalized_tracks[name] = entries
+    raw_views = value["views"]
+    if not isinstance(raw_views, list) or len(raw_views) != len(MOTION_LAB_VIEW_IDS):
+        raise ValueError("motion lab must contain exactly the four synchronized views")
+    views: list[dict[str, Any]] = []
+    for index, raw in enumerate(raw_views):
+        raw = _exact_object_fields(
+            raw,
+            f"views[{index}]",
+            {"id", "label", "frames"},
+            {"jointNames", "parents"},
+        )
+        view_id = _motion_lab_id(raw["id"], f"views[{index}].id")
+        joint_names = raw.get("jointNames")
+        parents = raw.get("parents")
+        if (joint_names is None) != (parents is None):
+            raise ValueError(f"views[{index}] jointNames and parents must appear together")
+        if joint_names is not None:
+            if not isinstance(joint_names, list) or not 1 <= len(joint_names) <= 256:
+                raise ValueError(f"views[{index}].jointNames must contain 1..256 joints")
+            joint_names = [
+                _motion_lab_id(name, f"views[{index}].jointNames[{joint_index}]")
+                for joint_index, name in enumerate(joint_names)
+            ]
+            if not isinstance(parents, list) or len(parents) != len(joint_names):
+                raise ValueError(f"views[{index}].parents must match jointNames")
+            normalized_parents = []
+            for joint_index, parent in enumerate(parents):
+                if isinstance(parent, bool) or not isinstance(parent, int) or not -1 <= parent < len(joint_names):
+                    raise ValueError(f"views[{index}].parents[{joint_index}] is invalid")
+                if joint_index == 0 and parent != -1:
+                    raise ValueError(f"views[{index}] root parent must be -1")
+                if joint_index and parent >= joint_index:
+                    raise ValueError(f"views[{index}] parents must precede children")
+                normalized_parents.append(parent)
+            parents = normalized_parents
+        frames = raw["frames"]
+        if not isinstance(frames, list) or not frames or len(frames) > frame_count:
+            raise ValueError(f"views[{index}].frames must be a non-empty bounded list")
+        normalized_frames = []
+        for frame_index, frame in enumerate(frames):
+            frame = _exact_object_fields(
+                frame,
+                f"views[{index}].frames[{frame_index}]",
+                {"frame", "root"},
+                {"joints"},
+            )
+            normalized_frame = {
+                "frame": _motion_lab_frame(frame["frame"], f"views[{index}].frames[{frame_index}].frame", frame_count),
+                "root": _motion_lab_vector(frame["root"], f"views[{index}].frames[{frame_index}].root"),
+            }
+            if "joints" in frame:
+                if joint_names is None or not isinstance(frame["joints"], list) or len(frame["joints"]) != len(joint_names):
+                    raise ValueError(f"views[{index}].frames[{frame_index}].joints must match jointNames")
+                normalized_frame["joints"] = [
+                    _motion_lab_vector(joint, f"views[{index}].frames[{frame_index}].joints[{joint_index}]")
+                    for joint_index, joint in enumerate(frame["joints"])
+                ]
+            elif joint_names is not None:
+                raise ValueError(f"views[{index}].frames[{frame_index}] is missing joints")
+            normalized_frames.append(normalized_frame)
+        normalized_view = {
+            "id": view_id,
+            "label": _bounded_string(raw["label"], f"views[{index}].label", maximum=200),
+            "frames": normalized_frames,
+        }
+        if joint_names is not None:
+            normalized_view.update({"jointNames": joint_names, "parents": parents})
+        views.append(normalized_view)
+    if tuple(view["id"] for view in views) != MOTION_LAB_VIEW_IDS:
+        raise ValueError("motion lab views must be ordered Kimodo, ARDY, MotionBricks, then physics")
+    raw_candidates = value["candidates"]
+    if not isinstance(raw_candidates, list) or not 2 <= len(raw_candidates) <= 32:
+        raise ValueError("motion lab candidates must contain 2..32 bounded candidates")
+    candidates = []
+    candidate_ids = set()
+    for index, raw in enumerate(raw_candidates):
+        raw = _exact_object_fields(raw, f"candidates[{index}]", {"id", "label", "viewId"})
+        candidate_id = _motion_lab_id(raw["id"], f"candidates[{index}].id")
+        if candidate_id in candidate_ids:
+            raise ValueError("motion lab candidate ids must be unique")
+        candidate_ids.add(candidate_id)
+        view_id = _motion_lab_id(raw["viewId"], f"candidates[{index}].viewId")
+        if view_id not in MOTION_LAB_VIEW_IDS:
+            raise ValueError("motion lab candidate references an unknown synchronized view")
+        candidates.append({"id": candidate_id, "label": _bounded_string(raw["label"], f"candidates[{index}].label", maximum=200), "viewId": view_id})
+    metrics = _exact_object_fields(value["metrics"], "motion lab metrics", set(MOTION_LAB_METRICS))
+    normalized_metrics: dict[str, dict[str, Any]] = {}
+    for name in MOTION_LAB_METRICS:
+        metric = _exact_object_fields(metrics[name], f"metrics.{name}", {"unit", "series"})
+        series = metric["series"]
+        if not isinstance(series, list) or len(series) != frame_count:
+            raise ValueError(f"metrics.{name}.series must have exactly frameCount values")
+        normalized = []
+        for index, number in enumerate(series):
+            if isinstance(number, bool) or not isinstance(number, (int, float)) or not math.isfinite(number):
+                raise ValueError(f"metrics.{name}.series[{index}] must be finite")
+            normalized.append(float(number))
+        normalized_metrics[name] = {"unit": _bounded_string(metric["unit"], f"metrics.{name}.unit", maximum=30), "series": normalized}
+    normalized = {"schema": "forgelens.motion-lab/v1", "motionLabId": motion_lab_id, "revision": revision, "fps": fps, "frameCount": frame_count, "tracks": normalized_tracks, "views": views, "candidates": candidates, "metrics": normalized_metrics}
+    if "lineage" in value:
+        lineage = _exact_object_fields(
+            value["lineage"],
+            "motion lab lineage",
+            {"kimodoSha256", "ardySha256", "motionBricksSha256", "physicsSha256"},
+        )
+        normalized["lineage"] = {
+            field: _hex_digest(lineage[field], f"lineage.{field}")
+            for field in ("kimodoSha256", "ardySha256", "motionBricksSha256", "physicsSha256")
+        }
+    return normalized
+
+
+def _motion_lab_source(root: Path, relative: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    path = _allowlisted_repo_file(root, relative)
+    if not path.is_file():
+        raise ValueError("Motion Lab payload is not a regular file")
+    before = path.stat()
+    if before.st_size > MAX_REQUEST_BYTES:
+        raise ValueError(f"Motion Lab payload exceeds {MAX_REQUEST_BYTES} byte limit")
+    payload = path.read_bytes()
+    after = path.stat()
+    if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+        raise StaleArtifactError("Motion Lab payload changed while it was being read")
+    try:
+        document = validate_motion_lab(_strict_json_loads(payload))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError(f"Motion Lab payload is invalid: {exc}") from exc
+    return document, {"path": relative, "sha256": hashlib.sha256(payload).hexdigest(), "bytes": len(payload)}
+
+
+def load_motion_lab(root: Path, relative: str) -> dict[str, Any]:
+    """Load only a regular, canonical repository payload; no provider fallback exists."""
+    return _motion_lab_source(root, relative)[0]
+
+
+class MotionLabStore:
+    """Append-only Motion Lab annotations; deliberately separate from ReviewRun admission."""
+
+    def __init__(self, root: Path, relative: str):
+        self.root = root.resolve()
+        self.relative = relative
+        document, _ = _motion_lab_source(self.root, relative)
+        self.directory = self.root / "qa_runs" / "asset_reviews" / "motion_lab" / document["motionLabId"]
+        self._lock = threading.RLock()
+
+    def _source(self) -> tuple[dict[str, Any], dict[str, Any]]:
+        return _motion_lab_source(self.root, self.relative)
+
+    def _event_paths(self) -> list[Path]:
+        if not self.directory.is_dir():
+            return []
+        return sorted(self.directory.glob("events/*.json"))
+
+    def _events(self, source: dict[str, Any], document: dict[str, Any]) -> list[dict[str, Any]]:
+        events = []
+        previous = None
+        for expected_sequence, path in enumerate(self._event_paths(), start=1):
+            try:
+                event = _strict_json_loads(path.read_bytes())
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                raise RuntimeError("Motion Lab event receipt is unreadable") from exc
+            content = dict(event) if isinstance(event, dict) else None
+            claimed = content.pop("eventSha256", None) if content is not None else None
+            if (
+                not isinstance(event, dict)
+                or event.get("schema") != "forgelens.motion-lab-event/v1"
+                or event.get("sequence") != expected_sequence
+                or event.get("previousEventSha256") != previous
+                or event.get("motionLabId") != document["motionLabId"]
+                or event.get("revision") != document["revision"]
+                or event.get("sourceSha256") != source["sha256"]
+                or not isinstance(claimed, str)
+                or hashlib.sha256(_canonical_json_bytes(content)).hexdigest() != claimed
+            ):
+                raise RuntimeError("Motion Lab event chain is invalid or stale")
+            previous = claimed
+            events.append(event)
+        return events
+
+    def load(self) -> dict[str, Any]:
+        with self._lock:
+            document, source = self._source()
+            events = self._events(source, document)
+            return {"schema": "forgelens.motion-lab-snapshot/v1", "motionLab": document, "source": source, "events": events, "admissionAuthority": "none-motion-lab-events-never-transition-reviewrun"}
+
+    def append_annotation(self, request: Any, *, actor_id: str) -> dict[str, Any]:
+        request = _exact_object_fields(request, "motion lab annotation", {"motionLabId", "sourceSha256", "reviewerKind", "text", "revision", "frame", "jointId", "objectId", "worldPoint"})
+        with self._lock:
+            document, source = self._source()
+            if request["motionLabId"] != document["motionLabId"] or request["revision"] != document["revision"]:
+                raise StaleArtifactError("Motion Lab identity changed; reload before annotating")
+            if request["sourceSha256"] != source["sha256"]:
+                raise StaleArtifactError("Motion Lab payload bytes changed; reload before annotating")
+            reviewer_kind = _bounded_string(request["reviewerKind"], "reviewerKind", {"human", "api", "inkling"})
+            events = self._events(source, document)
+            content = {
+                "schema": "forgelens.motion-lab-event/v1",
+                "eventType": "annotation",
+                "sequence": len(events) + 1,
+                "previousEventSha256": None if not events else events[-1]["eventSha256"],
+                "motionLabId": document["motionLabId"],
+                "revision": document["revision"],
+                "sourceSha256": source["sha256"],
+                "reviewerKind": reviewer_kind,
+                "actorId": _bounded_string(actor_id, "actorId", maximum=200),
+                "recordedAt": utc_now(),
+                "text": _bounded_string(request["text"], "text", maximum=MAX_COMMENT_CHARS),
+                "frame": _motion_lab_frame(request["frame"], "frame", document["frameCount"]),
+                "jointId": _motion_lab_id(request["jointId"], "jointId"),
+                "objectId": _motion_lab_id(request["objectId"], "objectId"),
+                "worldPoint": _motion_lab_vector(request["worldPoint"], "worldPoint"),
+            }
+            digest = hashlib.sha256(_canonical_json_bytes(content)).hexdigest()
+            event = {**content, "eventSha256": digest}
+            _write_immutable(self.directory / "events" / f"{content['sequence']:06d}-{digest}.json", _canonical_json_bytes(event) + b"\n")
+            return event
+
+    def import_human_event(self, relative: str) -> dict[str, Any]:
+        """Import an external human outcome; it is never a ReviewRun/pass transition."""
+        path = _allowlisted_repo_file(self.root, relative)
+        if not path.is_file() or path.stat().st_size > MAX_REQUEST_BYTES:
+            raise ValueError("Motion Lab human event is not a bounded regular file")
+        raw = path.read_bytes()
+        try:
+            request = _strict_json_loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            raise ValueError("Motion Lab human event is invalid JSON") from exc
+        request = _exact_object_fields(
+            request,
+            "motion lab human event",
+            {"schema", "motionLabId", "revision", "sourceSha256", "reviewerPseudonym", "action", "comment", "decidedAt", "attestation"},
+        )
+        if request["schema"] != "forgelens.motion-lab-human-event/v1":
+            raise ValueError("motion lab human event schema is invalid")
+        reviewer = _bounded_string(request["reviewerPseudonym"], "reviewerPseudonym", maximum=200)
+        if re.search(r"(?:api|inkling|agent|automation|hermes)", reviewer, re.IGNORECASE):
+            raise ValueError("API, Inkling, and automation identities cannot import human outcomes")
+        action = _bounded_string(request["action"], "action", MOTION_LAB_ACTIONS)
+        attestation = _bounded_string(request["attestation"], "attestation", maximum=500)
+        if attestation != "I independently reviewed this exact Motion Lab payload; this outcome does not approve a ReviewRun.":
+            raise ValueError("motion lab human event attestation is invalid")
+        decided_at = _bounded_string(request["decidedAt"], "decidedAt", maximum=80)
+        _parse_attestation_time(decided_at, "decidedAt")
+        with self._lock:
+            document, source = self._source()
+            if request["motionLabId"] != document["motionLabId"] or request["revision"] != document["revision"]:
+                raise StaleArtifactError("Motion Lab identity changed; do not import this outcome")
+            if request["sourceSha256"] != source["sha256"]:
+                raise StaleArtifactError("Motion Lab payload bytes changed; do not import this outcome")
+            events = self._events(source, document)
+            content = {
+                "schema": "forgelens.motion-lab-event/v1",
+                "eventType": "human-outcome",
+                "sequence": len(events) + 1,
+                "previousEventSha256": None if not events else events[-1]["eventSha256"],
+                "motionLabId": document["motionLabId"],
+                "revision": document["revision"],
+                "sourceSha256": source["sha256"],
+                "reviewerKind": "external-human",
+                "reviewerPseudonym": reviewer,
+                "action": action,
+                "comment": _bounded_string(request["comment"], "comment", maximum=MAX_COMMENT_CHARS),
+                "decidedAt": decided_at,
+                "recordedAt": utc_now(),
+                "externalEventPath": relative,
+                "externalEventSha256": hashlib.sha256(raw).hexdigest(),
+                "admissionAuthority": "none-motion-lab-outcome-never-transitions-reviewrun",
+            }
+            digest = hashlib.sha256(_canonical_json_bytes(content)).hexdigest()
+            event = {**content, "eventSha256": digest}
+            _write_immutable(self.directory / "events" / f"{content['sequence']:06d}-{digest}.json", _canonical_json_bytes(event) + b"\n")
+            return event
+
 @dataclass(frozen=True)
 class ServerContext:
     root: Path
@@ -4279,6 +4631,7 @@ class ServerContext:
     review_runs: ReviewRunStore | None = None
     file_identities: dict[str, tuple[dict[str, Any], ...]] | None = None
     active_review_run_id: str | None = None
+    motion_lab: MotionLabStore | None = None
 
 
 class AssetReviewHandler(BaseHTTPRequestHandler):
@@ -4388,6 +4741,15 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
                 payload["initialAsset"] = self.context.initial_asset
                 self._send_json(payload)
                 return
+            if route == "/api/motion-lab":
+                self._require_authority(mutation=False)
+                if parsed.query:
+                    raise ValueError("motion lab endpoint does not accept query parameters")
+                if self.context.motion_lab is None:
+                    self._error(HTTPStatus.NOT_FOUND, "Motion Lab is disabled; launch with --motion-lab <repository-relative-json>")
+                else:
+                    self._send_json(self.context.motion_lab.load())
+                return
             if route == "/api/active-review-run":
                 self._require_authority(mutation=False)
                 if parsed.query:
@@ -4484,6 +4846,7 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
             "/api/review-pin",
             "/api/viewer-context",
             "/api/review-run-export",
+            "/api/motion-lab-annotation",
         }:
             self._error(HTTPStatus.NOT_FOUND, "route not found")
             return
@@ -4522,6 +4885,11 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
                 if self.context.review_runs is None:
                     raise ValueError("ReviewRun store is not configured")
                 result = self.context.review_runs.create(build_review_run(self.context.root, payload))
+                response_status = HTTPStatus.CREATED
+            elif route == "/api/motion-lab-annotation":
+                if self.context.motion_lab is None:
+                    raise ValueError("Motion Lab is disabled; annotations require --motion-lab")
+                result = self.context.motion_lab.append_annotation(payload, actor_id=authority["actorId"])
                 response_status = HTTPStatus.CREATED
             elif route == "/api/review-pin":
                 if self.context.review_runs is None:
@@ -4667,6 +5035,15 @@ def parse_args() -> argparse.Namespace:
         metavar=("RUN_ID", "REPOSITORY_RELATIVE_JSON"),
         help="import a tracked-clean external human decision; this path is intentionally unavailable over HTTP",
     )
+    parser.add_argument(
+        "--motion-lab",
+        help="repository-relative forgelens.motion-lab/v1 JSON; omitted means /api/motion-lab fails closed",
+    )
+    parser.add_argument(
+        "--import-motion-lab-human-event",
+        metavar="REPOSITORY_RELATIVE_JSON",
+        help="import an external human Motion Lab outcome; unavailable over HTTP and never a ReviewRun transition",
+    )
     return parser.parse_args()
 
 
@@ -4714,6 +5091,8 @@ def main() -> int:
         raise SystemExit(
             "--review-run-declaration and --import-human-decision are mutually exclusive"
         )
+    if args.import_motion_lab_human_event and not args.motion_lab:
+        raise SystemExit("--import-motion-lab-human-event requires --motion-lab")
     root = find_repo_root(args.root or Path(__file__).parent)
     initial_asset = None
     if args.asset:
@@ -4737,6 +5116,7 @@ def main() -> int:
     bootstrap_token = secrets.token_urlsafe(32)
     catalog = build_catalog(root)
     review_runs = ReviewRunStore(root)
+    motion_lab = MotionLabStore(root, args.motion_lab) if args.motion_lab else None
     instance_lock = StoreInstanceLock(root)
     instance_lock.acquire()
     server = None
@@ -4755,6 +5135,13 @@ def main() -> int:
             active_review_run_id = review_runs.create(
                 build_review_run(root, declaration)
             )["runId"]
+        if args.import_motion_lab_human_event:
+            assert motion_lab is not None
+            motion_event = motion_lab.import_human_event(args.import_motion_lab_human_event)
+            print(
+                f"FORGELENS_MOTION_LAB_HUMAN_EVENT_IMPORTED={motion_event['motionLabId']} RECEIPT={motion_event['eventSha256']}",
+                flush=True,
+            )
         context = ServerContext(
             root=root,
             initial_asset=initial_asset,
@@ -4765,6 +5152,7 @@ def main() -> int:
             review_runs=review_runs,
             file_identities=_startup_file_identities(root, catalog, replay_config),
             active_review_run_id=active_review_run_id,
+            motion_lab=motion_lab,
         )
         handler_type = type("BoundAssetReviewHandler", (AssetReviewHandler,), {"context": context})
         server = ThreadingHTTPServer(("127.0.0.1", args.port), handler_type)
@@ -4778,6 +5166,12 @@ def main() -> int:
         print(f"ASSET_REVIEW_COUNT={len(context.catalog['assets'])}", flush=True)
         if active_review_run_id:
             print(f"FORGELENS_ACTIVE_REVIEW_RUN={active_review_run_id}", flush=True)
+        if motion_lab is not None:
+            snapshot = motion_lab.load()
+            print(
+                f"FORGELENS_MOTION_LAB={snapshot['motionLab']['motionLabId']} SOURCE_SHA256={snapshot['source']['sha256']}",
+                flush=True,
+            )
         if not args.no_open:
             bootstrap_url = (
                 f"http://{host}:{port}/auth/bootstrap?token="

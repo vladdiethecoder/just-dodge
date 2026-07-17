@@ -50,6 +50,7 @@ pub fn motion_request_from_snapshot(
         m3::Action::Strike => Action::Strike,
         m3::Action::Block => Action::Block,
         m3::Action::Grab => Action::Grab,
+        m3::Action::Move => Action::Dodge,
     };
     let injury = InjuryModifiers {
         head: fighter.head_injury,

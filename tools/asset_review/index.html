@@ -124,6 +124,36 @@
           <div id="comparisonDelta" class="comparison-delta">Select “Compare” on a library item</div>
         </div>
       </section>
+
+      <section id="motionLabPanel" class="motion-lab" hidden aria-label="ForgeLens Motion Lab">
+        <div class="motion-lab-heading">
+          <div><span class="eyebrow">Revision-bound diagnostic payload</span><h2>Motion Lab</h2></div>
+          <span id="motionLabStatus" class="submission-status">Disabled</span>
+        </div>
+        <p id="motionLabIdentity" class="motion-lab-identity"></p>
+        <div class="motion-lab-controls">
+          <label>Frame <input id="motionLabFrame" type="range" min="0" max="0" value="0"><output id="motionLabFrameOutput">F0</output></label>
+          <label>Candidate A <select id="motionCandidateA"></select></label>
+          <label>Candidate B <select id="motionCandidateB"></select></label>
+        </div>
+        <div id="motionTimeline" class="motion-timeline" aria-label="Draggable Motion Lab timeline pins"></div>
+        <div class="motion-view-grid" id="motionViews" aria-label="Synchronized motion views"></div>
+        <div id="motionDifference" class="motion-difference">Select two candidates to inspect root difference.</div>
+        <div id="motionPlots" class="motion-plots" aria-label="FK residual, foot drift, COM, grip, and weapon path plots"></div>
+        <form id="motionAnnotationForm" class="motion-annotation">
+          <strong>Bound annotation</strong>
+          <label>Reviewer<select id="motionReviewerKind"><option value="human">Human annotation</option><option value="api">API annotation</option><option value="inkling">Inkling annotation</option></select></label>
+          <label>Joint <input id="motionJointId" value="right_hand" maxlength="200" pattern="[A-Za-z0-9._-]+"></label>
+          <label>Object <input id="motionObjectId" value="weapon" maxlength="200" pattern="[A-Za-z0-9._-]+"></label>
+          <label>World X <input id="motionWorldX" value="0" inputmode="decimal"></label>
+          <label>World Y <input id="motionWorldY" value="0" inputmode="decimal"></label>
+          <label>World Z <input id="motionWorldZ" value="0" inputmode="decimal"></label>
+          <label class="motion-annotation-text">Observation<textarea id="motionAnnotationText" rows="2" maxlength="8000" placeholder="Observation at this revision, frame, joint, and object…"></textarea></label>
+          <button class="small-button" type="submit">Append annotation</button>
+          <p id="motionAuthorityNote" class="motion-authority-note">API and Inkling can annotate only. Human approve/reject/request-change outcomes require external CLI import and never transition a ReviewRun.</p>
+        </form>
+        <div id="motionEvents" class="motion-events"></div>
+      </section>
     </main>
 
     <aside class="inspector-panel" aria-label="Asset inspector">
