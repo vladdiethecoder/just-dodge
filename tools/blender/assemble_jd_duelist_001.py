@@ -41,8 +41,12 @@ def parse_args():
 
 def main() -> int:
     args = parse_args()
-    with open(args.manifest) as fh:
-        manifest = json.load(fh)
+    try:
+        with open(args.manifest) as fh:
+            manifest = json.load(fh)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"ASSEMBLE_FAIL cannot read manifest {args.manifest}: {error}")
+        return 1
     components = manifest["components"]
 
     import os
