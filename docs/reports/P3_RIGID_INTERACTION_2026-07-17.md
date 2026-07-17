@@ -52,6 +52,33 @@ deviation from rigid 0.160 m, and weapon orientation (from predicted hand rotati
 - Blinded human trial, impact-timing-vs-opponent, and full SO(3)-validity of the
   predicted full-body rotation set are forward work.
 
+## Honest scarcity boundary (2026-07-17, decision recorded)
+
+Two expansion paths were weighed and BOTH are inadmissible as presented:
+
+1. Authoring intermediate target/timing grid cells (e.g. 5x5) of the SAME base
+   strike would inflate the corpus with Cartesian variants of one template — the
+   exact held-out-inflation pattern the WO forbids. Distinct grid X-offsets/timings
+   of one source strike are NOT distinct source identity.
+2. A post-training rigid-projection (snapping hands to the rigid span) would
+   re-introduce a physics constraint applied to model output — conflating learned
+   conditioning with post-hoc correction, the same honesty violation as the
+   falsified hard-mask checkpoint (position/orientation would no longer be purely
+   the model's learned output).
+
+The genuine route to more rigid data is authoring cells from genuinely distinct
+source strikes (different base motions, not grid offsets of one). That requires new
+real source material (kimodo/ARDY target-directed clips with rigid-grip retargeting
+to distinct bases), which is a larger authoring effort than this unit. Recorded as
+the honest boundary: position/socket held-out generalization on the rigid lane is
+BLOCKED on distinct rigid source material, not on model capacity.
+
+Current verified P3 state (all genuine, no masking):
+- kimodo full-body lane: held-out full-body 0.90–1.86 mm, hand 0.59–1.38 mm
+  (position generalizes; NOT rigid).
+- authored rigid lane: held-out weapon orientation 0.105–0.271° (under 1° gate);
+  position/socket data-scarce (high_right 42.67 mm outlier, left/center 2.8–4.05 mm).
+
 ## Reproduce
 
 ```
