@@ -760,9 +760,244 @@ fn smoke_ticks_from_args() -> Option<u64> {
         })
 }
 
+/// Headless offscreen visual check: render the two debug mannequins (observer +
+/// first-person, skeleton overlay) into a COPY_SRC texture and save PNGs. This
+/// is the reliable visual QA path on a compositor that blocks window capture.
+/// Usage: `--shot TICKS OUT_DIR`.
+fn shot_args() -> Option<(u64, String)> {
+    let args: Vec<String> = std::env::args().collect();
+    let pos = args.iter().position(|arg| arg == "--shot")?;
+    let ticks = args
+        .get(pos + 1)
+        .and_then(|value| value.parse::<u64>().ok())
+        .expect("--shot requires a tick count");
+    let out_dir = args
+        .get(pos + 2)
+        .cloned()
+        .unwrap_or_else(|| "qa_runs/game_loop_shot".to_owned());
+    Some((ticks, out_dir))
+}
+
+fn run_shot(ticks: u64, out_dir: &str) {
+    // Drive the truth loop forward so the shot captures a mid-exchange pose.
+    let mut phase = PlanPhase::new();
+    let mut player_phase = 0_u64;
+    for _ in 0..ticks {
+        lock_next_phase(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            player_phase,
+        );
+        phase
+            .step_truth_tick()
+            .expect("shot must advance an M1 truth tick");
+        if phase.status() == PlanStatus::Planning {
+            player_phase = player_phase.saturating_add(1);
+        }
+    }
+    let snapshot = phase.snapshot();
+
+    let assets_root = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_owned());
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        backends: wgpu::Backends::VULKAN,
+        flags: wgpu::InstanceFlags::default(),
+        memory_budget_thresholds: wgpu::MemoryBudgetThresholds::default(),
+        backend_options: wgpu::BackendOptions::default(),
+        display: None,
+    });
+    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        compatible_surface: None,
+        ..Default::default()
+    }))
+    .expect("shot needs a GPU adapter");
+    let (device, queue) =
+        pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default()))
+            .expect("shot request device");
+
+    let (w, h) = (1280_u32, 720_u32);
+    let format = wgpu::TextureFormat::Bgra8UnormSrgb;
+    let config = wgpu::SurfaceConfiguration {
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        format,
+        width: w,
+        height: h,
+        present_mode: wgpu::PresentMode::Fifo,
+        alpha_mode: wgpu::CompositeAlphaMode::Auto,
+        view_formats: vec![],
+        color_space: wgpu::SurfaceColorSpace::Auto,
+        desired_maximum_frame_latency: 2,
+    };
+    let mannequin_path = format!("{assets_root}/{MANNEQUIN_SKIN}");
+    unsafe {
+        std::env::set_var("JUST_DODGE_C0_SKIN", mannequin_path);
+        std::env::set_var("JUST_DODGE_C0_FLAT_COLOR", "1");
+    }
+    let presentation = PresentationAssets::load(&assets_root);
+    let mut renderer = renderer::Renderer::new(
+        &device,
+        &queue,
+        &config,
+        false,
+        std::path::Path::new(&assets_root),
+    );
+
+    let color_tex = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("shot color"),
+        size: wgpu::Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+    let color_view = color_tex.create_view(&wgpu::TextureViewDescriptor::default());
+
+    std::fs::create_dir_all(out_dir).expect("create shot out dir");
+    let player_root = root_vec(&snapshot, Side::Player);
+    let opponent_root = root_vec(&snapshot, Side::Opponent);
+    let player_model = fighter_model(player_root, opponent_root);
+    let opponent_model = fighter_model(opponent_root, player_root);
+    let player_skin = presentation.skin_for(snapshot.locked[0], snapshot.truth_frame);
+    let opponent_skin = presentation.skin_for(snapshot.locked[1], snapshot.truth_frame);
+    let aspect = w as f32 / h as f32;
+
+    for (name, mode, render_index) in [
+        ("observer", CameraMode::Observer, 0_usize),
+        ("first_person", CameraMode::FirstPerson, 1_usize),
+    ] {
+        let proj_view = camera_proj_view(mode, 0.9, aspect, player_root, opponent_root);
+        renderer.update_camera(&queue, &proj_view);
+        renderer.upload_debug_mvp(&queue, &proj_view);
+        renderer.update_contact_shadows(&queue, &proj_view, player_root, opponent_root);
+        renderer.update_skinned_model(&queue, 0, &proj_view, player_model);
+        renderer.update_skinned_model(&queue, 1, &proj_view, opponent_model);
+        renderer.update_skin_joints_indexed(&queue, 0, &player_skin);
+        renderer.update_skin_joints_indexed(&queue, 1, &opponent_skin);
+        let mut marker_segments = arena_marker_segments();
+        marker_segments.extend(skeleton_segments(
+            &presentation.mesh,
+            &player_skin,
+            player_model,
+            [0.25, 0.95, 1.0],
+        ));
+        marker_segments.extend(skeleton_segments(
+            &presentation.mesh,
+            &opponent_skin,
+            opponent_model,
+            [1.0, 0.35, 0.45],
+        ));
+        renderer.update_debug_segments(&device, &marker_segments);
+
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("shot encoder"),
+        });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("shot pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &color_view,
+                    resolve_target: None,
+                    depth_slice: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.025,
+                            g: 0.035,
+                            b: 0.055,
+                            a: 1.0,
+                        }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &renderer.depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
+            renderer.render(&mut rpass);
+            renderer.render_skinned_from(&mut rpass, render_index);
+            renderer.render_debug_overlay(&mut rpass);
+        }
+        queue.submit(std::iter::once(encoder.finish()));
+
+        let bytes_per_row = (w * 4).next_multiple_of(256);
+        let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("shot readback"),
+            size: (bytes_per_row * h) as u64,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut copy = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        copy.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: &color_tex,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &read_buf,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(h),
+                },
+            },
+            wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+        );
+        queue.submit(std::iter::once(copy.finish()));
+        let slice = read_buf.slice(..);
+        slice.map_async(wgpu::MapMode::Read, |_| {});
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+        let data = slice.get_mapped_range().unwrap();
+        let mut img = image::ImageBuffer::<image::Rgba<u8>, Vec<u8>>::new(w, h);
+        for y in 0..h {
+            for x in 0..w {
+                let src = (y * bytes_per_row + x * 4) as usize;
+                img.put_pixel(
+                    x,
+                    y,
+                    image::Rgba([data[src], data[src + 1], data[src + 2], data[src + 3]]),
+                );
+            }
+        }
+        drop(data);
+        read_buf.unmap();
+        let path = format!("{out_dir}/game_loop_{name}.png");
+        img.save(&path).expect("save shot png");
+        println!("shot: wrote {path}");
+    }
+    println!(
+        "GAME_LOOP_SHOT ticks={ticks} truth_frame={} truth_hash={:016x}",
+        snapshot.truth_frame,
+        phase.truth_hash()
+    );
+}
+
 fn main() {
     if let Some(ticks) = smoke_ticks_from_args() {
         run_smoke(ticks);
+        return;
+    }
+    if let Some((ticks, out_dir)) = shot_args() {
+        run_shot(ticks, &out_dir);
         return;
     }
     env_logger::init();
