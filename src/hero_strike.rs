@@ -292,7 +292,7 @@ impl HeroStrikePresentation {
 }
 
 fn track_with_coupled_articulation(targets: &[[Mat4; 34]]) -> Vec<[Mat4; 34]> {
-    let parents = motion::MotionPipeline::G1_PARENTS;
+    let parents = motion::G1_PARENTS;
     let mut positions: [Vec3; 34] =
         std::array::from_fn(|joint| targets[0][joint].w_axis.truncate());
     let mut rotations: [glam::Quat; 34] = std::array::from_fn(|joint| {
@@ -573,7 +573,7 @@ mod tests {
         .unwrap();
         assert_eq!(targets.len(), FRAME_COUNT);
         let physical = track_with_coupled_articulation(&targets);
-        let parents = motion::MotionPipeline::G1_PARENTS;
+        let parents = motion::G1_PARENTS;
         let reference_lengths: [f32; 34] = std::array::from_fn(|joint| {
             let parent = parents[joint];
             if parent < 0 {

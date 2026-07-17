@@ -39,6 +39,7 @@ mod motion;
 mod motion_frontier_lab;
 mod motion_plan;
 mod motion_retarget;
+#[cfg(feature = "motion-inference")]
 mod motion_service;
 mod neural_plan;
 mod renderer;

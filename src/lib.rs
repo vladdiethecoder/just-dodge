@@ -20,7 +20,9 @@ pub mod motion;
 pub mod motion_plan;
 pub mod motion_request;
 pub mod motion_retarget;
+#[cfg(feature = "motion-inference")]
 pub mod motion_runtime;
+#[cfg(feature = "motion-inference")]
 pub mod motion_service;
 pub mod neural_plan;
 pub mod renderer;

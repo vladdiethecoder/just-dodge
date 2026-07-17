@@ -3,6 +3,15 @@ name = "just-dodge"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+# motion-inference: embeds ONNX Runtime (ort) + the Python MotionBricks bridge
+# (pyo3/numpy) for offline motion generation and QA probes. It is ON by default
+# so existing tests and tools keep working. The shipped game executable is built
+# with --no-default-features: it ships baked, validated motion and never links a
+# generative model or a Python interpreter (JD-RC0 clean-directory contract).
+default = ["motion-inference"]
+motion-inference = ["dep:ort", "dep:pyo3", "dep:numpy"]
+
 [dependencies]
 winit = "0.30"
 wgpu = "30.0"
@@ -13,7 +22,7 @@ log = "0.4"
 bytemuck = { version = "1", features = ["derive"] }
 image = "0.25"
 fbxcel = "0.9"
-ort = { version = "2.0.0-rc.12" }
+ort = { version = "2.0.0-rc.12", optional = true }
 ndarray = "0.15"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -22,5 +31,5 @@ postcard = { version = "1.0", features = ["use-std"] }
 rand = "0.8"
 rand_xoshiro = "0.6"
 sha2 = "0.10"
-pyo3 = { version = "0.25", features = ["auto-initialize"] }
-numpy = { version = "0.25", features = ["nalgebra"] }
+pyo3 = { version = "0.25", features = ["auto-initialize"], optional = true }
+numpy = { version = "0.25", features = ["nalgebra"], optional = true }

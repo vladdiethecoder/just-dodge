@@ -7,14 +7,79 @@
 //   4. Pose Transformer: tokens + conditions -> pose_logits[B, N, 8, 11]
 //   5. Root: conditions -> pred_global_root[B, T, 5]
 
-use anyhow::{Context, Result};
+#[cfg(feature = "motion-inference")]
+use anyhow::Context;
+use anyhow::Result;
 use glam::Mat4;
+#[cfg(feature = "motion-inference")]
 use ndarray::{Array, Array2, ArrayD, IxDyn};
+#[cfg(feature = "motion-inference")]
 use ort::session::Session;
+#[cfg(feature = "motion-inference")]
 use ort::value::{DynValue, Tensor};
+#[cfg(feature = "motion-inference")]
 use std::path::Path;
-#[cfg(test)]
+#[cfg(all(test, feature = "motion-inference"))]
 use std::path::PathBuf;
+
+/// G1Skeleton34 joint count (from motionbricks G1Skeleton34). Available without
+/// the inference feature so baked-asset loaders and hero_strike can use it.
+pub const G1_NB: usize = 34;
+/// G1Skeleton34 parent indices (from motionbricks G1Skeleton34).
+pub const G1_PARENTS: [i32; 34] = [
+    -1, 0, 1, 2, 3, 4, 5, 6, 0, 8, 9, 10, 11, 12, 13, 0, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+    17, 26, 27, 28, 29, 30, 31, 32,
+];
+
+/// Convert a continuous 6D rotation vector [x0,y0,z0,x1,y1,z1] to a Mat4 (rotation only).
+pub fn cont6d_to_matrix(v: [f32; 6]) -> Mat4 {
+    let v0 = glam::Vec3::new(v[0], v[1], v[2]);
+    let v1 = glam::Vec3::new(v[3], v[4], v[5]);
+    let v0n = v0.normalize();
+    let v1p = v1 - v0n * v0n.dot(v1);
+    let v1n = v1p.normalize();
+    let v2 = v0n.cross(v1n);
+    Mat4::from_cols_array(&[
+        v0n.x, v0n.y, v0n.z, 0.0, v1n.x, v1n.y, v1n.z, 0.0, v2.x, v2.y, v2.z, 0.0, 0.0, 0.0, 0.0,
+        1.0,
+    ])
+}
+
+/// Parse one decoded GlobalRootGlobalJoints frame [413] into 34 world-space joint Mat4.
+/// Layout (authoritative, from motionbricks source):
+///   [0,2]   global_root_pos (xyz)
+///   [3,4]   global_root_heading (cos, sin)
+///   [5,103] ric_data  (33*3 root-relative joint positions, joints 1..33)
+///   [104,307] global_rot_data (34*6D global joint rotations)
+///   [308,409] local_vel (unused)
+///   [410,413] foot_contacts (unused)
+pub fn parse_g1_frame(rec: &[f32]) -> [Mat4; 34] {
+    let mut mats = [Mat4::IDENTITY; 34];
+    let root = glam::Vec3::new(rec[0], rec[1], rec[2]);
+    let gr = &rec[104..308];
+    let ric = &rec[5..104];
+    for j in 0..34 {
+        let r6 = [
+            gr[j * 6],
+            gr[j * 6 + 1],
+            gr[j * 6 + 2],
+            gr[j * 6 + 3],
+            gr[j * 6 + 4],
+            gr[j * 6 + 5],
+        ];
+        let rot = cont6d_to_matrix(r6);
+        let pos = if j == 0 {
+            root
+        } else {
+            let b = (j - 1) * 3;
+            root + glam::Vec3::new(ric[b], ric[b + 1], ric[b + 2])
+        };
+        let mut m = rot;
+        m.w_axis = glam::Vec4::new(pos.x, pos.y, pos.z, 1.0);
+        mats[j] = m;
+    }
+    mats
+}
 
 /// Combat action used to condition MotionBricks generation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -45,7 +110,9 @@ pub struct ActionCondition {
     pub from_pose: Option<[Mat4; 34]>,
 }
 
-/// Full MotionBricks inference pipeline
+/// Full MotionBricks inference pipeline. Only available with the
+/// `motion-inference` feature; the shipped executable does not link it.
+#[cfg(feature = "motion-inference")]
 pub struct MotionPipeline {
     encoder: Session,
     decoder: Session,
@@ -74,6 +141,7 @@ pub struct MotionMeta {
     pub decoder_out_channels: usize,
 }
 
+#[cfg(feature = "motion-inference")]
 impl MotionPipeline {
     /// Load all models from the assets directory
     pub fn new(assets_path: &str) -> Result<Self> {
@@ -343,7 +411,7 @@ impl MotionPipeline {
                 gr[j * 6 + 4],
                 gr[j * 6 + 5],
             ];
-            let rot = Self::cont6d_to_matrix(r6);
+            let rot = cont6d_to_matrix(r6);
             let pos = if j == 0 {
                 root
             } else {
@@ -397,7 +465,7 @@ impl MotionPipeline {
         for f in 0..out_frames {
             let base = f * 413;
             let slice = &data[base..base + 413];
-            frames.push(Self::parse_g1_frame(slice));
+            frames.push(parse_g1_frame(slice));
         }
         Ok(frames)
     }
@@ -421,8 +489,8 @@ impl MotionPipeline {
 
         // Compute G1 bone root-relative positions from mannequin positions
         // via G1_TO_MANNEQUIN mapping
-        let g1_nb = Self::G1_NB;
-        let g1_parents = Self::G1_PARENTS;
+        let g1_nb = G1_NB;
+        let g1_parents = G1_PARENTS;
 
         let mut g1_world = [glam::Vec3::ZERO; 34];
         for i in 0..34 {
@@ -501,8 +569,8 @@ impl MotionPipeline {
     ///   [303]      hip height (pelvis Y)
     pub fn build_idle_encoder_input(&self, t: usize) -> Vec<f32> {
         let mut buf = vec![0f32; 304 * t];
-        let nb = Self::G1_NB;
-        let parents = Self::G1_PARENTS;
+        let nb = G1_NB;
+        let parents = G1_PARENTS;
         for f in 0..t {
             let phase = 2.0 * std::f32::consts::PI * (f as f32) / (t as f32);
             let knee = 0.5 * phase.sin();
@@ -572,7 +640,7 @@ pub fn load_g1_frames_from_bytes(data: &[u8]) -> Result<Vec<[Mat4; 34]>> {
     let mut frames = Vec::with_capacity(frame_count);
     for f in 0..frame_count {
         let base = f * 413;
-        frames.push(MotionPipeline::parse_g1_frame(&floats[base..base + 413]));
+        frames.push(parse_g1_frame(&floats[base..base + 413]));
     }
     Ok(frames)
 }
@@ -875,7 +943,9 @@ fn generate_action_clip_legacy(
 ///
 /// This is the runtime path: it requests a clip from the Python MotionBricks
 /// inference service and returns 34-joint world-space matrices. There is no
-/// procedural fallback and no prebaked clip.
+/// procedural fallback and no prebaked clip. Only available with the
+/// `motion-inference` feature.
+#[cfg(feature = "motion-inference")]
 pub fn generate_action_clip(
     condition: &ActionCondition,
     service: &crate::motion_service::MotionService,
@@ -891,7 +961,7 @@ pub fn generate_action_clip(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "motion-inference"))]
 impl MotionPipeline {
     /// Test-only hook to override the artifact directory for error-path tests.
     fn set_assets_path_for_test(&mut self, path: PathBuf) {
