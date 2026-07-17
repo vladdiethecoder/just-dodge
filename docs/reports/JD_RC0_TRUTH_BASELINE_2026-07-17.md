@@ -101,13 +101,43 @@ GLB validation detail (errors/warnings/infos):
    packaged matches absent; replay capture shows overlapping footer/Plan instructions
    (presentation acceptance fail-closed).
 
-## 7. Honest scope note
+## 8. Progress since baseline (2026-07-17 session)
 
-This baseline records the verified starting state. The Windows x64 package, the
-interaction-conditioned vertical Strike lane with actor/session/clip held-out split, the
-ForgeLens Mesh Doctor, the CI gate-repair set, and the canonical release evidence are
-forward work. The 1080p60 gameplay capture, 30-minute soak, and human owner approval are
-hardware/HID/human-bound and cannot be produced by automated tooling alone; they are
-tracked as external dependencies, not fabricated.
+Verified, committed work on top of this baseline:
 
-No artifact in this document is a promotion, readiness, or Steam-publication claim.
+- **P0 truth baseline**: this document (`f512b65`).
+- **P0/P2 evidence quarantine enforced in code** (`f512b65`): the ForgeLens
+  pass/promotion gate (`validate_pass_eligibility`) now rejects any lineage bound to
+  quarantined (162-demo), mocked/synthetic, or developer-machine paths. Repo-level CI gate
+  `tools/qa/enforce_evidence_quarantine.py` (PASS/FAIL both verified) wired into `ci.yml`.
+- **P1 Windows x64 package** (`f45c49c`, `faf84cb`): `motion-inference` cargo feature gates
+  ort/pyo3/numpy + MotionPipeline/MotionService/motion_runtime; shipped exe builds
+  `--no-default-features`. Cross-compiled `x86_64-pc-windows-gnu`. Packaged exe links only
+  system DLLs (no python*.dll, no onnxruntime). Under Wine, packaged `m3_match.exe
+  --repeat-identical` reproduces baseline truth hash `d1a3cc1bfb9c2f67` byte-identically
+  from a clean directory (cross-platform truth parity). Depot folder + `MANIFEST.sha256` +
+  `BUILD-INFO.txt` at `dist/just-dodge-windows-x86_64/`.
+  **Open**: GUI gameplay capture (menu→match→replay→rematch) requires a GPU/display and
+  human HID; not produced by automated tooling. Windows-package GUI smoke is a human gate.
+- **P2 CI gate repair (partial)** (`cba11d8`): glTF validation gate (5/5 GLB, 0 errors),
+  held-out interaction acceptance test (11/11), interaction partition/leakage test (3/3,
+  family-disjoint, leak rejected fail-closed), all wired into `ci.yml`.
+  **Open**: real MotionBricks checkpoint test in CI requires the hydrated ONNX runtime +
+  GPU and is co-scheduled with the vertical Strike lane (P3).
+
+Full default-feature test suite green (144 lib + 156 integration + 2 doc); determinism
+pinned test green; fmt/clippy/-Dwarnings clean; shipped-config `--no-default-features`
+build guarded in CI.
+
+## 9. Remaining forward work (not claimed here)
+
+- P3 vertical Strike lane: 3 targets × 3 timings, genuinely interaction-conditioned
+  MotionBricks, actor/session/clip held-out split, FK/contact/rotation thresholds, blinded
+  human distinguishability. Largest research/implementation unit.
+- P4 ForgeLens Mesh Doctor: penetration/self-intersection/tunneling detection,
+  geometry-anchored pins, multi-view sync, Blender repair queue, mesh promotion gates.
+- P5 canonical release evidence: 1080p60 video, nine Strike clips, diagnostic bundle,
+  perf trace, 30-min soak, human approval receipt. Hardware/HID/human-bound.
+
+No artifact here or in the listed commits is a promotion, readiness, or Steam-publication
+claim. Human owner approval from the exact packaged executable remains the promotion gate.
