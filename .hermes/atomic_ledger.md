@@ -2,6 +2,7 @@
 
 ## Global Context
 **Global Goal:** Achieve live/QA runtime truth parity for Strike presentation and replay verification.
+**Audit Baseline:** published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801` on branch `pvp-005-readable-live-motion`.
 **Assumptions:**
 - `milestone3::Session` remains the authoritative deterministic truth owner.
 - The existing R6 Hero Strike asset is the admitted shared presentation source.
