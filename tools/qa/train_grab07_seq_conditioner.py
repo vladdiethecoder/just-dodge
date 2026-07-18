@@ -27,8 +27,9 @@ import torch.nn.functional as F
 
 ROOT = Path(__file__).resolve().parents[2]
 SEG_DIRS = [
-    ROOT / "qa_runs/grab07_combat_corpus/segments",      # CMU
-    ROOT / "qa_runs/grab07_combat_corpus/kungfu_segments", # KungfuAthleteBot
+    ROOT / "qa_runs/grab07_combat_corpus/segments",          # CMU
+    ROOT / "qa_runs/grab07_combat_corpus/kungfu_segments",    # KungfuAthleteBot
+    ROOT / "qa_runs/grab07_combat_corpus/kyokushin_segments", # Kyokushin Karate
 ]
 OUT_DIR = ROOT / "qa_runs/grab07_combat_train"
 HAND_R, HAND_L = 33, 25
@@ -137,7 +138,7 @@ def main():
         if s["label"] != "grab":
             continue
         posed, root = load_seg(s["path"])
-        contact = s["contact_frame"]
+        contact = min(s["contact_frame"], posed.shape[0] - 1)
         peak = max(posed[contact, HAND_R, 2], posed[contact, HAND_L, 2])
         if not (REACH_LO <= peak <= REACH_HI):
             continue
