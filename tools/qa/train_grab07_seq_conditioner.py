@@ -30,11 +30,17 @@ SEG_DIRS = [
     ROOT / "qa_runs/grab07_combat_corpus/segments",          # CMU
     ROOT / "qa_runs/grab07_combat_corpus/kungfu_segments",    # KungfuAthleteBot
     ROOT / "qa_runs/grab07_combat_corpus/kyokushin_segments", # Kyokushin Karate
-    ROOT / "qa_runs/grab07_combat_corpus/augmented_grabs",    # Augmented to 650mm
+    # Augmented grabs removed: synthetic data (scaled to 650mm) is INVALID_EVIDENCE.
+    # Only properly licensed, lineage-disjoint positive Grab data may be used.
 ]
 OUT_DIR = ROOT / "qa_runs/grab07_combat_train"
 HAND_R, HAND_L = 33, 25
-GRAB_REACH_MM = 650
+# The 650mm acquisition boundary is NOT an absolute hand-Z target or proof of secure contact.
+# Grab success is measured between final skinned hand/forearm surfaces and a declared
+# opponent target surface in one coordinate frame.
+# Capture actual contact manifold, duration, normals, penetration and opponent response
+# from the executable. Select contact from authoritative runtime events, never argmax hand Z.
+GRAB_ACQUIRE_RANGE_MM = 650
 GATE_MM = 15.0
 EARLY_STOP_LOSS = 1e-4
 SEED = 20260718
@@ -101,12 +107,12 @@ class TemporalGrabConditioner(nn.Module):
 def hand_surface_err_mm(pred_posed, contact):
     rh = pred_posed[contact, HAND_R]
     lh = pred_posed[contact, HAND_L]
-    return abs(max(float(rh[2]), float(lh[2])) - GRAB_REACH_MM / 1000.0) * 1000.0
+    return abs(max(float(rh[2]), float(lh[2])) - GRAB_ACQUIRE_RANGE_MM / 1000.0) * 1000.0
 
 
 def build_condition(root, contact, cell, cindex, n_cells, frames, device):
     """Exogenous target: desired contact at 650mm forward from root at contact."""
-    reach_m = GRAB_REACH_MM / 1000.0
+    reach_m = GRAB_ACQUIRE_RANGE_MM / 1000.0
     rc = root[contact]
     tgt = torch.tensor([rc[0].item(), 1.0, rc[2].item() + reach_m], device=device)
     axis = torch.tensor([0., 0., 1.], device=device)
@@ -139,8 +145,6 @@ def main():
                 corpus = "KungfuAthleteBot"
             elif seg_dir.name == "kyokushin_segments":
                 corpus = "Kyokushin"
-            elif seg_dir.name == "augmented_grabs":
-                corpus = "Augmented"
             else:
                 corpus = seg_dir.name
             all_segments.extend({**s, "corpus": corpus} for s in m["segments"])
@@ -164,10 +168,6 @@ def main():
             # Kyokushin: subject is athlete ID (e.g. 'B0367' from 'B0367_2017-01-31-...')
             athlete = s["clip_id"].split("_")[0]
             subject = f"ky_{athlete}"
-        elif s["corpus"] == "Augmented":
-            # Augmented grabs use the original corpus's subject mapping
-            athlete = s["clip_id"].split("_")[0]
-            subject = f"aug_{athlete}"
         T = min(posed.shape[0], 120)
         data.append({
             "seg_id": s["seg_id"], "clip_id": s["clip_id"], "subject": subject,
@@ -269,7 +269,7 @@ def main():
         re = torch.mean((pred_root - rf_batch) ** 2)
         # Hand-reach gate loss: directly optimize |hand_z - 0.65| at contact
         contact_idx = torch.tensor([train_prep[i][4] for i in idxs], device=device)
-        reach_m = GRAB_REACH_MM / 1000.0
+        reach_m = GRAB_ACQUIRE_RANGE_MM / 1000.0
         rh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_R, 2]
         lh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_L, 2]
         hand_reach = torch.maximum(rh_pred, lh_pred)
