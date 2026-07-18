@@ -1,6 +1,7 @@
 pub mod action_matrix;
 pub mod active_ragdoll;
 pub mod armor;
+pub mod articulated_physics;
 pub mod asset;
 
 pub mod ai_script;

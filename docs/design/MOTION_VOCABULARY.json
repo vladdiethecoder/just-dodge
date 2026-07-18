@@ -1,0 +1,3988 @@
+{
+  "schema": "just-dodge-motion-vocabulary-v1",
+  "title": "Just Dodge Motion Vocabulary",
+  "purpose": "Canonical action vocabulary and conservative current-corpus coverage inventory for MotionBricks conditioning, segmentation, acquisition, and QA planning.",
+  "source_scope": {
+    "cmu": "CMU subjects/trials surveyed in cmu_combat_mocap_survey_2026-07-17.md. Directly named technique coverage is distinguished from generic boxing/swordplay coverage.",
+    "kungfu_athlete_bot": "Current local KungfuAthleteBot segments in qa_runs/grab07_combat_corpus/kungfu_segments/manifest.json: 97 strike, 497 kick, 192 grab, and 5 footwork segments. These are single-actor Wushu/reconstructed segments and must not be represented as paired grappling data.",
+    "availability_meaning": {
+      "yes": "A current source explicitly covers the named family or is directly labeled for it.",
+      "partial": "A related/generic current source exists but requires semantic segmentation, contact validation, or technique audit before admission.",
+      "no": "No verified current-corpus source covers the required action."
+    },
+    "runtime_policy": "Manifest entries are vocabulary/planning records, not runtime permission. Every admitted primitive still needs provenance, retargeting, MotionBricks conditioning, and visual/physics QA."
+  },
+  "action_count": 438,
+  "summary_counts": {
+    "by_category": {
+      "combat": 285,
+      "locomotion": 46,
+      "stance": 34,
+      "reaction": 41,
+      "special": 32
+    },
+    "by_data_available": {
+      "yes": 12,
+      "partial": 239,
+      "no": 187
+    },
+    "by_priority": {
+      "P0": 165,
+      "P1": 211,
+      "P2": 62
+    }
+  },
+  "required_fields": [
+    "name",
+    "category",
+    "subcategory",
+    "description",
+    "example_motion_source",
+    "data_available",
+    "priority"
+  ],
+  "actions": [
+    {
+      "name": "punch",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs punch as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "jab",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs jab as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "cross",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs cross as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "lead_straight_punch",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs lead straight punch as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "rear_straight_punch",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs rear straight punch as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "power_straight",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs power straight as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "body_straight_punch",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs body straight punch as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "lead_hook",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs lead hook as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "rear_hook",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs rear hook as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "body_hook",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs body hook as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "shovel_hook",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs shovel hook as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "lead_uppercut",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs lead uppercut as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "rear_uppercut",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs rear uppercut as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "body_uppercut",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs body uppercut as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "lead_overhand",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs lead overhand as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "rear_overhand",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs rear overhand as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "backfist",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs backfist as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "spinning_backfist",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs spinning backfist as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "hammerfist",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs hammerfist as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "downward_hammerfist",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs downward hammerfist as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "palm_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs palm strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "palm_heel_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs palm heel strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "ridge_hand_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs ridge hand strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "knife_hand_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs knife hand strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "spearhand_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs spearhand strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "lead_horizontal_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs lead horizontal elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "rear_horizontal_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs rear horizontal elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "upward_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs upward elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "downward_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs downward elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "spinning_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs spinning elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "diagonal_elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs diagonal elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "straight_knee_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs straight knee strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "round_knee_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs round knee strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "skip_knee_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs skip knee strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "flying_knee_strike",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs flying knee strike as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "forward_headbutt",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs forward headbutt as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "side_headbutt",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs side headbutt as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "shoulder_bump",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs shoulder bump as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "forearm_smash",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs forearm smash as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "front_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs front kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_04 (Front Kick); KungfuAthleteBot kf_100_00_kick.",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "lead_front_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs lead front kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_04 (Front Kick).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "rear_front_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs rear front kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_04 (Front Kick).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "teep_push_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs teep push kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "side_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs side kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_11 (Yokogeri / side kick).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "lead_side_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs lead side kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_11 (Yokogeri / side kick).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "rear_side_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs rear side kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_11 (Yokogeri / side kick).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "roundhouse_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs roundhouse kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_07 (Mawashigeri / roundhouse).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "low_roundhouse_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs low roundhouse kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_07 (Mawashigeri / roundhouse).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "body_roundhouse_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs body roundhouse kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_07 (Mawashigeri / roundhouse).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "high_roundhouse_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs high roundhouse kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 135_07 (Mawashigeri / roundhouse).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "calf_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs calf kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "inside_low_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs inside low kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "outside_low_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs outside low kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "back_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs back kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "spinning_back_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs spinning back kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "hook_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs hook kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "spinning_hook_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs spinning hook kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "axe_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs axe kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "inside_crescent_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs inside crescent kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "outside_crescent_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs outside crescent kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "oblique_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs oblique kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "stomp_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs stomp kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "switch_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs switch kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "question_mark_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs question mark kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "tornado_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs tornado kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "jump_spin_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs jump spin kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 87_01 (Jump with kick and spin); CMU 88_06 (jump and spin kick).",
+      "data_available": "yes",
+      "priority": "P1"
+    },
+    {
+      "name": "jumping_front_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs jumping front kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 75_16 (jump kick); CMU 90_05-07 (jump kick).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "jumping_side_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs jumping side kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 75_16 (jump kick).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "jumping_roundhouse_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs jumping roundhouse kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 75_16 (jump kick).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "flying_side_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs flying side kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 75_16 (jump kick).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "butterfly_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs butterfly kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "leg_sweep_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs leg sweep kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "spinning_leg_sweep",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs spinning leg sweep as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "scissor_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs scissor kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "heel_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs heel kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "high_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs high block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "low_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs low block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "mid_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs mid block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "inside_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs inside block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "outside_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs outside block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "double_forearm_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs double forearm block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "cross_block",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs cross block as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "cover_up",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs cover up as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "high_guard_cover",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs high guard cover as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "low_guard_cover",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs low guard cover as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "hand_parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs hand parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "forearm_parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs forearm parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 144_07/08 (Left_Blocks) and 144_26/27 (Right_Blocks).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "outside_parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs outside parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "inside_parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs inside parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "catch_parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs catch parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "dodge",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs dodge as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "sidestep_evasion",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs sidestep evasion as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "backstep_evasion",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs backstep evasion as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "slip_left",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs slip left as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "slip_right",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs slip right as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "weave_left",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs weave left as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "weave_right",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs weave right as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "duck_under",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs duck under as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "check_kick",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs check kick as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "single_collar_tie",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs single collar tie as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "double_collar_tie",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs double collar tie as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "body_lock",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs body lock as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "wrist_grab",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs wrist grab as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1001_00_grab (generic solo grab/reach segment; not paired contact).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "two_on_one_wrist_control",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs two on one wrist control as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "arm_drag",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs arm drag as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "underhook",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs underhook as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "double_underhook",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs double underhook as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "overhook",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs overhook as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "double_overhook",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs double overhook as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "elbow_control_grab",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs elbow control grab as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "shoulder_grab",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs shoulder grab as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1001_00_grab (generic solo grab/reach segment; not paired contact).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "rear_waist_grab",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs rear waist grab as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "front_body_grab",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs front body grab as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1001_00_grab (generic solo grab/reach segment; not paired contact).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "arm_capture",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs arm capture as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "wrist_release",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs wrist release as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1001_00_grab (generic solo grab/reach segment; not paired contact).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "grab_tech",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs grab tech as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "grip_break",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs grip break as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "pull_off_balance",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs pull off balance as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "push_off_balance",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs push off balance as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 18_03/19_03 pull-resist and 18_05/19_05 elbow-pull/resist paired contact proxies.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "thai_plum_clinch",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs thai plum clinch as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "pummeling",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs pummeling as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "clinch_break",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch break as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "clinch_knee_strike",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch knee strike as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "clinch_elbow_strike",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch elbow strike as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "clinch_turn",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch turn as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "clinch_wall_pin",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch wall pin as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "clinch_shove",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch shove as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "clinch_disengage",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs clinch disengage as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "hip_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs hip throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "shoulder_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs shoulder throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "leg_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs leg throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "sacrifice_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs sacrifice throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "inside_trip",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs inside trip as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "outside_trip",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs outside trip as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "foot_sweep",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs foot sweep as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "ankle_pick",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs ankle pick as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "single_leg_takedown",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs single leg takedown as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "double_leg_takedown",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs double leg takedown as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "high_crotch_lift",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs high crotch lift as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "firemans_carry",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs firemans carry as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "body_lock_lift",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs body lock lift as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "rear_suplex",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs rear suplex as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "head_and_arm_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs head and arm throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "arm_spin_throw",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs arm spin throw as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "osoto_gari",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs osoto gari as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "harai_goshi",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs harai goshi as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "tomoe_nage",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs tomoe nage as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "throw_breakfall",
+      "category": "combat",
+      "subcategory": "throw_takedown",
+      "description": "Performs throw breakfall as a distinct throw takedown action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "mount_top_control",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs mount top control as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "mount_bottom_defense",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs mount bottom defense as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "closed_guard_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs closed guard top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "closed_guard_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs closed guard bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "open_guard_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs open guard top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "open_guard_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs open guard bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "half_guard_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs half guard top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "half_guard_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs half guard bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "side_control_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs side control top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "side_control_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs side control bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "north_south_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs north south top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "turtle_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs turtle top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "turtle_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs turtle bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "back_control_top",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs back control top as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "back_control_bottom",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs back control bottom as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "ground_and_pound_mount",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs ground and pound mount as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "ground_and_pound_guard",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs ground and pound guard as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "guard_pass",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs guard pass as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "mount_escape_bridge",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs mount escape bridge as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "mount_escape_elbow_knee",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs mount escape elbow knee as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "side_control_escape_shrimp",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs side control escape shrimp as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "back_control_escape",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs back control escape as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "guard_sweep_scissor",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs guard sweep scissor as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "guard_sweep_hip_bump",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs guard sweep hip bump as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "technical_stand_up",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs technical stand up as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "combat_get_up_from_ground",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs combat get up from ground as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "ground_roll_recovery",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs ground roll recovery as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_draw",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword draw as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_sheath",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword sheath as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_ready_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword ready transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_high_guard_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword high guard transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_low_guard_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword low guard transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_left_guard_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword left guard transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_right_guard_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword right guard transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_thrust",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword thrust as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_short_thrust",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword short thrust as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_lunge_thrust",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword lunge thrust as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_overhead_slash",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword overhead slash as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_diagonal_slash_left",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword diagonal slash left as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_diagonal_slash_right",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword diagonal slash right as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_horizontal_slash_left",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword horizontal slash left as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_horizontal_slash_right",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword horizontal slash right as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_rising_slash",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword rising slash as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_draw_slash",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword draw slash as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_half_sword_thrust",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword half sword thrust as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "sword_pommel_strike",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword pommel strike as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_guard_parry",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword guard parry as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_bind",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword bind as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_beat_attack",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword beat attack as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_riposte",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword riposte as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_deflect",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword deflect as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_feint_thrust",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword feint thrust as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_feint_slash",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword feint slash as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_disengage",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword disengage as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_moulinet",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword moulinet as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "sword_spin_cut",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword spin cut as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "sword_guard_break",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword guard break as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_recover_to_guard",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword recover to guard as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "draw_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs draw revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "holster_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs holster revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "quick_draw_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs quick draw revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "aim_revolver_hip",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs aim revolver hip as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "aim_revolver_two_hand",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs aim revolver two hand as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "aim_revolver_one_hand",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs aim revolver one hand as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "fire_revolver_hip",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fire revolver hip as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "fire_revolver_aimed",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fire revolver aimed as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "fire_revolver_moving",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fire revolver moving as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "double_tap_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs double tap revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "fan_hammer_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fan hammer revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "cock_hammer_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs cock hammer revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "open_revolver_cylinder",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs open revolver cylinder as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "eject_revolver_cases",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs eject revolver cases as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "load_revolver_rounds",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs load revolver rounds as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "speedloader_reload_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs speedloader reload revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "close_revolver_cylinder",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs close revolver cylinder as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "tactical_reload_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs tactical reload revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "dry_fire_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs dry fire revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "revolver_misfire_reaction",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs revolver misfire reaction as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "gun_whip_strike",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs gun whip strike as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "gun_disarm",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs gun disarm as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "revolver_reholster_under_pressure",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs revolver reholster under pressure as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "dagger_draw",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger draw as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_sheath",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger sheath as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_forward_grip_ready",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger forward grip ready as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_reverse_grip_ready",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger reverse grip ready as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_horizontal_slash",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger horizontal slash as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_diagonal_slash",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger diagonal slash as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_rising_slash",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger rising slash as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_downward_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger downward stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_straight_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger straight stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_ice_pick_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger ice pick stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_lunge_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger lunge stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_backhand_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger backhand stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_parry",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger parry as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_deflect",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger deflect as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_trap_hand",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger trap hand as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_trap_weapon",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger trap weapon as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_disarm",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger disarm as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_bind",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger bind as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_riposte",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger riposte as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_feint",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger feint as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_cut_and_exit",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger cut and exit as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_clinch_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger clinch stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_recover_to_guard",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger recover to guard as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "idle_neutral",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using idle neutral, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "idle_combat_breathing",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using idle combat breathing, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "walk_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using walk forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "walk_backward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using walk backward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "walk_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using walk left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "walk_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using walk right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "combat_pace_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat pace forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "combat_pace_backward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat pace backward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "circle_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using circle left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "circle_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using circle right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "shuffle_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using shuffle forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "shuffle_backward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using shuffle backward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "shuffle_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using shuffle left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "shuffle_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using shuffle right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sprint_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sprint forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sprint_curve_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sprint curve left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sprint_curve_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sprint curve right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "backpedal",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using backpedal, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "sidestep_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sidestep left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sidestep_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sidestep right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "lunge_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using lunge forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 144_11/12 and 144_17/18 (Lunges).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "lunge_retreat",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using lunge retreat, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "retreat_step",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using retreat step, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "dash_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using dash forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "dash_backward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using dash backward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dash_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using dash left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dash_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using dash right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "combat_roll_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat roll forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "combat_roll_backward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat roll backward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "combat_roll_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat roll left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "combat_roll_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using combat roll right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "drop_step",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using drop step, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "pivot_left",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using pivot left, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "pivot_right",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using pivot right, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "stance_switch_step",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using stance switch step, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "leap_forward",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using leap forward, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "jump_vertical",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using jump vertical, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "landing_soft",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using landing soft, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "landing_hard",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using landing hard, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "neutral_ready_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts neutral ready stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "fighting_stance_orthodox",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts fighting stance orthodox as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "fighting_stance_southpaw",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts fighting stance southpaw as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "boxing_guard_high",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts boxing guard high as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "yes",
+      "priority": "P0"
+    },
+    {
+      "name": "boxing_guard_low",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts boxing guard low as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "muay_thai_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts muay thai guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "karate_front_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts karate front stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "karate_back_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts karate back stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "open_hand_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts open hand stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "bladed_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts bladed stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "side_on_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts side on stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "squared_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts squared stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "long_range_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts long range stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "close_range_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts close range stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_high_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts sword high guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_middle_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts sword middle guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_low_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts sword low guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_left_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts sword left guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "sword_right_guard",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts sword right guard as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_forward_grip_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts dagger forward grip stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_reverse_grip_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts dagger reverse grip stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "revolver_ready_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts revolver ready stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "revolver_low_ready",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts revolver low ready as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "revolver_high_ready",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts revolver high ready as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "taunt_invite",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts taunt invite as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "taunt_dismissive",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts taunt dismissive as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "taunt_weapon_flourish",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts taunt weapon flourish as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "hands_up_surrender_feint",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts hands up surrender feint as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "light_flinch_head",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays light flinch head after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "light_flinch_torso",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays light flinch torso after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "light_flinch_arm",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays light flinch arm after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "light_flinch_leg",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays light flinch leg after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "guard_hit_recoil",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays guard hit recoil after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "parry_recoil",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays parry recoil after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "weapon_bind_recoil",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays weapon bind recoil after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stagger_forward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stagger forward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "stagger_backward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stagger backward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "stagger_left",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stagger left after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stagger_right",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stagger right after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stumble_forward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stumble forward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stumble_backward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stumble backward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stumble_sideways",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stumble sideways after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "knockback_short",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays knockback short after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "knockback_long",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays knockback long after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "wall_bounce_reaction",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays wall bounce reaction after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "fall_forward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays fall forward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "fall_backward",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays fall backward after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "fall_side_left",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays fall side left after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "fall_side_right",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays fall side right after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "breakfall_back",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays breakfall back after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "breakfall_side",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays breakfall side after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "prone_land",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays prone land after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "supine_land",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays supine land after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "get_up_prone",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays get up prone after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "get_up_supine",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays get up supine after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "get_up_staggered",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays get up staggered after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "daze_loop",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays daze loop after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dizzy_recover",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays dizzy recover after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "pain_guard_arm",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays pain guard arm after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "pain_guard_leg",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays pain guard leg after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "winded_recover",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays winded recover after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "weapon_drop_reaction",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays weapon drop reaction after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "projectile_cut",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes projectile cut as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "projectile_deflect",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes projectile deflect as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "projectile_return_cut",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes projectile return cut as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "mid_air_roundhouse",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes mid air roundhouse as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 87_01 (Jump with kick and spin); technique-specific audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "mid_air_front_kick",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes mid air front kick as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 75_16 (jump kick); technique-specific audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "wall_run_left",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes wall run left as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "wall_run_right",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes wall run right as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "wall_kick_off",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes wall kick off as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "wall_flip",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes wall flip as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "dash_strike",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes dash strike as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "dash_slash",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes dash slash as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dash_thrust",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes dash thrust as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "counter_strike",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes counter strike as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "counter_kick",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes counter kick as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "counter_throw",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes counter throw as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "counter_grab",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes counter grab as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "perfect_parry_counter",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes perfect parry counter as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "dodge_counter",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes dodge counter as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "spin_attack",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes spin attack as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "jump_attack",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes jump attack as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "ground_pounce",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes ground pounce as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "disarm_counter",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes disarm counter as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "weapon_catch",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes weapon catch as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "environment_vault",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes environment vault as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "low_slide",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes low slide as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "slide_attack",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes slide attack as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "air_recovery_twist",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes air recovery twist as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "landing_strike",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes landing strike as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "stance_cancel",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes stance cancel as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "feint_cancel",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes feint cancel as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "burst_escape",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes burst escape as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "elbow",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs elbow as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "knee",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs knee as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_100_00_kick (generic kick segment); semantic audit required.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "uppercut",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs uppercut as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "hook",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs hook as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "overhand",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs overhand as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "headbutt",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs headbutt as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "palm",
+      "category": "combat",
+      "subcategory": "unarmed_strike",
+      "description": "Performs palm as a distinct unarmed strike action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "KungfuAthleteBot kf_1005_00_strike (generic strike segment; semantic audit required); CMU 13_17 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "flying_kick",
+      "category": "combat",
+      "subcategory": "kick",
+      "description": "Performs flying kick as a distinct kick action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 75_16 (jump kick); technique-specific audit required.",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "parry",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs parry as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sidestep",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs sidestep as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "backstep",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs backstep as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "slip",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs slip as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "weave",
+      "category": "combat",
+      "subcategory": "defense_evasion",
+      "description": "Performs weave as a distinct defense evasion action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "plum_clinch",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs plum clinch as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "knee_strike_from_clinch",
+      "category": "combat",
+      "subcategory": "grapple_clinch",
+      "description": "Performs knee strike from clinch as a distinct grapple clinch action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "mount",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs mount as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "guard",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs guard as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "side_control",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs side control as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "ground_escape",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs ground escape as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "ground_sweep",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs ground sweep as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "stand_up",
+      "category": "combat",
+      "subcategory": "ground_grappling",
+      "description": "Performs stand up as a distinct ground grappling action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_stance_transition",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword stance transition as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_slash",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword slash as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_parry",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword parry as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sword_feint",
+      "category": "combat",
+      "subcategory": "sword_art",
+      "description": "Performs sword feint as a distinct sword art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "CMU 02_07 (swordplay; also 02_08/09); exact technique requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "aim_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs aim revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "fire_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fire revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "reload_revolver",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs reload revolver as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "fan_hammer",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs fan hammer as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P2"
+    },
+    {
+      "name": "quick_draw",
+      "category": "combat",
+      "subcategory": "gun_art",
+      "description": "Performs quick draw as a distinct gun art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "dagger_slash",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger slash as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_stab",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger stab as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "dagger_trap",
+      "category": "combat",
+      "subcategory": "dagger_art",
+      "description": "Performs dagger trap as a distinct dagger art action with readable setup, active/contact, and recovery phases.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "walk",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using walk, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "pace",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using pace, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "circle",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using circle, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "sprint",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using sprint, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "retreat",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using retreat, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "CMU 76_01 (walk backwards then punch).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "dash",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using dash, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "roll",
+      "category": "locomotion",
+      "subcategory": "footwork",
+      "description": "Moves using roll, with root trajectory and foot contacts conditioned independently from combat-truth resolution.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P1"
+    },
+    {
+      "name": "fighting_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts fighting stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "ready_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts ready stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "guard_up_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts guard up stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "guard_down_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts guard down stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "CMU 76_03 (avoid attacker) / 76_04 (defensive guard pose).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "open_stance",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts open stance as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P1"
+    },
+    {
+      "name": "taunt",
+      "category": "stance",
+      "subcategory": "combat_stance",
+      "description": "Adopts taunt as a readable pre-contact pose that signals guard and range without revealing the committed action.",
+      "example_motion_source": "KungfuAthleteBot kf_48_00_footwork (generic footwork segment; semantic audit required).",
+      "data_available": "partial",
+      "priority": "P2"
+    },
+    {
+      "name": "stagger",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stagger after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "stumble",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays stumble after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "knockback",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays knockback after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "fall",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays fall after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "CMU 88_04 (spin kicks, spins, and fall); exact reaction phase requires segmentation audit.",
+      "data_available": "partial",
+      "priority": "P0"
+    },
+    {
+      "name": "get_up",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays get up after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "flinch",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays flinch after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "daze",
+      "category": "reaction",
+      "subcategory": "hit_reaction_recovery",
+      "description": "Displays daze after deterministic combat truth resolves an impact, imbalance, or state transition.",
+      "example_motion_source": "No verified current-corpus clip; requires a licensed/dedicated acquisition.",
+      "data_available": "no",
+      "priority": "P0"
+    },
+    {
+      "name": "counter",
+      "category": "special",
+      "subcategory": "special_art",
+      "description": "Executes counter as a high-commitment special motion; its hit outcome and timing remain truth-authoritative.",
+      "example_motion_source": "CMU 13_17 (boxing) / 14_01-03 (boxing).",
+      "data_available": "partial",
+      "priority": "P0"
+    }
+  ]
+}
