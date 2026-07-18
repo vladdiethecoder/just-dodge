@@ -121,6 +121,7 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--batch-size", type=int, default=8)
+    ap.add_argument("--action", choices=["grab","strike","kick","footwork"], default="grab")
     ap.add_argument("--held-out-subjects", nargs="*",
                     default=["86", "135"] + [f"ky_B{367+i:04d}" for i in range(10)])
     args = ap.parse_args()
@@ -143,7 +144,7 @@ def main():
 
     data = []
     for s in all_segments:
-        if s["label"] != "grab":
+        if s["label"] != args.action:
             continue
         posed, root = load_seg(s["path"])
         contact = min(s["contact_frame"], posed.shape[0] - 1)
@@ -169,7 +170,7 @@ def main():
         })
 
     if len(data) < 10:
-        print(f"BLOCKED: only {len(data)} calibrated grab segments")
+        print(f"BLOCKED: only {len(data)} calibrated {args.action} segments")
         return 2
 
     held_subs = set(args.held_out_subjects)
