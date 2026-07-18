@@ -15,6 +15,7 @@ use crate::truth::{Action, PhysicalContactBatch, Side};
 
 use super::clinch::{self, ClinchResolution, ClinchState};
 use super::combo::{AirState, ComboState};
+use super::grab_state::{GrabAttempt, GrabFailure};
 use super::intent::{Intent, MoveDirection, StrikeVariant};
 
 /// Root-space distance at which a fighter may begin a grab attempt.
@@ -135,6 +136,28 @@ pub enum PlanEvent {
     ClinchExit {
         escaped_by: Side,
     },
+    /// A grab attempt began (not a clinch — grab is separate from clinch).
+    GrabBegin {
+        initiator: Side,
+    },
+    /// A grab attempt was blocked (out of range or infeasible).
+    GrabBlocked {
+        side: Side,
+        reason: GrabFailure,
+    },
+    /// A grab attempt was released or failed.
+    GrabRelease {
+        side: Side,
+    },
+    /// A grab became secure (all admission criteria met).
+    GrabSecure {
+        side: Side,
+    },
+    /// A grab failed (whiff or insufficient contact).
+    GrabFailed {
+        side: Side,
+        reason: GrabFailure,
+    },
 }
 
 /// A replay-hashable plan snapshot. The measured world packet is reduced to its
@@ -152,6 +175,7 @@ pub struct PlanSnapshot {
     pub recovery_frames: [u16; 2],
     pub combos: [ComboState; 2],
     pub clinch: Option<ClinchState>,
+    pub grab: Option<super::grab_state::GrabState>,
     pub last_contact_observed: bool,
 }
 
@@ -216,6 +240,7 @@ pub struct PlanPhase {
     recovery_frames: [u16; 2],
     combos: [ComboState; 2],
     clinch: Option<ClinchState>,
+    grab: Option<GrabAttempt>,
     truth_frame: u64,
     last_contact_observed: bool,
     duel_world: DuelWorld,
@@ -250,6 +275,7 @@ impl PlanPhase {
                 air: AirState::Grounded,
             }; 2],
             clinch: None,
+            grab: None,
             truth_frame: 0,
             last_contact_observed: false,
             duel_world: DuelWorld::new(),
@@ -282,6 +308,18 @@ impl PlanPhase {
         self.clinch
     }
 
+    pub const fn grab(&self) -> Option<&GrabAttempt> {
+        self.grab.as_ref()
+    }
+
+    pub fn grab_mut(&mut self) -> Option<&mut GrabAttempt> {
+        self.grab.as_mut()
+    }
+
+    pub fn grab_state(&self) -> Option<super::grab_state::GrabState> {
+        self.grab.as_ref().map(|g| g.state)
+    }
+
     /// Test/replay hook for deterministic launch reconstruction.
     pub fn set_air_state(&mut self, side: Side, air: AirState) {
         self.combos[side_index(side)].air = air;
@@ -300,6 +338,7 @@ impl PlanPhase {
             recovery_frames: self.recovery_frames,
             combos: self.combos,
             clinch: self.clinch,
+            grab: self.grab_state(),
             last_contact_observed: self.last_contact_observed,
         }
     }
@@ -494,6 +533,18 @@ impl PlanPhase {
                     }
                 }
             }
+        } else if let Some(grab) = self.grab.as_mut() {
+            // Grab in progress: update state based on contact and intent
+            if grab.is_in_progress() {
+                // Check if grab intent is still active
+                let grab_active = intents[side_index(grab.initiator)] == Intent::Grab;
+                if !grab_active {
+                    grab.to_release();
+                    events.push(PlanEvent::GrabRelease {
+                        side: grab.initiator,
+                    });
+                }
+            }
         } else if self.within_grab_reach()
             && (intents[side_index(Side::Player)] == Intent::Grab
                 || intents[side_index(Side::Opponent)] == Intent::Grab)
@@ -503,8 +554,23 @@ impl PlanPhase {
             } else {
                 Side::Opponent
             };
-            self.clinch = Some(ClinchState::new(initiator, self.truth_frame));
-            events.push(PlanEvent::ClinchEnter { initiator });
+            // Start a new grab attempt (NOT a clinch — grab is separate from clinch)
+            let grab = GrabAttempt::new(
+                initiator,
+                self.roots[side_index(initiator)],
+                self.roots[side_index(initiator.opposite())],
+                self.truth_frame,
+            );
+            if grab.can_begin() {
+                self.grab = Some(grab);
+                events.push(PlanEvent::GrabBegin { initiator });
+            } else {
+                // Out of range: cannot begin grab
+                events.push(PlanEvent::GrabBlocked {
+                    side: initiator,
+                    reason: GrabFailure::OutOfRange,
+                });
+            }
         }
 
         self.selection_open = [ready[0].is_some(), ready[1].is_some()];
@@ -1093,12 +1159,15 @@ mod tests {
             move_intent(MoveDirection::Approach, 2_000, false),
         );
         let enter = phase.simulate_to_boundary().unwrap();
+        // Grab now uses the separate grab state machine, not clinch.
+        // The grab should begin (GrabBegin) and NOT enter clinch.
         assert!(
             enter
                 .iter()
-                .any(|event| matches!(event, PlanEvent::ClinchEnter { .. }))
+                .any(|event| matches!(event, PlanEvent::GrabBegin { .. }))
         );
-        assert!(phase.clinch().is_some());
+        assert!(phase.grab().is_some());
+        assert!(phase.clinch().is_none());
 
         assert!(phase.can_submit_intent(Side::Player));
         assert!(!phase.can_submit_intent(Side::Opponent));
