@@ -30,6 +30,7 @@ SEG_DIRS = [
     ROOT / "qa_runs/grab07_combat_corpus/segments",          # CMU
     ROOT / "qa_runs/grab07_combat_corpus/kungfu_segments",    # KungfuAthleteBot
     ROOT / "qa_runs/grab07_combat_corpus/kyokushin_segments", # Kyokushin Karate
+    ROOT / "qa_runs/grab07_combat_corpus/augmented_grabs",    # Augmented to 650mm
 ]
 OUT_DIR = ROOT / "qa_runs/grab07_combat_train"
 HAND_R, HAND_L = 33, 25
@@ -138,6 +139,8 @@ def main():
                 corpus = "KungfuAthleteBot"
             elif seg_dir.name == "kyokushin_segments":
                 corpus = "Kyokushin"
+            elif seg_dir.name == "augmented_grabs":
+                corpus = "Augmented"
             else:
                 corpus = seg_dir.name
             all_segments.extend({**s, "corpus": corpus} for s in m["segments"])
@@ -157,10 +160,14 @@ def main():
             subject = s["clip_id"].split("_", 1)[0]
         elif s["corpus"] == "KungfuAthleteBot":
             subject = f"kf_{s['clip_id']}"
-        else:
+        elif s["corpus"] == "Kyokushin":
             # Kyokushin: subject is athlete ID (e.g. 'B0367' from 'B0367_2017-01-31-...')
             athlete = s["clip_id"].split("_")[0]
             subject = f"ky_{athlete}"
+        elif s["corpus"] == "Augmented":
+            # Augmented grabs use the original corpus's subject mapping
+            athlete = s["clip_id"].split("_")[0]
+            subject = f"aug_{athlete}"
         T = min(posed.shape[0], 120)
         data.append({
             "seg_id": s["seg_id"], "clip_id": s["clip_id"], "subject": subject,
