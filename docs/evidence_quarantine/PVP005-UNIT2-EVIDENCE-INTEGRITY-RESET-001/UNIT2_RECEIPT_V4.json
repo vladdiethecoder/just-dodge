@@ -1,0 +1,22 @@
+{
+ "arch": "TemporalGrabConditioner v6 (concat, no FiLM)",
+ "checkpoint_sha256": "f9ab0011c58efa21f16f89f6fdd0047037dbbb27a1f4e399ced8220d8c81f1c3",
+ "diagnosis": "Concat conditioning IS genuine (median cond 368 < median abl 382, delta +14mm). But early stop at step 27 (memorized 177 segments instantly). 0% pass rate. Best 195mm. Data insufficient.",
+ "grab_reach_mm": 650,
+ "next": "Expand corpus with Harmony4D grappling (downloading). V2M pipeline to unlock fight-video-derived teachers. Remove or relax early stopping.",
+ "results": {
+  "ablation_ok": true,
+  "actual_steps": 27,
+  "best_mm": 195.2,
+  "early_stopped": true,
+  "held_seg": 12,
+  "median_abl_mm": 382.42,
+  "median_mm": 368.01,
+  "pass_rate_pct": 0.0,
+  "train_seg": 177
+ },
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-receipt-v4-concat",
+ "utc": "2026-07-18T05:36:33.041696+00:00",
+ "verdict": "FAIL"
+}

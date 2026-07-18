@@ -1,0 +1,1226 @@
+{
+ "ablated_distribution": {
+  "at_or_below_15mm": 0,
+  "best_mm": 24.37,
+  "count": 48,
+  "median_mm": 272.2,
+  "p05_mm": 66.8,
+  "p25_mm": 151.09,
+  "p75_mm": 420.34,
+  "p95_mm": 420.34,
+  "worst_mm": 449.46
+ },
+ "ablation_ok": true,
+ "actual_steps": 25000,
+ "architecture": "TemporalGrabConditioner (1D CNN + per-layer concatenation conditioning)",
+ "batch_size": 16,
+ "best_abl_mm": 24.37,
+ "best_cond_mm": 0.57,
+ "cells": [
+  "high",
+  "low",
+  "nominal"
+ ],
+ "checkpoint_sha256": "dc5c9d9f4e24fd045a62cf0d320a0d3f0e700dc7a7300064f88ea9d708ee84f5",
+ "conditioned_distribution": {
+  "at_or_below_15mm": 30,
+  "best_mm": 0.57,
+  "count": 48,
+  "median_mm": 5.84,
+  "p05_mm": 1.25,
+  "p25_mm": 3.37,
+  "p75_mm": 32.11,
+  "p95_mm": 71.2,
+  "worst_mm": 296.37
+ },
+ "conditioning": "exogenous target concatenated to every pose/root convolution input",
+ "early_stop_loss": 0.0001,
+ "early_stopped": false,
+ "held_out_split": "by subject: ['135', '86', 'ky_B0367', 'ky_B0371', 'ky_B0372']",
+ "heldout_ablated": [
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 6.71,
+   "hand_surface_err_mm": 24.37,
+   "peak_reach": 0.5674,
+   "seg_id": "135_04_00_grab",
+   "subject": "135"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.69,
+   "hand_surface_err_mm": 449.46,
+   "peak_reach": 0.3398,
+   "seg_id": "86_01_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.42,
+   "hand_surface_err_mm": 113.34,
+   "peak_reach": 0.3613,
+   "seg_id": "86_01_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 8.05,
+   "hand_surface_err_mm": 63.39,
+   "peak_reach": 0.4033,
+   "seg_id": "86_01_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 4.23,
+   "hand_surface_err_mm": 268.76,
+   "peak_reach": 0.4227,
+   "seg_id": "86_01_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.94,
+   "hand_surface_err_mm": 101.77,
+   "peak_reach": 0.3905,
+   "seg_id": "86_01_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.17,
+   "hand_surface_err_mm": 341.05,
+   "peak_reach": 0.437,
+   "seg_id": "86_01_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 7.86,
+   "hand_surface_err_mm": 55.5,
+   "peak_reach": 0.3599,
+   "seg_id": "86_02_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.01,
+   "hand_surface_err_mm": 83.05,
+   "peak_reach": 0.3243,
+   "seg_id": "86_02_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 8.36,
+   "hand_surface_err_mm": 324.91,
+   "peak_reach": 0.3361,
+   "seg_id": "86_03_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 4.59,
+   "hand_surface_err_mm": 88.83,
+   "peak_reach": 0.9197,
+   "seg_id": "86_03_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 5.06,
+   "hand_surface_err_mm": 126.05,
+   "peak_reach": 0.3387,
+   "seg_id": "86_03_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.9,
+   "hand_surface_err_mm": 113.91,
+   "peak_reach": 0.3799,
+   "seg_id": "86_03_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.28,
+   "hand_surface_err_mm": 378.23,
+   "peak_reach": 0.5576,
+   "seg_id": "86_03_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 7.16,
+   "hand_surface_err_mm": 134.96,
+   "peak_reach": 0.6908,
+   "seg_id": "86_04_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 7.19,
+   "hand_surface_err_mm": 447.4,
+   "peak_reach": 0.3216,
+   "seg_id": "86_04_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 4.08,
+   "hand_surface_err_mm": 328.56,
+   "peak_reach": 0.4994,
+   "seg_id": "86_05_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 4.06,
+   "hand_surface_err_mm": 265.99,
+   "peak_reach": 0.9643,
+   "seg_id": "86_05_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.58,
+   "hand_surface_err_mm": 159.07,
+   "peak_reach": 0.3124,
+   "seg_id": "86_05_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.91,
+   "hand_surface_err_mm": 268.4,
+   "peak_reach": 0.3529,
+   "seg_id": "86_05_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.27,
+   "hand_surface_err_mm": 373.58,
+   "peak_reach": 0.3831,
+   "seg_id": "86_05_06_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.73,
+   "hand_surface_err_mm": 204.05,
+   "peak_reach": 0.3019,
+   "seg_id": "86_05_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.06,
+   "hand_surface_err_mm": 377.24,
+   "peak_reach": 0.9793,
+   "seg_id": "86_06_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 6.62,
+   "hand_surface_err_mm": 73.13,
+   "peak_reach": 0.3505,
+   "seg_id": "86_06_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.24,
+   "hand_surface_err_mm": 320.04,
+   "peak_reach": 0.3009,
+   "seg_id": "86_08_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.82,
+   "hand_surface_err_mm": 385.32,
+   "peak_reach": 0.6295,
+   "seg_id": "86_08_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.39,
+   "hand_surface_err_mm": 156.46,
+   "peak_reach": 0.6418,
+   "seg_id": "86_08_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 6.42,
+   "hand_surface_err_mm": 208.15,
+   "peak_reach": 0.4896,
+   "seg_id": "86_08_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.5,
+   "hand_surface_err_mm": 126.16,
+   "peak_reach": 0.4675,
+   "seg_id": "86_08_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.61,
+   "hand_surface_err_mm": 224.3,
+   "peak_reach": 0.4249,
+   "seg_id": "86_08_06_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.82,
+   "hand_surface_err_mm": 176.86,
+   "peak_reach": 0.3928,
+   "seg_id": "86_08_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.51,
+   "hand_surface_err_mm": 385.67,
+   "peak_reach": 0.4452,
+   "seg_id": "ky_B0367_2017-01-31-B03_00_grab",
+   "subject": "ky_B0367"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.326,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4091,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4049,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4104,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 5.7,
+   "hand_surface_err_mm": 272.2,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 5.7,
+   "hand_surface_err_mm": 272.2,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.326,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4091,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4049,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4104,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 5.7,
+   "hand_surface_err_mm": 272.2,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 5.7,
+   "hand_surface_err_mm": 272.2,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 2.95,
+   "hand_surface_err_mm": 420.34,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  }
+ ],
+ "heldout_comparison": [
+  {
+   "ablated_hand_surface_err_mm": 24.37,
+   "conditioned_advantage_mm": -13.3,
+   "conditioned_hand_surface_err_mm": 37.67,
+   "seg_id": "135_04_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 449.46,
+   "conditioned_advantage_mm": 441.09,
+   "conditioned_hand_surface_err_mm": 8.37,
+   "seg_id": "86_01_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 113.34,
+   "conditioned_advantage_mm": 62.97,
+   "conditioned_hand_surface_err_mm": 50.37,
+   "seg_id": "86_01_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 63.39,
+   "conditioned_advantage_mm": 29.46,
+   "conditioned_hand_surface_err_mm": 33.93,
+   "seg_id": "86_01_03_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 268.76,
+   "conditioned_advantage_mm": 249.34,
+   "conditioned_hand_surface_err_mm": 19.42,
+   "seg_id": "86_01_04_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 101.77,
+   "conditioned_advantage_mm": 70.27,
+   "conditioned_hand_surface_err_mm": 31.5,
+   "seg_id": "86_01_05_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 341.05,
+   "conditioned_advantage_mm": 339.73,
+   "conditioned_hand_surface_err_mm": 1.32,
+   "seg_id": "86_01_07_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 55.5,
+   "conditioned_advantage_mm": 54.93,
+   "conditioned_hand_surface_err_mm": 0.57,
+   "seg_id": "86_02_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 83.05,
+   "conditioned_advantage_mm": 36.84,
+   "conditioned_hand_surface_err_mm": 46.21,
+   "seg_id": "86_02_05_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 324.91,
+   "conditioned_advantage_mm": 28.54,
+   "conditioned_hand_surface_err_mm": 296.37,
+   "seg_id": "86_03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 88.83,
+   "conditioned_advantage_mm": 61.64,
+   "conditioned_hand_surface_err_mm": 27.19,
+   "seg_id": "86_03_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 126.05,
+   "conditioned_advantage_mm": 80.31,
+   "conditioned_hand_surface_err_mm": 45.74,
+   "seg_id": "86_03_03_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 113.91,
+   "conditioned_advantage_mm": 33.36,
+   "conditioned_hand_surface_err_mm": 80.55,
+   "seg_id": "86_03_04_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 378.23,
+   "conditioned_advantage_mm": 377.55,
+   "conditioned_hand_surface_err_mm": 0.68,
+   "seg_id": "86_03_07_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 134.96,
+   "conditioned_advantage_mm": 117.17,
+   "conditioned_hand_surface_err_mm": 17.79,
+   "seg_id": "86_04_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 447.4,
+   "conditioned_advantage_mm": 427.66,
+   "conditioned_hand_surface_err_mm": 19.74,
+   "seg_id": "86_04_07_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 328.56,
+   "conditioned_advantage_mm": 294.2,
+   "conditioned_hand_surface_err_mm": 34.36,
+   "seg_id": "86_05_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 265.99,
+   "conditioned_advantage_mm": 193.45,
+   "conditioned_hand_surface_err_mm": 72.54,
+   "seg_id": "86_05_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 159.07,
+   "conditioned_advantage_mm": 90.36,
+   "conditioned_hand_surface_err_mm": 68.71,
+   "seg_id": "86_05_04_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 268.4,
+   "conditioned_advantage_mm": 263.49,
+   "conditioned_hand_surface_err_mm": 4.91,
+   "seg_id": "86_05_05_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 373.58,
+   "conditioned_advantage_mm": 370.7,
+   "conditioned_hand_surface_err_mm": 2.88,
+   "seg_id": "86_05_06_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 204.05,
+   "conditioned_advantage_mm": 200.81,
+   "conditioned_hand_surface_err_mm": 3.24,
+   "seg_id": "86_05_07_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 377.24,
+   "conditioned_advantage_mm": 340.56,
+   "conditioned_hand_surface_err_mm": 36.68,
+   "seg_id": "86_06_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 73.13,
+   "conditioned_advantage_mm": 32.76,
+   "conditioned_hand_surface_err_mm": 40.37,
+   "seg_id": "86_06_03_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 320.04,
+   "conditioned_advantage_mm": 318.83,
+   "conditioned_hand_surface_err_mm": 1.21,
+   "seg_id": "86_08_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 385.32,
+   "conditioned_advantage_mm": 381.45,
+   "conditioned_hand_surface_err_mm": 3.87,
+   "seg_id": "86_08_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 156.46,
+   "conditioned_advantage_mm": 145.12,
+   "conditioned_hand_surface_err_mm": 11.34,
+   "seg_id": "86_08_02_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 208.15,
+   "conditioned_advantage_mm": 194.97,
+   "conditioned_hand_surface_err_mm": 13.18,
+   "seg_id": "86_08_03_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 126.16,
+   "conditioned_advantage_mm": 118.99,
+   "conditioned_hand_surface_err_mm": 7.17,
+   "seg_id": "86_08_04_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 224.3,
+   "conditioned_advantage_mm": 213.77,
+   "conditioned_hand_surface_err_mm": 10.53,
+   "seg_id": "86_08_06_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 176.86,
+   "conditioned_advantage_mm": 159.27,
+   "conditioned_hand_surface_err_mm": 17.59,
+   "seg_id": "86_08_07_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 385.67,
+   "conditioned_advantage_mm": 381.79,
+   "conditioned_hand_surface_err_mm": 3.88,
+   "seg_id": "ky_B0367_2017-01-31-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 272.2,
+   "conditioned_advantage_mm": 266.36,
+   "conditioned_hand_surface_err_mm": 5.84,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 272.2,
+   "conditioned_advantage_mm": 266.36,
+   "conditioned_hand_surface_err_mm": 5.84,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 272.2,
+   "conditioned_advantage_mm": 266.36,
+   "conditioned_hand_surface_err_mm": 5.84,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 272.2,
+   "conditioned_advantage_mm": 266.36,
+   "conditioned_hand_surface_err_mm": 5.84,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab"
+  },
+  {
+   "ablated_hand_surface_err_mm": 420.34,
+   "conditioned_advantage_mm": 416.97,
+   "conditioned_hand_surface_err_mm": 3.37,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab"
+  }
+ ],
+ "heldout_conditioned": [
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.65,
+   "hand_surface_err_mm": 37.67,
+   "peak_reach": 0.5674,
+   "seg_id": "135_04_00_grab",
+   "subject": "135"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.92,
+   "hand_surface_err_mm": 8.37,
+   "peak_reach": 0.3398,
+   "seg_id": "86_01_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.05,
+   "hand_surface_err_mm": 50.37,
+   "peak_reach": 0.3613,
+   "seg_id": "86_01_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 3.32,
+   "hand_surface_err_mm": 33.93,
+   "peak_reach": 0.4033,
+   "seg_id": "86_01_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.34,
+   "hand_surface_err_mm": 19.42,
+   "peak_reach": 0.4227,
+   "seg_id": "86_01_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.66,
+   "hand_surface_err_mm": 31.5,
+   "peak_reach": 0.3905,
+   "seg_id": "86_01_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.95,
+   "hand_surface_err_mm": 1.32,
+   "peak_reach": 0.437,
+   "seg_id": "86_01_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.92,
+   "hand_surface_err_mm": 0.57,
+   "peak_reach": 0.3599,
+   "seg_id": "86_02_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.22,
+   "hand_surface_err_mm": 46.21,
+   "peak_reach": 0.3243,
+   "seg_id": "86_02_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.93,
+   "hand_surface_err_mm": 296.37,
+   "peak_reach": 0.3361,
+   "seg_id": "86_03_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.76,
+   "hand_surface_err_mm": 27.19,
+   "peak_reach": 0.9197,
+   "seg_id": "86_03_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.6,
+   "hand_surface_err_mm": 45.74,
+   "peak_reach": 0.3387,
+   "seg_id": "86_03_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.54,
+   "hand_surface_err_mm": 80.55,
+   "peak_reach": 0.3799,
+   "seg_id": "86_03_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.66,
+   "hand_surface_err_mm": 0.68,
+   "peak_reach": 0.5576,
+   "seg_id": "86_03_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.86,
+   "hand_surface_err_mm": 17.79,
+   "peak_reach": 0.6908,
+   "seg_id": "86_04_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.99,
+   "hand_surface_err_mm": 19.74,
+   "peak_reach": 0.3216,
+   "seg_id": "86_04_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.67,
+   "hand_surface_err_mm": 34.36,
+   "peak_reach": 0.4994,
+   "seg_id": "86_05_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.65,
+   "hand_surface_err_mm": 72.54,
+   "peak_reach": 0.9643,
+   "seg_id": "86_05_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.91,
+   "hand_surface_err_mm": 68.71,
+   "peak_reach": 0.3124,
+   "seg_id": "86_05_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.13,
+   "hand_surface_err_mm": 4.91,
+   "peak_reach": 0.3529,
+   "seg_id": "86_05_05_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.17,
+   "hand_surface_err_mm": 2.88,
+   "peak_reach": 0.3831,
+   "seg_id": "86_05_06_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.37,
+   "hand_surface_err_mm": 3.24,
+   "peak_reach": 0.3019,
+   "seg_id": "86_05_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "high",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.62,
+   "hand_surface_err_mm": 36.68,
+   "peak_reach": 0.9793,
+   "seg_id": "86_06_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.76,
+   "hand_surface_err_mm": 40.37,
+   "peak_reach": 0.3505,
+   "seg_id": "86_06_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.76,
+   "hand_surface_err_mm": 1.21,
+   "peak_reach": 0.3009,
+   "seg_id": "86_08_00_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.83,
+   "hand_surface_err_mm": 3.87,
+   "peak_reach": 0.6295,
+   "seg_id": "86_08_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "corpus": "CMU",
+   "fullbody_err_mm": 0.59,
+   "hand_surface_err_mm": 11.34,
+   "peak_reach": 0.6418,
+   "seg_id": "86_08_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.45,
+   "hand_surface_err_mm": 13.18,
+   "peak_reach": 0.4896,
+   "seg_id": "86_08_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 2.96,
+   "hand_surface_err_mm": 7.17,
+   "peak_reach": 0.4675,
+   "seg_id": "86_08_04_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.64,
+   "hand_surface_err_mm": 10.53,
+   "peak_reach": 0.4249,
+   "seg_id": "86_08_06_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "CMU",
+   "fullbody_err_mm": 1.72,
+   "hand_surface_err_mm": 17.59,
+   "peak_reach": 0.3928,
+   "seg_id": "86_08_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.62,
+   "hand_surface_err_mm": 3.88,
+   "peak_reach": 0.4452,
+   "seg_id": "ky_B0367_2017-01-31-B03_00_grab",
+   "subject": "ky_B0367"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.326,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4091,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4049,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4104,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.73,
+   "hand_surface_err_mm": 5.84,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.73,
+   "hand_surface_err_mm": 5.84,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0371_2017-02-20-B03_01_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0371_2017-02-20-B03_00_grab",
+   "subject": "ky_B0371"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.326,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4091,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4049,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4104,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.73,
+   "hand_surface_err_mm": 5.84,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.73,
+   "hand_surface_err_mm": 5.84,
+   "peak_reach": 0.5488,
+   "seg_id": "ky_B0372_2017-02-20-B03_01_grab",
+   "subject": "ky_B0372"
+  },
+  {
+   "cell": "low",
+   "corpus": "Kyokushin",
+   "fullbody_err_mm": 0.67,
+   "hand_surface_err_mm": 3.37,
+   "peak_reach": 0.4257,
+   "seg_id": "ky_B0372_2017-02-20-B03_00_grab",
+   "subject": "ky_B0372"
+  }
+ ],
+ "heldout_corpora": [
+  "CMU",
+  "Kyokushin"
+ ],
+ "heldout_segments": 48,
+ "hidden": 256,
+ "lr": 0.0003,
+ "median_abl_mm": 272.2,
+ "median_ablation_delta_mm": 266.36,
+ "median_cond_mm": 5.84,
+ "reason": "median 5.84mm <= 15mm, median ablation delta 266.36mm > 5mm (MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW)",
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-train-v6-seq-concat",
+ "seed": 20260718,
+ "source": "CMU Graphics Lab Motion Capture Database + KungfuAthleteBot",
+ "steps": 25000,
+ "train_corpora": [
+  "Augmented",
+  "CMU",
+  "KungfuAthleteBot",
+  "Kyokushin"
+ ],
+ "train_loss_first": 0.03150106966495514,
+ "train_loss_last": 0.001851168111898005,
+ "train_segments": 849,
+ "verdict": "PASS",
+ "worst_abl_mm": 449.46,
+ "worst_cond_mm": 296.37
+}

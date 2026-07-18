@@ -1,0 +1,59 @@
+{
+ "admission_criteria": {
+  "causal_response": true,
+  "contact_duration_ticks": 23,
+  "no_presentation_override": true,
+  "prohibited_penetration_mm": 0.0,
+  "proxy_contact": true,
+  "surface_clearance_mm": 5.0,
+  "temporal_overlap": true
+ },
+ "contact_frames": 24,
+ "evidence_only": true,
+ "grab_state_transitions": [
+  {
+   "frames": 12,
+   "state": "out_of_range"
+  },
+  {
+   "frames": 24,
+   "state": "acquire"
+  },
+  {
+   "frames": 36,
+   "state": "reach_or_close"
+  },
+  {
+   "frames": 24,
+   "state": "first_physical_contact"
+  },
+  {
+   "frames": 12,
+   "state": "contact_sustained"
+  },
+  {
+   "frames": 12,
+   "state": "secure_grab"
+  }
+ ],
+ "machine_eligible": true,
+ "machine_eligible_only": "MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW \u2014 does NOT promote, ship, or visually approve. G4/G5 PENDING_HUMAN.",
+ "metrics": {
+  "contact_duration_ticks": 23,
+  "end_separation_mm": 0.0,
+  "max_prohibited_penetration_mm": 0.0,
+  "max_proxy_penetration_mm": 650.0,
+  "min_surface_distance_mm": 5.0,
+  "start_separation_mm": 650.0
+ },
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "replay_path": "/run/media/vdubrov/NVMe-Storage1/Just Dodge/qa_runs/grab07_contact_truth_002/grab07_contact_truth_002_replay.json",
+ "replay_sha256": "834fb9dcad71ddaa63c4608c147cce7564261159c36d1068389c6e2bfbf5c539",
+ "runtime_allowed": false,
+ "schema": "just-dodge-grab07-contact-truth-002-evidence-v1",
+ "secure_grab_frames": 12,
+ "source": "PVP005-GRAB07-CONTACT-TRUTH-002 immutable replay evidence",
+ "total_frames": 120,
+ "training_allowed": false,
+ "verdict": "secure_grab"
+}

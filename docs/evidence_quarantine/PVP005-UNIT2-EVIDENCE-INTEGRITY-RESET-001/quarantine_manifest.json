@@ -1,0 +1,92 @@
+{
+ "g4": "PENDING_HUMAN",
+ "g5": "BLOCKED_MACHINE",
+ "human_decision": "PENDING",
+ "never_silently_overwrite": true,
+ "preserved_bytes": true,
+ "promotion": "BLOCKED",
+ "quarantined_files": [
+  {
+   "original": "qa_runs/grab07_combat_train/MOTION_VOCABULARY_RECEIPT_V1.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/MOTION_VOCABULARY_RECEIPT_V1.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "60a0a91dbf9f6120899531c943a34ff5fa5753a53512b7fd6b46da5130780ee7",
+   "size": 3240
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V2.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V2.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "bc1895b1c60776cb7926a3da6bbe445b40bc8574ab2cab83c9543763110a55af",
+   "size": 2733
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V3_CORRECTED.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V3_CORRECTED.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "e61308e1226d47e4ba7b976ebe9a1b015dd10e51d0eaded1e12f6aa05b21231d",
+   "size": 1961
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V3.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V3.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "52017459db6cfa999e25ef25f22575404bd529bce56426daacfef63b8c204f50",
+   "size": 2904
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V4.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V4.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "c6599302ee65270a4c4a8ef6b106247b1f65926e67b0814a2b3a457493b070ed",
+   "size": 894
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V6_FINAL.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V6_FINAL.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "5e226f825890be4a2ae414478d9a3737f93a4945729ebf177bb5cd328a9a1e63",
+   "size": 3802
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V7_PASS.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/UNIT2_RECEIPT_V7_PASS.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "88a9a4744346cb6d211ce473253767cf88f3d65146f9a90506176a9fe2202bdc",
+   "size": 3977
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/train_report.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/train_report.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "53f92d2018c1039d8909481c14982591b2e2bc122603260c445f0760acfd634d",
+   "size": 3556
+  },
+  {
+   "original": "qa_runs/grab07_combat_train/train_report_seq.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/train_report_seq.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "ccdf20bed864e44d1f45db8c75546507373c180cd80b784f64dff808760e3e2b",
+   "size": 28498
+  },
+  {
+   "original": "qa_runs/grab07_contact_truth_002/grab07_contact_truth_002_evidence.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/grab07_contact_truth_002_evidence.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "d101a00086cad620b65f6c63bd09a382f0fe69c6f95f7024ebb1178d667f9540",
+   "size": 1597
+  },
+  {
+   "original": "qa_runs/grab07_contact_truth_002/grab07_contact_truth_002_replay.json",
+   "quarantine": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/grab07_contact_truth_002_replay.json",
+   "reason": "INVALID_EVIDENCE: UNIT-2 v7 PASS and all prior evidence are invalid due to evidence integrity failure",
+   "sha256": "834fb9dcad71ddaa63c4608c147cce7564261159c36d1068389c6e2bfbf5c539",
+   "size": 48020
+  }
+ ],
+ "reason": "UNIT-2 v7 PASS, every present Grab/Kick PASS receipt, contact sheets, generated contact-truth replay, and MACHINE_ELIGIBLE status are INVALID_EVIDENCE. The augmented training data was synthetic (scaled to 650mm), not real 650mm reach data. The model learned from augmented data, not real 650mm reach data. The gate was passed by manufacturing data, not by genuine learned interaction conditioning.",
+ "schema": "just-dodge-evidence-quarantine-v1",
+ "source": "PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001",
+ "utc": "2026-07-18T23:41:55.238179+00:00",
+ "verdict": "INVALID_EVIDENCE"
+}

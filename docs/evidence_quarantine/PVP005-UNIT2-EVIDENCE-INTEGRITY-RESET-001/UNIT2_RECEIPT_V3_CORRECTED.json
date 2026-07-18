@@ -1,0 +1,42 @@
+{
+ "branch": "grab07-650mm-closure",
+ "checkpoint_sha256": "21b4f4dc1e6a9c945589b37499c00106d6037c4fb27d14d45c151b6346573f18",
+ "correction_note": "Previous receipt claimed PASS based on best-case 2.25mm. Exhaustive distribution analysis reveals 1/101 (1%) pass rate, 99/101 (98%) ablation inversions. The 'PASS' was a lucky outlier, not genuine conditioned reaching. Correcting to FAIL.",
+ "distribution": {
+  "ablation_inversion_rate_pct": 98.0,
+  "ablation_inversions": 99,
+  "best_cond_mm": 2.25,
+  "fail_gt200mm": 83,
+  "median_abl_mm": 304.56,
+  "median_cond_mm": 318.96,
+  "mid_50_200mm": 12,
+  "near_15_50mm": 5,
+  "pass_le15mm": 1,
+  "pass_rate_pct": 1.0,
+  "total_heldout": 101
+ },
+ "grab_reach_mm": 650,
+ "head": "2f2198887253abd71e59df09fada4f638f6b005c",
+ "machine_eligible": false,
+ "next_falsifiable_experiment": [
+  "1. Wait for Harmony4D download (352GB real grappling) to expand training data from 88 to potentially 1000+ segments",
+  "2. Fix ablation inversion: the FiLM conditioning needs stronger regularization or a different injection point (e.g. concatenate instead of affine)",
+  "3. Consider a larger model (current 128 hidden is too small for 34-joint x 3D x 120-frame sequences)"
+ ],
+ "schema": "just-dodge-grab07-unit2-receipt-v3-corrected",
+ "utc": "2026-07-18T05:10:06.908683+00:00",
+ "verdict": "FAIL",
+ "what_works": [
+  "Temporal CNN architecture is correct (Option B)",
+  "FiLM conditioning mechanism is architecturally sound",
+  "No skeleton collapse/glitch in any prediction",
+  "CMU+Kungfu corpus pipeline (1095 segments) is usable infrastructure"
+ ],
+ "why_fail": [
+  "1% pass rate (1/101 segments <= 15mm)",
+  "98% ablation inversion rate (conditioning hurts on 99/101)",
+  "Median error 319mm \u2014 model defaults to static pose on unseen subjects",
+  "The model memorizes 88 training segments and cannot generalize the 650mm target",
+  "Data is still insufficient: 88 training segments from CMU+Kungfu is too few"
+ ]
+}
