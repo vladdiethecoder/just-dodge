@@ -17,8 +17,9 @@ use super::clinch::{self, ClinchResolution, ClinchState};
 use super::combo::{AirState, ComboState};
 use super::intent::{Intent, MoveDirection, StrikeVariant};
 
-/// Root-space distance at which an unarmed grab becomes a clinch.
-pub const GRAB_REACH_MM: i32 = 650;
+/// Root-space distance at which a fighter may begin a grab attempt.
+/// This is NOT the secure-grab distance. Secure grab requires physical contact.
+pub const GRAB_ACQUIRE_RANGE_MM: i32 = 650;
 /// Maximum deterministic root translation in one 60 Hz truth tick.
 pub const ROOT_SPEED_MM_PER_TICK: i32 = 100;
 /// Fixed recovery attached to an explicit cancel.
@@ -599,8 +600,11 @@ impl PlanPhase {
             && attacker_state
                 .iasa_on_hit
                 .is_some_and(|iasa_on_hit| attacker_action.current_tick >= iasa_on_hit);
-        if can_hit_cancel && let Some(action) = &mut self.active[attacker_index] {
-            action.hit_cancel = true;
+        if can_hit_cancel {
+            let action = &mut self.active[attacker_index];
+            if let Some(action) = action {
+                action.hit_cancel = true;
+            }
         }
     }
 
@@ -643,7 +647,7 @@ impl PlanPhase {
                     self.roots[side_index(side.opposite())],
                 );
                 let max_travel = ROOT_SPEED_MM_PER_TICK.saturating_mul(i32::from(available_frames));
-                distance <= GRAB_REACH_MM.saturating_add(max_travel)
+                distance <= GRAB_ACQUIRE_RANGE_MM.saturating_add(max_travel)
             }
             Intent::Clinch { .. } => self.clinch.is_some(),
             _ => true,
@@ -651,7 +655,7 @@ impl PlanPhase {
     }
 
     fn within_grab_reach(&self) -> bool {
-        planar_distance_upper_bound(self.roots[0], self.roots[1]) <= GRAB_REACH_MM
+        planar_distance_upper_bound(self.roots[0], self.roots[1]) <= GRAB_ACQUIRE_RANGE_MM
     }
 
     fn active_intents(&self) -> Result<[Intent; 2], PlanError> {
@@ -706,7 +710,12 @@ fn root_after_action(
     action: ActiveAction,
 ) -> RootPosition {
     match action.intent {
-        Intent::Grab => step_toward(root, opponent, GRAB_REACH_MM, ROOT_SPEED_MM_PER_TICK),
+        Intent::Grab => step_toward(
+            root,
+            opponent,
+            GRAB_ACQUIRE_RANGE_MM,
+            ROOT_SPEED_MM_PER_TICK,
+        ),
         Intent::Move {
             dir, auto_correct, ..
         } if action.remaining_distance_mm > 0 => {
@@ -816,7 +825,7 @@ mod tests {
     }
 
     /// The farthest symmetric separation at which a Grab is still feasible:
-    /// distance <= GRAB_REACH_MM + ROOT_SPEED_MM_PER_TICK * grab frame cost.
+    /// distance <= GRAB_ACQUIRE_RANGE_MM + ROOT_SPEED_MM_PER_TICK * grab frame cost.
     fn grab_feasible_phase() -> PlanPhase {
         // 2D <= 650 + 100*20 = 2650 => D <= 1325. Use D=1200 (2400mm) with margin.
         let [player, opponent] = symmetric(1_200);

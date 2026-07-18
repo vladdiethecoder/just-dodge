@@ -6,17 +6,21 @@
 
 pub mod clinch;
 pub mod combo;
+pub mod grab_state;
 #[allow(clippy::module_inception)]
 pub mod intent;
 pub mod plan_phase;
 
 pub use clinch::{ClinchIntent, ClinchResolution, ClinchState};
 pub use combo::{AirState, ComboState, GRAVITY_MM_PER_TICK_SQUARED, LAUNCH_VELOCITY_MM_PER_TICK};
+pub use grab_state::{
+    GRAB_ACQUIRE_RANGE_MM, GrabAttempt, GrabFailure, GrabState, SecureGrabAdmission,
+};
 pub use intent::{
     Hitbox, Intent, MoveDirection, MoveParameters, State, StrikeVariant, TargetEligibility,
 };
 pub use plan_phase::{
-    ActionabilityReason, CANCEL_PENALTY_FRAMES, GRAB_REACH_MM, InterruptOfferReason, PlanError,
-    PlanEvent, PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK,
-    RepromptOption, RepromptReason, RootPosition,
+    ActionabilityReason, CANCEL_PENALTY_FRAMES, InterruptOfferReason, PlanError, PlanEvent,
+    PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RepromptOption,
+    RepromptReason, RootPosition,
 };
