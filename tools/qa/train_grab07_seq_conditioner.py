@@ -10,7 +10,7 @@ contact) needed to terminate at the 650mm engine distance.
 Architecture:
   - Input: full pose trajectory [T, 102] + root [T, 3] + exogenous condition [T, cd]
   - 1D temporal convolutions over time (kernel=5, 3 layers) capture dynamics
-  - Condition injected at each layer via FiLM (feature-wise affine modulation)
+  - Condition concatenated to each convolution input at every temporal layer
   - Output: per-frame pose correction [T, 102] and root correction [T, 3]
   - NO output masking, NO post-decode FK replacement
 
@@ -34,6 +34,7 @@ OUT_DIR = ROOT / "qa_runs/grab07_combat_train"
 HAND_R, HAND_L = 33, 25
 GRAB_REACH_MM = 650
 GATE_MM = 15.0
+EARLY_STOP_LOSS = 1e-4
 SEED = 20260718
 REACH_LO, REACH_HI = 0.40, 0.90
 
@@ -47,76 +48,49 @@ def load_seg(path):
     return d["posed_joints"].astype(np.float64), d["root_positions"].astype(np.float64)
 
 
-class FiRMLayer(nn.Module):
-    """Feature-wise affine modulation: cond -> per-channel scale+shift.
-
-    Scale is tanh-clamped to [-1,1] and the effective gain starts at 0
-    (identity) so the model must learn to use the condition rather than
-    having it inject noise from the start.
-    """
-    def __init__(self, cond_dim: int, channels: int):
-        super().__init__()
-        self.proj = nn.Linear(cond_dim, channels * 2)
-        # Initialize to zero so FiLM starts as identity (no conditioning effect)
-        nn.init.zeros_(self.proj.weight)
-        nn.init.zeros_(self.proj.bias)
-
-    def forward(self, x, cond):
-        s = self.proj(cond)  # [B, T, C*2]
-        s = s.permute(0, 2, 1)  # [B, C*2, T]
-        scale, shift = s.chunk(2, dim=1)
-        scale = torch.tanh(scale)  # clamp to [-1, 1]
-        return x * (1 + scale) + shift
-
-
 class TemporalGrabConditioner(nn.Module):
-    """1D temporal CNN with FiLM conditioning.
+    """1D temporal CNN with concatenation-based conditioning.
 
     Learns per-frame pose dynamics conditioned on the exogenous grab target.
     The temporal receptive field captures the accelerate-decelerate-contact
-    pattern of a real grab approach.
+    pattern of a real grab approach.  The condition is concatenated to the
+    input of every convolution, so no zero-initialized affine path can silence
+    the exogenous target.
     """
-    def __init__(self, n_targets: int, hidden: int = 128):
+    def __init__(self, n_targets: int, hidden: int = 256):
         super().__init__()
         cd = 3 + 3 + 1 + n_targets
 
-        # Pose stream (reduced capacity + dropout to prevent memorization)
-        self.pose_in = nn.Conv1d(102, hidden, 5, padding=2)
+        # Every convolution consumes the exogenous condition explicitly.
+        self.pose_in = nn.Conv1d(102 + cd, hidden, 5, padding=2)
         self.pose_drop1 = nn.Dropout(0.3)
-        self.pose_film1 = FiRMLayer(cd, hidden)
-        self.pose_conv1 = nn.Conv1d(hidden, hidden, 5, padding=2)
+        self.pose_conv1 = nn.Conv1d(hidden + cd, hidden, 5, padding=2)
         self.pose_drop2 = nn.Dropout(0.3)
-        self.pose_film2 = FiRMLayer(cd, hidden)
-        self.pose_conv2 = nn.Conv1d(hidden, hidden, 5, padding=2)
+        self.pose_conv2 = nn.Conv1d(hidden + cd, hidden, 5, padding=2)
         self.pose_drop3 = nn.Dropout(0.3)
-        self.pose_film3 = FiRMLayer(cd, hidden)
         self.pose_out = nn.Conv1d(hidden, 102, 3, padding=1)
 
         # Root stream
-        self.root_in = nn.Conv1d(3, hidden // 2, 5, padding=2)
-        self.root_film = FiRMLayer(cd, hidden // 2)
-        self.root_conv = nn.Conv1d(hidden // 2, hidden // 2, 5, padding=2)
+        self.root_in = nn.Conv1d(3 + cd, hidden // 2, 5, padding=2)
+        self.root_conv = nn.Conv1d(hidden // 2 + cd, hidden // 2, 5, padding=2)
         self.root_out = nn.Conv1d(hidden // 2, 3, 3, padding=1)
 
     def forward(self, pose_seq, root_seq, cond_seq):
         # pose_seq: [B, T, 102] -> [B, C, T]
         p = pose_seq.permute(0, 2, 1)
         r = root_seq.permute(0, 2, 1)
+        c = cond_seq.permute(0, 2, 1)
 
-        p = F.gelu(self.pose_in(p))
+        p = F.gelu(self.pose_in(torch.cat([p, c], dim=1)))
         p = self.pose_drop1(p)
-        p = self.pose_film1(p, cond_seq)
-        p = F.gelu(self.pose_conv1(p))
+        p = F.gelu(self.pose_conv1(torch.cat([p, c], dim=1)))
         p = self.pose_drop2(p)
-        p = self.pose_film2(p, cond_seq)
-        p = F.gelu(self.pose_conv2(p))
+        p = F.gelu(self.pose_conv2(torch.cat([p, c], dim=1)))
         p = self.pose_drop3(p)
-        p = self.pose_film3(p, cond_seq)
         pose_res = self.pose_out(p).permute(0, 2, 1)  # [B, T, 102]
 
-        r = F.gelu(self.root_in(r))
-        r = self.root_film(r, cond_seq)
-        r = F.gelu(self.root_conv(r))
+        r = F.gelu(self.root_in(torch.cat([r, c], dim=1)))
+        r = F.gelu(self.root_conv(torch.cat([r, c], dim=1)))
         root_res = self.root_out(r).permute(0, 2, 1)  # [B, T, 3]
 
         return pose_res, root_res
@@ -146,8 +120,7 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--batch-size", type=int, default=8)
-    ap.add_argument("--held-out-subjects", nargs="*",
-                    default=["86", "135", "kf"])  # hold out CMU subjects AND all Kungfu
+    ap.add_argument("--held-out-subjects", nargs="*", default=["86", "135"])
     args = ap.parse_args()
 
     # Load from all segment directories
@@ -156,7 +129,8 @@ def main():
         mf = seg_dir / "manifest.json"
         if mf.exists():
             m = json.loads(mf.read_text())
-            all_segments.extend(m["segments"])
+            corpus = "CMU" if seg_dir.name == "segments" else "KungfuAthleteBot"
+            all_segments.extend({**s, "corpus": corpus} for s in m["segments"])
 
     data = []
     for s in all_segments:
@@ -167,16 +141,15 @@ def main():
         peak = max(posed[contact, HAND_R, 2], posed[contact, HAND_L, 2])
         if not (REACH_LO <= peak <= REACH_HI):
             continue
-        subject = s["clip_id"]
-        # For CMU clips: subject = first number (e.g. "86" from "86_01")
-        # For Kungfu clips: subject = "kf" (all from same source)
-        if subject.isdigit():
-            subject = subject.split("_")[0]
-        else:
-            subject = "kf"
+        # Split CMU by its original subject identifier and Kungfu by clip.
+        # This keeps the default held-out CMU subjects separate while retaining
+        # both corpora in the training data.
+        subject = (s["clip_id"].split("_", 1)[0]
+                   if s["corpus"] == "CMU" else f"kf_{s['clip_id']}")
         T = min(posed.shape[0], 120)
         data.append({
             "seg_id": s["seg_id"], "clip_id": s["clip_id"], "subject": subject,
+            "corpus": s["corpus"],
             "posed": posed[:T], "root": root[:T],
             "contact": min(contact, T - 1), "T": T, "peak_reach": peak,
         })
@@ -234,6 +207,7 @@ def main():
     held_prep = [prep(d) for d in heldout]
 
     losses = []
+    early_stopped = False
     for step in range(args.steps):
         idxs = np.random.choice(len(train_prep), min(args.batch_size, len(train_prep)), replace=True)
         pf_batch = torch.stack([train_prep[i][0] for i in idxs])
@@ -259,6 +233,9 @@ def main():
         opt.step()
         sched.step()
         losses.append(float(loss.detach().cpu()))
+        if losses[-1] < EARLY_STOP_LOSS:
+            early_stopped = True
+            break
 
     model.eval()
 
@@ -276,7 +253,8 @@ def main():
                     torch.linalg.vector_norm(pred - tgt, dim=-1)).cpu()) * 1000
                 hs = hand_surface_err_mm(pred, d["contact"])
                 rows.append({"seg_id": d["seg_id"], "subject": d["subject"],
-                             "cell": d["cell"], "peak_reach": round(d["peak_reach"], 4),
+                             "corpus": d["corpus"], "cell": d["cell"],
+                             "peak_reach": round(d["peak_reach"], 4),
                              "fullbody_err_mm": round(full_err, 2),
                              "hand_surface_err_mm": round(hs, 2)})
         return rows
@@ -287,41 +265,75 @@ def main():
     median_cond = float(np.median([h["hand_surface_err_mm"] for h in held_cond]))
     worst_cond = max(h["hand_surface_err_mm"] for h in held_cond)
     best_abl = min(h["hand_surface_err_mm"] for h in held_abl)
-    ablation_delta = best_abl - best_cond
+    median_abl = float(np.median([h["hand_surface_err_mm"] for h in held_abl]))
+    worst_abl = max(h["hand_surface_err_mm"] for h in held_abl)
+    ablation_delta = median_abl - median_cond
     ablation_ok = ablation_delta > 5.0
+
+    def distribution(rows):
+        values = np.array([row["hand_surface_err_mm"] for row in rows], dtype=np.float64)
+        return {
+            "count": len(values), "best_mm": round(float(np.min(values)), 2),
+            "p05_mm": round(float(np.percentile(values, 5)), 2),
+            "p25_mm": round(float(np.percentile(values, 25)), 2),
+            "median_mm": round(float(np.median(values)), 2),
+            "p75_mm": round(float(np.percentile(values, 75)), 2),
+            "p95_mm": round(float(np.percentile(values, 95)), 2),
+            "worst_mm": round(float(np.max(values)), 2),
+            "at_or_below_15mm": int(np.count_nonzero(values <= GATE_MM)),
+        }
+
+    held_comparison = [
+        {"seg_id": conditioned["seg_id"],
+         "conditioned_hand_surface_err_mm": conditioned["hand_surface_err_mm"],
+         "ablated_hand_surface_err_mm": ablated["hand_surface_err_mm"],
+         "conditioned_advantage_mm": round(
+             ablated["hand_surface_err_mm"] - conditioned["hand_surface_err_mm"], 2)}
+        for conditioned, ablated in zip(held_cond, held_abl, strict=True)
+    ]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     ck = OUT_DIR / "grab07_conditioner_seq.pt"
     torch.save({"state_dict": model.state_dict(), "frames": frames,
                 "cells": cells, "hidden": args.hidden,
-                "arch": "TemporalGrabConditioner-v5"}, ck)
+                "arch": "TemporalGrabConditioner-v6-concat"}, ck)
 
-    if best_cond == 0.0:
+    if median_cond == 0.0:
         verdict, reason = "SUSPICIOUS_ZERO", "0.0mm: masking red flag"
-    elif best_cond <= GATE_MM and ablation_ok:
+    elif median_cond <= GATE_MM and ablation_ok:
         verdict = "PASS"
-        reason = (f"best {best_cond:.2f}mm <= {GATE_MM:.0f}mm, ablation delta "
-                  f"{ablation_delta:.2f}mm (MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW)")
-    elif best_cond <= GATE_MM:
-        verdict, reason = "FAIL", f"distance passes but ablation delta {ablation_delta:.2f}mm <= 5mm"
+        reason = (f"median {median_cond:.2f}mm <= {GATE_MM:.0f}mm, median ablation "
+                  f"delta {ablation_delta:.2f}mm > 5mm "
+                  "(MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW)")
+    elif median_cond <= GATE_MM:
+        verdict, reason = "FAIL", (
+            f"median distance passes but median ablation delta {ablation_delta:.2f}mm <= 5mm")
     else:
-        verdict, reason = "FAIL", f"best {best_cond:.2f}mm > {GATE_MM:.0f}mm"
+        verdict, reason = "FAIL", f"median {median_cond:.2f}mm > {GATE_MM:.0f}mm"
 
     report = {
-        "schema": "just-dodge-grab07-unit2-train-v5-seq",
+        "schema": "just-dodge-grab07-unit2-train-v6-seq-concat",
         "runtime_admitted": False,
-        "source": "CMU Graphics Lab Motion Capture Database (public domain)",
-        "architecture": "TemporalGrabConditioner (1D CNN + FiLM conditioning)",
-        "conditioning": "genuine sequence-level (temporal dynamics + exogenous target via FiLM)",
+        "source": "CMU Graphics Lab Motion Capture Database + KungfuAthleteBot",
+        "architecture": "TemporalGrabConditioner (1D CNN + per-layer concatenation conditioning)",
+        "conditioning": "exogenous target concatenated to every pose/root convolution input",
         "held_out_split": f"by subject: {sorted({d['subject'] for d in heldout})}",
         "train_segments": len(train), "heldout_segments": len(heldout),
+        "train_corpora": sorted({d["corpus"] for d in train}),
+        "heldout_corpora": sorted({d["corpus"] for d in heldout}),
         "cells": cells, "steps": args.steps, "lr": args.lr,
         "hidden": args.hidden, "batch_size": args.batch_size, "seed": SEED,
         "train_loss_first": losses[0], "train_loss_last": losses[-1],
+        "actual_steps": len(losses), "early_stop_loss": EARLY_STOP_LOSS,
+        "early_stopped": early_stopped,
         "heldout_conditioned": held_cond, "heldout_ablated": held_abl,
+        "heldout_comparison": held_comparison,
+        "conditioned_distribution": distribution(held_cond),
+        "ablated_distribution": distribution(held_abl),
         "best_cond_mm": best_cond, "median_cond_mm": round(median_cond, 2),
         "worst_cond_mm": worst_cond, "best_abl_mm": best_abl,
-        "ablation_delta_mm": round(ablation_delta, 2), "ablation_ok": ablation_ok,
+        "median_abl_mm": round(median_abl, 2), "worst_abl_mm": worst_abl,
+        "median_ablation_delta_mm": round(ablation_delta, 2), "ablation_ok": ablation_ok,
         "verdict": verdict, "reason": reason,
         "checkpoint_sha256": sha(ck.read_bytes()),
     }
@@ -329,12 +341,14 @@ def main():
         json.dumps(report, indent=1, sort_keys=True) + "\n")
     print(json.dumps({"verdict": verdict, "best_mm": best_cond,
                       "median_mm": round(median_cond, 2),
-                      "ablation_delta": round(ablation_delta, 2),
+                      "median_abl_mm": round(median_abl, 2),
+                      "median_ablation_delta": round(ablation_delta, 2),
                       "ablation_ok": ablation_ok,
                       "train_seg": len(train), "held_seg": len(heldout),
-                      "arch": "temporal-cnn-film"}, indent=1))
-    print(f"GRAB07_UNIT2_V5 verdict={verdict} best={best_cond:.2f}mm "
-          f"median={median_cond:.2f}mm abl_delta={ablation_delta:.2f}mm")
+                      "train_corpora": sorted({d["corpus"] for d in train}),
+                      "arch": "temporal-cnn-concat"}, indent=1))
+    print(f"GRAB07_UNIT2_V6 verdict={verdict} median={median_cond:.2f}mm "
+          f"median_abl={median_abl:.2f}mm median_abl_delta={ablation_delta:.2f}mm")
     return 0 if verdict == "PASS" else 1
 
 
