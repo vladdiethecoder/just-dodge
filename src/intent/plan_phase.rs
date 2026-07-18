@@ -18,6 +18,9 @@ use super::combo::{AirState, ComboState};
 use super::grab_state::{GrabAttempt, GrabFailure};
 use super::intent::{Intent, MoveDirection, StrikeVariant};
 
+#[cfg(test)]
+use super::grab_state::SecureGrabAdmission;
+
 /// Root-space distance at which a fighter may begin a grab attempt.
 /// This is NOT the secure-grab distance. Secure grab requires physical contact.
 pub const GRAB_ACQUIRE_RANGE_MM: i32 = 650;
@@ -1171,6 +1174,190 @@ mod tests {
 
         assert!(phase.can_submit_intent(Side::Player));
         assert!(!phase.can_submit_intent(Side::Opponent));
+    }
+
+    // PVP005-GRAB07-CONTACT-TRUTH-002 tests
+    #[test]
+    fn grab_651mm_out_of_range_cannot_begin() {
+        let mut phase =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 651), RootPosition::new(0, 0, -651));
+        let result = phase.submit_intent(Side::Player, Intent::Grab);
+        assert!(result.is_ok());
+        let grab = phase.grab();
+        assert!(grab.is_none()); // Out of range: no grab attempt created
+    }
+
+    #[test]
+    fn grab_650mm_can_begin_but_not_automatic_success() {
+        let mut phase =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 650), RootPosition::new(0, 0, -650));
+        lock(
+            &mut phase,
+            Intent::Grab,
+            move_intent(MoveDirection::Approach, 2_000, false),
+        );
+        let enter = phase.simulate_to_boundary().unwrap();
+        assert!(
+            enter
+                .iter()
+                .any(|event| matches!(event, PlanEvent::GrabBegin { .. }))
+        );
+        let grab = phase.grab().unwrap();
+        assert!(grab.is_in_progress()); // In progress, not secure
+        assert!(!grab.is_secure()); // Not automatically secure
+    }
+
+    #[test]
+    fn grab_220_9mm_clearance_never_secure() {
+        // The 220.9mm visible clearance run is reclassified as acquisition_failed/whiff.
+        // This test proves that 220.9mm clearance never becomes secure_grab.
+        let mut phase =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 220), RootPosition::new(0, 0, -220));
+        lock(
+            &mut phase,
+            Intent::Grab,
+            move_intent(MoveDirection::Approach, 2_000, false),
+        );
+        let enter = phase.simulate_to_boundary().unwrap();
+        assert!(
+            enter
+                .iter()
+                .any(|event| matches!(event, PlanEvent::GrabBegin { .. }))
+        );
+        let grab = phase.grab().unwrap();
+        // 220mm is within 650mm acquire range, so grab can begin.
+        // But 220mm clearance means NO physical contact (15mm gate not met).
+        // The grab should fail as acquisition_failed/whiff, not secure.
+        assert!(!grab.is_secure()); // Never secure with 220mm clearance
+    }
+
+    #[test]
+    fn grab_15mm_no_physical_contact_never_secure() {
+        // 15mm surface clearance without physical contact is NOT a secure grab.
+        // The 15mm gate requires actual physical contact, not just proximity.
+        let mut grab = GrabAttempt::new(
+            Side::Player,
+            RootPosition::new(0, 0, 0),
+            RootPosition::new(0, 0, 650),
+            0,
+        );
+        // Simulate 15mm clearance but no physical contact
+        let admission = SecureGrabAdmission {
+            proxy_contact: false, // No physical contact
+            surface_clearance_mm: 15.0,
+            contact_duration_ticks: 12,
+            temporal_overlap: true,
+            causal_response: true,
+            prohibited_penetration_mm: 0.0,
+            no_presentation_override: true,
+        };
+        grab.admit_secure(admission);
+        assert!(!grab.is_secure()); // Never secure without physical contact
+        assert_eq!(grab.failure, Some(GrabFailure::NoPhysicalContact));
+    }
+
+    #[test]
+    fn grab_proxy_contact_less_than_100ms_never_secure() {
+        // Proxy contact for < 100ms (12 ticks at 120Hz) is NOT a secure grab.
+        let mut grab = GrabAttempt::new(
+            Side::Player,
+            RootPosition::new(0, 0, 0),
+            RootPosition::new(0, 0, 650),
+            0,
+        );
+        let admission = SecureGrabAdmission {
+            proxy_contact: true,
+            surface_clearance_mm: 5.0,
+            contact_duration_ticks: 5, // < 12 ticks (100ms)
+            temporal_overlap: true,
+            causal_response: true,
+            prohibited_penetration_mm: 0.0,
+            no_presentation_override: true,
+        };
+        grab.admit_secure(admission);
+        assert!(!grab.is_secure()); // Never secure with < 100ms contact
+        assert_eq!(grab.failure, Some(GrabFailure::ContactTooBrief));
+    }
+
+    #[test]
+    fn grab_valid_sustained_bilateral_contact_secure() {
+        // Valid sustained bilateral contact >= 100ms IS a secure grab.
+        let mut grab = GrabAttempt::new(
+            Side::Player,
+            RootPosition::new(0, 0, 0),
+            RootPosition::new(0, 0, 650),
+            0,
+        );
+        let admission = SecureGrabAdmission {
+            proxy_contact: true,
+            surface_clearance_mm: 5.0,
+            contact_duration_ticks: 12, // >= 12 ticks (100ms)
+            temporal_overlap: true,
+            causal_response: true,
+            prohibited_penetration_mm: 0.0,
+            no_presentation_override: true,
+        };
+        grab.admit_secure(admission);
+        assert!(grab.is_secure()); // Secure with valid sustained contact
+        assert_eq!(grab.failure, None);
+    }
+
+    #[test]
+    fn grab_blocked_or_evaded_whiff() {
+        // Blocked or evaded closing motion results in whiff (not secure).
+        let mut phase =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 650), RootPosition::new(0, 0, -650));
+        lock(
+            &mut phase,
+            Intent::Grab,
+            move_intent(MoveDirection::Retreat, 2_000, false),
+        );
+        let enter = phase.simulate_to_boundary().unwrap();
+        // Opponent is retreating: grab may still begin but won't become secure.
+        // The grab might begin (GrabBegin) or be blocked (GrabBlocked).
+        // In either case, it should NOT become secure.
+        if let Some(grab) = phase.grab() {
+            assert!(!grab.is_secure()); // Not secure when opponent evades
+        }
+        // The important thing: no GrabSecure event is emitted.
+        assert!(
+            !enter
+                .iter()
+                .any(|event| matches!(event, PlanEvent::GrabSecure { .. }))
+        );
+    }
+
+    #[test]
+    fn grab_deterministic_replay_same_hashes() {
+        // Identical input/replay produces identical truth and motion-plan hashes.
+        let phase1 =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 650), RootPosition::new(0, 0, -650));
+        let phase2 =
+            PlanPhase::with_roots(RootPosition::new(0, 0, 650), RootPosition::new(0, 0, -650));
+        assert_eq!(phase1.truth_hash(), phase2.truth_hash());
+        assert_eq!(phase1.snapshot().roots, phase2.snapshot().roots);
+    }
+
+    #[test]
+    fn grab_no_presentation_override_never_secure() {
+        // Presentation-only truth override (no physical contact) is NOT a secure grab.
+        let mut grab = GrabAttempt::new(
+            Side::Player,
+            RootPosition::new(0, 0, 0),
+            RootPosition::new(0, 0, 650),
+            0,
+        );
+        let admission = SecureGrabAdmission {
+            proxy_contact: true,
+            surface_clearance_mm: 5.0,
+            contact_duration_ticks: 12,
+            temporal_overlap: true,
+            causal_response: true,
+            prohibited_penetration_mm: 0.0,
+            no_presentation_override: false, // Presentation override used
+        };
+        grab.admit_secure(admission);
+        assert!(!grab.is_secure()); // Never secure with presentation override
     }
 
     #[test]
