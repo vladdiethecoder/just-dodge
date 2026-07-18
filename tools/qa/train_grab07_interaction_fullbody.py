@@ -103,13 +103,14 @@ def build_tensors(d, frames, targets, tindex, device):
 
 
 def hand_surface_err_mm(pred_posed: torch.Tensor, pred_root: torch.Tensor, contact: int) -> float:
+    # Two-sided: abs(reach_z - plane_z). Overshoot and undershoot both count.
     # posed_joints are already WORLD-space (hips == root), so the visible hand
     # world position is the posed hand joint directly; do NOT add root again.
     rh = pred_posed[contact, HAND_R]
     lh = pred_posed[contact, HAND_L]
     plane_z = GRAB_REACH_MM / 1000.0
     reach_z = max(float(rh[2]), float(lh[2]))
-    return max(0.0, (plane_z - reach_z) * 1000.0)
+    return abs(reach_z - plane_z) * 1000.0
 
 
 def main() -> int:

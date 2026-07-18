@@ -48,7 +48,11 @@ def load_clip(path: Path):
 
 
 def hand_surface_error_mm(posed: np.ndarray, root: np.ndarray, contact: int) -> dict:
-    """Hand-to-opponent-surface error at the contact frame, Z-forward convention.
+    """Two-sided hand-to-opponent-surface error at the contact frame.
+
+    Uses abs(reach_z - plane_z) so BOTH undershoot (hand short of opponent)
+    and overshoot (hand punching through opponent) count as error. The old
+    one-sided max(0, plane_z - reach_z) made overshoots look like 0mm PASS.
 
     posed_joints are already WORLD-space (hips == root), so the visible hand
     world position is the posed hand joint directly; do NOT add root again.
@@ -57,7 +61,7 @@ def hand_surface_error_mm(posed: np.ndarray, root: np.ndarray, contact: int) -> 
     lh = posed[contact, HAND_L]
     plane_z_m = GRAB_REACH_MM / 1000.0
     reach_z = max(float(rh[2]), float(lh[2]))
-    err_mm = max(0.0, (plane_z_m - reach_z) * 1000.0)
+    err_mm = abs(reach_z - plane_z_m) * 1000.0
     return {
         "contact_frame": int(contact),
         "reach_z_m": round(reach_z, 4),

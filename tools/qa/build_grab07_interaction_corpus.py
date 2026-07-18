@@ -117,7 +117,13 @@ def main() -> int:
                 # Real grab: hands reach forward (>0.3 m), there is forward hand
                 # travel, a deliberate step/lunge, and a plausible grab span
                 # (0.08–0.55 m — two hands closing on a torso, not T-pose apart).
-                if zmax > 0.30 and z_travel > 0.30 and root_dz > 0.05 and 0.08 < span < 0.55:
+                # Reach calibration: the contact-frame peak hand world-Z must be
+                # within [0.52, 0.78]m of the 650mm engine plane. Clips that
+                # massively overshoot (>0.78m) or undershoot (<0.52m) are
+                # inconsistent teachers for the <=15mm-at-650mm gate.
+                peak_reach = float(max(rh[peak, 2], lh[peak, 2]))
+                if zmax > 0.30 and z_travel > 0.30 and root_dz > 0.05 \
+                        and 0.08 < span < 0.55 and 0.52 <= peak_reach <= 0.78:
                     clip_ok = True
                     break
                 npz.unlink(missing_ok=True)  # reject weak clip, retry
