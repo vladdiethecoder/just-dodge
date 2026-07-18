@@ -229,12 +229,22 @@ def main():
     early_stop_loss = 0.0001
     early_stopped = False
 
+    # Per-corpus balanced loss: weight each corpus inversely proportional to its size
+    # so CMU/Kungfu grabs get equal gradient weight to kyokushin karate grabs.
+    corpus_counts = {}
+    for d in train:
+        corpus_counts[d["corpus"]] = corpus_counts.get(d["corpus"], 0) + 1
+    corpus_weights = {c: len(train) / (len(corpus_counts) * n) for c, n in corpus_counts.items()}
+    print(f"Corpus weights: {corpus_weights}")
+
     for step in range(args.steps):
         idxs = np.random.choice(len(train_prep), min(args.batch_size, len(train_prep)), replace=True)
         pf_batch = torch.stack([train_prep[i][0] for i in idxs])
         rf_batch = torch.stack([train_prep[i][1] for i in idxs])
         cond_batch = torch.stack([train_prep[i][2] for i in idxs])
         tgt_batch = torch.stack([train_prep[i][3] for i in idxs])
+        # Per-sample corpus weight
+        batch_weights = torch.tensor([corpus_weights[train[i]["corpus"]] for i in idxs], device=device)
 
         opt.zero_grad(set_to_none=True)
         pose_res, root_res = model(pf_batch, rf_batch, cond_batch)
@@ -245,22 +255,23 @@ def main():
         w[HAND_R] = 8.0
         w[HAND_L] = 8.0
         pw = w.reshape(1, 1, 34, 1)
-        pe = ((pred_pose.reshape(len(idxs), frames, 34, 3) -
-               tgt_batch.reshape(len(idxs), frames, 34, 3)) ** 2 * pw).mean()
+        # Per-sample weighted pose error
+        pe_per = ((pred_pose.reshape(len(idxs), frames, 34, 3) -
+               tgt_batch.reshape(len(idxs), frames, 34, 3)) ** 2 * pw).mean(dim=(1,2,3))
+        pe = (pe_per * batch_weights).mean()
         re = torch.mean((pred_root - rf_batch) ** 2)
         # Hand-reach gate loss: directly optimize |hand_z - 0.65| at contact
-        # (the actual gate metric, not just generic MSE)
         contact_idx = torch.tensor([train_prep[i][4] for i in idxs], device=device)
         reach_m = GRAB_REACH_MM / 1000.0
         rh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_R, 2]
         lh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_L, 2]
         hand_reach = torch.maximum(rh_pred, lh_pred)
-        # Gather at contact frame per sample
         contact_mask = torch.zeros(len(idxs), frames, device=device)
         for b in range(len(idxs)):
             contact_mask[b, contact_idx[b]] = 1.0
         hs_err = (hand_reach * contact_mask).sum(dim=1) - reach_m
-        gate_loss = (hs_err ** 2).mean()
+        gate_loss_per = (hs_err ** 2)
+        gate_loss = (gate_loss_per * batch_weights).mean()
         loss = pe + 0.3 * re + 0.5 * gate_loss
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
