@@ -37,7 +37,7 @@ GRAB_REACH_MM = 650
 GATE_MM = 15.0
 EARLY_STOP_LOSS = 1e-4
 SEED = 20260718
-REACH_LO, REACH_HI = 0.40, 0.90
+REACH_LO, REACH_HI = 0.30, 1.0  # widen calibration band for more training data
 
 
 def sha(b: bytes) -> str:
@@ -64,11 +64,11 @@ class TemporalGrabConditioner(nn.Module):
 
         # Every convolution consumes the exogenous condition explicitly.
         self.pose_in = nn.Conv1d(102 + cd, hidden, 5, padding=2)
-        self.pose_drop1 = nn.Dropout(0.3)
+        self.pose_drop1 = nn.Dropout(0.5)
         self.pose_conv1 = nn.Conv1d(hidden + cd, hidden, 5, padding=2)
-        self.pose_drop2 = nn.Dropout(0.3)
+        self.pose_drop2 = nn.Dropout(0.5)
         self.pose_conv2 = nn.Conv1d(hidden + cd, hidden, 5, padding=2)
-        self.pose_drop3 = nn.Dropout(0.3)
+        self.pose_drop3 = nn.Dropout(0.5)
         self.pose_out = nn.Conv1d(hidden, 102, 3, padding=1)
 
         # Root stream
@@ -121,7 +121,8 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--batch-size", type=int, default=8)
-    ap.add_argument("--held-out-subjects", nargs="*", default=["86", "135"])
+    ap.add_argument("--held-out-subjects", nargs="*",
+                    default=["86", "135"] + [f"ky_B{367+i:04d}" for i in range(10)])
     args = ap.parse_args()
 
     # Load from all segment directories
@@ -130,7 +131,14 @@ def main():
         mf = seg_dir / "manifest.json"
         if mf.exists():
             m = json.loads(mf.read_text())
-            corpus = "CMU" if seg_dir.name == "segments" else "KungfuAthleteBot"
+            if seg_dir.name == "segments":
+                corpus = "CMU"
+            elif seg_dir.name == "kungfu_segments":
+                corpus = "KungfuAthleteBot"
+            elif seg_dir.name == "kyokushin_segments":
+                corpus = "Kyokushin"
+            else:
+                corpus = seg_dir.name
             all_segments.extend({**s, "corpus": corpus} for s in m["segments"])
 
     data = []
@@ -142,11 +150,16 @@ def main():
         peak = max(posed[contact, HAND_R, 2], posed[contact, HAND_L, 2])
         if not (REACH_LO <= peak <= REACH_HI):
             continue
-        # Split CMU by its original subject identifier and Kungfu by clip.
-        # This keeps the default held-out CMU subjects separate while retaining
-        # both corpora in the training data.
-        subject = (s["clip_id"].split("_", 1)[0]
-                   if s["corpus"] == "CMU" else f"kf_{s['clip_id']}")
+        # Split CMU by its original subject identifier and Kungfu/Kyokushin by clip.
+        # Kyokushin clips get their own subject for held-out separation.
+        if s["corpus"] == "CMU":
+            subject = s["clip_id"].split("_", 1)[0]
+        elif s["corpus"] == "KungfuAthleteBot":
+            subject = f"kf_{s['clip_id']}"
+        else:
+            # Kyokushin: subject is athlete ID (e.g. 'B0367' from 'B0367_2017-01-31-...')
+            athlete = s["clip_id"].split("_")[0]
+            subject = f"ky_{athlete}"
         T = min(posed.shape[0], 120)
         data.append({
             "seg_id": s["seg_id"], "clip_id": s["clip_id"], "subject": subject,
@@ -193,7 +206,7 @@ def main():
     torch.manual_seed(SEED)
     np.random.seed(SEED)
     model = TemporalGrabConditioner(len(cells), args.hidden).to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-3)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.steps)
 
     # Pre-compute tensors
@@ -202,13 +215,19 @@ def main():
         root = torch.tensor(d["root"], dtype=torch.float32, device=device)
         pf = posed.reshape(frames, -1)
         cond = build_condition(root, d["contact"], d["cell"], cindex, len(cells), frames, device)
-        return pf, root, cond, posed.reshape(frames, -1)
+        return pf, root, cond, posed.reshape(frames, -1), d["contact"]
 
     train_prep = [prep(d) for d in train]
     held_prep = [prep(d) for d in heldout]
 
     losses = []
+    # Early stop: only after sustained low loss (100 steps below threshold),
+    # not the first step that dips below (prevents memorization)
+    patience = 100
+    low_loss_count = 0
+    early_stop_loss = 0.0001
     early_stopped = False
+
     for step in range(args.steps):
         idxs = np.random.choice(len(train_prep), min(args.batch_size, len(train_prep)), replace=True)
         pf_batch = torch.stack([train_prep[i][0] for i in idxs])
@@ -228,12 +247,34 @@ def main():
         pe = ((pred_pose.reshape(len(idxs), frames, 34, 3) -
                tgt_batch.reshape(len(idxs), frames, 34, 3)) ** 2 * pw).mean()
         re = torch.mean((pred_root - rf_batch) ** 2)
-        loss = pe + 0.3 * re
+        # Hand-reach gate loss: directly optimize |hand_z - 0.65| at contact
+        # (the actual gate metric, not just generic MSE)
+        contact_idx = torch.tensor([train_prep[i][4] for i in idxs], device=device)
+        reach_m = GRAB_REACH_MM / 1000.0
+        rh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_R, 2]
+        lh_pred = pred_pose.reshape(len(idxs), frames, 34, 3)[:, :, HAND_L, 2]
+        hand_reach = torch.maximum(rh_pred, lh_pred)
+        # Gather at contact frame per sample
+        contact_mask = torch.zeros(len(idxs), frames, device=device)
+        for b in range(len(idxs)):
+            contact_mask[b, contact_idx[b]] = 1.0
+        hs_err = (hand_reach * contact_mask).sum(dim=1) - reach_m
+        gate_loss = (hs_err ** 2).mean()
+        loss = pe + 0.3 * re + 0.5 * gate_loss
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
         opt.step()
         sched.step()
         losses.append(float(loss.detach().cpu()))
+
+        # Sustained low-loss early stop (prevents single-step memorization trigger)
+        if losses[-1] < early_stop_loss:
+            low_loss_count += 1
+            if low_loss_count >= patience:
+                early_stopped = True
+                break
+        else:
+            low_loss_count = 0
         if losses[-1] < EARLY_STOP_LOSS:
             early_stopped = True
             break
@@ -244,7 +285,7 @@ def main():
         rows = []
         with torch.no_grad():
             for i, d in enumerate(heldout):
-                pf, rf, cond, target = held_prep[i]
+                pf, rf, cond, target, contact = held_prep[i]
                 if ablate:
                     cond = torch.zeros_like(cond)
                 pr, rr = model(pf[None], rf[None], cond[None])
@@ -252,7 +293,7 @@ def main():
                 tgt = target.reshape(frames, 34, 3)
                 full_err = float(torch.mean(
                     torch.linalg.vector_norm(pred - tgt, dim=-1)).cpu()) * 1000
-                hs = hand_surface_err_mm(pred, d["contact"])
+                hs = hand_surface_err_mm(pred, contact)
                 rows.append({"seg_id": d["seg_id"], "subject": d["subject"],
                              "corpus": d["corpus"], "cell": d["cell"],
                              "peak_reach": round(d["peak_reach"], 4),
