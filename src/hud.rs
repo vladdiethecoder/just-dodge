@@ -519,6 +519,21 @@ pub fn build_hud(
     // --- Intent list (bottom-left; receipt 24,560 → layout y ≈ +0.04) ---
     let x = -0.965;
     let mut y = 0.04;
+    let dist = crate::intent::plan_phase::planar_distance_upper_bound(
+        snapshot.roots[0],
+        snapshot.roots[1],
+    );
+    let band = format!("{:?}", snapshot.range_band).to_uppercase();
+    text_lines(
+        &mut out,
+        &format!("RANGE {band} {dist}MM"),
+        x,
+        y,
+        ch,
+        aspect,
+        TEXT,
+    );
+    y += line;
     text_lines(&mut out, "INTENT", x, y, ch, aspect, DIM);
     y += line;
     if snapshot.clinch.is_some() {

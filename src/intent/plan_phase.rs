@@ -84,6 +84,30 @@ pub const WHIFF_TEMPO_LOSS: u16 = 1;
 /// F-013 dynamic IASA: an unblocked hit shortens the attacker's actionable
 /// tick by this many frames vs a blocked contact.
 pub const DYNAMIC_IASA_HIT_BONUS_TICKS: u16 = 2;
+/// F-020 range band thresholds (Manhattan mm): Close = grab/immediate strike
+/// range, Mid = approach-covered strike range, Far = travel-required range.
+pub const RANGE_CLOSE_MAX_MM: i32 = 650;
+pub const RANGE_MID_MAX_MM: i32 = 2_000;
+
+/// F-020 explicit range band for the current separation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RangeBand {
+    Close,
+    Mid,
+    Far,
+}
+
+impl RangeBand {
+    pub const fn of(separation_mm: i32) -> Self {
+        if separation_mm <= RANGE_CLOSE_MAX_MM {
+            Self::Close
+        } else if separation_mm <= RANGE_MID_MAX_MM {
+            Self::Mid
+        } else {
+            Self::Far
+        }
+    }
+}
 /// Tempo at match start (PRD_STANCE_TEMPO: tempo is a cost resource that
 /// gates selection, never cancels a committed action).
 pub const TEMPO_START: u16 = 50;
@@ -328,6 +352,8 @@ pub struct PlanSnapshot {
     pub tempo: [u16; 2],
     /// Persistent per-side stance (F-003).
     pub stances: [Stance; 2],
+    /// F-020 explicit range band for the current separation.
+    pub range_band: RangeBand,
 }
 
 /// Errors that prevent an external controller from mutating plan state.
@@ -526,6 +552,7 @@ impl PlanPhase {
             whiffed: self.whiffed,
             tempo: self.tempo,
             stances: self.stances,
+            range_band: RangeBand::of(planar_distance_upper_bound(self.roots[0], self.roots[1])),
         }
     }
 
@@ -1500,7 +1527,7 @@ fn step_heading(root: RootPosition, heading: MovementHeading, speed: i32) -> Roo
     }
 }
 
-fn planar_distance_upper_bound(left: RootPosition, right: RootPosition) -> i32 {
+pub fn planar_distance_upper_bound(left: RootPosition, right: RootPosition) -> i32 {
     left.x_mm
         .saturating_sub(right.x_mm)
         .abs()
@@ -1953,6 +1980,22 @@ mod tests {
             TEMPO_START - 4 + TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
         );
         assert_eq!(snap.tempo[1], TEMPO_START + TEMPO_REGEN_PER_EXCHANGE);
+    }
+
+    #[test]
+    fn range_bands_classify_separation() {
+        assert_eq!(RangeBand::of(0), RangeBand::Close);
+        assert_eq!(RangeBand::of(RANGE_CLOSE_MAX_MM), RangeBand::Close);
+        assert_eq!(RangeBand::of(RANGE_CLOSE_MAX_MM + 1), RangeBand::Mid);
+        assert_eq!(RangeBand::of(RANGE_MID_MAX_MM), RangeBand::Mid);
+        assert_eq!(RangeBand::of(RANGE_MID_MAX_MM + 1), RangeBand::Far);
+        // Snapshot surface reflects the live separation.
+        let [player, opponent] = symmetric(300);
+        let phase = PlanPhase::with_roots(player, opponent);
+        assert_eq!(phase.snapshot().range_band, RangeBand::Close);
+        let [player, opponent] = symmetric(2_500);
+        let phase = PlanPhase::with_roots(player, opponent);
+        assert_eq!(phase.snapshot().range_band, RangeBand::Far);
     }
 
     #[test]

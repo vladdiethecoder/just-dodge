@@ -28,6 +28,6 @@ pub use intent::{
 pub use matrix::{CellOutcome, MATRIX_ACTIONS, classify_cell};
 pub use plan_phase::{
     ActionabilityReason, CANCEL_PENALTY_FRAMES, InterruptOfferReason, PlanError, PlanEvent,
-    PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RepromptOption,
-    RepromptReason, RootPosition, Stance, tempo_cost,
+    PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RangeBand,
+    RepromptOption, RepromptReason, RootPosition, Stance, tempo_cost,
 };
