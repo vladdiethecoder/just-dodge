@@ -114,7 +114,7 @@ F-012 Free-cancel category graph (grounded/aerial strings) — H — W2 — DONE
 F-013 Dynamic IASA from hit/block/landing — H — W2 — DONE (d42a018; landing hook deferred to air lane)
 F-014 Clinch sub-exchange full frame data + tech/escape options — H,G — W2
 F-015 Clinch position states (over/under/back-control) with option gating — H,G — W2 — DONE (bf03b3e controller/Overhook→BackControl + role gating)
-F-016 Throw/throw-tech deterministic resolution — H,G — W2
+F-016 Throw/throw-tech deterministic resolution — H,G — W2 — DONE (fbd111a controller-relative tech/whiff/launch rules)
 F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2
 F-018 Disarm/armed state machine gating strikes vs unarmed options — H,G — W2
 F-019 Weapon draw/sheath as intents with vulnerability windows — H,G — W2
