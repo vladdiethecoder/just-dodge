@@ -1,0 +1,75 @@
+{
+ "contact_rate": 62.9,
+ "dataset": "Voxel51/Harmony4D",
+ "license": "user_approved",
+ "schema": "just-dodge-harmony4d-paired-grabs-full-v1",
+ "sequences": {
+  "025_grappling2": {
+   "contact": 25,
+   "frames": 25
+  },
+  "028_grappling2": {
+   "contact": 25,
+   "frames": 25
+  },
+  "030_grappling2": {
+   "contact": 25,
+   "frames": 25
+  },
+  "031_grappling2": {
+   "contact": 21,
+   "frames": 25
+  },
+  "032_grappling2": {
+   "contact": 26,
+   "frames": 28
+  },
+  "033_grappling2": {
+   "contact": 17,
+   "frames": 23
+  },
+  "034_grappling2": {
+   "contact": 22,
+   "frames": 25
+  },
+  "035_grappling2": {
+   "contact": 17,
+   "frames": 22
+  },
+  "036_grappling2": {
+   "contact": 30,
+   "frames": 30
+  },
+  "037_grappling2": {
+   "contact": 11,
+   "frames": 21
+  },
+  "038_grappling2": {
+   "contact": 8,
+   "frames": 21
+  },
+  "039_grappling2": {
+   "contact": 13,
+   "frames": 24
+  },
+  "040_grappling2": {
+   "contact": 13,
+   "frames": 21
+  },
+  "041_grappling2": {
+   "contact": 0,
+   "frames": 20
+  },
+  "042_grappling2": {
+   "contact": 0,
+   "frames": 20
+  },
+  "043_grappling2": {
+   "contact": 1,
+   "frames": 21
+  }
+ },
+ "total_contact_frames": 232,
+ "total_segments": 369,
+ "total_sequences": 16
+}
