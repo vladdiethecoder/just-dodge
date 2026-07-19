@@ -17,7 +17,20 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from motionbricks_service.interaction_forward import canonical_json, sha256_json, strict_json_load  # noqa: E402
+# Load the offline interaction contract by file path so CI (which has no
+# torch) can run the partition leakage test without triggering the package
+# __init__ import chain (motionbricks_service/__init__ -> generate -> torch).
+import importlib.util  # noqa: E402
+
+_IF_PATH = ROOT / "motionbricks_service" / "interaction_forward.py"
+_IF_SPEC = importlib.util.spec_from_file_location("interaction_forward_offline", _IF_PATH)
+assert _IF_SPEC is not None and _IF_SPEC.loader is not None
+interaction_forward = importlib.util.module_from_spec(_IF_SPEC)
+sys.modules["interaction_forward_offline"] = interaction_forward
+_IF_SPEC.loader.exec_module(interaction_forward)
+canonical_json = interaction_forward.canonical_json
+sha256_json = interaction_forward.sha256_json
+strict_json_load = interaction_forward.strict_json_load
 
 SPLITS = ("train", "validation", "test")
 SCHEMA = "just-dodge.motionbricks.interaction-partitions/v1"
