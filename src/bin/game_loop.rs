@@ -253,7 +253,27 @@ fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64, a
 fn run_smoke(ticks: u64) {
     let mut phase = PlanPhase::new();
     let mut player_phase = 0_u64;
+    // F-021 dev lane: JUSTDODGE_MOTION=generative drives the async buffered
+    // plan service with the MotionBricks generative provider. Presentation-
+    // only: the truth hash must be identical with or without the flag.
+    let generative = std::env::var("JUSTDODGE_MOTION").ok().as_deref() == Some("generative");
+    let mut motion = generative.then(|| {
+        let service = just_dodge::motion_service_async::MotionPlanService::new(
+            just_dodge::motion_service_async::GenerativeMotionProvider::new(
+                std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string()),
+            ),
+        );
+        let adapter = just_dodge::motion_service_async::PlanPhaseMotionAdapter::new(
+            [glam::Mat4::IDENTITY; just_dodge::motion::G1_NB],
+            [glam::Mat4::IDENTITY; just_dodge::motion::G1_NB],
+        );
+        (service, adapter)
+    });
+    let mut motion_submits = 0_u32;
+    let mut motion_ready = 0_u32;
+    let mut motion_rejected = 0_u32;
     for _ in 0..ticks {
+        let was_planning = phase.status() == PlanStatus::Planning;
         lock_next_phase(
             &mut phase,
             match player_phase % 6 {
@@ -271,12 +291,45 @@ fn run_smoke(ticks: u64) {
             player_phase,
             true,
         );
-        phase
-            .step_truth_tick()
-            .expect("smoke must always advance an M1 truth tick");
+        if let Some((service, adapter)) = motion.as_mut() {
+            // Submit only on a fresh lock (a Planning boundary that just
+            // locked), not every tick.
+            if was_planning {
+                motion_submits += adapter
+                    .submit_locked(&phase, service)
+                    .map(|receipts| receipts.len() as u32)
+                    .unwrap_or(0);
+            }
+            let _ = adapter.step_truth_tick(&mut phase, service);
+            let sample = adapter.poll_presentation(service);
+            for receipt in sample.receipts.into_iter().flatten() {
+                let _ = receipt;
+                motion_ready += 1;
+            }
+            motion_rejected += sample.rejected.iter().filter(|r| **r).count() as u32;
+        } else {
+            phase
+                .step_truth_tick()
+                .expect("smoke must always advance an M1 truth tick");
+        }
         if phase.status() == PlanStatus::Planning {
             player_phase = player_phase.saturating_add(1);
         }
+    }
+    if let Some((service, adapter)) = motion.as_mut() {
+        // Dev-lane measurement: drain up to 90s for inference completions
+        // (first request carries model-load latency).
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(90);
+        while std::time::Instant::now() < deadline {
+            let sample = adapter.poll_presentation(service);
+            motion_ready += sample.receipts.into_iter().flatten().count() as u32;
+            motion_rejected += sample.rejected.iter().filter(|r| **r).count() as u32;
+            if motion_ready + motion_rejected > 0 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        adapter.cancel_all(service);
     }
     let snapshot = phase.snapshot();
     println!(
@@ -284,6 +337,15 @@ fn run_smoke(ticks: u64) {
         snapshot.truth_frame,
         phase.truth_hash()
     );
+    if generative {
+        println!(
+            "GAME_LOOP_MOTION provider=GenerativeKeyframeInbetweening submits={motion_submits} ready={motion_ready} rejected={motion_rejected}"
+        );
+        // Dev-lane probe: in-flight MotionBricks Python worker threads crash
+        // pyo3 teardown at exit; cancel is issued above and the OS reaps the
+        // workers. Skipping destructors keeps the probe exit deterministic.
+        std::process::exit(0);
+    }
 }
 
 struct GameLoopApp {

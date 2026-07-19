@@ -328,14 +328,14 @@ fn validate_full_pose_clip(frames: &[FullPose]) -> Result<(), &'static str> {
     Ok(())
 }
 
-/// Dev/training-only asynchronous MotionBricks provider. A detached worker
-/// validates the existing `MotionPipeline` artifacts, enters the existing PyO3
-/// `MotionService`, and requests a clip with the two root/full-pose keyframes.
+/// Dev/training-only asynchronous MotionBricks provider. ONE persistent
+/// worker thread owns the validated `MotionPipeline` and the PyO3
+/// `MotionService` (a single model load, serialized inference — concurrent
+/// per-request services crash the GPU/bridge), draining a request queue.
 /// The truth/presentation caller only observes its `mpsc::try_recv` buffer.
 #[cfg(feature = "motion-inference")]
 pub struct GenerativeMotionProvider {
-    assets_path: String,
-    sender: std::sync::mpsc::Sender<GenerativeWorkerResult>,
+    request_tx: std::sync::mpsc::Sender<MotionPlanRequest>,
     receiver: std::sync::mpsc::Receiver<GenerativeWorkerResult>,
     pending: HashSet<MotionRequestId>,
     ready: HashMap<MotionRequestId, Result<MotionClip, MotionServiceError>>,
@@ -350,10 +350,47 @@ struct GenerativeWorkerResult {
 #[cfg(feature = "motion-inference")]
 impl GenerativeMotionProvider {
     pub fn new(assets_path: impl Into<String>) -> Self {
-        let (sender, receiver) = std::sync::mpsc::channel();
+        let (request_tx, request_rx) = std::sync::mpsc::channel::<MotionPlanRequest>();
+        let (result_tx, receiver) = std::sync::mpsc::channel();
+        let assets_path = assets_path.into();
+        std::thread::spawn(move || {
+            // Persistent single-worker loop: artifact validation and the
+            // Python service start ONCE; a startup failure rejects every
+            // request with the same error; a generation panic rejects that
+            // request only.
+            eprintln!("[generative-worker] boot");
+            let startup = crate::motion::MotionPipeline::new(&assets_path)
+                .map(|_| ())
+                .and_then(|_| crate::motion_service::MotionService::new());
+            eprintln!("[generative-worker] startup ready={}", startup.is_ok());
+            for request in request_rx {
+                let start = Instant::now();
+                let request_id = request.id;
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let service = startup.as_ref().map_err(|error| {
+                        MotionServiceError::new(format!(
+                            "MotionBricks bridge startup failed: {error}"
+                        ))
+                    })?;
+                    generate_supported_keyframe_inbetweening(service, request, start)
+                }))
+                .unwrap_or_else(|_| {
+                    Err(MotionServiceError::new(
+                        "generative worker panicked (bridge/assets unavailable)",
+                    ))
+                });
+                eprintln!(
+                    "[generative-worker] request={request_id} ok={} latency_ms={}",
+                    result.is_ok(),
+                    start.elapsed().as_millis()
+                );
+                // The receiver may have been dropped at application shutdown;
+                // a worker result is presentation-only, so discard is safe.
+                let _ = result_tx.send(GenerativeWorkerResult { request_id, result });
+            }
+        });
         Self {
-            assets_path: assets_path.into(),
-            sender,
+            request_tx,
             receiver,
             pending: HashSet::new(),
             ready: HashMap::new(),
@@ -381,16 +418,11 @@ impl AsyncMotionPlanProvider for GenerativeMotionProvider {
                 "duplicate generative motion request id",
             ));
         }
-        let sender = self.sender.clone();
-        let assets_path = self.assets_path.clone();
         let request_id = request.id;
-        std::thread::spawn(move || {
-            let start = Instant::now();
-            let result = generate_supported_keyframe_inbetweening(&assets_path, request, start);
-            // The receiver may have been dropped at application shutdown; a
-            // worker result is presentation-only, so discarding it is safe.
-            let _ = sender.send(GenerativeWorkerResult { request_id, result });
-        });
+        self.request_tx.send(request).map_err(|_| {
+            self.pending.remove(&request_id);
+            MotionServiceError::new("generative worker disconnected")
+        })?;
         Ok(MotionSubmitReceipt {
             request_id,
             provider: MotionProviderKind::GenerativeKeyframeInbetweening,
@@ -418,18 +450,10 @@ impl AsyncMotionPlanProvider for GenerativeMotionProvider {
 /// rewritten after generation.
 #[cfg(feature = "motion-inference")]
 fn generate_supported_keyframe_inbetweening(
-    assets_path: &str,
+    service: &crate::motion_service::MotionService,
     request: MotionPlanRequest,
     start: Instant,
 ) -> Result<MotionClip, MotionServiceError> {
-    let _pipeline = crate::motion::MotionPipeline::new(assets_path).map_err(|error| {
-        MotionServiceError::new(format!("MotionPipeline validation failed: {error}"))
-    })?;
-    let service = crate::motion_service::MotionService::new().map_err(|error| {
-        MotionServiceError::new(format!(
-            "MotionBricks Python service startup failed: {error}"
-        ))
-    })?;
     let action = format!("{:?}", request.intent.motionbricks_action());
     let keyframes = [request.keyframes.start_pose, request.keyframes.end_pose];
     let frames = service
@@ -503,6 +527,16 @@ impl PlanPhaseMotionAdapter {
         Ok(receipts)
     }
 
+    /// Cancel every in-flight request (dev-lane teardown; avoids abandoning
+    /// worker threads at process exit).
+    pub fn cancel_all(&mut self, service: &mut MotionPlanService) {
+        for request in self.requests.iter_mut() {
+            if let Some(id) = request.take() {
+                service.cancel(id);
+            }
+        }
+    }
+
     /// Advance authoritative truth first, then poll the buffered presentation
     /// service. `poll` cannot wait on inference, and a hash check makes the
     /// presentation-only boundary explicit even in debug builds.
@@ -527,6 +561,7 @@ impl PlanPhaseMotionAdapter {
         let mut poses = self.last_pose;
         let mut held_last_pose = [true; 2];
         let mut receipts = [None, None];
+        let mut rejected = [false; 2];
         for side in [Side::Player, Side::Opponent] {
             let index = side_index(side);
             let Some(request_id) = self.requests[index] else {
@@ -542,13 +577,20 @@ impl PlanPhaseMotionAdapter {
                     receipts[index] = Some(clip.receipt);
                     self.requests[index] = None;
                 }
-                MotionPoll::Pending | MotionPoll::Rejected(_) => {}
+                MotionPoll::Rejected(_) => {
+                    // Surface the rejection (bridge/generation failure class)
+                    // and clear the request so the next lock can retry.
+                    rejected[index] = true;
+                    self.requests[index] = None;
+                }
+                MotionPoll::Pending => {}
             }
         }
         MotionPresentationSample {
             poses,
             held_last_pose,
             receipts,
+            rejected,
         }
     }
 }
@@ -558,6 +600,8 @@ pub struct MotionPresentationSample {
     pub poses: [FullPose; 2],
     pub held_last_pose: [bool; 2],
     pub receipts: [Option<MotionGenerationReceipt>; 2],
+    /// A poll consumed a provider rejection this sample (F-021 observability).
+    pub rejected: [bool; 2],
 }
 
 /// Read-only M1 lock adapter. It encodes requested displacement in the two root
