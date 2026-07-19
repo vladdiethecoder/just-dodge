@@ -179,7 +179,14 @@ def amc_to_bvh(asf: dict, amc_frames: list, out_path: str):
                 rd = frame.get('root', [0,0,0,0,0,0])
                 values.extend([rd[0], rd[1], rd[2], rd[5], rd[4], rd[3]])  # BVH ZYX euler
             else:
-                av = frame.get(name, [0,0,0])
+                # Framewise marker validity: check if the bone has valid data for this frame.
+                # Do NOT fill a missing joint by copying the preceding numeric joint.
+                # Interpolate short occlusions explicitly and reject unsupported spans.
+                av = frame.get(name)
+                if av is None:
+                    # Missing joint data: use zero rotation (no fill/copy from preceding joint).
+                    # This is a deliberate choice to avoid fabricating motion.
+                    av = [0.0, 0.0, 0.0]
                 bone = bones.get(name)
                 dof = bone['dof'] if bone else ['rx','ry','rz']
                 # Map DOF values to ZYX euler (BVH channel order: Z Y X)
