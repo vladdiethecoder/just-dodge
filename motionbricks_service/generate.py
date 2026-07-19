@@ -388,6 +388,21 @@ def _parse_primitives_ron(text: str) -> list[dict]:
     def parse_numbers(blob: str) -> list[float]:
         return [float(x) for x in re.findall(r"-?\d+\.?\d*(?:[eE][-+]?\d+)?", blob)]
 
+    def parse_frame_list(blob: str) -> list[list[float]]:
+        # feature_window is NESTED ([[414 floats] × frames]); preserve the
+        # frame structure — flattening to one row corrupts the model input
+        # dim (measured: (1, 1656) instead of (4, 414)).
+        frames: list[list[float]] = []
+        i = 0
+        while i < len(blob):
+            if blob[i] == "[":
+                inner, j = extract_block(blob, i, "[", "]")
+                frames.append(parse_numbers(inner))
+                i = j
+            else:
+                i += 1
+        return frames
+
     def extract_block(src: str, start: int, open_ch: str, close_ch: str) -> tuple[str, int]:
         depth = 0
         i = start
@@ -436,7 +451,7 @@ def _parse_primitives_ron(text: str) -> list[dict]:
                 "weapon": parse_ident(body, "weapon"),
                 "stance": parse_ident(body, "stance"),
                 "source_id": parse_str(body, "source_id"),
-                "feature_window": [parse_numbers(fw)] if fw else [],
+                "feature_window": parse_frame_list(fw) if fw else [],
                 "root_target": rt,
             }
         )

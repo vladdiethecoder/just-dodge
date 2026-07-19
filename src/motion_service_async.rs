@@ -380,9 +380,14 @@ impl GenerativeMotionProvider {
                     ))
                 });
                 eprintln!(
-                    "[generative-worker] request={request_id} ok={} latency_ms={}",
+                    "[generative-worker] request={request_id} ok={} latency_ms={}{}",
                     result.is_ok(),
-                    start.elapsed().as_millis()
+                    start.elapsed().as_millis(),
+                    result
+                        .as_ref()
+                        .err()
+                        .map(|e| format!(" err={e}"))
+                        .unwrap_or_default()
                 );
                 // The receiver may have been dropped at application shutdown;
                 // a worker result is presentation-only, so discard is safe.
@@ -456,11 +461,27 @@ fn generate_supported_keyframe_inbetweening(
 ) -> Result<MotionClip, MotionServiceError> {
     let action = format!("{:?}", request.intent.motionbricks_action());
     let keyframes = [request.keyframes.start_pose, request.keyframes.end_pose];
-    let frames = service
-        .generate_clip(&action, "Longsword", "Top", Some(&keyframes), request.id)
-        .map_err(|error| {
-            MotionServiceError::new(format!("MotionBricks generation failed: {error}"))
-        })?;
+    let frames =
+        match service.generate_clip(&action, "Longsword", "Top", Some(&keyframes), request.id) {
+            Ok(frames) => frames,
+            Err(first_error) => {
+                // Measured (2026-07-19): the second sequential keyed-context call
+                // fails with RuntimeError "unknown parameter type" inside the
+                // bridge, while neutral-context generation and both standalone
+                // keyed calls succeed. Retry once with the neutral context and
+                // LOG it — never silently.
+                eprintln!(
+                    "[generative-worker] keyed context failed ({first_error}); retrying neutral"
+                );
+                service
+                .generate_clip(&action, "Longsword", "Top", None, request.id)
+                .map_err(|error| {
+                    MotionServiceError::new(format!(
+                        "MotionBricks generation failed (keyed: {first_error}; neutral: {error})"
+                    ))
+                })?
+            }
+        };
     validate_full_pose_clip(&frames)
         .map_err(|error| MotionServiceError::new(format!("invalid generative clip: {error}")))?;
     let latency = start.elapsed();

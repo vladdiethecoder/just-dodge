@@ -324,7 +324,7 @@ fn run_smoke(ticks: u64) {
             let sample = adapter.poll_presentation(service);
             motion_ready += sample.receipts.into_iter().flatten().count() as u32;
             motion_rejected += sample.rejected.iter().filter(|r| **r).count() as u32;
-            if motion_ready + motion_rejected > 0 {
+            if motion_ready + motion_rejected >= motion_submits {
                 break;
             }
             std::thread::sleep(std::time::Duration::from_millis(50));

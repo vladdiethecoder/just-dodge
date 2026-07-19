@@ -72,6 +72,9 @@ impl MotionService {
         Python::with_gil(|py| {
             let svc = py.import("motionbricks_service").map_err(py_err)?;
             let ctx_array = Self::build_context_array(py, context)?;
+            // torch.manual_seed rejects seeds > u32::MAX; the request id is a
+            // u64 hash — mask deterministically.
+            let seed = seed & 0xFFFF_FFFF;
             let bytes: Vec<u8> = svc
                 .getattr("generate_clip")
                 .map_err(py_err)?
