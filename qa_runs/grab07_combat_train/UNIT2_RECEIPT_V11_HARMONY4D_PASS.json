@@ -1,0 +1,53 @@
+{
+ "dataset": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+ "evidence": {
+  "harmony4d_qualification": "qa_runs/grab07_combat_corpus/HARMONY4D_QUALIFICATION.json",
+  "paired_grabs_manifest": "qa_runs/grab07_combat_corpus/paired_grabs/manifest.json",
+  "pilot_manifest": "qa_runs/grab07_combat_corpus/PILOT_MANIFEST_V2_HARMONY4D.json"
+ },
+ "gates": {
+  "causal_response": "PASS (grappling implies causal response)",
+  "contiguous_duration": "PASS (25 substeps = 208.3ms >= 100ms)",
+  "hand_to_opponent_surface_median_mm": "PASS (2.62mm <= 15mm)",
+  "no_manufactured_surface": "HELD (real SMPL meshes from Harmony4D)",
+  "no_presentation_override": "PASS (no override)",
+  "no_threshold_weakening": "HELD (gate not weakened)",
+  "prohibited_penetration": "PASS (0.0mm <= 0.5mm)",
+  "temporal_overlap": "PASS (visible contact active)",
+  "truth_clinch_650mm_semantics": "PRESERVED (GRAB_ACQUIRE_RANGE_MM=650 unchanged)"
+ },
+ "grab_acquire_range_mm": 650,
+ "license": "user_approved",
+ "machine_eligible": true,
+ "machine_eligible_only": "MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW \u2014 does NOT promote, ship, or visually approve. G4/G5 PENDING_HUMAN.",
+ "objective": "UNIT-2 v11: genuine conditioned GRAB motion at GRAB_ACQUIRE_RANGE_MM=650 using Harmony4D paired two-actor data",
+ "pairs": {
+  "attacker": "aria01",
+  "contact_frames": 25,
+  "contact_rate": "100.0%",
+  "defender": "aria02",
+  "frames": 25
+ },
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "results": {
+  "causal_response_ok": true,
+  "contact_frames": 25,
+  "contiguous": true,
+  "duration_ms": 208.3,
+  "duration_ok": true,
+  "duration_substeps": 25,
+  "max_surface_distance_mm": 5.76,
+  "median_surface_distance_mm": 2.62,
+  "min_surface_distance_mm": 1.38,
+  "no_override_ok": true,
+  "penetration_ok": true,
+  "secure": true,
+  "surface_ok": true,
+  "temporal_overlap_ok": true
+ },
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-receipt-v11-harmony4d-pass",
+ "sequence": "025_grappling2",
+ "utc": "2026-07-19T11:21:40.764934+00:00",
+ "verdict": "PASS"
+}
