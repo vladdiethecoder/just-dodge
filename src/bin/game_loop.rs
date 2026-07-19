@@ -189,9 +189,7 @@ fn scripted_opponent(phase_number: u64) -> Intent {
         0 | 4 => Intent::move_standard(Approach),
         1 => Intent::move_standard(LateralLeft),
         2 => Intent::Block,
-        3 => Intent::Strike {
-            variant: StrikeVariant::Thrust,
-        },
+        3 => Intent::Grab,
         5 => Intent::Dodge {
             dir: CircleClockwise,
         },
@@ -204,6 +202,25 @@ fn scripted_opponent(phase_number: u64) -> Intent {
 
 fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64) {
     if phase.status() != PlanStatus::Planning {
+        return;
+    }
+    // While clinched, only Clinch intents are feasible. A submitted Clinch
+    // intent passes through (interactive clinch sub-menu); anything else is
+    // coerced to Hold so the demo/smoke paths keep running deterministically.
+    if phase.clinch().is_some() {
+        let player_clinch = match player {
+            Intent::Clinch { .. } => player,
+            _ => Intent::Clinch {
+                sub: just_dodge::intent::ClinchIntent::Hold,
+            },
+        };
+        let _ = phase.submit_intent(Side::Player, player_clinch);
+        let _ = phase.submit_intent(
+            Side::Opponent,
+            Intent::Clinch {
+                sub: just_dodge::intent::ClinchIntent::Hold,
+            },
+        );
         return;
     }
     let opponent = scripted_opponent(opponent_phase);

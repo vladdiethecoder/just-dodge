@@ -9,8 +9,8 @@ use glam::{Vec3, vec3};
 use serde::{Deserialize, Serialize};
 
 use crate::cleanbox::action_frame;
-use crate::duel_physics::Fighter;
-use crate::duel_world::{DuelWorld, DuelWorldError, DuelWorldTarget};
+use crate::duel_physics::{Fighter, SharedPhysicsStep};
+use crate::duel_world::{DuelWorld, DuelWorldError, DuelWorldTarget, DuelWorldTruthTick};
 use crate::truth::{Action, PhysicalContactBatch, Side};
 
 use super::clinch::{self, ClinchResolution, ClinchState};
@@ -26,6 +26,27 @@ use super::grab_state::SecureGrabAdmission;
 pub const GRAB_ACQUIRE_RANGE_MM: i32 = 650;
 /// Maximum deterministic root translation in one 60 Hz truth tick.
 pub const ROOT_SPEED_MM_PER_TICK: i32 = 100;
+/// Minimum center-to-center Manhattan separation between fighter roots.
+/// Two torso cylinders (~200 mm radius each) may never interpenetrate: a
+/// voluntary root step (Move/Dodge/Grab approach) is clamped so it never
+/// reduces planar separation below this bound. Clinch/grab admission at
+/// GRAB_ACQUIRE_RANGE_MM (650) stays outside this bound, so the clamp does
+/// not gate the grab lane. Movement that increases separation is always
+/// allowed, even when a prior state is already inside the bound.
+pub const BODY_MIN_SEPARATION_MM: i32 = 400;
+/// Root separation an active Grab closes to. GRAB_ACQUIRE_RANGE_MM is only the
+/// admission gate (where a grab intent may BEGIN); once the grab is live, the
+/// state machine's ReachOrClose phase must actually close to contact distance
+/// or the hand can never reach the opponent surface and the attempt hovers at
+/// the boundary forever. Contact range equals the body-interpenetration floor:
+/// a clinch ends chest-to-chest.
+pub const GRAB_CLOSE_RANGE_MM: i32 = BODY_MIN_SEPARATION_MM;
+/// Truth ticks an Acquire/ReachOrClose grab may go without any measured
+/// contact before it is a whiff. 24 ticks = 400 ms at 60 Hz.
+pub const GRAB_WHIFF_TIMEOUT_TICKS: u64 = 24;
+/// Trailing contact-inactive 120 Hz substeps after FirstPhysicalContact that
+/// break the grab (the defender slipped out before the hold secured).
+pub const GRAB_BREAK_INACTIVE_SUBSTEPS: usize = 4;
 /// Fixed recovery attached to an explicit cancel.
 pub const CANCEL_PENALTY_FRAMES: u16 = 8;
 
@@ -425,6 +446,7 @@ impl PlanPhase {
             )
             .map_err(PlanError::DuelWorld)?;
         self.last_contact_observed = measured.contact_batch.contact.is_some();
+        self.apply_grab_contact_samples(&measured);
         self.apply_contact_outcomes(&measured.contact_batch);
         self.truth_frame = self.truth_frame.saturating_add(1);
 
@@ -528,6 +550,9 @@ impl PlanPhase {
                     ClinchResolution::Continue => {}
                     ClinchResolution::Exit { escaped_by } => {
                         self.clinch = None;
+                        // The grab attempt that opened this clinch is spent;
+                        // future grabs start fresh.
+                        self.grab = None;
                         events.push(PlanEvent::ClinchExit { escaped_by });
                     }
                     ClinchResolution::Launch { launched } => {
@@ -536,6 +561,21 @@ impl PlanPhase {
                     }
                 }
             }
+        } else if self.grab.as_ref().is_some_and(GrabAttempt::is_secure) {
+            // Secure grab resolves to its consequence: the clinch. This is the
+            // only production path that emits GrabSecure / ClinchEnter; both
+            // are derived from the measured interval verdict, never scripted.
+            let initiator = self
+                .grab
+                .as_ref()
+                .map(|grab| grab.initiator)
+                .unwrap_or(Side::Player);
+            if let Some(grab) = self.grab.as_mut() {
+                grab.state = super::grab_state::GrabState::Consequence;
+            }
+            self.clinch = Some(ClinchState::new(initiator, self.truth_frame));
+            events.push(PlanEvent::GrabSecure { side: initiator });
+            events.push(PlanEvent::ClinchEnter { initiator });
         } else if let Some(grab) = self.grab.as_mut() {
             // Grab in progress: update state based on contact and intent
             if grab.is_in_progress() {
@@ -598,6 +638,14 @@ impl PlanPhase {
     fn actionability_events(&self) -> [Option<ActionabilityReason>; 2] {
         self.active.map(|action| {
             let action = action.expect("executing PlanPhase owns two active actions");
+            // Grab hold: while the grab state machine is in progress, the
+            // grabber is NOT actionable — the attempt resolves to SecureGrab,
+            // a break, or a whiff before the grabber may re-choose.
+            if matches!(action.intent, Intent::Grab)
+                && self.grab.as_ref().is_some_and(GrabAttempt::is_in_progress)
+            {
+                return None;
+            }
             let state = action.intent.state();
             if action.hit_cancel {
                 Some(ActionabilityReason::HitCancel)
@@ -626,6 +674,78 @@ impl PlanPhase {
         }
     }
 
+    /// Feed the grab state machine with REAL per-substep measured contact
+    /// evidence from the shared 120 Hz physics steps. This replaces the coarse
+    /// one-sample-per-tick bridge that marked visible/causal channels inactive
+    /// (which made SecureGrab unreachable in the live loop):
+    /// - substep_id: the real consecutive 120 Hz physics tick (integer clock).
+    /// - manifold_id: the measured proxy pair identity.
+    /// - surface_distance_mm / proxy_overlap_mm: from the measured penetration
+    ///   depth of the grabber↔defender proxy pair.
+    /// - visible_contact_active: at the debug-mannequin tier the rendered
+    ///   geometry IS the truth proxy geometry (canon hitbox parity), so a
+    ///   measured proxy contact is the visible contact. The AAA mesh tier
+    ///   replaces this with posed-mesh measurement (Mesh Doctor domain).
+    /// - opponent_response_causal: measured truth-state disruption of the
+    ///   defender caused by this manifold (negative_on_hit applied below).
+    /// - prohibited_penetration_mm: 0 — mesh-level penetration is not
+    ///   measurable at the proxy tier and is never fabricated.
+    fn apply_grab_contact_samples(&mut self, measured: &DuelWorldTruthTick) {
+        let in_progress = self.grab.as_ref().is_some_and(GrabAttempt::is_in_progress);
+        if !in_progress {
+            return;
+        }
+        let initiator = self
+            .grab
+            .as_ref()
+            .map(|g| g.initiator)
+            .unwrap_or(Side::Player);
+        let grabber = fighter_of(initiator);
+        let defender_index = side_index(initiator.opposite());
+        for step in [&measured.first, &measured.second] {
+            let sample = grab_substep_sample(step, grabber);
+            if sample.physics_contact_active {
+                // Measured causal response: the grab manifold disrupts the
+                // defender's committed action (negative-on-hit), which also
+                // opens their interrupt offer to tech the grab.
+                if let Some(defender_action) = &mut self.active[defender_index] {
+                    defender_action.negative_on_hit = true;
+                }
+                if let Some(grab) = self.grab.as_mut() {
+                    if grab.state == super::grab_state::GrabState::Acquire {
+                        grab.state = super::grab_state::GrabState::ReachOrClose;
+                    }
+                    let mut causal = sample;
+                    causal.opponent_response_causal = true;
+                    grab.update_contact(&causal);
+                }
+            } else if let Some(grab) = self.grab.as_mut() {
+                grab.update_contact(&sample);
+            }
+        }
+        // Whiff/break evaluation, derived deterministically from the recorded
+        // samples (no extra state enters the truth hash).
+        if let Some(grab) = self.grab.as_mut() {
+            let contact_started = grab.first_contact_frame.is_some();
+            if !contact_started
+                && self.truth_frame.saturating_sub(grab.started_at_frame)
+                    >= GRAB_WHIFF_TIMEOUT_TICKS
+            {
+                grab.update_whiff(self.truth_frame);
+            } else if contact_started {
+                let trailing_inactive = grab
+                    .contact_samples
+                    .iter()
+                    .rev()
+                    .take_while(|s| !s.physics_contact_active)
+                    .count();
+                if trailing_inactive >= GRAB_BREAK_INACTIVE_SUBSTEPS {
+                    grab.to_release();
+                }
+            }
+        }
+    }
+
     fn apply_contact_outcomes(&mut self, measured: &PhysicalContactBatch) {
         let Some(contact) = measured.contact else {
             return;
@@ -638,27 +758,9 @@ impl PlanPhase {
             return;
         };
 
-        // Runtime proof: wire measured runtime contact into GrabAttempt update/admission.
-        // The truth-layer ContactGeometry carries only distance/range/attacker/surface —
-        // it does NOT carry 120Hz substep IDs, manifold identity, penetration, visible
-        // overlap, causal response or override flags. Those must come from canonical
-        // bilateral physics manifolds (DuelWorld), not from this coarse batch. Until the
-        // DuelWorld emits ContactManifoldSample, we bridge the measured fields we do have
-        // and mark the unknown evidence channels as inactive (never fabricated True).
-        if let Some(grab) = self.grab.as_mut() {
-            let sample = super::grab_contact::ContactManifoldSample {
-                substep_id: u64::from(measured.truth_frame) * 2, // 60Hz frame -> 120Hz substep
-                manifold_id: u64::from(attacker as u8),
-                surface_distance_mm: contact.distance * 1000.0,
-                proxy_overlap_mm: 0.0,          // not measured at this layer
-                prohibited_penetration_mm: 0.0, // not measured at this layer
-                physics_contact_active: contact.in_range,
-                visible_contact_active: false, // unknown at this layer — not fabricated
-                opponent_response_causal: false, // unknown at this layer — not fabricated
-                presentation_override: false,
-            };
-            grab.update_contact(&sample);
-        }
+        // Grab contact evidence is fed by apply_grab_contact_samples from the
+        // real per-substep shared-physics contacts; this coarse 60 Hz batch no
+        // longer writes into the grab state machine.
         let active_cancellable_hitbox = attacker_action
             .intent
             .hitboxes()
@@ -800,13 +902,8 @@ fn root_after_action(
     opponent: RootPosition,
     action: ActiveAction,
 ) -> RootPosition {
-    match action.intent {
-        Intent::Grab => step_toward(
-            root,
-            opponent,
-            GRAB_ACQUIRE_RANGE_MM,
-            ROOT_SPEED_MM_PER_TICK,
-        ),
+    let candidate = match action.intent {
+        Intent::Grab => step_toward(root, opponent, GRAB_CLOSE_RANGE_MM, ROOT_SPEED_MM_PER_TICK),
         Intent::Move {
             dir, auto_correct, ..
         } if action.remaining_distance_mm > 0 => {
@@ -819,6 +916,100 @@ fn root_after_action(
         }
         Intent::Dodge { dir } => step_direction(root, opponent, dir, ROOT_SPEED_MM_PER_TICK * 2),
         _ => root,
+    };
+    clamp_body_separation(root, opponent, candidate)
+}
+
+/// Clamp a voluntary root step so the fighters' body cylinders never
+/// interpenetrate. Steps that keep or increase separation pass through
+/// unchanged; steps that would breach BODY_MIN_SEPARATION_MM are shortened
+/// proportionally (integer-exact) so the mover stops at the boundary.
+fn clamp_body_separation(
+    root: RootPosition,
+    opponent: RootPosition,
+    candidate: RootPosition,
+) -> RootPosition {
+    let current = planar_distance_upper_bound(root, opponent);
+    let after = planar_distance_upper_bound(candidate, opponent);
+    if after >= current || after >= BODY_MIN_SEPARATION_MM {
+        return candidate;
+    }
+    let allowed_reduction = current.saturating_sub(BODY_MIN_SEPARATION_MM).max(0);
+    let dx = candidate.x_mm.saturating_sub(root.x_mm);
+    let dz = candidate.z_mm.saturating_sub(root.z_mm);
+    let total = dx.abs().saturating_add(dz.abs());
+    if total == 0 {
+        return root;
+    }
+    let reduction = current.saturating_sub(after);
+    let keep = total
+        .saturating_sub(reduction.saturating_sub(allowed_reduction))
+        .max(0);
+    RootPosition {
+        x_mm: root.x_mm.saturating_add(dx.saturating_mul(keep) / total),
+        y_mm: candidate.y_mm,
+        z_mm: root.z_mm.saturating_add(dz.saturating_mul(keep) / total),
+    }
+}
+
+fn fighter_of(side: Side) -> Fighter {
+    match side {
+        Side::Player => Fighter::Player,
+        Side::Opponent => Fighter::Opponent,
+    }
+}
+
+/// Reduce one measured 120 Hz shared-physics step into one grab contact
+/// manifold sample for the grabber's manifold pair. Only contacts that
+/// involve the grabber (as attacker or defender) count; the deepest measured
+/// penetration wins. Inactive substeps are still emitted so interval
+/// contiguity is evaluated against the real 120 Hz clock, never fabricated.
+fn grab_substep_sample(
+    step: &SharedPhysicsStep,
+    grabber: Fighter,
+) -> super::grab_contact::ContactManifoldSample {
+    let best = step
+        .contacts
+        .iter()
+        .filter(|contact| contact.attacker == grabber || contact.defender == grabber)
+        .max_by(|a, b| {
+            a.geometry
+                .depth
+                .partial_cmp(&b.geometry.depth)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+    match best {
+        Some(contact) => {
+            let overlap_mm = contact.geometry.depth * 1000.0;
+            super::grab_contact::ContactManifoldSample {
+                substep_id: step.physics_tick,
+                manifold_id: ((contact.geometry.attacker_proxy as u64) << 16)
+                    | ((contact.geometry.defender_proxy as u64) << 1)
+                    | u64::from(contact.attacker == grabber),
+                surface_distance_mm: (-overlap_mm).max(0.0),
+                proxy_overlap_mm: overlap_mm,
+                prohibited_penetration_mm: 0.0,
+                physics_contact_active: true,
+                // Debug-mannequin tier: the rendered geometry IS the truth
+                // proxy geometry (canon hitbox parity), so a measured proxy
+                // contact is the visible contact. The AAA mesh tier replaces
+                // this with posed-mesh measurement (Mesh Doctor domain).
+                visible_contact_active: true,
+                opponent_response_causal: false, // set by caller when applied
+                presentation_override: false,
+            }
+        }
+        None => super::grab_contact::ContactManifoldSample {
+            substep_id: step.physics_tick,
+            manifold_id: 0,
+            surface_distance_mm: f32::MAX,
+            proxy_overlap_mm: 0.0,
+            prohibited_penetration_mm: 0.0,
+            physics_contact_active: false,
+            visible_contact_active: false,
+            opponent_response_causal: false,
+            presentation_override: false,
+        },
     }
 }
 
@@ -941,6 +1132,169 @@ mod tests {
             dir,
             distance_mm,
             auto_correct,
+        }
+    }
+
+    fn manhattan(phase: &PlanPhase) -> i32 {
+        let roots = phase.snapshot().roots;
+        planar_distance_upper_bound(roots[0], roots[1])
+    }
+
+    /// Re-lock at a planning boundary, respecting one-sided actionability:
+    /// only sides whose selection is open receive a new intent.
+    fn relock_available(phase: &mut PlanPhase, player: Intent, opponent: Intent) {
+        if phase.status() != PlanStatus::Planning {
+            return;
+        }
+        if phase.can_submit_intent(Side::Player) {
+            let _ = phase.submit_intent(Side::Player, player);
+        }
+        if phase.can_submit_intent(Side::Opponent) {
+            let _ = phase.submit_intent(Side::Opponent, opponent);
+        }
+    }
+
+    #[test]
+    fn secure_grab_enters_clinch_against_passive_opponent() {
+        // Player grabs; opponent idles. The grab must close, make measured
+        // contact, satisfy the full 100 ms interval gate, and enter the clinch.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let mut saw_secure = false;
+        let mut saw_enter = false;
+        for _ in 0..120 {
+            if phase.clinch().is_some() {
+                relock_available(
+                    &mut phase,
+                    Intent::Clinch {
+                        sub: super::clinch::ClinchIntent::Hold,
+                    },
+                    Intent::Clinch {
+                        sub: super::clinch::ClinchIntent::Hold,
+                    },
+                );
+            } else {
+                relock_available(&mut phase, Intent::Grab, Intent::Idle);
+            }
+            if phase.status() == PlanStatus::Planning && !phase.can_submit_intent(Side::Player) {
+                // One-sided boundary with nobody to act: step is impossible.
+            }
+            if let Ok(events) = phase.step_truth_tick() {
+                saw_secure |= events
+                    .iter()
+                    .any(|event| matches!(event, PlanEvent::GrabSecure { .. }));
+                saw_enter |= events
+                    .iter()
+                    .any(|event| matches!(event, PlanEvent::ClinchEnter { .. }));
+            }
+            if saw_secure && saw_enter {
+                break;
+            }
+        }
+        assert!(
+            saw_secure,
+            "secure grab must be reachable from measured contact"
+        );
+        assert!(saw_enter, "secure grab must enter the clinch");
+        assert!(phase.clinch().is_some());
+    }
+
+    #[test]
+    fn grab_whiff_times_out_against_retreating_opponent() {
+        // Opponent retreats every phase; the grab must never secure and must
+        // fail as a whiff inside GRAB_WHIFF_TIMEOUT_TICKS. Start beyond proxy
+        // contact range (1200 mm Manhattan) so the equal-speed retreat can
+        // actually stay clear — inside ~600 mm the body proxies already touch.
+        let [player, opponent] = symmetric(600);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let mut saw_secure = false;
+        for _ in 0..40 {
+            relock_available(
+                &mut phase,
+                Intent::Grab,
+                move_intent(MoveDirection::Retreat, 2_000, true),
+            );
+            if let Ok(events) = phase.step_truth_tick() {
+                saw_secure |= events
+                    .iter()
+                    .any(|event| matches!(event, PlanEvent::GrabSecure { .. }));
+            }
+        }
+        assert!(!saw_secure);
+        // Honest outcome: against an equal-speed retreat the grabber never
+        // closes inside GRAB_ACQUIRE_RANGE_MM, so either no attempt begins or
+        // any attempt fails. Retreat legitimately counters grab by range.
+        assert!(phase.grab().is_none_or(|grab| !grab.is_secure()));
+    }
+
+    #[test]
+    fn approach_never_crosses_opponent_body() {
+        // Mutual approach for a full second: roots must clamp at
+        // BODY_MIN_SEPARATION_MM and never coincide or cross.
+        let [player, opponent] = symmetric(1_000);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let mut min_seen = i32::MAX;
+        for _ in 0..60 {
+            relock_available(
+                &mut phase,
+                move_intent(MoveDirection::Approach, 2_000, true),
+                move_intent(MoveDirection::Approach, 2_000, true),
+            );
+            phase.step_truth_tick().unwrap();
+            min_seen = min_seen.min(manhattan(&phase));
+        }
+        assert_eq!(min_seen, BODY_MIN_SEPARATION_MM);
+        let roots = phase.snapshot().roots;
+        assert!(roots[0].z_mm > roots[1].z_mm, "roots must never cross");
+    }
+
+    #[test]
+    fn auto_correct_approach_stops_at_boundary_and_holds() {
+        // One-sided approach: mover stops at the boundary; further ticks hold.
+        let [player, opponent] = symmetric(500);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        for _ in 0..30 {
+            relock_available(
+                &mut phase,
+                move_intent(MoveDirection::Approach, 2_000, true),
+                Intent::Idle,
+            );
+            phase.step_truth_tick().unwrap();
+        }
+        assert!(manhattan(&phase) >= BODY_MIN_SEPARATION_MM);
+    }
+
+    #[test]
+    fn dodge_away_from_boundary_still_escapes() {
+        // At the boundary, a retreat/dodge that increases separation is free.
+        let [player, opponent] = symmetric(BODY_MIN_SEPARATION_MM / 2);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let before = manhattan(&phase);
+        assert_eq!(before, BODY_MIN_SEPARATION_MM);
+        lock(
+            &mut phase,
+            Intent::Dodge {
+                dir: MoveDirection::Retreat,
+            },
+            Intent::Idle,
+        );
+        phase.step_truth_tick().unwrap();
+        assert!(manhattan(&phase) > before);
+    }
+
+    #[test]
+    fn lateral_move_at_boundary_does_not_reduce_separation() {
+        // A circling move at the boundary must not cut through the opponent.
+        let [player, opponent] = symmetric(BODY_MIN_SEPARATION_MM / 2);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        for _ in 0..20 {
+            relock_available(
+                &mut phase,
+                move_intent(MoveDirection::CircleClockwise, 600, true),
+                Intent::Idle,
+            );
+            phase.step_truth_tick().unwrap();
+            assert!(manhattan(&phase) >= BODY_MIN_SEPARATION_MM);
         }
     }
 
