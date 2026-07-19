@@ -181,7 +181,7 @@
         "cargo_lock_sha256": "e53f8705232f9d5941f4b3a5dc4657b2e61990aef6e2cf11e0404495a67e4ac9",
         "path": "target/release/m3_match",
         "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
-        "sha256": "a93eb47bd672750c1522736b534a98658563320ca6cdc0bf18ec07fca4d0764c"
+        "sha256": "2b9cbcbd8f2c5a30272c8383c87492886b18d4a786204dc2c0261030f73f32a5"
       }
     ],
     "request_limits": {
