@@ -1088,8 +1088,30 @@ impl PlanPhase {
         }
         let attacker_state = attacker_action.intent.state();
         if !defender_is_blocking {
+            let defender_root = self.roots[defender_index];
+            let attacker_root = self.roots[attacker_index];
             if let Some(defender_action) = &mut self.active[defender_index] {
                 defender_action.negative_on_hit = true;
+                if !matches!(defender_action.intent, Intent::Strike { .. }) {
+                    // Hit-stun interrupts the action itself: a grab, dodge,
+                    // move, or feint that eats an unblocked hit DIES — it can
+                    // never continue to resolution after being struck. (A
+                    // strike already stops contacting via negative_on_hit.)
+                    let interrupted = ActiveAction::new(Intent::Idle, defender_root, attacker_root);
+                    *defender_action = ActiveAction {
+                        negative_on_hit: true,
+                        ..interrupted
+                    };
+                    // A struck grabber loses the grab attempt entirely — no
+                    // sustained-contact streak can survive the interrupt.
+                    if self
+                        .grab
+                        .as_ref()
+                        .is_some_and(|grab| grab.initiator == defender)
+                    {
+                        self.grab = None;
+                    }
+                }
             }
             if matches!(attacker_action.intent, Intent::Strike { .. })
                 && self.combos[defender_index].air.is_airborne()
@@ -1878,6 +1900,32 @@ mod tests {
             TEMPO_START - 4 + TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
         );
         assert_eq!(snap.tempo[1], TEMPO_START + TEMPO_REGEN_PER_EXCHANGE);
+    }
+
+    #[test]
+    fn struck_grab_dies_and_never_secures() {
+        // Canon: a grab that eats an unblocked strike is interrupted — it can
+        // never continue to a secure. Player thrusts (hitbox start 3), the
+        // opponent grabs; the grab must never reach GrabSecure/ClinchEnter.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Grab,
+            |event| matches!(event, PlanEvent::Ready { .. }),
+            12,
+        );
+        assert!(
+            !events.iter().any(|e| matches!(
+                e,
+                PlanEvent::GrabSecure { .. } | PlanEvent::ClinchEnter { .. }
+            )),
+            "a struck grab must die: {events:?}"
+        );
+        assert!(phase.clinch().is_none());
     }
 
     #[test]

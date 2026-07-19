@@ -12,6 +12,7 @@ pub mod grab_contact;
 pub mod grab_state;
 #[allow(clippy::module_inception)]
 pub mod intent;
+pub mod matrix;
 pub mod plan_phase;
 
 pub use clinch::{ClinchIntent, ClinchResolution, ClinchState};
@@ -23,6 +24,7 @@ pub use grab_state::{
 pub use intent::{
     Hitbox, Intent, MoveDirection, MoveParameters, State, StrikeVariant, TargetEligibility,
 };
+pub use matrix::{CellOutcome, MATRIX_ACTIONS, classify_cell};
 pub use plan_phase::{
     ActionabilityReason, CANCEL_PENALTY_FRAMES, InterruptOfferReason, PlanError, PlanEvent,
     PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RepromptOption,
