@@ -117,7 +117,7 @@ F-015 Clinch position states (over/under/back-control) with option gating — H,
 F-016 Throw/throw-tech deterministic resolution — H,G — W2 — DONE (fbd111a controller-relative tech/whiff/launch rules)
 F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2 — DONE (834604d downed + getup gate; throw exits clinch)
 F-018 Disarm/armed state machine gating strikes vs unarmed options — H,G — W2 — DONE (2685887 parry-deflect disarm + re-arm gate)
-F-019 Weapon draw/sheath as intents with vulnerability windows — H,G — W2
+F-019 Weapon draw/sheath as intents with vulnerability windows — H,G — W2 — DONE (47c9978 Draw/Sheath intents + sheathed state + 225-cell matrix)
 F-020 Range bands (out/jab/mid/clinch) with intent feasibility gating — H — W1 — DONE (06b220c explicit Close/Mid/Far bands + snapshot/HUD; feasibility gating exists via is_feasible)
 
 ### C.2 Generative motion and combat fidelity (F-021..F-040)
