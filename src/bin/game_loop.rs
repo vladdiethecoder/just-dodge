@@ -13,6 +13,7 @@ use std::{
 use glam::{Mat4, Quat, Vec3, Vec3Swizzles, vec3};
 use just_dodge::{
     asset::{self, SkeletalAnimation, SkinnedMeshData},
+    hud,
     intent::{
         ForecastOutcome, Intent, MoveDirection, PlanPhase, PlanSnapshot, PlanStatus, StrikeVariant,
         forecast, predicted_outcome,
@@ -299,6 +300,7 @@ struct GameLoopApp {
     show_skeleton: bool,
     show_dev: bool,
     show_ghosts: bool,
+    show_hud: bool,
     whatif_index: usize,
     first_frame_presented: bool,
 }
@@ -323,6 +325,7 @@ impl GameLoopApp {
             show_skeleton: true,
             show_dev: false,
             show_ghosts: true,
+            show_hud: true,
             whatif_index: 0,
             first_frame_presented: false,
         }
@@ -410,6 +413,7 @@ impl GameLoopApp {
             PhysicalKey::Code(KeyCode::KeyB) => self.show_skeleton = !self.show_skeleton,
             PhysicalKey::Code(KeyCode::F3) => self.show_dev = !self.show_dev,
             PhysicalKey::Code(KeyCode::Tab) => self.show_ghosts = !self.show_ghosts,
+            PhysicalKey::Code(KeyCode::KeyH) => self.show_hud = !self.show_hud,
             PhysicalKey::Code(KeyCode::KeyN) => {
                 self.whatif_index = self.whatif_index.saturating_add(1);
             }
@@ -601,6 +605,27 @@ impl GameLoopApp {
             Vec::new()
         };
         renderer.update_hitbox_debug(device, &obb_lines);
+        // F-110/F-112 stroke-font HUD (design receipt canvas-c602d5588727 r4).
+        let hud_segments = if self.show_hud {
+            let availability: Vec<bool> = hud::SELECTABLE
+                .iter()
+                .map(|intent| self.phase.intent_available(Side::Player, *intent))
+                .collect();
+            let opp_availability: Vec<bool> = hud::SELECTABLE
+                .iter()
+                .map(|intent| self.phase.intent_available(Side::Opponent, *intent))
+                .collect();
+            hud::build_hud(
+                &snapshot,
+                forecast_outcome.as_ref(),
+                &availability,
+                &opp_availability,
+                aspect,
+            )
+        } else {
+            Vec::new()
+        };
+        renderer.update_hud_segments(device, &hud_segments);
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("M2 game loop encoder"),
         });
@@ -643,6 +668,7 @@ impl GameLoopApp {
             if self.show_dev {
                 renderer.render_hitbox_debug(&mut rpass);
             }
+            renderer.render_hud_overlay(queue, &mut rpass);
         }
         queue.submit(std::iter::once(encoder.finish()));
         queue.present(surface_texture);
@@ -1031,6 +1057,32 @@ fn run_shot(ticks: u64, out_dir: &str) {
     let opponent_skin = presentation.skin_for(snapshot.locked[1], snapshot.truth_frame);
     let aspect = w as f32 / h as f32;
 
+    // F-111/F-112: forecast + HUD for the frozen boundary capture.
+    let shot_forecast = forecast(
+        &phase,
+        Intent::Strike {
+            variant: StrikeVariant::Slash,
+        },
+        scripted_opponent(player_phase),
+    )
+    .ok()
+    .flatten();
+    let availability: Vec<bool> = hud::SELECTABLE
+        .iter()
+        .map(|intent| phase.intent_available(Side::Player, *intent))
+        .collect();
+    let opp_availability: Vec<bool> = hud::SELECTABLE
+        .iter()
+        .map(|intent| phase.intent_available(Side::Opponent, *intent))
+        .collect();
+    let hud_segments = hud::build_hud(
+        &snapshot,
+        shot_forecast.as_ref(),
+        &availability,
+        &opp_availability,
+        aspect,
+    );
+
     for (name, mode, render_index) in [
         ("observer", CameraMode::Observer, 0_usize),
         ("first_person", CameraMode::FirstPerson, 1_usize),
@@ -1057,18 +1109,11 @@ fn run_shot(ticks: u64, out_dir: &str) {
             [1.0, 0.35, 0.45],
         ));
         // F-111 ghosts in shot captures when the loop froze at a boundary.
-        if phase.status() == PlanStatus::Planning
-            && let Ok(Some(outcome)) = forecast(
-                &phase,
-                Intent::Strike {
-                    variant: StrikeVariant::Slash,
-                },
-                scripted_opponent(player_phase),
-            )
-        {
-            marker_segments.extend(ghost_segments(&presentation.mesh, &presentation, &outcome));
+        if let Some(outcome) = &shot_forecast {
+            marker_segments.extend(ghost_segments(&presentation.mesh, &presentation, outcome));
         }
         renderer.update_debug_segments(&device, &marker_segments);
+        renderer.update_hud_segments(&device, &hud_segments);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("shot encoder"),
@@ -1105,6 +1150,7 @@ fn run_shot(ticks: u64, out_dir: &str) {
             renderer.render(&mut rpass);
             renderer.render_skinned_from(&mut rpass, render_index);
             renderer.render_debug_overlay(&mut rpass);
+            renderer.render_hud_overlay(&queue, &mut rpass);
         }
         queue.submit(std::iter::once(encoder.finish()));
 

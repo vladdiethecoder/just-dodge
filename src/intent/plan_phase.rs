@@ -963,6 +963,25 @@ impl PlanPhase {
         }
     }
 
+    /// Full state-conditioned availability for HUD display (F-112): clinch
+    /// exclusivity, feint charges, whiff-cancel follow-up gate, grab range.
+    pub fn intent_available(&self, side: Side, intent: Intent) -> bool {
+        let index = side_index(side);
+        if self.clinch.is_some() {
+            return matches!(intent, Intent::Clinch { .. });
+        }
+        if matches!(intent, Intent::Clinch { .. }) {
+            return false;
+        }
+        if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
+            return false;
+        }
+        if self.whiff_cancel_followup[index] && !matches!(intent, Intent::Strike { .. }) {
+            return false;
+        }
+        self.is_feasible(side, intent, intent.state().anim_length)
+    }
+
     fn is_feasible(&self, side: Side, intent: Intent, available_frames: u16) -> bool {
         match intent {
             Intent::Grab => {

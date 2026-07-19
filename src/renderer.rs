@@ -143,6 +143,9 @@ pub struct Renderer {
     debug_line_count: u32,
     hitbox_vb: Option<wgpu::Buffer>,
     hitbox_line_count: u32,
+    hud_pipeline: wgpu::RenderPipeline,
+    hud_vb: Option<wgpu::Buffer>,
+    hud_line_count: u32,
     /// Parent index (-1 = root) for the active skinned carrier hierarchy.
     pub bone_parents: Vec<i32>,
 }
@@ -753,7 +756,7 @@ impl Renderer {
             vertex: wgpu::VertexState {
                 module: &debug_shader,
                 entry_point: Some("vs_main"),
-                buffers: &[Some(debug_vl)],
+                buffers: &[Some(debug_vl.clone())],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -795,6 +798,46 @@ impl Renderer {
                 binding: 0,
                 resource: debug_ub.as_entire_binding(),
             }],
+        });
+
+        // --- HUD line pipeline (screen-space NDC, depth-always, identity MVP).
+        // Same debug shader + uniform layout; depth_compare Always so HUD
+        // strokes draw over the world at any range.
+        let hud_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("HUD Pipeline"),
+            cache: None,
+            layout: Some(&debug_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &debug_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Some(debug_vl.clone())],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &debug_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                front_face: wgpu::FrontFace::Ccw,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::Always),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
         });
 
         // --- Depth texture ---
@@ -1136,6 +1179,9 @@ impl Renderer {
             debug_line_count: 0,
             hitbox_vb: None,
             hitbox_line_count: 0,
+            hud_pipeline,
+            hud_vb: None,
+            hud_line_count: 0,
             bone_parents,
         }
     }
@@ -1208,6 +1254,43 @@ impl Renderer {
         rpass.set_bind_group(0, &self.debug_ubg, &[]);
         rpass.set_vertex_buffer(0, vb.slice(..));
         rpass.draw(0..self.debug_line_count, 0..1);
+    }
+
+    /// Upload screen-space (NDC) HUD line segments (stroke-font HUD).
+    pub fn update_hud_segments(
+        &mut self,
+        device: &wgpu::Device,
+        segments: &[(Vec3, Vec3, [f32; 3])],
+    ) {
+        let vertices = debug_segment_vertices(segments);
+        self.hud_line_count = (vertices.len() / 6) as u32;
+        if vertices.is_empty() {
+            self.hud_vb = None;
+            return;
+        }
+        self.hud_vb = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("HUD VB"),
+                contents: bytemuck::cast_slice(&vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            }),
+        );
+    }
+
+    /// Draw the HUD after all world passes: uploads the identity MVP (NDC
+    /// passthrough) and draws with the depth-always HUD pipeline. Call LAST in
+    /// the render pass; the next frame re-uploads proj_view before the world
+    /// debug overlay.
+    pub fn render_hud_overlay<'a>(&'a self, queue: &wgpu::Queue, rpass: &mut wgpu::RenderPass<'a>) {
+        let Some(ref vb) = self.hud_vb else { return };
+        if self.hud_line_count == 0 {
+            return;
+        }
+        self.upload_debug_mvp(queue, &Mat4::IDENTITY);
+        rpass.set_pipeline(&self.hud_pipeline);
+        rpass.set_bind_group(0, &self.debug_ubg, &[]);
+        rpass.set_vertex_buffer(0, vb.slice(..));
+        rpass.draw(0..self.hud_line_count, 0..1);
     }
 
     /// Upload hitbox debug line vertices.

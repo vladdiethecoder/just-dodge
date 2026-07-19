@@ -16,6 +16,7 @@ pub mod golden_replay;
 pub mod hero_strike;
 pub mod hinge_projection;
 pub mod hitbox;
+pub mod hud;
 pub mod injury;
 pub mod intent;
 pub mod m3_cleanbox;
