@@ -28,6 +28,8 @@ jobs:
       - run: python3 tools/qa/test_forgelens_review_run_schema.py
       - name: Build the allowlisted replay verifier (reproducible flags)
         run: RUSTFLAGS="--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME/.cargo=/.cargo --remap-path-prefix=$RUSTUP_HOME=/.rustup" cargo build --release --locked --bin m3_match
+      - name: Record the CI-built verifier hash (pinned into the contract after observation)
+        run: sha256sum target/release/m3_match
       - run: python3 tools/qa/verify_forgelens_phase_a.py
       - run: python3 tools/qa/validate_pvp005_w0_grip_camera.py
       - run: python3 tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
