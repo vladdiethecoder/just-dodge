@@ -118,7 +118,7 @@ F-016 Throw/throw-tech deterministic resolution — H,G — W2
 F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2
 F-018 Disarm/armed state machine gating strikes vs unarmed options — H,G — W2
 F-019 Weapon draw/sheath as intents with vulnerability windows — H,G — W2
-F-020 Range bands (out/jab/mid/clinch) with intent feasibility gating — H — W1
+F-020 Range bands (out/jab/mid/clinch) with intent feasibility gating — H — W1 — DONE (06b220c explicit Close/Mid/Far bands + snapshot/HUD; feasibility gating exists via is_feasible)
 
 ### C.2 Generative motion and combat fidelity (F-021..F-040)
 F-021 Runtime generative provider (feature-gated dev lane) on MotionBricks — H,P — W3
