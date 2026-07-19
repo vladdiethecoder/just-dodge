@@ -367,6 +367,8 @@ fn intent_label(intent: Intent) -> String {
         Intent::Feint => "FEINT".into(),
         Intent::Cancel => "CANCEL".into(),
         Intent::Idle => "IDLE".into(),
+        Intent::Draw => "DRAW".into(),
+        Intent::Sheath => "SHEATH".into(),
         Intent::Clinch { sub } => format!("CLINCH {sub:?}").to_uppercase(),
     }
 }
@@ -387,6 +389,8 @@ pub const SELECTABLE: &[Intent] = &[
     Intent::Feint,
     Intent::Cancel,
     Intent::Idle,
+    Intent::Draw,
+    Intent::Sheath,
 ];
 
 const CLINCH_ROWS: &[ClinchIntent] = &[

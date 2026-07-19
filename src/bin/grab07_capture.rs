@@ -218,7 +218,11 @@ fn placeholder_skin(mesh: &SkinnedMeshData, intent: Intent) -> Vec<Mat4> {
         }
         Intent::Feint => rotate_local(&mut local, right, Quat::from_rotation_x(-0.42)),
         Intent::Cancel => rotate_local(&mut local, spine, Quat::from_rotation_y(-0.18)),
-        Intent::Idle | Intent::Move { .. } | Intent::Dodge { .. } => {}
+        Intent::Idle
+        | Intent::Move { .. }
+        | Intent::Dodge { .. }
+        | Intent::Draw
+        | Intent::Sheath => {}
     }
     asset::reference_pose_skin_matrices(mesh, &local).expect("placeholder pose must skin")
 }
@@ -265,6 +269,8 @@ fn action_for(intent: Option<Intent>) -> Action {
         | Intent::Feint
         | Intent::Cancel
         | Intent::Idle
+        | Intent::Draw
+        | Intent::Sheath
         | Intent::Clinch { .. } => Action::Block,
         Intent::Dodge { .. } => Action::Dodge,
         Intent::Grab => Action::Grab,

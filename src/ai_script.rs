@@ -22,6 +22,8 @@ pub const fn intent_name(intent: Intent) -> &'static str {
         Intent::Feint => "Feint",
         Intent::Cancel => "Cancel",
         Intent::Idle => "Idle",
+        Intent::Draw => "Draw",
+        Intent::Sheath => "Sheath",
         Intent::Clinch {
             sub: ClinchIntent::Hold,
         } => "Clinch(Hold)",

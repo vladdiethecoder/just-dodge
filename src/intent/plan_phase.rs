@@ -141,6 +141,8 @@ pub fn tempo_cost(intent: Intent, stance: Stance) -> u16 {
         Intent::Feint => 6,
         Intent::Cancel | Intent::Idle => 0,
         Intent::Clinch { .. } => 4,
+        Intent::Draw => 4,
+        Intent::Sheath => 0,
     };
     let modifier: i16 = match (stance, intent) {
         (Stance::High, Intent::Strike { .. }) => -2,
@@ -203,6 +205,10 @@ pub enum RepromptReason {
     GroundedGetup,
     /// F-018: a disarmed side picked a weapon option (Strike).
     Disarmed,
+    /// F-019: Draw submitted while already armed.
+    AlreadyArmed,
+    /// F-019: Sheath submitted while already sheathed.
+    AlreadySheathed,
     /// Feint submitted with no free-cancel charges remaining.
     NoFeintCharges,
     /// After a whiff cancel the follow-up must be an attack.
@@ -368,6 +374,8 @@ pub struct PlanSnapshot {
     pub downed: [bool; 2],
     /// F-018 disarm flags (parry deflect; no Strike until next selection).
     pub disarmed: [bool; 2],
+    /// F-019 voluntary sheath flags (persistent until Draw completes).
+    pub sheathed: [bool; 2],
     /// Tempo meter per side (0..=100, F-004): a cost resource that gates
     /// selection (PRD_STANCE_TEMPO) — actions cost tempo at lock, regen per
     /// exchange, bonuses for hits/blocks/parries, losses on hits/whiffs.
@@ -466,6 +474,9 @@ pub struct PlanPhase {
     /// F-018 disarm: a parried attacker loses its weapon — no Strike until
     /// its next submitted selection.
     disarmed: [bool; 2],
+    /// F-019 voluntary sheath state: persistent until a Draw window
+    /// completes; doubles tempo regen but removes Strike.
+    sheathed: [bool; 2],
     tempo: [u16; 2],
     stances: [Stance; 2],
     pending_events: Vec<PlanEvent>,
@@ -511,6 +522,7 @@ impl PlanPhase {
             whiffed: [false; 2],
             downed: [false; 2],
             disarmed: [false; 2],
+            sheathed: [false; 2],
             whiff_cancel_followup: [false; 2],
             tempo: [TEMPO_START; 2],
             stances: [Stance::Neutral; 2],
@@ -582,6 +594,7 @@ impl PlanPhase {
             whiffed: self.whiffed,
             downed: self.downed,
             disarmed: self.disarmed,
+            sheathed: self.sheathed,
             tempo: self.tempo,
             stances: self.stances,
             range_band: RangeBand::of(planar_distance_upper_bound(self.roots[0], self.roots[1])),
@@ -672,11 +685,28 @@ impl PlanPhase {
                 options: REPROMPT_OPTIONS,
             }]);
         }
-        // F-018: a disarmed side cannot pick weapon options.
-        if self.disarmed[index] && matches!(intent, Intent::Strike { .. }) {
+        // F-018/F-019: a disarmed or sheathed side cannot pick weapon
+        // options.
+        if (self.disarmed[index] || self.sheathed[index]) && matches!(intent, Intent::Strike { .. })
+        {
             return Ok(vec![PlanEvent::Reprompt {
                 side,
                 reason: RepromptReason::Disarmed,
+                options: REPROMPT_OPTIONS,
+            }]);
+        }
+        // F-019: Draw requires sheathed; Sheath requires armed.
+        if matches!(intent, Intent::Draw) && !self.sheathed[index] {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::AlreadyArmed,
+                options: REPROMPT_OPTIONS,
+            }]);
+        }
+        if matches!(intent, Intent::Sheath) && self.sheathed[index] {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::AlreadySheathed,
                 options: REPROMPT_OPTIONS,
             }]);
         }
@@ -1017,10 +1047,11 @@ impl PlanPhase {
         // fighter therefore cannot select an intent and continues its state.
         self.locked = self.active.map(|action| action.map(|action| action.intent));
         // Exchange regen (PRD_STANCE_TEMPO §4.3-4.4): base regen per
-        // boundary, bonus for a Retreat disengage.
+        // boundary, bonus for a Retreat disengage; F-019: sheathed fighters
+        // regen double (the sheath is the recovery trade for losing Strike).
         for side in [Side::Player, Side::Opponent] {
             let index = side_index(side);
-            let regen = if matches!(
+            let mut regen = if matches!(
                 intents[index],
                 Intent::Move {
                     dir: MoveDirection::Retreat,
@@ -1031,7 +1062,17 @@ impl PlanPhase {
             } else {
                 TEMPO_REGEN_PER_EXCHANGE
             };
+            if self.sheathed[index] {
+                regen = regen.saturating_mul(2);
+            }
             self.tempo[index] = (self.tempo[index] + regen).min(TEMPO_MAX);
+            // F-019: the sheathed/armed transition lands at the END of the
+            // Draw/Sheath window (the window itself is the vulnerability).
+            match intents[index] {
+                Intent::Sheath => self.sheathed[index] = true,
+                Intent::Draw => self.sheathed[index] = false,
+                _ => {}
+            }
         }
         events
     }
@@ -1388,8 +1429,17 @@ impl PlanPhase {
         if self.downed[index] && !is_getup_option(intent) {
             return false;
         }
-        // F-018: disarmed sides cannot pick weapon options.
-        if self.disarmed[index] && matches!(intent, Intent::Strike { .. }) {
+        // F-018/F-019: disarmed or sheathed sides cannot pick weapon
+        // options.
+        if (self.disarmed[index] || self.sheathed[index]) && matches!(intent, Intent::Strike { .. })
+        {
+            return false;
+        }
+        // F-019: Draw requires sheathed; Sheath requires armed.
+        if matches!(intent, Intent::Draw) && !self.sheathed[index] {
+            return false;
+        }
+        if matches!(intent, Intent::Sheath) && self.sheathed[index] {
             return false;
         }
         if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
@@ -1458,6 +1508,8 @@ fn action_for(intent: Intent) -> Action {
         | Intent::Feint
         | Intent::Cancel
         | Intent::Idle
+        | Intent::Draw
+        | Intent::Sheath
         | Intent::Clinch { .. } => Action::Block,
     }
 }
@@ -2239,6 +2291,67 @@ mod tests {
                 .any(|e| matches!(e, PlanEvent::Reprompt { .. })),
             "controller Throw must be legal: {events:?}"
         );
+    }
+
+    #[test]
+    fn sheath_gates_strike_and_draw_rearms() {
+        // F-019: Draw gated while armed; Sheath removes Strike and doubles
+        // regen; a Draw window re-arms.
+        let [player, opponent] = symmetric(1_500);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        // Draw while armed → reprompted.
+        let reprompt = phase.submit_intent(Side::Player, Intent::Draw).unwrap();
+        assert!(reprompt.iter().any(|e| matches!(
+            e,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::AlreadyArmed,
+                ..
+            }
+        )));
+        // Sheath locks; the sheathed state lands at the window's end.
+        let _ = phase.submit_intent(Side::Opponent, Intent::Idle);
+        let _ = phase.submit_intent(Side::Player, Intent::Sheath);
+        let _ = phase.simulate_to_boundary();
+        assert!(
+            phase.snapshot().sheathed[side_index(Side::Player)],
+            "a completed Sheath window must sheathe"
+        );
+        assert!(
+            !phase.intent_available(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash
+                }
+            ),
+            "sheathed: no Strike"
+        );
+        // Regen doubles while sheathed: two idle boundaries → +4 vs +2.
+        let before = phase.snapshot().tempo[side_index(Side::Player)];
+        relock_available(&mut phase, Intent::Idle, Intent::Idle);
+        let _ = phase.simulate_to_boundary();
+        let after = phase.snapshot().tempo[side_index(Side::Player)];
+        assert_eq!(
+            after - before,
+            TEMPO_REGEN_PER_EXCHANGE * 2,
+            "sheathed regen must double"
+        );
+        // Draw re-arms at the end of its window; Strike returns.
+        advance_until_submittable(&mut phase, Side::Player);
+        let _ = phase.submit_intent(Side::Player, Intent::Draw);
+        advance_until_submittable(&mut phase, Side::Opponent);
+        let _ = phase.submit_intent(Side::Opponent, Intent::Idle);
+        let _ = phase.simulate_to_boundary();
+        assert!(
+            !phase.snapshot().sheathed[side_index(Side::Player)],
+            "a completed Draw window must re-arm"
+        );
+        advance_until_submittable(&mut phase, Side::Player);
+        assert!(phase.intent_available(
+            Side::Player,
+            Intent::Strike {
+                variant: StrikeVariant::Slash
+            }
+        ));
     }
 
     #[test]

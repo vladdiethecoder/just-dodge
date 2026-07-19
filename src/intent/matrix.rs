@@ -15,7 +15,7 @@ use crate::truth::Side;
 
 /// The 13 canonical non-clinch action identities (clinch lanes are owned by
 /// the S-08 grab/clinch tests and are not matrix cells).
-pub const MATRIX_ACTIONS: [Intent; 13] = [
+pub const MATRIX_ACTIONS: [Intent; 15] = [
     Intent::Strike {
         variant: crate::intent::intent::StrikeVariant::Slash,
     },
@@ -35,6 +35,8 @@ pub const MATRIX_ACTIONS: [Intent; 13] = [
     Intent::Feint,
     Intent::Cancel,
     Intent::Idle,
+    Intent::Draw,
+    Intent::Sheath,
 ];
 
 /// One matrix cell's exchange outcome.
@@ -136,24 +138,29 @@ pub fn classify_cell(a: Intent, b: Intent) -> CellOutcome {
     }
 }
 
-/// Canonical measured matrix (2026-07-19, truth rev with stance/tempo W2):
+/// Canonical measured matrix (2026-07-19, truth rev with F-019 draw/sheath):
 /// rows = A (player), cols = B (opponent), order = MATRIX_ACTIONS.
-/// a=AWin b=BWin c=Clash k=Blocked w=Whiff m=Movement
+/// a=AWin b=BWin c=Clash k=Blocked w=Whiff m=Movement n=NotApplicable
+/// (Draw-as-A/B cells measure n: Draw is gated to the sheathed state, which
+/// the fresh-exchange classifier never enters — the gate itself is the
+/// measured outcome.)
 #[cfg(test)]
-const CANONICAL: [&str; 13] = [
-    "cckamammmmaaa",
-    "cckamaammmaaa",
-    "kkwbmmmmmmwww",
-    "abaamaammmaaa",
-    "bmmmmmmmmmmmm",
-    "bbmbmmmmmmmmm",
-    "mbmbmmmmmmmmm",
-    "mmmmmmmmmmmmm",
-    "mmmmmmmmmmmmm",
-    "mmmmmmmmmmmmm",
-    "bbwbmmmmmmwww",
-    "bbwbmmmmmmwww",
-    "bbwbmmmmmmwww",
+const CANONICAL: [&str; 15] = [
+    "cckamammmmaaana",
+    "cckamaammmaaana",
+    "kkwbmmmmmmwwwnw",
+    "abaamaammmaaanm",
+    "bmmmmmmmmmmmmnm",
+    "bbmbmmmmmmmmmnm",
+    "mbmbmmmmmmmmmnm",
+    "mmmmmmmmmmmmmnm",
+    "mmmmmmmmmmmmmnm",
+    "mmmmmmmmmmmmmnm",
+    "bbwbmmmmmmwwwnw",
+    "bbwbmmmmmmwwwnw",
+    "bbwbmmmmmmwwwnw",
+    "nnnnnnnnnnnnnnn",
+    "bbwmmmmmmmwwwnw",
 ];
 
 #[cfg(test)]
@@ -186,11 +193,11 @@ mod tests {
         }
     }
 
-    /// F-001 per-cell golden: every one of the 169 cells must classify to the
+    /// F-001 per-cell golden: every one of the 225 cells must classify to the
     /// canonical measured outcome, deterministically (classified twice).
     #[test]
     fn matrix_cells_match_canonical() {
-        assert!(CANONICAL.iter().all(|row| row.len() == 13));
+        assert!(CANONICAL.iter().all(|row| row.len() == 15));
         for (i, a) in MATRIX_ACTIONS.iter().enumerate() {
             for (j, b) in MATRIX_ACTIONS.iter().enumerate() {
                 let expected = decode(CANONICAL[i].as_bytes()[j]);

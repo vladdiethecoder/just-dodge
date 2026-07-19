@@ -55,7 +55,12 @@ impl CoreMotionIntent {
             Intent::Grab => Self::Grab,
             Intent::Move { .. } => Self::Move,
             Intent::Dodge { .. } => Self::Dodge,
-            Intent::Idle | Intent::Feint | Intent::Cancel | Intent::Clinch { .. } => Self::Idle,
+            Intent::Idle
+            | Intent::Feint
+            | Intent::Cancel
+            | Intent::Draw
+            | Intent::Sheath
+            | Intent::Clinch { .. } => Self::Idle,
         }
     }
 

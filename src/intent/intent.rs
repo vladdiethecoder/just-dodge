@@ -138,6 +138,12 @@ pub enum Intent {
     Clinch {
         sub: super::clinch::ClinchIntent,
     },
+    /// F-019: voluntarily draw the weapon — re-arms at the end of the
+    /// window; the draw window is unarmed and counter-hit vulnerable.
+    Draw,
+    /// F-019: voluntarily sheath the weapon — loses Strike until Draw, but
+    /// accelerates tempo regen while sheathed.
+    Sheath,
 }
 
 impl Intent {
@@ -273,6 +279,26 @@ impl Intent {
                 iasa_on_hit_on_block: false,
                 interruptible_on_opponent_turn: false,
                 cancel_categories: NO_CANCELS,
+                feint_cancel_categories: NO_CANCELS,
+            },
+            Self::Draw => State {
+                anim_length: 16,
+                iasa_at: 15,
+                interrupt_frames: NO_INTERRUPTS,
+                iasa_on_hit: None,
+                iasa_on_hit_on_block: false,
+                interruptible_on_opponent_turn: false,
+                cancel_categories: GROUND_CANCELS,
+                feint_cancel_categories: NO_CANCELS,
+            },
+            Self::Sheath => State {
+                anim_length: 12,
+                iasa_at: 10,
+                interrupt_frames: NO_INTERRUPTS,
+                iasa_on_hit: None,
+                iasa_on_hit_on_block: false,
+                interruptible_on_opponent_turn: false,
+                cancel_categories: GROUND_CANCELS,
                 feint_cancel_categories: NO_CANCELS,
             },
         }
