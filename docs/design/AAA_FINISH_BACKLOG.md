@@ -53,7 +53,7 @@ S-04 13-action set (Strike, Block, Grab, Move, Thrust, Slash,
 S-05 Deterministic truth + truth hash + replay                    — IMPLEMENTED
 S-06 Golden-replay determinism gate (100-run)                     — IMPLEMENTED (7 scenarios)
 S-07 Injury truth (atlas, capability gating, incapacitation)      — IMPLEMENTED (core), atlas population pending
-S-08 Grab → clinch sub-exchange with frame data                   — PARTIAL (grab state machine + clinch module exist)
+S-08 Grab → clinch sub-exchange with frame data                   — IMPLEMENTED (W1 lane: SecureGrab→Clinch wired live, commit bface6f; clinch sub-menu UI pending)
 S-09 Debug mannequin + skeleton overlay + FP/observer camera      — IMPLEMENTED
 S-10 Flat-arena game_loop profile + headless --shot harness       — IMPLEMENTED
 S-11 Async motion plan service (non-blocking truth)               — IMPLEMENTED (async service; ship lane = live generative provider, W3; baked clips forbidden)
