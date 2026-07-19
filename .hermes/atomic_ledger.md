@@ -8,6 +8,11 @@
 **Unresolved Risks:**
 - The requested concat architecture genuinely improves the median ablation signal, but does not meet the strict 15 mm median reach gate. It remains runtime-inadmissible.
 
+**Status Reconciliation (required by tools/verify_pvp005_revision_baseline.py):**
+- Published feature baseline: `4e481ccd59602c1cb4eda97183c32dec48f9a801`
+- Published branch: `pvp-005-readable-live-motion`
+- This ledger tracks work on `grab07-650mm-closure`, which descends from that published baseline history.
+
 ---
 
 ## Active Unit

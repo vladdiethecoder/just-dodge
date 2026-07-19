@@ -11,7 +11,6 @@ from types import SimpleNamespace
 from typing import Any, Optional
 
 import numpy as np
-import pyron
 import torch
 
 from .interaction_forward import apply_fk_targets, parse_authorized_request
@@ -359,26 +358,89 @@ def _load_primitives() -> list[dict]:
 
     Each dict contains the keys: action, weapon, stance, source_id,
     feature_window, root_target.
+
+    The `pyron` package is Python-2-only (imports ConfigParser) and is not
+    installable on this Python 3.12/3.14 environment. This RON subset is flat
+    and regular, so we parse it with a minimal stdlib parser instead of adding
+    a new dependency. The structure per primitive is fixed:
+        (action: X, weapon: Y, stance: Z, source_id: "...", feature_window: [[...]],
+         root_target: (position: [..], heading: h),)
     """
     if not os.path.exists(PRIMITIVES_RON):
         raise FileNotFoundError(f"Primitive library not found: {PRIMITIVES_RON}")
     with open(PRIMITIVES_RON, "r", encoding="utf-8") as f:
         text = f.read()
+    return _parse_primitives_ron(text)
 
-    data = pyron.loads(text, preserve_class_names=True)
-    primitives = data.get("primitives", [])
 
-    def _normalize(value: Any) -> Any:
-        """Convert pyron unit-enum markers to plain strings recursively."""
-        if isinstance(value, dict):
-            if len(value) == 1 and "!__name__" in value:
-                return value["!__name__"]
-            return {k: _normalize(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [_normalize(v) for v in value]
-        return value
+def _parse_primitives_ron(text: str) -> list[dict]:
+    """Minimal stdlib parser for the flat primitives.ron subset (no pyron)."""
+    import re
 
-    return [_normalize(p) for p in primitives]
+    def parse_ident(body: str, key: str) -> str:
+        m = re.search(rf"\b{key}:\s*([A-Za-z0-9_]+)", body)
+        return m.group(1) if m else ""
+
+    def parse_str(body: str, key: str) -> str:
+        m = re.search(rf'\b{key}:\s*"([^"]*)"', body)
+        return m.group(1) if m else ""
+
+    def parse_numbers(blob: str) -> list[float]:
+        return [float(x) for x in re.findall(r"-?\d+\.?\d*(?:[eE][-+]?\d+)?", blob)]
+
+    def extract_block(src: str, start: int, open_ch: str, close_ch: str) -> tuple[str, int]:
+        depth = 0
+        i = start
+        while i < len(src):
+            c = src[i]
+            if c == open_ch:
+                depth += 1
+            elif c == close_ch:
+                depth -= 1
+                if depth == 0:
+                    return src[start + 1 : i], i + 1
+            i += 1
+        return src[start + 1 :], len(src)
+
+    # Split top-level primitives list into per-primitive (...) blocks.
+    prim_section = text.split("primitives:", 1)[1]
+    list_body, _ = extract_block(prim_section, prim_section.index("["), "[", "]")
+    primitives: list[dict] = []
+    i = 0
+    while i < len(list_body):
+        if list_body[i] != "(":
+            i += 1
+            continue
+        body, i = extract_block(list_body, i, "(", ")")
+        # feature_window block
+        fw = ""
+        fw_m = re.search(r"feature_window:\s*", body)
+        if fw_m:
+            fw_start = body.index("[", fw_m.end())
+            fw, _ = extract_block(body, fw_start, "[", "]")
+        # root_target block
+        rt: dict = {}
+        rt_m = re.search(r"root_target:\s*", body)
+        if rt_m:
+            rt_start = body.index("(", rt_m.end())
+            rt_body, _ = extract_block(body, rt_start, "(", ")")
+            pos_m = re.search(r"position:\s*\[([^\]]*)\]", rt_body)
+            head_m = re.search(r"heading:\s*(-?\d+\.?\d*(?:[eE][-+]?\d+)?)", rt_body)
+            rt = {
+                "position": parse_numbers(pos_m.group(1)) if pos_m else [],
+                "heading": float(head_m.group(1)) if head_m else 0.0,
+            }
+        primitives.append(
+            {
+                "action": parse_ident(body, "action"),
+                "weapon": parse_ident(body, "weapon"),
+                "stance": parse_ident(body, "stance"),
+                "source_id": parse_str(body, "source_id"),
+                "feature_window": [parse_numbers(fw)] if fw else [],
+                "root_target": rt,
+            }
+        )
+    return primitives
 
 
 def _load_primitive(action: str, weapon: str, stance: str) -> np.ndarray:
