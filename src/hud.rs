@@ -446,6 +446,19 @@ pub fn build_hud(
         .collect();
     text_lines(&mut out, &format!("FEINT {pips}"), x, y, ch, aspect, AMBER);
     y += line;
+    text_lines(&mut out, "TEMPO", x, y, ch, aspect, DIM);
+    y += line;
+    bar_lines(
+        &mut out,
+        x,
+        y,
+        0.30,
+        0.016,
+        f32::from(snapshot.tempo[0]) / 100.0,
+        GREEN,
+        DIM,
+    );
+    y += line;
     if snapshot.whiffed[0] {
         text_lines(
             &mut out,

@@ -62,6 +62,25 @@ pub const BURST_REGEN_PERIOD_TICKS: u64 = 30;
 pub const FEINT_MAX_CHARGES: u8 = 2;
 /// Truth ticks per +1 feint-charge recharge (2 s at 60 Hz).
 pub const FEINT_RECHARGE_PERIOD_TICKS: u64 = 120;
+/// A block contact at or before this block-action tick is a perfect block /
+/// parry (F-008/F-009).
+pub const PERFECT_BLOCK_TICKS: u16 = 3;
+/// Attacker recovery penalty from a parry deflect.
+pub const PARRY_STAGGER_FRAMES: u16 = 6;
+/// Burst reward for a perfect block.
+pub const PERFECT_BLOCK_BURST_GAIN: u16 = 12;
+/// Tempo meter ceiling.
+pub const TEMPO_MAX: u16 = 100;
+/// Tempo gain for a perfect block.
+pub const PERFECT_BLOCK_TEMPO_GAIN: u16 = 4;
+/// Tempo gain for landing an unblocked hit.
+pub const HIT_TEMPO_GAIN: u16 = 2;
+/// Tempo loss for taking an unblocked hit.
+pub const HIT_TAKEN_TEMPO_LOSS: u16 = 2;
+/// Tempo gain for a normal block contact.
+pub const BLOCK_TEMPO_GAIN: u16 = 1;
+/// Tempo loss for a whiffed attack.
+pub const WHIFF_TEMPO_LOSS: u16 = 1;
 
 /// A root coordinate quantized to whole millimetres at every state boundary.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -177,6 +196,21 @@ pub enum PlanEvent {
         side: Side,
         burst_remaining: u16,
     },
+    /// A block contact inside PERFECT_BLOCK_TICKS of the block's start
+    /// (F-008): full negate plus burst/tempo reward.
+    PerfectBlocked {
+        side: Side,
+    },
+    /// The perfect block deflected the attack (F-009): attacker takes the
+    /// stagger recovery and cannot hit-cancel.
+    Parried {
+        side: Side,
+    },
+    /// Contact during the defender's attack startup (F-010); the attacker
+    /// hit-cancels immediately.
+    CounterHit {
+        side: Side,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -230,6 +264,9 @@ pub struct PlanSnapshot {
     pub feint_charges: [u8; 2],
     /// The side's last completed attack whiffed (whiff-cancel window open).
     pub whiffed: [bool; 2],
+    /// Tempo meter per side (0..=100, F-004): gains on hits/blocks/parries,
+    /// losses on hits taken/whiffs. Effect hooks land with the balance pass.
+    pub tempo: [u16; 2],
 }
 
 /// Errors that prevent an external controller from mutating plan state.
@@ -310,6 +347,8 @@ pub struct PlanPhase {
     feint_recharge_ticks: [u64; 2],
     whiffed: [bool; 2],
     whiff_cancel_followup: [bool; 2],
+    tempo: [u16; 2],
+    pending_events: Vec<PlanEvent>,
     duel_world: DuelWorld,
 }
 
@@ -351,6 +390,8 @@ impl PlanPhase {
             feint_recharge_ticks: [0; 2],
             whiffed: [false; 2],
             whiff_cancel_followup: [false; 2],
+            tempo: [0; 2],
+            pending_events: Vec::new(),
             duel_world: DuelWorld::new(),
         }
     }
@@ -416,6 +457,7 @@ impl PlanPhase {
             burst: self.burst,
             feint_charges: self.feint_charges,
             whiffed: self.whiffed,
+            tempo: self.tempo,
         }
     }
 
@@ -517,16 +559,20 @@ impl PlanPhase {
         self.regen_yomi_resources();
         self.truth_frame = self.truth_frame.saturating_add(1);
 
+        let mut events = Vec::new();
+        events.append(&mut self.pending_events);
         let actionability = self.actionability_events();
         self.advance_action_ticks();
         if actionability.iter().any(Option::is_some) {
-            return Ok(self.finish_boundary(intents, actionability));
+            let mut boundary_events = self.finish_boundary(intents, actionability);
+            events.append(&mut boundary_events);
+            return Ok(events);
         }
 
         self.status = PlanStatus::Executing {
             frames_remaining: frames_remaining.saturating_sub(1),
         };
-        Ok(Vec::new())
+        Ok(events)
     }
 
     /// Simulate the locked forecast through its next frozen plan boundary.
@@ -624,6 +670,7 @@ impl PlanPhase {
                     && self.active[index].is_some_and(|action| !action.made_contact)
                 {
                     self.whiffed[index] = true;
+                    self.tempo[index] = self.tempo[index].saturating_sub(WHIFF_TEMPO_LOSS);
                 }
                 match intents[index] {
                     Intent::Feint => events.push(PlanEvent::Feinted { side }),
@@ -906,6 +953,54 @@ impl PlanPhase {
             self.active[defender_index].map(|action| action.intent),
             Some(Intent::Block)
         );
+        if defender_is_blocking {
+            let block_tick = self.active[defender_index].map_or(u16::MAX, |a| a.current_tick);
+            if block_tick <= PERFECT_BLOCK_TICKS {
+                // F-008/F-009 perfect block + parry deflect: full negate,
+                // defender burst/tempo reward, attacker staggered with no
+                // hit-cancel.
+                self.tempo[defender_index] =
+                    (self.tempo[defender_index] + PERFECT_BLOCK_TEMPO_GAIN).min(TEMPO_MAX);
+                self.burst[defender_index] =
+                    (self.burst[defender_index] + PERFECT_BLOCK_BURST_GAIN).min(BURST_MAX);
+                self.recovery_frames[attacker_index] =
+                    self.recovery_frames[attacker_index].saturating_add(PARRY_STAGGER_FRAMES);
+                self.pending_events
+                    .push(PlanEvent::PerfectBlocked { side: defender });
+                self.pending_events
+                    .push(PlanEvent::Parried { side: defender });
+                return;
+            }
+            // Normal block contact: small defender tempo gain.
+            self.tempo[defender_index] =
+                (self.tempo[defender_index] + BLOCK_TEMPO_GAIN).min(TEMPO_MAX);
+        } else {
+            // F-010 counter-hit: contact while the defender's attack is still
+            // in startup (no hitbox active yet) — attacker hit-cancels at once.
+            let counter_hit = self.active[defender_index].is_some_and(|action| {
+                matches!(action.intent, Intent::Strike { .. } | Intent::Grab)
+                    && action.current_tick
+                        < action
+                            .intent
+                            .hitboxes()
+                            .iter()
+                            .map(|hitbox| hitbox.start_tick)
+                            .min()
+                            .unwrap_or(u16::MAX)
+            });
+            if counter_hit {
+                self.pending_events
+                    .push(PlanEvent::CounterHit { side: attacker });
+                if let Some(action) = &mut self.active[attacker_index] {
+                    action.hit_cancel = true;
+                }
+            }
+            // Landed unblocked hit: attacker gains tempo, defender loses it.
+            self.tempo[attacker_index] =
+                (self.tempo[attacker_index] + HIT_TEMPO_GAIN).min(TEMPO_MAX);
+            self.tempo[defender_index] =
+                self.tempo[defender_index].saturating_sub(HIT_TAKEN_TEMPO_LOSS);
+        }
         let attacker_state = attacker_action.intent.state();
         if !defender_is_blocking {
             if let Some(defender_action) = &mut self.active[defender_index] {
@@ -1498,6 +1593,100 @@ mod tests {
             let _ = phase.step_truth_tick();
         }
         assert!(phase.snapshot().feint_charges[0] >= 1);
+    }
+
+    #[test]
+    fn perfect_block_parry_staggers_attacker() {
+        // Thrust (hitbox start 3) vs Block locked at the same boundary: the
+        // first processed contact lands at block tick 3 (PERFECT_BLOCK_TICKS),
+        // so the block is perfect — attacker staggered, defender rewarded.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Block,
+            |event| matches!(event, PlanEvent::Parried { .. }),
+            8,
+        );
+        assert!(
+            events.iter().any(|e| matches!(
+                e,
+                PlanEvent::PerfectBlocked {
+                    side: Side::Opponent
+                }
+            )),
+            "block tick 3 contact must be a perfect block: {events:?}"
+        );
+        assert!(events.iter().any(|e| matches!(
+            e,
+            PlanEvent::Parried {
+                side: Side::Opponent
+            }
+        )));
+        let snap = phase.snapshot();
+        // +4 from the perfect contact, +1 per subsequent normal contact while
+        // the thrust hitbox stays active.
+        assert!(snap.tempo[1] >= PERFECT_BLOCK_TEMPO_GAIN);
+        // Attacker stagger: recovery was extended at the parry tick (decays
+        // per tick afterward, so assert it has not fully elapsed).
+        assert!(snap.recovery_frames[0] > 0);
+    }
+
+    #[test]
+    fn late_block_is_normal_not_perfect() {
+        // Slash (hitbox start 4) vs Block: first contact at block tick 4, past
+        // the perfect window — normal block, no parry events.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            Intent::Block,
+            |event| matches!(event, PlanEvent::Ready { .. }),
+            12,
+        );
+        assert!(
+            !events.iter().any(|e| matches!(
+                e,
+                PlanEvent::PerfectBlocked { .. } | PlanEvent::Parried { .. }
+            )),
+            "block tick 4 contact must not be perfect: {events:?}"
+        );
+        assert!(
+            phase.snapshot().tempo[1] >= BLOCK_TEMPO_GAIN,
+            "normal block contacts grant the defender +1 tempo each"
+        );
+    }
+
+    #[test]
+    fn counter_hit_during_startup_grants_instant_hit_cancel() {
+        // Thrust (start 3) beats Slash (start 4): contact at tick 3 lands
+        // during the slasher's startup — counter-hit, attacker tempo up.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            |event| matches!(event, PlanEvent::CounterHit { .. }),
+            8,
+        );
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::CounterHit { side: Side::Player })),
+            "contact during startup must be a counter-hit: {events:?}"
+        );
+        assert_eq!(phase.snapshot().tempo[0], HIT_TEMPO_GAIN);
     }
 
     #[test]
