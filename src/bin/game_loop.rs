@@ -301,7 +301,7 @@ fn run_smoke(ticks: u64) {
                     .unwrap_or(0);
             }
             let _ = adapter.step_truth_tick(&mut phase, service);
-            let sample = adapter.poll_presentation(service);
+            let sample = adapter.poll_presentation(service, phase.snapshot().truth_frame);
             for receipt in sample.receipts.into_iter().flatten() {
                 let _ = receipt;
                 motion_ready += 1;
@@ -321,7 +321,7 @@ fn run_smoke(ticks: u64) {
         // (first request carries model-load latency).
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(90);
         while std::time::Instant::now() < deadline {
-            let sample = adapter.poll_presentation(service);
+            let sample = adapter.poll_presentation(service, phase.snapshot().truth_frame);
             motion_ready += sample.receipts.into_iter().flatten().count() as u32;
             motion_rejected += sample.rejected.iter().filter(|r| **r).count() as u32;
             if motion_ready + motion_rejected >= motion_submits {

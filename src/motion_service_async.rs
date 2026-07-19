@@ -505,12 +505,15 @@ fn generate_supported_keyframe_inbetweening(
     })
 }
 
-/// M1-facing presentation adapter. It reads `PlanPhase` after the simultaneous
-/// lock, submits exactly one request per actor, advances truth independently,
-/// and chooses a ready clip or the prior pose at every presentation sample.
+/// Read-only M1 lock adapter. It encodes requested displacement in the two root
+/// keyframes and passes complete start/end G1 poses to the provider.
+#[cfg(feature = "motion-inference")]
 pub struct PlanPhaseMotionAdapter {
     requests: [Option<MotionRequestId>; 2],
     last_pose: [FullPose; 2],
+    /// F-022 clip streaming: the consumed clip and the truth tick it started,
+    /// so rendering advances one generated frame per truth tick.
+    active_clip: [Option<(MotionClip, u64)>; 2],
 }
 
 impl PlanPhaseMotionAdapter {
@@ -518,6 +521,7 @@ impl PlanPhaseMotionAdapter {
         Self {
             requests: [None, None],
             last_pose: [initial_player_pose, initial_opponent_pose],
+            active_clip: [None, None],
         }
     }
 
@@ -568,9 +572,21 @@ impl PlanPhaseMotionAdapter {
     ) -> Result<(Vec<PlanEvent>, MotionPresentationSample), crate::intent::PlanError> {
         let events = phase.step_truth_tick()?;
         let truth_hash_after_tick = phase.truth_hash();
-        let sample = self.poll_presentation(service);
+        let sample = self.poll_presentation(service, phase.snapshot().truth_frame);
         debug_assert_eq!(truth_hash_after_tick, phase.truth_hash());
         Ok((events, sample))
+    }
+
+    /// F-022 playback: the generated clip's frame for this truth tick
+    /// (one frame per tick, clamped at the clip end), or the last pose when
+    /// no clip is active (underrun/before the first clip).
+    pub fn playback_pose(&self, side: Side, truth_tick: u64) -> FullPose {
+        let index = side_index(side);
+        if let Some((clip, started)) = &self.active_clip[index] {
+            let offset = truth_tick.saturating_sub(*started) as usize;
+            return clip.frames[offset.min(clip.frames.len().saturating_sub(1))];
+        }
+        self.last_pose[index]
     }
 
     /// Consume ready clips only; pending or rejected requests retain the last
@@ -578,6 +594,7 @@ impl PlanPhaseMotionAdapter {
     pub fn poll_presentation(
         &mut self,
         service: &mut MotionPlanService,
+        truth_tick: u64,
     ) -> MotionPresentationSample {
         let mut poses = self.last_pose;
         let mut held_last_pose = [true; 2];
@@ -590,12 +607,15 @@ impl PlanPhaseMotionAdapter {
             };
             match service.poll(request_id) {
                 MotionPoll::Ready(clip) => {
+                    // F-022 streaming: keep the whole clip; playback advances
+                    // one generated frame per truth tick from this sample.
                     if let Some(first) = clip.frames.first() {
                         poses[index] = *first;
                         self.last_pose[index] = *first;
                         held_last_pose[index] = false;
                     }
                     receipts[index] = Some(clip.receipt);
+                    self.active_clip[index] = Some((clip, truth_tick));
                     self.requests[index] = None;
                 }
                 MotionPoll::Rejected(_) => {
@@ -828,6 +848,73 @@ mod tests {
     }
 
     struct PendingProvider;
+
+    /// Stub that returns a fixed 4-frame clip immediately (deterministic
+    /// streaming proof without the Python bridge).
+    struct FixedClipProvider;
+
+    impl AsyncMotionPlanProvider for FixedClipProvider {
+        fn submit(
+            &mut self,
+            request: MotionPlanRequest,
+        ) -> Result<MotionSubmitReceipt, MotionServiceError> {
+            Ok(MotionSubmitReceipt {
+                request_id: request.id,
+                provider: MotionProviderKind::GenerativeKeyframeInbetweening,
+            })
+        }
+
+        fn cancel(&mut self, _request_id: MotionRequestId) {}
+
+        fn poll(&mut self, request_id: MotionRequestId) -> MotionPoll {
+            let frames: Vec<FullPose> = (0..4)
+                .map(|i| {
+                    let mut pose = [Mat4::IDENTITY; G1_NB];
+                    pose[0] = Mat4::from_translation(glam::Vec3::new(i as f32, 0.0, 0.0));
+                    pose
+                })
+                .collect();
+            MotionPoll::Ready(MotionClip {
+                request_id,
+                intent: CoreMotionIntent::Idle,
+                frames: frames.into(),
+                receipt: MotionGenerationReceipt {
+                    request_id,
+                    provider: MotionProviderKind::GenerativeKeyframeInbetweening,
+                    generation_latency: Duration::from_millis(1),
+                    frame_count: 4,
+                },
+            })
+        }
+    }
+
+    #[test]
+    fn playback_streams_one_generated_frame_per_truth_tick_and_clamps() {
+        // F-022: after a clip is consumed at tick T, playback advances
+        // frame-per-tick and clamps at the clip end; underrun holds last pose.
+        let mut phase = PlanPhase::new();
+        let mut service = MotionPlanService::new(FixedClipProvider);
+        let mut adapter = PlanPhaseMotionAdapter::new(identity_pose(), identity_pose());
+        phase
+            .submit_intent(Side::Player, Intent::Idle)
+            .expect("idle submits");
+        phase
+            .submit_intent(Side::Opponent, Intent::Idle)
+            .expect("idle submits");
+        let receipts = adapter.submit_locked(&phase, &mut service).unwrap();
+        assert_eq!(receipts.len(), 2);
+        let consumed_tick = phase.snapshot().truth_frame;
+        let sample = adapter.poll_presentation(&mut service, consumed_tick);
+        assert!(sample.receipts[0].is_some(), "clip must be consumed");
+        let x = |side: Side, t: u64| adapter.playback_pose(side, t)[0].w_axis.x;
+        for (offset, expected) in [(0, 0.0), (1, 1.0), (2, 2.0), (3, 3.0), (9, 3.0)] {
+            assert_eq!(
+                x(Side::Player, consumed_tick + offset),
+                expected,
+                "tick offset {offset} must play frame {expected} (clamped)"
+            );
+        }
+    }
 
     impl AsyncMotionPlanProvider for PendingProvider {
         fn submit(
