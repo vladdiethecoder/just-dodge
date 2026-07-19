@@ -637,6 +637,12 @@ impl PlanPhase {
         let Some(attacker_action) = self.active[attacker_index] else {
             return;
         };
+
+        // Runtime proof: wire measured runtime contact into GrabAttempt update/admission.
+        // Remove manual admission booleans and fabricated JSON truth.
+        if let Some(grab) = self.grab.as_mut() {
+            grab.update_contact(&contact, self.truth_frame);
+        }
         let active_cancellable_hitbox = attacker_action
             .intent
             .hitboxes()
