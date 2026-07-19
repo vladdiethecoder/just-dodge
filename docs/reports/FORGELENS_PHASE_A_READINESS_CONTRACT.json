@@ -176,12 +176,12 @@
     "pin_receipt_hash_rule": "sha256(canonical pin receipt object with pinReceiptSha256 omitted)",
     "replay_verifier_allowlist": [
       {
-        "build_command": "cargo build --release --bin m3_match",
+        "build_command": "RUSTFLAGS=\"--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME/.cargo=/.cargo --remap-path-prefix=$RUSTUP_HOME=/.rustup\" cargo build --release --locked --bin m3_match",
         "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
         "cargo_lock_sha256": "e53f8705232f9d5941f4b3a5dc4657b2e61990aef6e2cf11e0404495a67e4ac9",
         "path": "target/release/m3_match",
         "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
-        "sha256": "6d9aabf95cde05ff132726e2a0ce3ffb92d5bf28af754041ec664bb2d41d2cb6"
+        "sha256": "a93eb47bd672750c1522736b534a98658563320ca6cdc0bf18ec07fca4d0764c"
       }
     ],
     "request_limits": {
