@@ -26,5 +26,5 @@ pub use intent::{
 pub use plan_phase::{
     ActionabilityReason, CANCEL_PENALTY_FRAMES, InterruptOfferReason, PlanError, PlanEvent,
     PlanPhase, PlanSnapshot, PlanStatus, REPROMPT_OPTIONS, ROOT_SPEED_MM_PER_TICK, RepromptOption,
-    RepromptReason, RootPosition,
+    RepromptReason, RootPosition, Stance, tempo_cost,
 };

@@ -414,6 +414,15 @@ impl GameLoopApp {
             PhysicalKey::Code(KeyCode::F3) => self.show_dev = !self.show_dev,
             PhysicalKey::Code(KeyCode::Tab) => self.show_ghosts = !self.show_ghosts,
             PhysicalKey::Code(KeyCode::KeyH) => self.show_hud = !self.show_hud,
+            PhysicalKey::Code(KeyCode::KeyZ) => {
+                // F-003 stance cycling (costs tempo between exchanges).
+                let next = match self.phase.snapshot().stances[0] {
+                    just_dodge::intent::Stance::Neutral => just_dodge::intent::Stance::High,
+                    just_dodge::intent::Stance::High => just_dodge::intent::Stance::Low,
+                    just_dodge::intent::Stance::Low => just_dodge::intent::Stance::Neutral,
+                };
+                let _ = self.phase.set_stance(Side::Player, next);
+            }
             PhysicalKey::Code(KeyCode::KeyN) => {
                 self.whatif_index = self.whatif_index.saturating_add(1);
             }

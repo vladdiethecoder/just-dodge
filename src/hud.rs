@@ -477,6 +477,18 @@ pub fn build_hud(
     let mut y = -0.95;
     text_lines(&mut out, "STATE", x, y, ch, aspect, DIM);
     y += line;
+    text_lines(
+        &mut out,
+        format!("STANCE {:?}", snapshot.stances[0])
+            .to_uppercase()
+            .as_str(),
+        x,
+        y,
+        ch,
+        aspect,
+        CYAN,
+    );
+    y += line;
     let grab_text = snapshot.grab.map_or("GRAB -".to_string(), |g| {
         format!("GRAB {g:?}").to_uppercase()
     });

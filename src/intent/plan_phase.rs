@@ -81,6 +81,49 @@ pub const HIT_TAKEN_TEMPO_LOSS: u16 = 2;
 pub const BLOCK_TEMPO_GAIN: u16 = 1;
 /// Tempo loss for a whiffed attack.
 pub const WHIFF_TEMPO_LOSS: u16 = 1;
+/// Tempo at match start (PRD_STANCE_TEMPO: tempo is a cost resource that
+/// gates selection, never cancels a committed action).
+pub const TEMPO_START: u16 = 50;
+/// Tempo regenerated per side at each exchange boundary.
+pub const TEMPO_REGEN_PER_EXCHANGE: u16 = 6;
+/// Bonus tempo recovery when the side's locked intent was a Retreat move
+/// (Disengage, PRD_STANCE_TEMPO §4.4).
+pub const DISENGAGE_TEMPO_BONUS: u16 = 4;
+/// Tempo cost of switching stance between exchanges.
+pub const STANCE_SWITCH_TEMPO_COST: u16 = 5;
+
+/// Fighter stance (PRD_STANCE_TEMPO): readable pre-contact information that
+/// modifies the tempo economy (F-003; matrix-row hooks land with F-001).
+/// Persists across exchanges; switching between exchanges costs tempo.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Stance {
+    High,
+    Neutral,
+    Low,
+}
+
+/// Tempo cost of an intent in a stance. High favors strikes, Low favors
+/// movement/defense, Neutral is the baseline (deterministic table).
+pub fn tempo_cost(intent: Intent, stance: Stance) -> u16 {
+    let base: u16 = match intent {
+        Intent::Strike { .. } => 10,
+        Intent::Grab => 12,
+        Intent::Dodge { .. } => 8,
+        Intent::Block => 4,
+        Intent::Move { .. } => 4,
+        Intent::Feint => 6,
+        Intent::Cancel | Intent::Idle => 0,
+        Intent::Clinch { .. } => 4,
+    };
+    let modifier: i16 = match (stance, intent) {
+        (Stance::High, Intent::Strike { .. }) => -2,
+        (Stance::High, Intent::Dodge { .. }) => 2,
+        (Stance::Low, Intent::Strike { .. }) => 2,
+        (Stance::Low, Intent::Dodge { .. } | Intent::Move { .. }) => -2,
+        _ => 0,
+    };
+    base.saturating_add_signed(modifier)
+}
 
 /// A root coordinate quantized to whole millimetres at every state boundary.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -127,6 +170,8 @@ pub enum RepromptReason {
     NoFeintCharges,
     /// After a whiff cancel the follow-up must be an attack.
     AttackOnlyFollowup,
+    /// The selected intent cannot be afforded with the side's current tempo.
+    TempoExhausted,
 }
 
 /// Non-committal responses available after a failed goal feasibility check.
@@ -211,6 +256,11 @@ pub enum PlanEvent {
     CounterHit {
         side: Side,
     },
+    /// A side changed stance between exchanges (F-003, PRD stance_changed).
+    StanceChanged {
+        side: Side,
+        stance: Stance,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -264,9 +314,12 @@ pub struct PlanSnapshot {
     pub feint_charges: [u8; 2],
     /// The side's last completed attack whiffed (whiff-cancel window open).
     pub whiffed: [bool; 2],
-    /// Tempo meter per side (0..=100, F-004): gains on hits/blocks/parries,
-    /// losses on hits taken/whiffs. Effect hooks land with the balance pass.
+    /// Tempo meter per side (0..=100, F-004): a cost resource that gates
+    /// selection (PRD_STANCE_TEMPO) — actions cost tempo at lock, regen per
+    /// exchange, bonuses for hits/blocks/parries, losses on hits/whiffs.
     pub tempo: [u16; 2],
+    /// Persistent per-side stance (F-003).
+    pub stances: [Stance; 2],
 }
 
 /// Errors that prevent an external controller from mutating plan state.
@@ -348,6 +401,7 @@ pub struct PlanPhase {
     whiffed: [bool; 2],
     whiff_cancel_followup: [bool; 2],
     tempo: [u16; 2],
+    stances: [Stance; 2],
     pending_events: Vec<PlanEvent>,
     duel_world: DuelWorld,
 }
@@ -390,7 +444,8 @@ impl PlanPhase {
             feint_recharge_ticks: [0; 2],
             whiffed: [false; 2],
             whiff_cancel_followup: [false; 2],
-            tempo: [0; 2],
+            tempo: [TEMPO_START; 2],
+            stances: [Stance::Neutral; 2],
             pending_events: Vec::new(),
             duel_world: DuelWorld::new(),
         }
@@ -458,6 +513,7 @@ impl PlanPhase {
             feint_charges: self.feint_charges,
             whiffed: self.whiffed,
             tempo: self.tempo,
+            stances: self.stances,
         }
     }
 
@@ -504,6 +560,15 @@ impl PlanPhase {
             return Ok(vec![PlanEvent::Reprompt {
                 side,
                 reason: RepromptReason::AttackOnlyFollowup,
+                options: REPROMPT_OPTIONS,
+            }]);
+        }
+        // Tempo gates selection (PRD_STANCE_TEMPO): unaffordable intents are
+        // reprompted; a committed action is never cancelled by tempo.
+        if tempo_cost(intent, self.stances[index]) > self.tempo[index] {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::TempoExhausted,
                 options: REPROMPT_OPTIONS,
             }]);
         }
@@ -614,6 +679,9 @@ impl PlanPhase {
                 if matches!(intent, Intent::Feint) {
                     self.feint_charges[index] = self.feint_charges[index].saturating_sub(1);
                 }
+                // Tempo is consumed by the selected action at lock.
+                self.tempo[index] =
+                    self.tempo[index].saturating_sub(tempo_cost(intent, self.stances[index]));
                 let mut action = ActiveAction::new(
                     intent,
                     self.roots[index],
@@ -788,6 +856,23 @@ impl PlanPhase {
         // Preserve active busy actions for a one-sided next lock. A non-IOOT
         // fighter therefore cannot select an intent and continues its state.
         self.locked = self.active.map(|action| action.map(|action| action.intent));
+        // Exchange regen (PRD_STANCE_TEMPO §4.3-4.4): base regen per
+        // boundary, bonus for a Retreat disengage.
+        for side in [Side::Player, Side::Opponent] {
+            let index = side_index(side);
+            let regen = if matches!(
+                intents[index],
+                Intent::Move {
+                    dir: MoveDirection::Retreat,
+                    ..
+                }
+            ) {
+                TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
+            } else {
+                TEMPO_REGEN_PER_EXCHANGE
+            };
+            self.tempo[index] = (self.tempo[index] + regen).min(TEMPO_MAX);
+        }
         events
     }
 
@@ -1058,6 +1143,24 @@ impl PlanPhase {
         }
     }
 
+    /// Switch a side's stance between exchanges (F-003, PRD_STANCE_TEMPO):
+    /// costs tempo, Planning-only, fail-open (tempo clamps at 0). Emits
+    /// StanceChanged so the snapshot stream shows the transition.
+    pub fn set_stance(&mut self, side: Side, stance: Stance) -> Result<(), PlanError> {
+        if self.status != PlanStatus::Planning {
+            return Err(PlanError::NotPlanning);
+        }
+        let index = side_index(side);
+        if self.stances[index] == stance {
+            return Ok(());
+        }
+        self.stances[index] = stance;
+        self.tempo[index] = self.tempo[index].saturating_sub(STANCE_SWITCH_TEMPO_COST);
+        self.pending_events
+            .push(PlanEvent::StanceChanged { side, stance });
+        Ok(())
+    }
+
     /// Full state-conditioned availability for HUD display (F-112): clinch
     /// exclusivity, feint charges, whiff-cancel follow-up gate, grab range.
     pub fn intent_available(&self, side: Side, intent: Intent) -> bool {
@@ -1072,6 +1175,9 @@ impl PlanPhase {
             return false;
         }
         if self.whiff_cancel_followup[index] && !matches!(intent, Intent::Strike { .. }) {
+            return false;
+        }
+        if tempo_cost(intent, self.stances[index]) > self.tempo[index] {
             return false;
         }
         self.is_feasible(side, intent, intent.state().anim_length)
@@ -1686,7 +1792,92 @@ mod tests {
                 .any(|e| matches!(e, PlanEvent::CounterHit { side: Side::Player })),
             "contact during startup must be a counter-hit: {events:?}"
         );
-        assert_eq!(phase.snapshot().tempo[0], HIT_TEMPO_GAIN);
+        // 50 start - 10 strike cost + 2 landed hit + 6 exchange regen (the
+        // window runs to its boundary after the counter-hit tick).
+        assert_eq!(
+            phase.snapshot().tempo[0],
+            TEMPO_START - 10 + HIT_TEMPO_GAIN + TEMPO_REGEN_PER_EXCHANGE
+        );
+    }
+
+    #[test]
+    fn stance_switch_costs_tempo_and_emits_event() {
+        let mut phase = PlanPhase::new();
+        phase.set_stance(Side::Player, Stance::High).unwrap();
+        let snap = phase.snapshot();
+        assert_eq!(snap.stances[0], Stance::High);
+        assert_eq!(snap.tempo[0], TEMPO_START - STANCE_SWITCH_TEMPO_COST);
+        // High stance discounts strikes: cost 8 instead of 10.
+        assert_eq!(
+            tempo_cost(
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+                Stance::High
+            ),
+            8
+        );
+        // Same-stance set is a no-op (no double charge).
+        phase.set_stance(Side::Player, Stance::High).unwrap();
+        assert_eq!(
+            phase.snapshot().tempo[0],
+            TEMPO_START - STANCE_SWITCH_TEMPO_COST
+        );
+    }
+
+    #[test]
+    fn tempo_exhaustion_reprompts_unaffordable_actions() {
+        let mut phase = PlanPhase::new();
+        // Drain tempo below the strike cost via repeated stance switches.
+        for _ in 0..9 {
+            let next = match phase.snapshot().stances[0] {
+                Stance::Neutral => Stance::High,
+                _ => Stance::Neutral,
+            };
+            phase.set_stance(Side::Player, next).unwrap();
+        }
+        assert!(phase.snapshot().tempo[0] < 10);
+        let reprompt = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+            )
+            .unwrap();
+        assert!(reprompt.iter().any(|event| matches!(
+            event,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::TempoExhausted,
+                ..
+            }
+        )));
+        // Idle is always affordable.
+        assert!(
+            phase
+                .submit_intent(Side::Player, Intent::Idle)
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn exchange_regen_and_disengage_bonus() {
+        // Player retreats (disengage +4), opponent idles: after one exchange
+        // boundary the player has +10 regen (minus move cost 4).
+        let mut phase = PlanPhase::new();
+        relock_available(
+            &mut phase,
+            Intent::move_standard(MoveDirection::Retreat),
+            Intent::Idle,
+        );
+        phase.simulate_to_boundary().unwrap();
+        let snap = phase.snapshot();
+        assert_eq!(
+            snap.tempo[0],
+            TEMPO_START - 4 + TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
+        );
+        assert_eq!(snap.tempo[1], TEMPO_START + TEMPO_REGEN_PER_EXCHANGE);
     }
 
     #[test]
