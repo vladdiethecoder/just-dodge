@@ -13,7 +13,10 @@ use std::{
 use glam::{Mat4, Quat, Vec3, Vec3Swizzles, vec3};
 use just_dodge::{
     asset::{self, SkeletalAnimation, SkinnedMeshData},
-    intent::{Intent, MoveDirection, PlanPhase, PlanSnapshot, PlanStatus, StrikeVariant},
+    intent::{
+        ForecastOutcome, Intent, MoveDirection, PlanPhase, PlanSnapshot, PlanStatus, StrikeVariant,
+        forecast, predicted_outcome,
+    },
     renderer,
     truth::Side,
 };
@@ -200,7 +203,7 @@ fn scripted_opponent(phase_number: u64) -> Intent {
     }
 }
 
-fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64) {
+fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64, auto_player: bool) {
     if phase.status() != PlanStatus::Planning {
         return;
     }
@@ -214,7 +217,9 @@ fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64) {
                 sub: just_dodge::intent::ClinchIntent::Hold,
             },
         };
-        let _ = phase.submit_intent(Side::Player, player_clinch);
+        if auto_player {
+            let _ = phase.submit_intent(Side::Player, player_clinch);
+        }
         let _ = phase.submit_intent(
             Side::Opponent,
             Intent::Clinch {
@@ -224,12 +229,17 @@ fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64) {
         return;
     }
     let opponent = scripted_opponent(opponent_phase);
-    let _ = phase.submit_intent(Side::Player, player);
+    // Interactive mode: the game freezes at the player's actionability
+    // boundary until the player locks (forecast/ghost preview is live during
+    // the freeze). Scripted paths (shot/smoke) auto-lock the player.
+    if auto_player {
+        let _ = phase.submit_intent(Side::Player, player);
+    }
     let _ = phase.submit_intent(Side::Opponent, opponent);
-    // A speculative Grab can be correctly re-prompted by M1. The presentation
-    // loop keeps running by deterministically selecting Idle rather than faking
-    // a whiff or mutating authority state.
-    if phase.status() == PlanStatus::Planning {
+    if auto_player && phase.status() == PlanStatus::Planning {
+        // A speculative Grab can be correctly re-prompted; the scripted loop
+        // keeps running by deterministically selecting Idle rather than faking
+        // a whiff or mutating authority state.
         let _ = phase.submit_intent(Side::Player, Intent::Idle);
         let _ = phase.submit_intent(Side::Opponent, Intent::Idle);
     }
@@ -254,6 +264,7 @@ fn run_smoke(ticks: u64) {
                 _ => Intent::Idle,
             },
             player_phase,
+            true,
         );
         phase
             .step_truth_tick()
@@ -287,6 +298,8 @@ struct GameLoopApp {
     observer_yaw: f32,
     show_skeleton: bool,
     show_dev: bool,
+    show_ghosts: bool,
+    whatif_index: usize,
     first_frame_presented: bool,
 }
 
@@ -309,15 +322,60 @@ impl GameLoopApp {
             observer_yaw: 0.0,
             show_skeleton: true,
             show_dev: false,
+            show_ghosts: true,
+            whatif_index: 0,
             first_frame_presented: false,
         }
+    }
+
+    /// Hypothetical opponent intent for the forecast/ghost preview, cycled
+    /// with N/M (F-111 full-information tactics preview).
+    fn whatif_intent(&self) -> Intent {
+        const CYCLE: &[fn() -> Intent] = &[
+            || Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            || Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            || Intent::Block,
+            || Intent::Grab,
+            || Intent::Dodge {
+                dir: MoveDirection::LateralLeft,
+            },
+            || Intent::move_standard(MoveDirection::Approach),
+            || Intent::move_standard(MoveDirection::LateralLeft),
+            || Intent::Feint,
+            || Intent::Cancel,
+            || Intent::Idle,
+        ];
+        CYCLE[self.whatif_index % CYCLE.len()]()
+    }
+
+    /// Forecast the current hypothetical lock (player selection vs what-if
+    /// opponent) from the live planning boundary. None when not planning.
+    fn current_forecast(&self) -> Option<ForecastOutcome> {
+        if self.phase.status() != PlanStatus::Planning {
+            return None;
+        }
+        forecast(&self.phase, self.selected, self.whatif_intent())
+            .ok()
+            .flatten()
     }
 
     fn advance_truth(&mut self) {
         let now = Instant::now();
         let mut stepped = 0_u8;
         while now >= self.next_truth && stepped < 4 {
-            lock_next_phase(&mut self.phase, self.selected, self.opponent_phase);
+            lock_next_phase(&mut self.phase, self.selected, self.opponent_phase, false);
+            // Interactive freeze: the player's selection is still open — wait
+            // for a key-locked intent instead of stepping without both locks.
+            if self.phase.status() == PlanStatus::Planning
+                && self.phase.can_submit_intent(Side::Player)
+            {
+                self.next_truth = now + TRUTH_STEP;
+                return;
+            }
             self.phase
                 .step_truth_tick()
                 .expect("window loop must only step locked PlanPhase truth");
@@ -334,6 +392,12 @@ impl GameLoopApp {
 
     fn set_intent(&mut self, intent: Intent) {
         self.selected = intent;
+        // During the planning freeze a key-press IS the lock (design receipt:
+        // lock-intent-button). Submit immediately so the freeze ends.
+        if self.phase.status() == PlanStatus::Planning && self.phase.can_submit_intent(Side::Player)
+        {
+            let _ = self.phase.submit_intent(Side::Player, intent);
+        }
     }
 
     fn handle_key(&mut self, event_loop: &ActiveEventLoop, event: &winit::event::KeyEvent) {
@@ -345,6 +409,13 @@ impl GameLoopApp {
             PhysicalKey::Code(KeyCode::KeyC) => self.camera = self.camera.toggled(),
             PhysicalKey::Code(KeyCode::KeyB) => self.show_skeleton = !self.show_skeleton,
             PhysicalKey::Code(KeyCode::F3) => self.show_dev = !self.show_dev,
+            PhysicalKey::Code(KeyCode::Tab) => self.show_ghosts = !self.show_ghosts,
+            PhysicalKey::Code(KeyCode::KeyN) => {
+                self.whatif_index = self.whatif_index.saturating_add(1);
+            }
+            PhysicalKey::Code(KeyCode::KeyM) => {
+                self.whatif_index = self.whatif_index.saturating_sub(1);
+            }
             PhysicalKey::Code(KeyCode::KeyJ) => self.observer_yaw -= 0.12,
             PhysicalKey::Code(KeyCode::KeyL) => self.observer_yaw += 0.12,
             PhysicalKey::Code(KeyCode::KeyW) => {
@@ -376,27 +447,41 @@ impl GameLoopApp {
             PhysicalKey::Code(KeyCode::Digit5) => self.set_intent(Intent::Feint),
             PhysicalKey::Code(KeyCode::Digit6) => self.set_intent(Intent::Cancel),
             PhysicalKey::Code(KeyCode::Digit0) => self.set_intent(Intent::Idle),
+            PhysicalKey::Code(KeyCode::Space) => self.set_intent(self.selected),
             _ => {}
         }
     }
 
-    fn update_title(&self, snapshot: &PlanSnapshot) {
+    fn update_title(&self, snapshot: &PlanSnapshot, forecast_outcome: Option<&ForecastOutcome>) {
         let Some(window) = self.window.as_ref() else {
             return;
         };
+        let forecast_text = forecast_outcome.map_or_else(
+            || "forecast: busy".to_string(),
+            |outcome| {
+                format!(
+                    "what-if {:?} → {:?} in {}f",
+                    self.whatif_intent(),
+                    predicted_outcome(outcome),
+                    outcome.ticks
+                )
+            },
+        );
         let title = if self.show_dev {
             format!(
-                "Just Dodge M2 | DEV frame={} dist={:.2}m hash={:016x} contact={} OBB=ON",
+                "Just Dodge M2 | DEV frame={} dist={:.2}m hash={:016x} contact={} OBB=ON | {}",
                 snapshot.truth_frame,
                 planar_distance_m(snapshot),
                 self.phase.truth_hash(),
                 snapshot.last_contact_observed,
+                forecast_text,
             )
         } else {
             format!(
-                "Just Dodge M2 | {} | spacing {:.2}m | C camera B skeleton F3 dev",
+                "Just Dodge M2 | {} | spacing {:.2}m | {} | C camera B skeleton Tab ghosts N/M what-if F3 dev",
                 self.camera.label(),
                 planar_distance_m(snapshot),
+                forecast_text,
             )
         };
         window.set_title(&title);
@@ -405,7 +490,12 @@ impl GameLoopApp {
     fn render_frame(&mut self) {
         self.advance_truth();
         let snapshot = self.phase.snapshot();
-        self.update_title(&snapshot);
+        let forecast_outcome = if self.show_ghosts {
+            self.current_forecast()
+        } else {
+            None
+        };
+        self.update_title(&snapshot, forecast_outcome.as_ref());
         let (Some(surface), Some(device), Some(queue), Some(config)) = (
             self.surface.as_ref(),
             self.device.as_ref(),
@@ -496,6 +586,11 @@ impl GameLoopApp {
                 opponent_model,
                 [1.0, 0.35, 0.45],
             ));
+        }
+        // F-111 what-if ghosts: forecast root trails + end-of-window ghost
+        // skeletons for both fighters (presentation-only, never feeds truth).
+        if let Some(outcome) = &forecast_outcome {
+            marker_segments.extend(ghost_segments(&presentation.mesh, presentation, outcome));
         }
         renderer.update_debug_segments(device, &marker_segments);
         let obb_lines = if self.show_dev {
@@ -688,6 +783,50 @@ fn camera_proj_view(
         * Mat4::look_at_lh(eye, target, Vec3::Y)
 }
 
+fn root_pos_vec(root: just_dodge::intent::RootPosition) -> Vec3 {
+    vec3(
+        root.x_mm as f32 / 1000.0,
+        root.y_mm as f32 / 1000.0,
+        root.z_mm as f32 / 1000.0,
+    )
+}
+
+/// F-111 what-if ghost segments: per-side forecast root trails plus a ghost
+/// skeleton at each fighter's end-of-window root. Dim cyan/red distinguishes
+/// ghosts from the live skeletons (bright cyan/red).
+fn ghost_segments(
+    mesh: &SkinnedMeshData,
+    presentation: &PresentationAssets,
+    outcome: &ForecastOutcome,
+) -> Vec<(Vec3, Vec3, [f32; 3])> {
+    const GHOST_COLORS: [[f32; 3]; 2] = [[0.12, 0.55, 0.65], [0.65, 0.18, 0.22]];
+    let mut segments = Vec::new();
+    for (side, color) in GHOST_COLORS.iter().enumerate() {
+        for pair in outcome.root_track[side].windows(2) {
+            let lift = vec3(0.0, 0.02, 0.0);
+            segments.push((
+                root_pos_vec(pair[0]) + lift,
+                root_pos_vec(pair[1]) + lift,
+                *color,
+            ));
+        }
+    }
+    let ends = [
+        outcome.root_track[0].last().copied(),
+        outcome.root_track[1].last().copied(),
+    ];
+    if let (Some(player_end), Some(opponent_end)) = (ends[0], ends[1]) {
+        let roots = [root_pos_vec(player_end), root_pos_vec(opponent_end)];
+        for side in 0..2 {
+            let model = fighter_model(roots[side], roots[1 - side]);
+            let skin =
+                presentation.skin_for(outcome.locked[side], outcome.end_snapshot.truth_frame);
+            segments.extend(skeleton_segments(mesh, &skin, model, GHOST_COLORS[side]));
+        }
+    }
+    segments
+}
+
 fn skeleton_segments(
     mesh: &SkinnedMeshData,
     skin: &[Mat4],
@@ -806,6 +945,7 @@ fn run_shot(ticks: u64, out_dir: &str) {
                 variant: StrikeVariant::Slash,
             },
             player_phase,
+            true,
         );
         phase
             .step_truth_tick()
@@ -813,6 +953,12 @@ fn run_shot(ticks: u64, out_dir: &str) {
         if phase.status() == PlanStatus::Planning {
             player_phase = player_phase.saturating_add(1);
         }
+    }
+    // Capture at a planning boundary so the what-if ghost forecast is live.
+    while phase.status() != PlanStatus::Planning {
+        phase
+            .step_truth_tick()
+            .expect("shot must reach a planning boundary");
     }
     let snapshot = phase.snapshot();
 
@@ -910,6 +1056,18 @@ fn run_shot(ticks: u64, out_dir: &str) {
             opponent_model,
             [1.0, 0.35, 0.45],
         ));
+        // F-111 ghosts in shot captures when the loop froze at a boundary.
+        if phase.status() == PlanStatus::Planning
+            && let Ok(Some(outcome)) = forecast(
+                &phase,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+                scripted_opponent(player_phase),
+            )
+        {
+            marker_segments.extend(ghost_segments(&presentation.mesh, &presentation, &outcome));
+        }
         renderer.update_debug_segments(&device, &marker_segments);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
