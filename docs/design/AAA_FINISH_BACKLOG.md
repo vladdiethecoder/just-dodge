@@ -122,7 +122,7 @@ F-020 Range bands (out/jab/mid/clinch) with intent feasibility gating — H — 
 
 ### C.2 Generative motion and combat fidelity (F-021..F-040)
 F-021 Runtime generative provider (feature-gated dev lane) on MotionBricks — H,P — W3 — DONE (c9663f8 dev lane + persistent worker; live clips verified in be90c3d)
-F-022 Ship-lane live generative motion provider: per-tick MotionBricks inference from the full condition packet via the async buffered plan service; no baked clips, pose banks, or clip libraries in any mode — H,G,P — W3
+F-022 Ship-lane live generative motion provider: per-tick MotionBricks inference from the full condition packet via the async buffered plan service; no baked clips, pose banks, or clip libraries in any mode — H,G,P — W3 — IN PROGRESS (ed2d0be clip streaming proven; render-path swap + baked retirement remain)
 F-023 Masked condition packet v1 (root keyframes + full-pose keyframes) runtime — H,G — W3 — DONE (be90c3d bridge unblocked: clips generate; keyed-context retry annotated)
 F-024 Condition packet v2 retrain: clearance + limb-state tokens — H — W3
 F-025 Condition packet v3 retrain: weapon-hand + opponent-state tokens — H — W3
