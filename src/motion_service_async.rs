@@ -23,7 +23,9 @@ use std::time::Instant;
 
 use glam::{Mat4, Vec3};
 
-use crate::intent::{Intent, MoveDirection, PlanEvent, PlanPhase, PlanSnapshot, RootPosition};
+use crate::intent::{Intent, MoveDirection, PlanSnapshot, RootPosition};
+#[cfg(feature = "motion-inference")]
+use crate::intent::{PlanEvent, PlanPhase};
 #[cfg(feature = "motion-inference")]
 use crate::motion::Action;
 use crate::motion::G1_NB;
