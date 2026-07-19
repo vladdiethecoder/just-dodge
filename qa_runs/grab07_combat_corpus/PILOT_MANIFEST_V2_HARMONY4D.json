@@ -1,0 +1,668 @@
+{
+ "contact_surface_uncertainty_mm": 15.0,
+ "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+ "hand_to_opponent_surface_evaluable": true,
+ "leakage_rules": [
+  "split by complete interaction/session/actor-pair root lineage",
+  "every crop/window/retarget/augmentation inherits root group",
+  "zero actor/pair/session/clip/overlapping-window/raw-hash/tensor-hash/near-duplicate leakage",
+  "no random-window split",
+  "no silent fallback group selection"
+ ],
+ "license": "user_approved",
+ "pairs": [
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.52,
+    "contact": true,
+    "left_hand_distance_mm": 2.52,
+    "right_hand_distance_mm": 13.62
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "8d196363194a0c894203a48a2d344de891045a48c61ca74a2895f243e8ced6f1",
+    "aria02_frame": "8cf6cee91e82653fd21a79acc2dbd8f0e01569158af6dcddc1b7c0bd5cc5f433"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 0"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.72,
+    "contact": true,
+    "left_hand_distance_mm": 2.72,
+    "right_hand_distance_mm": 4.95
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "548297f1c73d651b93ae612f6246e54c3da3d026baa45c1f043636c7fbec3b1d",
+    "aria02_frame": "14e2850d0e7c0685cafe666c3a5bd37ce5eb8a3d18bdccea86f2ead3347a57e4"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 1"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.05,
+    "contact": true,
+    "left_hand_distance_mm": 4.7,
+    "right_hand_distance_mm": 3.05
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "f72ed97a6223bee74e760bf8d758a1d02800bbb71c30a6731af67bc97e5ecd79",
+    "aria02_frame": "ec580820631a9d97f805e21b83a7a1fbd6a1dfed501f5739c2c0cef8eca9cfec"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 2"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.22,
+    "contact": true,
+    "left_hand_distance_mm": 2.22,
+    "right_hand_distance_mm": 5.4
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "427194ce54070c1b66d4744e99d26e15ed837637b74c17a37c3d4484d396a680",
+    "aria02_frame": "94eed36d146ce2a51248326ca989443157a6086f145637fe86d1155e9813339b"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 3"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 4.23,
+    "contact": true,
+    "left_hand_distance_mm": 4.23,
+    "right_hand_distance_mm": 11.04
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "d85acbec951d8500109e4d8f4e3871fbc941195ae1589e3cd2a26772f702e774",
+    "aria02_frame": "5c2b2c73cb6b94b4fe43288486b02defbf07a81a76bd4b9fc178148e037c03a4"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 4"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.77,
+    "contact": true,
+    "left_hand_distance_mm": 3.77,
+    "right_hand_distance_mm": 18.74
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "5e2bc52c748b9a463404d51b13c5330007c443a67df59229afd66b00ff5f6ee9",
+    "aria02_frame": "dde427dc3694a86ced227846ea985a601b16506f2da501cb4208398ae97f403e"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 5"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.13,
+    "contact": true,
+    "left_hand_distance_mm": 4.72,
+    "right_hand_distance_mm": 3.13
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "afaab896c0cdc5745a7adfecc5bcbd9173397f548e7b74a40a26b1ea6ed1dd96",
+    "aria02_frame": "72fbd727abdcbbfb01a750cf194da736c6355c785fa905aa3df68418d837b75b"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 6"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.0,
+    "contact": true,
+    "left_hand_distance_mm": 2.0,
+    "right_hand_distance_mm": 5.05
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "84d286a742d2bccda2da4068b14b9821f1532c6ee64349f8441695f2bb60cbf8",
+    "aria02_frame": "15ba5c755b3fa6e5014129d62734677da16054ffa3a0f64ba193b1cb816bb853"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 7"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.68,
+    "contact": true,
+    "left_hand_distance_mm": 3.57,
+    "right_hand_distance_mm": 2.68
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "ba24d3fcfd3591a50ea61ad95ed7921e0da58243d25b946970b8c25662d8c414",
+    "aria02_frame": "1680deef3d02bf6cccf8b3079b825caa06c7d4fc975fd1dfff12a570ebf9eb4f"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 8"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 1.71,
+    "contact": true,
+    "left_hand_distance_mm": 12.88,
+    "right_hand_distance_mm": 1.71
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "e3828e1c6a229322459aac888e50e489b447f65a475097946ea211e5328d66f4",
+    "aria02_frame": "23afc3c919c644f6308e1a659833228a927a1289bc07d0628a41a7ee3a718b9c"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 9"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.6,
+    "contact": true,
+    "left_hand_distance_mm": 11.52,
+    "right_hand_distance_mm": 2.6
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "ed625d9decddfcb34b2b08dbc57f21e76c31d4357924b8ffdb9cf559d2b3d917",
+    "aria02_frame": "310f7dbb7fc7e78ce23b1b2c0b1dab5c88ddcf51b10a9dc2e96bac51df2d72e1"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 10"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.36,
+    "contact": true,
+    "left_hand_distance_mm": 2.36,
+    "right_hand_distance_mm": 3.26
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "49d387e137db831cc679681b12811be226e4a590212d058e0f63f7410ef9253d",
+    "aria02_frame": "699cb8181db163823a9893a30a788052219c5776ed42a610d906c25d48044d67"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 11"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.0,
+    "contact": true,
+    "left_hand_distance_mm": 3.0,
+    "right_hand_distance_mm": 3.67
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "517f59f1246e1bb99aae163e9e198b83a6d8e240f9bdc2f01b28b40eafaad83b",
+    "aria02_frame": "6699bb3889377003f4f1474ee4e3943eaa0db56b98a4d10358079a0d57c97bf5"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 12"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.04,
+    "contact": true,
+    "left_hand_distance_mm": 3.04,
+    "right_hand_distance_mm": 5.92
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "f6739772f7a5c8d212c84d3db7ac3ea09a971cc8783340cb10beec8040ee2f61",
+    "aria02_frame": "e14c07048c3272e27933055929bfdd43aec8ebfb5766913376c0dd382b8c7dbf"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 13"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.48,
+    "contact": true,
+    "left_hand_distance_mm": 2.72,
+    "right_hand_distance_mm": 2.48
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "52ddafe1d911acc15c41ba7ab3a929258ae33b3d9360d6cf8e9bfee2af361219",
+    "aria02_frame": "d91f364bbe1f541985a84596f82cf90bf6443598a0dbd4c04f32fa925ed89f25"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 14"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.54,
+    "contact": true,
+    "left_hand_distance_mm": 3.54,
+    "right_hand_distance_mm": 3.83
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "d6edc735955f556aee4ccce764c486a3c0c38ff8179b4ac2bac0c3b392e1a74c",
+    "aria02_frame": "f59b39f2647fb1455dfb277bb23ce331dd7c33ebf29155d57ae985f8bdd49c8d"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 15"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 3.63,
+    "contact": true,
+    "left_hand_distance_mm": 4.66,
+    "right_hand_distance_mm": 3.63
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "26543da837647c73618c88de0c13546cd772efa851c391803bbcb92b85ff2f6a",
+    "aria02_frame": "453f4ebe127dc1d5721220f7c1dab25fda69228f9dc344490ba5b91aa6878f86"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 16"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.57,
+    "contact": true,
+    "left_hand_distance_mm": 2.57,
+    "right_hand_distance_mm": 4.33
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "f6a3e98f6295bb144df4d8b221817c281a4ac33c70a4efbe77e3d1bf75331540",
+    "aria02_frame": "d618786bc1f851b30eab80f77880ec53e4a742579b6f22b7cdba6807259db42a"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 17"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 5.09,
+    "contact": true,
+    "left_hand_distance_mm": 11.29,
+    "right_hand_distance_mm": 5.09
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "80b2b07ca7f5340167a99932d65b4a58896d955189bbf8edba3627fd3597f5f5",
+    "aria02_frame": "a4ead823f481ccf94ed8750fd81255841d15f4104a02a23fa25a2e0362f43669"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 18"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.42,
+    "contact": true,
+    "left_hand_distance_mm": 2.42,
+    "right_hand_distance_mm": 3.56
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "87c91f740660845ea111950370ca2a32e09931734dc4ac4145badcb49827d29a",
+    "aria02_frame": "f048d459c4a4ddaefad2bf8f4a2040777e704e4a10559849b861bc7881f8c85e"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 19"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 1.58,
+    "contact": true,
+    "left_hand_distance_mm": 1.58,
+    "right_hand_distance_mm": 6.21
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "50e8481c49e52d4aa2b6e0843e26dbcfda9b3cb3968c7e14f8e8439ef6eca668",
+    "aria02_frame": "92ce1d28aff12d2194a905fd6b779a9ad849b376b0108c729c4f6532bb89149c"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 20"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 5.76,
+    "contact": true,
+    "left_hand_distance_mm": 64.0,
+    "right_hand_distance_mm": 5.76
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "ce17bc3580e3740db5cafd6431c33b5a30dd06daff843d025b1349d9cb6834ef",
+    "aria02_frame": "ea723d98384a5afcf2f0545bdec63cd61902822f4146e35afa8df6507f23a00b"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 21"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 1.66,
+    "contact": true,
+    "left_hand_distance_mm": 1.66,
+    "right_hand_distance_mm": 4.43
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "3ace928e256fe5169d4c38a316ddf1fe42324a7a3331b5a3afea5f5ff9d44b0f",
+    "aria02_frame": "eeb388d11949dff351800b296e03fd798477bcf5163ec94c681637dc69981159"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 22"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 2.62,
+    "contact": true,
+    "left_hand_distance_mm": 2.62,
+    "right_hand_distance_mm": 4.13
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "bd214eac6c936641a30e5c489e4d1b17353f057081190c8ac5ca4e006818ccd8",
+    "aria02_frame": "e05a625ec8b4e0ac8c3c0362ca68098112e4fb087bef67d68812b465292853ff"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 23"
+  },
+  {
+   "action_annotation": "grappling",
+   "attacker_actor": "aria01",
+   "camera_calibration_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "contact_annotation": {
+    "best_hand_distance_mm": 1.38,
+    "contact": true,
+    "left_hand_distance_mm": 1.38,
+    "right_hand_distance_mm": 67.78
+   },
+   "dataset_revision": "Voxel51/Harmony4D @ 0efc0187af1377c0c12f0002217c83307c937875",
+   "defender_actor": "aria02",
+   "license_receipt": "user_approved",
+   "mesh_pose_hashes": {
+    "aria01_frame": "207b468e90532ff525c91056bad9799aedf5431f072927804c2b6d4172c2fdbe",
+    "aria02_frame": "aeff793e6b4975e29197da1214812e734d1b17aa2857d1fa05263b32f0256c69"
+   },
+   "raw_hashes": {
+    "aria01_trajectory_ply": "25560f979e3a523fa483855bc991048fa0ccf4395aea83af17fe80ac03e9d2bc",
+    "aria02_trajectory_ply": "1db406dc58284fb6cdcf57ab395813f882ab0a6950846037da3795ed780988bb"
+   },
+   "root_lineage_group": "harmony4d_025_grappling2_aria01_aria02",
+   "sequence": "025_grappling2",
+   "session": "025_grappling2",
+   "synchronized_time_range": "frame 24"
+  }
+ ],
+ "per_frame_smpl_meshes": true,
+ "schema": "just-dodge-grab07-pilot-manifest-v2-harmony4d",
+ "utc": "2026-07-19T11:19:43.963390+00:00"
+}
