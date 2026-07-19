@@ -219,8 +219,8 @@ F-107 Mix buses + loudness normalization + options sliders — X — W10
 F-108 Steam Deck audio latency budget pass — P — W10
 
 ### C.7 UI/UX, camera, and readability (F-109..F-125)
-F-109 Hermes Canvas design gate for all HUD/menu work (authority) — process — W1
-F-110 Forecast timeline UI (predicted frames before lock) — H,V,X — W1
+F-109 Hermes Canvas design gate for all HUD/menu work (authority) — process — W1 — DONE (FORECAST_HUD_DESIGN.md, canvas-c602d5588727 r4, visual QA pass)
+F-110 Forecast timeline UI (predicted frames before lock) — H,V,X — W1 — IN PROGRESS (forecast engine done 49d200c; HUD render pending text pipeline)
 F-111 What-if ghost (select opponent move in planning, preview sim) — H,V,X — W1
 F-112 Intent list UI with state-conditioned availability display — V,X — W1
 F-113 Injury readout UI (anatomical, readable, non-debug) — V,X — W4
