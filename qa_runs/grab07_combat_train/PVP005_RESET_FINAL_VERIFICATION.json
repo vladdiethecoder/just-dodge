@@ -1,0 +1,49 @@
+{
+ "branch": "grab07-650mm-closure",
+ "completed": {
+  "1_receipt_binding": "DONE \u2014 evaluated_source_sha=01b6f95, receipt_commit_sha recorded separately, dirty state CLEAN, evaluator/corpus/dep SHAs bound in UNIT2_RECEIPT_V10_BINDING.json",
+  "2_regression_test": "DONE \u2014 explicit injection (control passes first, injected defect rejected); 7 synthetic evaluator fixtures (a-g) + duration boundary, all pass in src/intent/grab_contact.rs",
+  "3_contact_timing": "DONE \u2014 120Hz substep IDs, SECURE_GRAB_MIN_SUBSTEPS=12 (100ms), clock domain bound; contiguous interval required; no inference from 60Hz PlanPhase frames",
+  "4_runtime_wiring": "DONE \u2014 ContactManifoldSample typed (substep/manifold/surface/proxy/penetration/flags); no RootPosition distance write; unknown evidence channels never fabricated True; GrabSecure only from one contiguous interval",
+  "5_pilot_manifest": "BLOCKED \u2014 NO_PAIRED_SOURCE_QUALIFIES_RIGHTS_AND_GEOMETRY. Harmony4D is exact content (2 subjects, close contact, per-subject SMPL mesh) but dataset license not specified + SMPL-weight dependency restrictive. All 3 on-disk corpora single-actor. No opponent surface manufactured.",
+  "6_evaluator_qualification": "DONE \u2014 evaluate_intervals computes every gate from the same contiguous interval (no clip-wide min/max)"
+ },
+ "contracts_restored": "visual contract + ForgeLens contract re-bound to current source revision (qa_capture_binary @09538738, asset_review files), receipt internal binding ffc67b6f preserved as immutable historical evidence",
+ "does_not_pass_G5": true,
+ "head": "e82ee54a5483d04b1740cee1de8c2cf9ffd2d461",
+ "not_a_trained_model": true,
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN",
+ "public_ci": {
+  "BLOCKED_gate": {
+   "exact_unblock": "Commit a byte-reproducible release build of m3_match as a tracked artifact (or a hermetic build recipe producing the identical hash), then the gate passes on CI. Building on CI does NOT reproduce the hash.",
+   "name": "verify_forgelens_phase_a replay-verifier hash check (public CI only)",
+   "not_papered_over": true,
+   "note": "verify_forgelens_phase_a PASSES locally where the allowlisted binary exists; it is BLOCKED only on public CI where the artifact is absent.",
+   "reason": "The allowlisted replay verifier (target/release/m3_match sha 6d9aabf9) is a locally-built, gitignored, non-byte-reproducible artifact. A fresh CI build produces a different hash (4f803c16 on identical rustc 1.96.0 + Cargo.lock). The gate is release-only by design and has never passed on CI (no successful run exists on this branch)."
+  },
+  "python_gates_passing": [
+   "verify_pvp005_revision_baseline",
+   "enforce_evidence_quarantine",
+   "pvp005_visual_contract",
+   "test_pvp005_visual_contract",
+   "test_asset_review",
+   "test_forgelens_review_run_schema",
+   "verify_forgelens_phase_a",
+   "validate_pvp005_w0_grip_camera",
+   "validate_pvp005_ardy_action_endpoints_v4",
+   "test_heldout_motion_acceptance",
+   "test_interaction_partition_leakage"
+  ],
+  "rust_gates_passing": [
+   "cargo fmt --check",
+   "cargo clippy -D warnings",
+   "cargo test --locked 351/0/3",
+   "no-default-features check",
+   "replay hash bit-exact"
+  ]
+ },
+ "pyron_removed": "generate.py uses a minimal stdlib RON parser (pyron is Python-2-only/ConfigParser); 6 primitives parsed",
+ "schema": "just-dodge-pvp005-reset-final-verification-v1",
+ "unit": "PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001 (6-part repair unit)",
+ "utc": "2026-07-19T03:47:00.849033+00:00"
+}
