@@ -1,0 +1,39 @@
+{
+ "blocked_class": "DATA_PROVENANCE_UNAVAILABLE",
+ "blocking_finding": {
+  "fact_1": "Every corpus segment (CMU 304, KungfuAthleteBot 791, Kyokushin 1442 = 2537 total) is a SINGLE-ACTOR window: keys are posed_joints[120,34,3] + root_positions[120,3]. No opponent surface exists anywhere in the training/eval data.",
+  "fact_2": "contact_frame is a window marker (only 30/304 CMU segments even use frames-1); it does not mark a two-body contact event.",
+  "fact_3": "The declared hard gate 'held-out hand-to-opponent-surface error <=15mm' therefore CANNOT be evaluated on this corpus. The trainer's |hand_z - 0.65m| metric is an absolute-reach proxy, not the gate.",
+  "fact_4": "Prior claim 'no licensed teacher reaches 650mm (max ~0.44m)' was WRONG. Real CMU grab reach at contact: median 392.8mm, mean 463.8mm, p95 1125.4mm; 31/255 reach >=650mm.",
+  "fact_5": "Two sound proxy attempts recorded: v6 concat median 365.10mm FAIL; v8 clean corpus median 27.10mm FAIL (5/48 <=15mm, ablation +222.94mm). These are proxy numbers, not gate numbers."
+ },
+ "branch": "grab07-650mm-closure",
+ "exact_unblock": "Build paired two-actor segments: attacker posed_joints + defender (opponent) surface in ONE shared coordinate frame, from a dual-actor licensed source (Harmony4D grappling pairs or CMU paired clips), with per-frame hand-to-opponent-surface distance measurable. Then re-run the identical evaluator measuring hand-to-opponent-surface distance over the secure-grab window at GRAB_ACQUIRE_RANGE_MM=650. No gate weakening: 650mm acquisition semantics and the 15mm surface threshold are preserved.",
+ "gates": {
+  "cargo_fmt_clippy_test": "PASS (343/0/3)",
+  "hand_to_opponent_surface_median_mm": "BLOCKED (not evaluable: no opponent surface in corpus)",
+  "prohibited_penetration": "0.0mm (prior evidence)",
+  "truth_clinch_650mm_semantics": "PRESERVED (GRAB_ACQUIRE_RANGE_MM=650 in plan_phase.rs)"
+ },
+ "grab_acquire_range_mm": 650,
+ "head": "e3670df371afc6fd7baceacb864657a34a3a7ee3",
+ "machine_eligible": false,
+ "not_permitted": [
+  "relabel single-actor clips as two-actor grabs",
+  "manufacture a synthetic opponent surface",
+  "weaken the 15mm surface threshold or the 650mm acquisition constant",
+  "report the absolute-reach proxy as the opponent-surface gate"
+ ],
+ "objective": "UNIT-2 v9: honest machine verdict for conditioned GRAB at GRAB_ACQUIRE_RANGE_MM=650",
+ "preserved_evidence": {
+  "corpus_lineage_manifest": "qa_runs/grab07_combat_corpus/corpus_lineage_manifest.json",
+  "quarantine_manifest": "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/quarantine_manifest.json",
+  "train_report_seq_sha256": "12a3adbc2f55335b77a307f8abf2423034e215c5d6ba22bb25b94af8b31967eb",
+  "v8_proxy_receipt_sha256": "d016e5752cf3cc72cccbc16127c214e48b0f0c63c9da016f930b9a806c6d119e"
+ },
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-receipt-v9-blocked-provenance",
+ "utc": "2026-07-19T01:43:16.523698+00:00",
+ "verdict": "BLOCKED"
+}
