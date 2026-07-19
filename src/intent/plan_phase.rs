@@ -108,6 +108,8 @@ impl RangeBand {
         }
     }
 }
+/// F-014: hit-stun frames applied by a clinch knee.
+pub const CLINCH_KNEE_STUN_FRAMES: u16 = 4;
 /// Tempo at match start (PRD_STANCE_TEMPO: tempo is a cost resource that
 /// gates selection, never cancels a committed action).
 pub const TEMPO_START: u16 = 50;
@@ -311,6 +313,10 @@ pub enum PlanEvent {
     },
     /// A clinch tech found no throw and whiffed (F-016).
     TechWhiffed {
+        side: Side,
+    },
+    /// The controller's clinch knee connected (F-014).
+    ClinchKnee {
         side: Side,
     },
     /// A parry deflected the side's weapon (F-018).
@@ -972,6 +978,17 @@ impl PlanPhase {
                         clinch_state.position = super::clinch::ClinchPositionKind::BackControl;
                         self.clinch = Some(clinch_state);
                         events.push(PlanEvent::TechWhiffed { side: teched_by });
+                    }
+                    ClinchResolution::KneeHit { struck } => {
+                        // F-014 clinch poke: tempo damage + hit-stun.
+                        let struck_index = side_index(struck);
+                        self.tempo[struck_index] =
+                            self.tempo[struck_index].saturating_sub(HIT_TAKEN_TEMPO_LOSS);
+                        self.recovery_frames[struck_index] = self.recovery_frames[struck_index]
+                            .saturating_add(CLINCH_KNEE_STUN_FRAMES);
+                        events.push(PlanEvent::ClinchKnee {
+                            side: clinch_state.controller,
+                        });
                     }
                 }
             }

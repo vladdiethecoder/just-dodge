@@ -73,6 +73,11 @@ pub enum ClinchResolution {
     WhiffedTech {
         teched_by: Side,
     },
+    /// F-014: the controller's knee connected (clinch poke — tempo damage
+    /// and hit-stun on the struck side).
+    KneeHit {
+        struck: Side,
+    },
 }
 
 /// F-016 deterministic throw/tech contest, controller-relative:
@@ -93,19 +98,24 @@ pub fn resolve(player: ClinchIntent, opponent: ClinchIntent, controller: Side) -
             escaped_by: controlled,
         };
     }
-    if controlled_pick == ClinchIntent::Tech {
-        if controller_pick == ClinchIntent::Throw {
-            return ClinchResolution::Exit {
-                escaped_by: controlled,
-            };
-        }
-        return ClinchResolution::WhiffedTech {
-            teched_by: controlled,
+    if controlled_pick == ClinchIntent::Tech && controller_pick == ClinchIntent::Throw {
+        return ClinchResolution::Exit {
+            escaped_by: controlled,
         };
     }
     if controller_pick == ClinchIntent::Throw {
         return ClinchResolution::Launch {
             launched: controlled,
+        };
+    }
+    if controller_pick == ClinchIntent::Knee {
+        // F-014: the knee connects — a whiffed tech reads throws, not knees,
+        // so Tech vs Knee eats the knee too.
+        return ClinchResolution::KneeHit { struck: controlled };
+    }
+    if controlled_pick == ClinchIntent::Tech {
+        return ClinchResolution::WhiffedTech {
+            teched_by: controlled,
         };
     }
     ClinchResolution::Continue
@@ -114,6 +124,46 @@ pub fn resolve(player: ClinchIntent, opponent: ClinchIntent, controller: Side) -
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn break_always_escapes() {
+        assert_eq!(
+            resolve(ClinchIntent::Throw, ClinchIntent::Break, Side::Player),
+            ClinchResolution::Exit {
+                escaped_by: Side::Opponent
+            }
+        );
+    }
+
+    #[test]
+    fn knee_connects_even_through_a_tech() {
+        // F-014: Knee vs Hold connects; Tech reads throws, not knees.
+        assert_eq!(
+            resolve(ClinchIntent::Knee, ClinchIntent::Hold, Side::Player),
+            ClinchResolution::KneeHit {
+                struck: Side::Opponent
+            }
+        );
+        assert_eq!(
+            resolve(ClinchIntent::Knee, ClinchIntent::Tech, Side::Player),
+            ClinchResolution::KneeHit {
+                struck: Side::Opponent
+            }
+        );
+    }
+
+    #[test]
+    fn clinch_frame_data_is_differentiated() {
+        // F-014: the sub-exchange timing table — tech is the fast read,
+        // break the slow guarantee, throw the slow launch.
+        assert_eq!(ClinchIntent::Hold.frame_cost(), 8);
+        assert_eq!(ClinchIntent::Knee.frame_cost(), 12);
+        assert_eq!(ClinchIntent::Throw.frame_cost(), 16);
+        assert_eq!(ClinchIntent::Tech.frame_cost(), 6);
+        assert_eq!(ClinchIntent::Break.frame_cost(), 10);
+        assert!(ClinchIntent::Tech.frame_cost() < ClinchIntent::Break.frame_cost());
+        assert!(ClinchIntent::Throw.frame_cost() > ClinchIntent::Knee.frame_cost());
+    }
 
     #[test]
     fn throw_vs_tech_escapes_the_controlled_side() {
@@ -148,16 +198,6 @@ mod tests {
             resolve(ClinchIntent::Hold, ClinchIntent::Tech, Side::Player),
             ClinchResolution::WhiffedTech {
                 teched_by: Side::Opponent
-            }
-        );
-    }
-
-    #[test]
-    fn break_always_escapes() {
-        assert_eq!(
-            resolve(ClinchIntent::Throw, ClinchIntent::Break, Side::Player),
-            ClinchResolution::Exit {
-                escaped_by: Side::Opponent
             }
         );
     }
