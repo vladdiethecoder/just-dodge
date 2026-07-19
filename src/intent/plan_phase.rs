@@ -49,6 +49,19 @@ pub const GRAB_WHIFF_TIMEOUT_TICKS: u64 = 24;
 pub const GRAB_BREAK_INACTIVE_SUBSTEPS: usize = 4;
 /// Fixed recovery attached to an explicit cancel.
 pub const CANCEL_PENALTY_FRAMES: u16 = 8;
+/// Burst resource ceiling (percent).
+pub const BURST_MAX: u16 = 100;
+/// Burst cost of a whiff cancel (YOMIH: 75%).
+pub const WHIFF_CANCEL_BURST_COST: u16 = 75;
+/// Recovery attached to a whiff cancel — a distinct 2-frame state, not the
+/// full cancel penalty.
+pub const WHIFF_CANCEL_RECOVERY_FRAMES: u16 = 2;
+/// Truth ticks per +1 burst regen (0.5 s at 60 Hz).
+pub const BURST_REGEN_PERIOD_TICKS: u64 = 30;
+/// Free-cancel (feint) charges at match start (YOMIH base cast: 2).
+pub const FEINT_MAX_CHARGES: u8 = 2;
+/// Truth ticks per +1 feint-charge recharge (2 s at 60 Hz).
+pub const FEINT_RECHARGE_PERIOD_TICKS: u64 = 120;
 
 /// A root coordinate quantized to whole millimetres at every state boundary.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -91,6 +104,10 @@ pub enum RepromptReason {
     GoalOutOfReach,
     GoalLostAtBoundary,
     ClinchRequired,
+    /// Feint submitted with no free-cancel charges remaining.
+    NoFeintCharges,
+    /// After a whiff cancel the follow-up must be an attack.
+    AttackOnlyFollowup,
 }
 
 /// Non-committal responses available after a failed goal feasibility check.
@@ -154,6 +171,12 @@ pub enum PlanEvent {
         side: Side,
         penalty_frames: u16,
     },
+    /// A whiffed attack was cancelled at 75% burst into the 2-frame
+    /// whiff-cancel state; the follow-up must be an attack.
+    WhiffCancelled {
+        side: Side,
+        burst_remaining: u16,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -201,6 +224,12 @@ pub struct PlanSnapshot {
     pub clinch: Option<ClinchState>,
     pub grab: Option<super::grab_state::GrabState>,
     pub last_contact_observed: bool,
+    /// Burst resource per side (0..=100). Whiff cancel spends 75.
+    pub burst: [u16; 2],
+    /// Free-cancel (feint) charges per side (0..=2).
+    pub feint_charges: [u8; 2],
+    /// The side's last completed attack whiffed (whiff-cancel window open).
+    pub whiffed: [bool; 2],
 }
 
 /// Errors that prevent an external controller from mutating plan state.
@@ -227,6 +256,10 @@ struct ActiveAction {
     negative_on_hit: bool,
     remaining_distance_mm: i32,
     locked_heading: MovementHeading,
+    /// The action produced a measured contact (never whiffed).
+    made_contact: bool,
+    /// This Cancel was admitted as a whiff cancel (2-frame recovery).
+    is_whiff_cancel: bool,
 }
 
 impl ActiveAction {
@@ -247,6 +280,8 @@ impl ActiveAction {
                 .movement_parameters()
                 .map_or(0, |parameters| i32::from(parameters.distance_mm)),
             locked_heading,
+            made_contact: false,
+            is_whiff_cancel: false,
         }
     }
 }
@@ -267,6 +302,12 @@ pub struct PlanPhase {
     grab: Option<GrabAttempt>,
     truth_frame: u64,
     last_contact_observed: bool,
+    burst: [u16; 2],
+    burst_regen_ticks: [u64; 2],
+    feint_charges: [u8; 2],
+    feint_recharge_ticks: [u64; 2],
+    whiffed: [bool; 2],
+    whiff_cancel_followup: [bool; 2],
     duel_world: DuelWorld,
 }
 
@@ -302,6 +343,12 @@ impl PlanPhase {
             grab: None,
             truth_frame: 0,
             last_contact_observed: false,
+            burst: [BURST_MAX; 2],
+            burst_regen_ticks: [0; 2],
+            feint_charges: [FEINT_MAX_CHARGES; 2],
+            feint_recharge_ticks: [0; 2],
+            whiffed: [false; 2],
+            whiff_cancel_followup: [false; 2],
             duel_world: DuelWorld::new(),
         }
     }
@@ -364,6 +411,9 @@ impl PlanPhase {
             clinch: self.clinch,
             grab: self.grab_state(),
             last_contact_observed: self.last_contact_observed,
+            burst: self.burst,
+            feint_charges: self.feint_charges,
+            whiffed: self.whiffed,
         }
     }
 
@@ -398,6 +448,20 @@ impl PlanPhase {
         }
         if self.clinch.is_none() && matches!(intent, Intent::Clinch { .. }) {
             return Err(PlanError::ClinchIntentRequired);
+        }
+        if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::NoFeintCharges,
+                options: REPROMPT_OPTIONS,
+            }]);
+        }
+        if self.whiff_cancel_followup[index] && !matches!(intent, Intent::Strike { .. }) {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::AttackOnlyFollowup,
+                options: REPROMPT_OPTIONS,
+            }]);
         }
 
         self.submitted[index] = Some(intent);
@@ -448,6 +512,7 @@ impl PlanPhase {
         self.last_contact_observed = measured.contact_batch.contact.is_some();
         self.apply_grab_contact_samples(&measured);
         self.apply_contact_outcomes(&measured.contact_batch);
+        self.regen_yomi_resources();
         self.truth_frame = self.truth_frame.saturating_add(1);
 
         let actionability = self.actionability_events();
@@ -497,11 +562,33 @@ impl PlanPhase {
             let index = side_index(side);
             if self.selection_open[index] {
                 let intent = intents[index];
-                self.active[index] = Some(ActiveAction::new(
+                // Feint spends a free-cancel charge (gated at submit time).
+                if matches!(intent, Intent::Feint) {
+                    self.feint_charges[index] = self.feint_charges[index].saturating_sub(1);
+                }
+                let mut action = ActiveAction::new(
                     intent,
                     self.roots[index],
                     self.roots[side_index(side.opposite())],
-                ));
+                );
+                // Whiff-cancel admission: a Cancel locked while the whiff
+                // window is open and burst covers the cost becomes the
+                // 2-frame whiff-cancel state instead of the 8-frame cancel.
+                if matches!(intent, Intent::Cancel)
+                    && self.whiffed[index]
+                    && self.burst[index] >= WHIFF_CANCEL_BURST_COST
+                {
+                    self.burst[index] = self.burst[index].saturating_sub(WHIFF_CANCEL_BURST_COST);
+                    self.whiffed[index] = false;
+                    self.whiff_cancel_followup[index] = true;
+                    action.is_whiff_cancel = true;
+                }
+                // Any lock closes the whiff window: whiff-cancel, normal
+                // cancel, or simply choosing something else.
+                self.whiffed[index] = false;
+                self.whiff_cancel_followup[index] =
+                    self.whiff_cancel_followup[index] && matches!(intent, Intent::Cancel);
+                self.active[index] = Some(action);
                 self.combos[index].lock(intent);
                 events.push(PlanEvent::Locked { side, intent });
             }
@@ -527,15 +614,35 @@ impl PlanPhase {
         for side in [Side::Player, Side::Opponent] {
             if let Some(reason) = ready[side_index(side)] {
                 events.push(PlanEvent::Ready { side, reason });
-                match intents[side_index(side)] {
+                let index = side_index(side);
+                // Whiff detection: an attack that reached its actionability
+                // boundary without any measured contact opens the whiff-cancel
+                // window for the next lock.
+                if matches!(intents[index], Intent::Strike { .. })
+                    && self.active[index].is_some_and(|action| !action.made_contact)
+                {
+                    self.whiffed[index] = true;
+                }
+                match intents[index] {
                     Intent::Feint => events.push(PlanEvent::Feinted { side }),
                     Intent::Cancel => {
-                        let recovery = &mut self.recovery_frames[side_index(side)];
-                        *recovery = recovery.saturating_add(CANCEL_PENALTY_FRAMES);
-                        events.push(PlanEvent::Cancelled {
-                            side,
-                            penalty_frames: CANCEL_PENALTY_FRAMES,
-                        });
+                        let is_whiff_cancel =
+                            self.active[index].is_some_and(|action| action.is_whiff_cancel);
+                        if is_whiff_cancel {
+                            let recovery = &mut self.recovery_frames[index];
+                            *recovery = recovery.saturating_add(WHIFF_CANCEL_RECOVERY_FRAMES);
+                            events.push(PlanEvent::WhiffCancelled {
+                                side,
+                                burst_remaining: self.burst[index],
+                            });
+                        } else {
+                            let recovery = &mut self.recovery_frames[index];
+                            *recovery = recovery.saturating_add(CANCEL_PENALTY_FRAMES);
+                            events.push(PlanEvent::Cancelled {
+                                side,
+                                penalty_frames: CANCEL_PENALTY_FRAMES,
+                            });
+                        }
                     }
                     _ => {}
                 }
@@ -746,6 +853,24 @@ impl PlanPhase {
         }
     }
 
+    /// Deterministic resource regen: +1 burst per BURST_REGEN_PERIOD_TICKS
+    /// (cap BURST_MAX), +1 feint charge per FEINT_RECHARGE_PERIOD_TICKS
+    /// (cap FEINT_MAX_CHARGES). Runs inside the truth tick so replays hash it.
+    fn regen_yomi_resources(&mut self) {
+        for index in 0..2 {
+            self.burst_regen_ticks[index] += 1;
+            if self.burst_regen_ticks[index] >= BURST_REGEN_PERIOD_TICKS {
+                self.burst_regen_ticks[index] = 0;
+                self.burst[index] = (self.burst[index] + 1).min(BURST_MAX);
+            }
+            self.feint_recharge_ticks[index] += 1;
+            if self.feint_recharge_ticks[index] >= FEINT_RECHARGE_PERIOD_TICKS {
+                self.feint_recharge_ticks[index] = 0;
+                self.feint_charges[index] = (self.feint_charges[index] + 1).min(FEINT_MAX_CHARGES);
+            }
+        }
+    }
+
     fn apply_contact_outcomes(&mut self, measured: &PhysicalContactBatch) {
         let Some(contact) = measured.contact else {
             return;
@@ -769,6 +894,10 @@ impl PlanPhase {
             .any(|hitbox| hitbox.cancellable && hitbox.active_at(attacker_action.current_tick));
         if !active_cancellable_hitbox {
             return;
+        }
+        // The attack produced a measured contact; it can never be a whiff.
+        if let Some(action) = &mut self.active[attacker_index] {
+            action.made_contact = true;
         }
 
         let defender_is_blocking = matches!(
@@ -1152,6 +1281,202 @@ mod tests {
         if phase.can_submit_intent(Side::Opponent) {
             let _ = phase.submit_intent(Side::Opponent, opponent);
         }
+    }
+
+    /// Drive boundaries until `pred` matches an emitted event (or attempts
+    /// run out), keeping the opponent on `opp` and re-submitting `player`
+    /// whenever the player's selection opens. Returns all events seen.
+    fn drive_until(
+        phase: &mut PlanPhase,
+        player: Intent,
+        opp: Intent,
+        pred: impl Fn(&PlanEvent) -> bool,
+        max_boundaries: usize,
+    ) -> Vec<PlanEvent> {
+        let mut seen = Vec::new();
+        for _ in 0..max_boundaries {
+            relock_available(phase, player, opp);
+            match phase.simulate_to_boundary() {
+                Ok(events) => {
+                    let hit = events.iter().any(&pred);
+                    seen.extend(events);
+                    if hit {
+                        break;
+                    }
+                }
+                Err(_) => break,
+            }
+        }
+        seen
+    }
+
+    #[test]
+    fn whiff_cancel_spends_burst_shortens_recovery_and_gates_followup() {
+        // Long-range slash vs retreat: guaranteed whiff. The next Cancel must
+        // be admitted as a whiff cancel: burst 100 -> 25, 2-frame recovery,
+        // attack-only follow-up gate.
+        let [player, opponent] = symmetric(1_500);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        relock_available(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            move_intent(MoveDirection::Retreat, 2_000, true),
+        );
+        phase.simulate_to_boundary().unwrap();
+        assert!(
+            phase.snapshot().whiffed[0],
+            "a complete miss must open the whiff window"
+        );
+        // Whiff-cancel; drive until the Cancel's own Ready boundary resolves.
+        let events = drive_until(
+            &mut phase,
+            Intent::Cancel,
+            Intent::Idle,
+            |event| matches!(event, PlanEvent::WhiffCancelled { .. }),
+            12,
+        );
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event, PlanEvent::WhiffCancelled { .. })),
+            "whiffed attack + 75 burst must admit the whiff cancel"
+        );
+        assert_eq!(
+            phase.snapshot().burst[0],
+            BURST_MAX - WHIFF_CANCEL_BURST_COST
+        );
+        // Attack-only follow-up: Block is reprompted, Strike locks.
+        relock_available(&mut phase, Intent::Idle, Intent::Idle);
+        let reprompt = phase.submit_intent(Side::Player, Intent::Block).unwrap();
+        assert!(reprompt.iter().any(|event| matches!(
+            event,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::AttackOnlyFollowup,
+                ..
+            }
+        )));
+        let followup = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Thrust,
+                },
+            )
+            .unwrap();
+        assert!(
+            !followup
+                .iter()
+                .any(|event| matches!(event, PlanEvent::Reprompt { .. })),
+            "an attack follow-up must not be reprompted"
+        );
+    }
+
+    #[test]
+    fn whiff_cancel_requires_burst() {
+        // Drain burst below the 75 cost with one whiff-cancel; the second
+        // whiff-cancel attempt degrades to the normal 8-frame cancel.
+        let [player, opponent] = symmetric(1_500);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            move_intent(MoveDirection::Retreat, 2_000, true),
+            |event| matches!(event, PlanEvent::Ready { .. }),
+            4,
+        );
+        assert!(!events.is_empty());
+        assert!(phase.snapshot().whiffed[0]);
+        let events = drive_until(
+            &mut phase,
+            Intent::Cancel,
+            Intent::Idle,
+            |event| matches!(event, PlanEvent::WhiffCancelled { .. }),
+            12,
+        );
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event, PlanEvent::WhiffCancelled { .. }))
+        );
+        assert_eq!(phase.snapshot().burst[0], 25);
+        // Second whiff setup: whiff again, then Cancel must NOT be a whiff
+        // cancel (25 < 75) — normal 8-frame cancel applies.
+        let events = drive_until(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            move_intent(MoveDirection::Retreat, 2_000, true),
+            |event| matches!(event, PlanEvent::Ready { .. }),
+            8,
+        );
+        assert!(!events.is_empty());
+        assert!(phase.snapshot().whiffed[0]);
+        let events = drive_until(
+            &mut phase,
+            Intent::Cancel,
+            Intent::Idle,
+            |event| {
+                matches!(
+                    event,
+                    PlanEvent::Cancelled { .. } | PlanEvent::WhiffCancelled { .. }
+                )
+            },
+            12,
+        );
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event, PlanEvent::Cancelled { .. })),
+            "without 75 burst the cancel is the normal 8-frame cancel"
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, PlanEvent::WhiffCancelled { .. }))
+        );
+        let final_burst = phase.snapshot().burst[0];
+        assert!(
+            (25..75).contains(&final_burst),
+            "no 75-cost spend without 75 available (regen may add +1/30 ticks): {final_burst}"
+        );
+    }
+
+    #[test]
+    fn feint_charges_deplete_gate_and_recharge() {
+        let [player, opponent] = symmetric(500);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        // Two feints spend both charges.
+        for expected in [1_u8, 0_u8] {
+            relock_available(&mut phase, Intent::Feint, Intent::Idle);
+            phase.simulate_to_boundary().unwrap();
+            assert_eq!(phase.snapshot().feint_charges[0], expected);
+        }
+        // Third feint is reprompted.
+        let reprompt = phase.submit_intent(Side::Player, Intent::Feint).unwrap();
+        assert!(reprompt.iter().any(|event| matches!(
+            event,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::NoFeintCharges,
+                ..
+            }
+        )));
+        // Recharge: one charge returns after FEINT_RECHARGE_PERIOD_TICKS.
+        for _ in 0..FEINT_RECHARGE_PERIOD_TICKS {
+            relock_available(&mut phase, Intent::Idle, Intent::Idle);
+            if phase.status() == PlanStatus::Planning
+                && !phase.can_submit_intent(Side::Player)
+                && !phase.can_submit_intent(Side::Opponent)
+            {
+                break;
+            }
+            let _ = phase.step_truth_tick();
+        }
+        assert!(phase.snapshot().feint_charges[0] >= 1);
     }
 
     #[test]
