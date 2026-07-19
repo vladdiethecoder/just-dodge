@@ -519,6 +519,7 @@ pub struct PlanPhaseMotionAdapter {
     active_clip: [Option<(MotionClip, u64)>; 2],
 }
 
+#[cfg(feature = "motion-inference")]
 impl PlanPhaseMotionAdapter {
     pub fn new(initial_player_pose: FullPose, initial_opponent_pose: FullPose) -> Self {
         Self {
