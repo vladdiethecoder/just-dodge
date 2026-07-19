@@ -201,6 +201,8 @@ pub enum RepromptReason {
     ControlledMustEscape,
     /// F-017: a downed side picked a non-getup option.
     GroundedGetup,
+    /// F-018: a disarmed side picked a weapon option (Strike).
+    Disarmed,
     /// Feint submitted with no free-cancel charges remaining.
     NoFeintCharges,
     /// After a whiff cancel the follow-up must be an attack.
@@ -305,6 +307,10 @@ pub enum PlanEvent {
     TechWhiffed {
         side: Side,
     },
+    /// A parry deflected the side's weapon (F-018).
+    Disarmed {
+        side: Side,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -360,6 +366,8 @@ pub struct PlanSnapshot {
     pub whiffed: [bool; 2],
     /// F-017 ground/pinned flags (getup-restricted window).
     pub downed: [bool; 2],
+    /// F-018 disarm flags (parry deflect; no Strike until next selection).
+    pub disarmed: [bool; 2],
     /// Tempo meter per side (0..=100, F-004): a cost resource that gates
     /// selection (PRD_STANCE_TEMPO) — actions cost tempo at lock, regen per
     /// exchange, bonuses for hits/blocks/parries, losses on hits/whiffs.
@@ -455,6 +463,9 @@ pub struct PlanPhase {
     /// F-017 ground/pinned: launched side's next selection is restricted to
     /// getup options (Idle/Dodge/Block) for one window.
     downed: [bool; 2],
+    /// F-018 disarm: a parried attacker loses its weapon — no Strike until
+    /// its next submitted selection.
+    disarmed: [bool; 2],
     tempo: [u16; 2],
     stances: [Stance; 2],
     pending_events: Vec<PlanEvent>,
@@ -499,6 +510,7 @@ impl PlanPhase {
             feint_recharge_ticks: [0; 2],
             whiffed: [false; 2],
             downed: [false; 2],
+            disarmed: [false; 2],
             whiff_cancel_followup: [false; 2],
             tempo: [TEMPO_START; 2],
             stances: [Stance::Neutral; 2],
@@ -569,6 +581,7 @@ impl PlanPhase {
             feint_charges: self.feint_charges,
             whiffed: self.whiffed,
             downed: self.downed,
+            disarmed: self.disarmed,
             tempo: self.tempo,
             stances: self.stances,
             range_band: RangeBand::of(planar_distance_upper_bound(self.roots[0], self.roots[1])),
@@ -656,6 +669,14 @@ impl PlanPhase {
             return Ok(vec![PlanEvent::Reprompt {
                 side,
                 reason: RepromptReason::GroundedGetup,
+                options: REPROMPT_OPTIONS,
+            }]);
+        }
+        // F-018: a disarmed side cannot pick weapon options.
+        if self.disarmed[index] && matches!(intent, Intent::Strike { .. }) {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::Disarmed,
                 options: REPROMPT_OPTIONS,
             }]);
         }
@@ -815,6 +836,8 @@ impl PlanPhase {
                 // F-017: submitting the getup selection lifts the downed
                 // restriction (one restricted selection, whenever it comes).
                 self.downed[index] = false;
+                // F-018: submitting any selection re-arms (weapon recovered).
+                self.disarmed[index] = false;
                 self.whiff_cancel_followup[index] =
                     self.whiff_cancel_followup[index] && matches!(intent, Intent::Cancel);
                 self.active[index] = Some(action);
@@ -1190,10 +1213,15 @@ impl PlanPhase {
                     (self.burst[defender_index] + PERFECT_BLOCK_BURST_GAIN).min(BURST_MAX);
                 self.recovery_frames[attacker_index] =
                     self.recovery_frames[attacker_index].saturating_add(PARRY_STAGGER_FRAMES);
+                // F-018: the parry deflects the attacker's weapon — the
+                // attacker is disarmed until its next submitted selection.
+                self.disarmed[attacker_index] = true;
                 self.pending_events
                     .push(PlanEvent::PerfectBlocked { side: defender });
                 self.pending_events
                     .push(PlanEvent::Parried { side: defender });
+                self.pending_events
+                    .push(PlanEvent::Disarmed { side: attacker });
                 return;
             }
             // Normal block contact: small defender tempo gain.
@@ -1358,6 +1386,10 @@ impl PlanPhase {
         }
         // F-017: downed sides may only pick getup options.
         if self.downed[index] && !is_getup_option(intent) {
+            return false;
+        }
+        // F-018: disarmed sides cannot pick weapon options.
+        if self.disarmed[index] && matches!(intent, Intent::Strike { .. }) {
             return false;
         }
         if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
@@ -2112,8 +2144,12 @@ mod tests {
     /// Advance one-sided clinch boundaries (relocking neutral Holds for the
     /// OTHER side only) until `side` may submit.
     fn advance_until_submittable(phase: &mut PlanPhase, side: Side) {
-        let hold = Intent::Clinch {
-            sub: ClinchIntent::Hold,
+        let hold = if phase.clinch().is_some() {
+            Intent::Clinch {
+                sub: ClinchIntent::Hold,
+            }
+        } else {
+            Intent::Idle
         };
         for _ in 0..12 {
             if phase.can_submit_intent(side) {
@@ -2202,6 +2238,64 @@ mod tests {
                 .iter()
                 .any(|e| matches!(e, PlanEvent::Reprompt { .. })),
             "controller Throw must be legal: {events:?}"
+        );
+    }
+
+    #[test]
+    fn parry_disarms_the_attacker_for_one_selection() {
+        // F-018: thrust into a fresh block at 300mm parries (block_tick 3)
+        // → the attacker is disarmed; Strike reprompts; any other selection
+        // re-arms.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        lock(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Block,
+        );
+        let mut disarmed_event = false;
+        for _ in 0..4 {
+            let events = phase.step_truth_tick().unwrap_or_default();
+            disarmed_event |= events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::Disarmed { side: Side::Player }));
+        }
+        assert!(disarmed_event, "the parry must emit Disarmed");
+        assert!(
+            phase.snapshot().disarmed[side_index(Side::Player)],
+            "the parried attacker must be disarmed"
+        );
+        // Weapon option → reprompted at the attacker's next selection.
+        advance_until_submittable(&mut phase, Side::Player);
+        let reprompt = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+            )
+            .unwrap();
+        assert!(reprompt.iter().any(|e| matches!(
+            e,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::Disarmed,
+                ..
+            }
+        )));
+        // Non-weapon selection re-arms; Strike returns.
+        let _ = phase.submit_intent(Side::Player, Intent::Idle);
+        let _ = phase.simulate_to_boundary();
+        advance_until_submittable(&mut phase, Side::Player);
+        assert!(
+            phase.intent_available(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash
+                }
+            ),
+            "after re-arming the Strike menu returns"
         );
     }
 
