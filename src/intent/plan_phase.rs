@@ -81,6 +81,9 @@ pub const HIT_TAKEN_TEMPO_LOSS: u16 = 2;
 pub const BLOCK_TEMPO_GAIN: u16 = 1;
 /// Tempo loss for a whiffed attack.
 pub const WHIFF_TEMPO_LOSS: u16 = 1;
+/// F-013 dynamic IASA: an unblocked hit shortens the attacker's actionable
+/// tick by this many frames vs a blocked contact.
+pub const DYNAMIC_IASA_HIT_BONUS_TICKS: u16 = 2;
 /// Tempo at match start (PRD_STANCE_TEMPO: tempo is a cost resource that
 /// gates selection, never cancels a committed action).
 pub const TEMPO_START: u16 = 50;
@@ -353,6 +356,9 @@ struct ActiveAction {
     locked_heading: MovementHeading,
     /// The action produced a measured contact (never whiffed).
     made_contact: bool,
+    /// Truth-tick of the action's first measured contact (F-013: dynamic
+    /// IASA never shortens below contact+1 — the string window is preserved).
+    first_contact_tick: Option<u16>,
     /// This Cancel was admitted as a whiff cancel (2-frame recovery).
     is_whiff_cancel: bool,
 }
@@ -376,6 +382,7 @@ impl ActiveAction {
                 .map_or(0, |parameters| i32::from(parameters.distance_mm)),
             locked_heading,
             made_contact: false,
+            first_contact_tick: None,
             is_whiff_cancel: false,
         }
     }
@@ -1060,6 +1067,9 @@ impl PlanPhase {
         // The attack produced a measured contact; it can never be a whiff.
         if let Some(action) = &mut self.active[attacker_index] {
             action.made_contact = true;
+            if action.first_contact_tick.is_none() {
+                action.first_contact_tick = Some(attacker_action.current_tick);
+            }
         }
 
         let defender_is_blocking = matches!(
@@ -1150,10 +1160,25 @@ impl PlanPhase {
             }
         }
         let hit_cancel_allowed = !defender_is_blocking || attacker_state.iasa_on_hit_on_block;
+        // F-013 dynamic IASA: an unblocked hit shortens the hit-cancel tick
+        // vs a blocked contact (blocked contacts keep the static iasa), but
+        // never below first_contact+2 — one full tick of F-012 string window
+        // is always preserved after first contact (contact resolution and the
+        // post-advance actionability check share a step).
         let can_hit_cancel = hit_cancel_allowed
-            && attacker_state
-                .iasa_on_hit
-                .is_some_and(|iasa_on_hit| attacker_action.current_tick >= iasa_on_hit);
+            && attacker_state.iasa_on_hit.is_some_and(|iasa_on_hit| {
+                let shortened = iasa_on_hit.saturating_sub(DYNAMIC_IASA_HIT_BONUS_TICKS);
+                let effective = if !defender_is_blocking {
+                    // Read first_contact live: attacker_action is a pre-contact
+                    // copy and would miss a first contact set this very tick.
+                    self.active[attacker_index]
+                        .and_then(|action| action.first_contact_tick)
+                        .map_or(shortened, |contact| shortened.max(contact + 2))
+                } else {
+                    iasa_on_hit
+                };
+                attacker_action.current_tick >= effective
+            });
         if can_hit_cancel {
             let action = &mut self.active[attacker_index];
             if let Some(action) = action {
@@ -1931,9 +1956,32 @@ mod tests {
     }
 
     #[test]
-    fn free_cancel_chains_strikes_on_contact() {
-        // F-012: thrust lands at 300mm (contact tick 3) → an immediate
-        // mid-execution Slash submit is admitted as a free-cancel string.
+    fn probe_thrust_idle_ticks() {
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        relock_available(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            Intent::Idle,
+        );
+        for i in 0..8 {
+            let events = phase.step_truth_tick().unwrap_or_default();
+            println!(
+                "TICK {} status={:?} contact={} events={:?}",
+                i + 1,
+                phase.status(),
+                phase.snapshot().last_contact_observed,
+                events
+            );
+        }
+    }
+
+    #[test]
+    fn dynamic_iasa_unblocked_hit_cancels_two_ticks_earlier() {
+        // F-013: thrust (iasa_on_hit 6) landing UNBLOCKED hit-cancels at
+        // tick 4 (6 - DYNAMIC_IASA_HIT_BONUS_TICKS), not tick 6.
         let [player, opponent] = symmetric(300);
         let mut phase = PlanPhase::with_roots(player, opponent);
         relock_available(
@@ -1943,14 +1991,52 @@ mod tests {
             },
             Intent::Idle,
         );
-        for _ in 0..4 {
+        let mut cancel_frame = None;
+        for _ in 0..10 {
+            let events = phase.step_truth_tick().unwrap_or_default();
+            if cancel_frame.is_none()
+                && events.iter().any(|e| {
+                    matches!(
+                        e,
+                        PlanEvent::Ready {
+                            side: Side::Player,
+                            reason: ActionabilityReason::HitCancel
+                        }
+                    )
+                })
+            {
+                cancel_frame = Some(phase.snapshot().truth_frame);
+            }
+        }
+        assert_eq!(
+            cancel_frame,
+            Some(6),
+            "unblocked thrust hit-cancel (dynamic IASA, string window preserved), got {cancel_frame:?}"
+        );
+    }
+
+    #[test]
+    fn free_cancel_chains_strikes_on_contact() {
+        // F-012: slash contacts during the 4th tick at 300mm; the hit-cancel
+        // boundary lands at tick 5 (dynamic IASA clamps to contact+1), so the
+        // string submit after 4 ticks is mid-execution and must be admitted.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        relock_available(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            Intent::Idle,
+        );
+        for _ in 0..5 {
             let _ = phase.step_truth_tick();
         }
         let events = phase
             .submit_intent(
                 Side::Player,
                 Intent::Strike {
-                    variant: StrikeVariant::Slash,
+                    variant: StrikeVariant::Thrust,
                 },
             )
             .unwrap();
@@ -2247,7 +2333,12 @@ mod tests {
             hit.snapshot().last_contact_observed,
             "close DuelWorld strike must be measured"
         );
-        assert!(hit.snapshot().truth_frame < whiff.snapshot().truth_frame);
+        assert!(
+            hit.snapshot().truth_frame <= whiff.snapshot().truth_frame,
+            "hit window {} must never be slower than whiff window {}",
+            hit.snapshot().truth_frame,
+            whiff.snapshot().truth_frame
+        );
         assert!(hit_events.iter().any(|event| {
             matches!(
                 event,

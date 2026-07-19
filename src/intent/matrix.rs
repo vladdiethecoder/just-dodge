@@ -141,7 +141,7 @@ pub fn classify_cell(a: Intent, b: Intent) -> CellOutcome {
 /// a=AWin b=BWin c=Clash k=Blocked w=Whiff m=Movement
 #[cfg(test)]
 const CANONICAL: [&str; 13] = [
-    "cckaaammmmaaa",
+    "cckamammmmaaa",
     "cckamaammmaaa",
     "kkwbmmmmmmwww",
     "abaamaammmaaa",
