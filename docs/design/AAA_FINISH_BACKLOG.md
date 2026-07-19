@@ -99,7 +99,7 @@ Consequences applied throughout this backlog:
   injury, and opponent state differ.
 
 ### C.1 Combat truth, intent, and yomi depth (F-001..F-020)
-F-001 Data-driven 13×13 matchup matrix with per-cell golden tests — H,G — W2
+F-001 Data-driven 13×13 matchup matrix with per-cell golden tests — H,G — W2 — DONE (772decc; intent::matrix + 169-cell golden + hit-stun interrupt canon fix)
 F-002 Per-action timing table derived from motion analysis — H — W2
 F-003 Stance system high/neutral/low affecting matrix rows — H,G — W2 — DONE (508c34d; tempo-economy effects; matrix-row hooks pending F-001)
 F-004 Tempo meter with deterministic gain/loss rules — H,G — W2 — DONE (5b1235d gains; 508c34d cost economy + gate per PRD_STANCE_TEMPO)
