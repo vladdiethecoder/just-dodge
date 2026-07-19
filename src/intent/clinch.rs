@@ -59,51 +59,106 @@ impl ClinchState {
 }
 
 /// Result of one simultaneously locked clinch exchange.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClinchResolution {
     Continue,
-    Exit { escaped_by: Side },
-    Launch { launched: Side },
+    Exit {
+        escaped_by: Side,
+    },
+    Launch {
+        launched: Side,
+    },
+    /// F-016: the controlled side teched with no throw coming — the tech
+    /// whiffs and the controller deepens for free (deterministic punishment).
+    WhiffedTech {
+        teched_by: Side,
+    },
 }
 
-/// Resolve without an initiative-order bias. Tech wins as an escape if either
-/// fighter selected it; matching throws otherwise launch both into the regular
-/// deterministic ballistic state.
-pub fn resolve(player: ClinchIntent, opponent: ClinchIntent) -> ClinchResolution {
-    if player == ClinchIntent::Tech {
+/// F-016 deterministic throw/tech contest, controller-relative:
+/// - Throw vs Tech: the tech reads the throw → escape.
+/// - Throw vs anything else: the throw launches the controlled side.
+/// - Tech vs non-Throw: the tech whiffs (WhiffedTech).
+///
+/// Tech by the controller is illegal upstream (F-015 gate), so only the
+/// controlled side's tech is considered.
+pub fn resolve(player: ClinchIntent, opponent: ClinchIntent, controller: Side) -> ClinchResolution {
+    let (controller_pick, controlled_pick, controlled) = if controller == Side::Player {
+        (player, opponent, Side::Opponent)
+    } else {
+        (opponent, player, Side::Player)
+    };
+    if controlled_pick == ClinchIntent::Break {
         return ClinchResolution::Exit {
-            escaped_by: Side::Player,
+            escaped_by: controlled,
         };
     }
-    if opponent == ClinchIntent::Tech {
-        return ClinchResolution::Exit {
-            escaped_by: Side::Opponent,
+    if controlled_pick == ClinchIntent::Tech {
+        if controller_pick == ClinchIntent::Throw {
+            return ClinchResolution::Exit {
+                escaped_by: controlled,
+            };
+        }
+        return ClinchResolution::WhiffedTech {
+            teched_by: controlled,
         };
     }
-    if player == ClinchIntent::Break {
-        return ClinchResolution::Exit {
-            escaped_by: Side::Player,
-        };
-    }
-    if opponent == ClinchIntent::Break {
-        return ClinchResolution::Exit {
-            escaped_by: Side::Opponent,
-        };
-    }
-    if player == ClinchIntent::Throw && opponent == ClinchIntent::Throw {
+    if controller_pick == ClinchIntent::Throw {
         return ClinchResolution::Launch {
-            launched: Side::Player,
-        };
-    }
-    if player == ClinchIntent::Throw {
-        return ClinchResolution::Launch {
-            launched: Side::Opponent,
-        };
-    }
-    if opponent == ClinchIntent::Throw {
-        return ClinchResolution::Launch {
-            launched: Side::Player,
+            launched: controlled,
         };
     }
     ClinchResolution::Continue
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn throw_vs_tech_escapes_the_controlled_side() {
+        assert_eq!(
+            resolve(ClinchIntent::Throw, ClinchIntent::Tech, Side::Player),
+            ClinchResolution::Exit {
+                escaped_by: Side::Opponent
+            }
+        );
+        // Symmetric: controller = Opponent.
+        assert_eq!(
+            resolve(ClinchIntent::Tech, ClinchIntent::Throw, Side::Opponent),
+            ClinchResolution::Exit {
+                escaped_by: Side::Player
+            }
+        );
+    }
+
+    #[test]
+    fn throw_against_no_tech_launches_the_controlled_side() {
+        assert_eq!(
+            resolve(ClinchIntent::Throw, ClinchIntent::Hold, Side::Player),
+            ClinchResolution::Launch {
+                launched: Side::Opponent
+            }
+        );
+    }
+
+    #[test]
+    fn tech_against_no_throw_whiffs() {
+        assert_eq!(
+            resolve(ClinchIntent::Hold, ClinchIntent::Tech, Side::Player),
+            ClinchResolution::WhiffedTech {
+                teched_by: Side::Opponent
+            }
+        );
+    }
+
+    #[test]
+    fn break_always_escapes() {
+        assert_eq!(
+            resolve(ClinchIntent::Throw, ClinchIntent::Break, Side::Player),
+            ClinchResolution::Exit {
+                escaped_by: Side::Opponent
+            }
+        );
+    }
 }

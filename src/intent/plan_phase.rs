@@ -299,6 +299,10 @@ pub enum PlanEvent {
     FreeCancelled {
         side: Side,
     },
+    /// A clinch tech found no throw and whiffed (F-016).
+    TechWhiffed {
+        side: Side,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -859,7 +863,7 @@ impl PlanPhase {
             let player = clinch_intent(intents[side_index(Side::Player)]);
             let opponent = clinch_intent(intents[side_index(Side::Opponent)]);
             if let (Some(player), Some(opponent)) = (player, opponent) {
-                match clinch::resolve(player, opponent) {
+                match clinch::resolve(player, opponent, clinch_state.controller) {
                     ClinchResolution::Continue => {
                         // F-015 grapple progression: sustained double-Hold
                         // advances the controller Overhook → BackControl.
@@ -881,6 +885,13 @@ impl PlanPhase {
                     ClinchResolution::Launch { launched } => {
                         self.combos[side_index(launched)].launch();
                         let _ = clinch_state;
+                    }
+                    ClinchResolution::WhiffedTech { teched_by } => {
+                        // F-016 punishment: a whiffed tech deepens the
+                        // controller's position for free.
+                        clinch_state.position = super::clinch::ClinchPositionKind::BackControl;
+                        self.clinch = Some(clinch_state);
+                        events.push(PlanEvent::TechWhiffed { side: teched_by });
                     }
                 }
             }
