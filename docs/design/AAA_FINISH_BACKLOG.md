@@ -101,8 +101,8 @@ Consequences applied throughout this backlog:
 ### C.1 Combat truth, intent, and yomi depth (F-001..F-020)
 F-001 Data-driven 13×13 matchup matrix with per-cell golden tests — H,G — W2
 F-002 Per-action timing table derived from motion analysis — H — W2
-F-003 Stance system high/neutral/low affecting matrix rows — H,G — W2
-F-004 Tempo meter with deterministic gain/loss rules — H,G — W2 — DONE (5b1235d; gain/loss wired, effect hooks pending balance pass)
+F-003 Stance system high/neutral/low affecting matrix rows — H,G — W2 — DONE (508c34d; tempo-economy effects; matrix-row hooks pending F-001)
+F-004 Tempo meter with deterministic gain/loss rules — H,G — W2 — DONE (5b1235d gains; 508c34d cost economy + gate per PRD_STANCE_TEMPO)
 F-005 Feint (2-charge free-cancel) with cancel-category resolution — H,G — W2 — DONE (charges/spend/recharge/gate, f2e877d; category-graph widening pending F-012)
 F-006 Whiff-cancel 2-frame state at 75% burst — H,G — W2 — DONE (f2e877d)
 F-007 Burst resource economy (gain on read, spend on cancel/feint) — H,G — W2 — DONE (spend+regen, f2e877d; gain-on-read tuning pending balance pass)
