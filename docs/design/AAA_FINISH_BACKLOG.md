@@ -115,7 +115,7 @@ F-013 Dynamic IASA from hit/block/landing — H — W2 — DONE (d42a018; landin
 F-014 Clinch sub-exchange full frame data + tech/escape options — H,G — W2
 F-015 Clinch position states (over/under/back-control) with option gating — H,G — W2 — DONE (bf03b3e controller/Overhook→BackControl + role gating)
 F-016 Throw/throw-tech deterministic resolution — H,G — W2 — DONE (fbd111a controller-relative tech/whiff/launch rules)
-F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2
+F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2 — DONE (834604d downed + getup gate; throw exits clinch)
 F-018 Disarm/armed state machine gating strikes vs unarmed options — H,G — W2
 F-019 Weapon draw/sheath as intents with vulnerability windows — H,G — W2
 F-020 Range bands (out/jab/mid/clinch) with intent feasibility gating — H — W1 — DONE (06b220c explicit Close/Mid/Far bands + snapshot/HUD; feasibility gating exists via is_feasible)
