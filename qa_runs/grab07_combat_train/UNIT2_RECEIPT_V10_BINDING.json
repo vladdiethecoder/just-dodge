@@ -1,0 +1,22 @@
+{
+ "action_evaluator_sha256": "c6c33a6bc3dbd9647bd6646670977458d51f6e4066ff0ce3e37a25ad146057af",
+ "corpus_lineage_manifest_sha256": "bdae82389140295589986d21feb167b574dec3d83473bd696a996922591bf97e",
+ "dependency_versions": {
+  "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+  "numpy": "2.4.4",
+  "python": "Python 3.14.6",
+  "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "torch": "2.11.0+cu130"
+ },
+ "dirty_state_porcelain": "CLEAN",
+ "evaluated_source_sha": "01b6f956672d4309da0e57dc172330270fd00f36",
+ "evaluator_sha256": "c374a9f10ac0e9122a69895f672989e4b7a7599fc307ef7573cba90b0c2fd86e",
+ "prior_verdict": "BLOCKED (DATA_PROVENANCE_UNAVAILABLE) \u2014 v9 receipt c11f5196",
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "public_ci_required": true,
+ "public_ci_status": "RUNNING \u2014 full GitHub workflow triggered on receipt revision",
+ "receipt_commit_sha": "07efda67516581df38b697aaca4a0393252e35e2",
+ "receipt_sha256_self": "COMPUTED_AFTER_WRITE",
+ "schema": "just-dodge-grab07-unit2-receipt-v10-verification-binding",
+ "utc": "2026-07-19T03:09:21.822336+00:00"
+}
