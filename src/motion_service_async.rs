@@ -192,8 +192,11 @@ impl MotionPlanService {
         }
     }
 
-    /// Construct the deterministic shipped path: embedded baked G1 clips only,
-    /// no Python interpreter, model session, or runtime inference.
+    /// TEST-ONLY: embedded baked clips for deterministic provider tests.
+    /// Canon (2026-07-19 ruling): baked clips are forbidden in every runtime
+    /// mode — ship is live generative MotionBricks — so no runtime
+    /// constructor exists; this survives only to exercise the provider
+    /// contract in tests.
     pub fn baked() -> Result<Self, MotionServiceError> {
         Ok(Self::new(BakedClipProvider::embedded()?))
     }
@@ -216,9 +219,9 @@ impl MotionPlanService {
     }
 }
 
-/// Shipped deterministic provider. Every file is embedded from
-/// `assets/motion/m4_baked/`, parsed and finite-validated at startup, then
-/// selected by core intent. It has no model or Python dependency.
+/// TEST-ONLY provider: embedded `assets/motion/m4_baked/` clips. Baked clips
+/// are canon-forbidden at runtime (2026-07-19 ruling); this type exists only
+/// to test the provider contract deterministically.
 pub struct BakedClipProvider {
     clips: HashMap<CoreMotionIntent, Arc<[FullPose]>>,
     pending: HashMap<MotionRequestId, CoreMotionIntent>,
