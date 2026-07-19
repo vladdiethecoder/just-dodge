@@ -261,6 +261,11 @@ pub enum PlanEvent {
         side: Side,
         stance: Stance,
     },
+    /// A grounded strike that made contact free-cancelled into another
+    /// grounded strike mid-execution (F-012 string system).
+    FreeCancelled {
+        side: Side,
+    },
     ClinchEnter {
         initiator: Side,
     },
@@ -532,6 +537,29 @@ impl PlanPhase {
         side: Side,
         intent: Intent,
     ) -> Result<Vec<PlanEvent>, PlanError> {
+        // F-012 free-cancel category graph: a grounded Strike that produced
+        // measured contact (hit OR blocked) free-cancels into another
+        // grounded Strike immediately, mid-execution — the string system.
+        if matches!(self.status, PlanStatus::Executing { .. })
+            && matches!(intent, Intent::Strike { .. })
+        {
+            let index = side_index(side);
+            let admits = self.active[index].is_some_and(|action| {
+                action.made_contact
+                    && matches!(action.intent, Intent::Strike { .. })
+                    && tempo_cost(intent, self.stances[index]) <= self.tempo[index]
+            });
+            if admits {
+                self.tempo[index] =
+                    self.tempo[index].saturating_sub(tempo_cost(intent, self.stances[index]));
+                self.active[index] = Some(ActiveAction::new(
+                    intent,
+                    self.roots[index],
+                    self.roots[1 - index],
+                ));
+                return Ok(vec![PlanEvent::FreeCancelled { side }]);
+            }
+        }
         if self.status != PlanStatus::Planning {
             return Err(PlanError::NotPlanning);
         }
@@ -1900,6 +1928,76 @@ mod tests {
             TEMPO_START - 4 + TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
         );
         assert_eq!(snap.tempo[1], TEMPO_START + TEMPO_REGEN_PER_EXCHANGE);
+    }
+
+    #[test]
+    fn free_cancel_chains_strikes_on_contact() {
+        // F-012: thrust lands at 300mm (contact tick 3) → an immediate
+        // mid-execution Slash submit is admitted as a free-cancel string.
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        relock_available(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Idle,
+        );
+        for _ in 0..4 {
+            let _ = phase.step_truth_tick();
+        }
+        let events = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+            )
+            .unwrap();
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::FreeCancelled { side: Side::Player })),
+            "contact must admit the free-cancel string: {events:?}"
+        );
+        // The chained slash produces its own contact a few ticks later.
+        let mut contacted = false;
+        for _ in 0..6 {
+            let events = phase.step_truth_tick().unwrap_or_default();
+            let _ = events;
+            if phase.snapshot().last_contact_observed {
+                contacted = true;
+            }
+        }
+        assert!(contacted, "the chained strike must produce its own contact");
+    }
+
+    #[test]
+    fn free_cancel_requires_measured_contact() {
+        // No contact (whiff at range): early strike submit is NOT a
+        // free-cancel — the normal Planning gate applies.
+        let [player, opponent] = symmetric(2_000);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        relock_available(
+            &mut phase,
+            Intent::Strike {
+                variant: StrikeVariant::Thrust,
+            },
+            Intent::Idle,
+        );
+        let _ = phase.step_truth_tick();
+        let result = phase.submit_intent(
+            Side::Player,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+        );
+        let admitted = result.as_ref().is_ok_and(|events| {
+            events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::FreeCancelled { .. }))
+        });
+        assert!(!admitted, "a whiffing strike must not free-cancel");
     }
 
     #[test]
