@@ -113,7 +113,7 @@ F-011 Hit-cancel windows per action (iasa_on_hit) — H — W2 — DONE (existin
 F-012 Free-cancel category graph (grounded/aerial strings) — H — W2 — DONE (a52b1db grounded strings; aerial deferred to air actions)
 F-013 Dynamic IASA from hit/block/landing — H — W2 — DONE (d42a018; landing hook deferred to air lane)
 F-014 Clinch sub-exchange full frame data + tech/escape options — H,G — W2
-F-015 Clinch position states (over/under/back-control) with option gating — H,G — W2
+F-015 Clinch position states (over/under/back-control) with option gating — H,G — W2 — DONE (bf03b3e controller/Overhook→BackControl + role gating)
 F-016 Throw/throw-tech deterministic resolution — H,G — W2
 F-017 Ground/pinned state with reduced intent set (state-conditioned options) — H,G — W2
 F-018 Disarm/armed state machine gating strikes vs unarmed options — H,G — W2
