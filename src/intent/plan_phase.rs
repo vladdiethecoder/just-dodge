@@ -199,6 +199,8 @@ pub enum RepromptReason {
     /// F-015: the controlled side picked a controller-only option — it must
     /// escape (Tech/Break) or Hold.
     ControlledMustEscape,
+    /// F-017: a downed side picked a non-getup option.
+    GroundedGetup,
     /// Feint submitted with no free-cancel charges remaining.
     NoFeintCharges,
     /// After a whiff cancel the follow-up must be an attack.
@@ -356,6 +358,8 @@ pub struct PlanSnapshot {
     pub feint_charges: [u8; 2],
     /// The side's last completed attack whiffed (whiff-cancel window open).
     pub whiffed: [bool; 2],
+    /// F-017 ground/pinned flags (getup-restricted window).
+    pub downed: [bool; 2],
     /// Tempo meter per side (0..=100, F-004): a cost resource that gates
     /// selection (PRD_STANCE_TEMPO) — actions cost tempo at lock, regen per
     /// exchange, bonuses for hits/blocks/parries, losses on hits/whiffs.
@@ -448,6 +452,9 @@ pub struct PlanPhase {
     feint_recharge_ticks: [u64; 2],
     whiffed: [bool; 2],
     whiff_cancel_followup: [bool; 2],
+    /// F-017 ground/pinned: launched side's next selection is restricted to
+    /// getup options (Idle/Dodge/Block) for one window.
+    downed: [bool; 2],
     tempo: [u16; 2],
     stances: [Stance; 2],
     pending_events: Vec<PlanEvent>,
@@ -491,6 +498,7 @@ impl PlanPhase {
             feint_charges: [FEINT_MAX_CHARGES; 2],
             feint_recharge_ticks: [0; 2],
             whiffed: [false; 2],
+            downed: [false; 2],
             whiff_cancel_followup: [false; 2],
             tempo: [TEMPO_START; 2],
             stances: [Stance::Neutral; 2],
@@ -560,6 +568,7 @@ impl PlanPhase {
             burst: self.burst,
             feint_charges: self.feint_charges,
             whiffed: self.whiffed,
+            downed: self.downed,
             tempo: self.tempo,
             stances: self.stances,
             range_band: RangeBand::of(planar_distance_upper_bound(self.roots[0], self.roots[1])),
@@ -641,6 +650,14 @@ impl PlanPhase {
         }
         if self.clinch.is_none() && matches!(intent, Intent::Clinch { .. }) {
             return Err(PlanError::ClinchIntentRequired);
+        }
+        // F-017: a downed (launched) side may only pick getup options.
+        if self.downed[index] && !is_getup_option(intent) {
+            return Ok(vec![PlanEvent::Reprompt {
+                side,
+                reason: RepromptReason::GroundedGetup,
+                options: REPROMPT_OPTIONS,
+            }]);
         }
         if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
             return Ok(vec![PlanEvent::Reprompt {
@@ -795,6 +812,9 @@ impl PlanPhase {
                 // Any lock closes the whiff window: whiff-cancel, normal
                 // cancel, or simply choosing something else.
                 self.whiffed[index] = false;
+                // F-017: submitting the getup selection lifts the downed
+                // restriction (one restricted selection, whenever it comes).
+                self.downed[index] = false;
                 self.whiff_cancel_followup[index] =
                     self.whiff_cancel_followup[index] && matches!(intent, Intent::Cancel);
                 self.active[index] = Some(action);
@@ -884,6 +904,13 @@ impl PlanPhase {
                     }
                     ClinchResolution::Launch { launched } => {
                         self.combos[side_index(launched)].launch();
+                        // A successful throw EXITS the clinch into the
+                        // launch/knockdown (F-016/F-017).
+                        self.clinch = None;
+                        self.grab = None;
+                        // F-017: the launched side is grounded — its next
+                        // selection is restricted to getup options.
+                        self.downed[side_index(launched)] = true;
                         let _ = clinch_state;
                     }
                     ClinchResolution::WhiffedTech { teched_by } => {
@@ -1329,6 +1356,10 @@ impl PlanPhase {
         if matches!(intent, Intent::Clinch { .. }) {
             return false;
         }
+        // F-017: downed sides may only pick getup options.
+        if self.downed[index] && !is_getup_option(intent) {
+            return false;
+        }
         if matches!(intent, Intent::Feint) && self.feint_charges[index] == 0 {
             return false;
         }
@@ -1404,6 +1435,11 @@ fn clinch_intent(intent: Intent) -> Option<super::clinch::ClinchIntent> {
         Intent::Clinch { sub } => Some(sub),
         _ => None,
     }
+}
+
+/// F-017 getup options available to a downed side.
+fn is_getup_option(intent: Intent) -> bool {
+    matches!(intent, Intent::Idle | Intent::Dodge { .. } | Intent::Block)
 }
 
 fn root_after_action(
@@ -2166,6 +2202,69 @@ mod tests {
                 .iter()
                 .any(|e| matches!(e, PlanEvent::Reprompt { .. })),
             "controller Throw must be legal: {events:?}"
+        );
+    }
+
+    #[test]
+    fn launched_side_is_getup_restricted_for_one_selection() {
+        // F-017: controller Throw vs controlled Hold launches the controlled
+        // side; its next selection must be a getup option.
+        let mut phase = clinch_phase();
+        advance_until_submittable(&mut phase, Side::Opponent);
+        let _ = phase.submit_intent(
+            Side::Opponent,
+            Intent::Clinch {
+                sub: ClinchIntent::Hold,
+            },
+        );
+        advance_until_submittable(&mut phase, Side::Player);
+        let _ = phase.submit_intent(
+            Side::Player,
+            Intent::Clinch {
+                sub: ClinchIntent::Throw,
+            },
+        );
+        // The throw resolves at the window's end (finish_boundary).
+        let _ = phase.simulate_to_boundary();
+        assert!(
+            phase.snapshot().downed[side_index(Side::Opponent)],
+            "the launched side must be downed"
+        );
+        // Non-getup option → reprompted.
+        advance_until_submittable(&mut phase, Side::Opponent);
+        let reprompt = phase
+            .submit_intent(
+                Side::Opponent,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                },
+            )
+            .unwrap();
+        assert!(reprompt.iter().any(|e| matches!(
+            e,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::GroundedGetup,
+                ..
+            }
+        )));
+        // Getup option admits; the restriction lifts after that selection.
+        let events = phase.submit_intent(Side::Opponent, Intent::Idle).unwrap();
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::Reprompt { .. })),
+            "getup option must be legal: {events:?}"
+        );
+        let _ = phase.simulate_to_boundary();
+        advance_until_submittable(&mut phase, Side::Opponent);
+        assert!(
+            phase.intent_available(
+                Side::Opponent,
+                Intent::Strike {
+                    variant: StrikeVariant::Slash
+                }
+            ),
+            "after the getup selection the full menu returns"
         );
     }
 
