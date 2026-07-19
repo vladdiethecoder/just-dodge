@@ -357,6 +357,12 @@ struct GameLoopApp {
     config: Option<wgpu::SurfaceConfiguration>,
     renderer: Option<renderer::Renderer>,
     presentation: Option<PresentationAssets>,
+    /// F-022 generative ship lane: live MotionBricks clips drive the skinned
+    /// fighters when JUSTDODGE_MOTION=generative.
+    motion: Option<(
+        just_dodge::motion_service_async::MotionPlanService,
+        just_dodge::motion_service_async::PlanPhaseMotionAdapter,
+    )>,
     phase: PlanPhase,
     selected: Intent,
     opponent_phase: u64,
@@ -373,6 +379,19 @@ struct GameLoopApp {
 
 impl GameLoopApp {
     fn new(assets_root: String) -> Self {
+        let motion = (std::env::var("JUSTDODGE_MOTION").ok().as_deref() == Some("generative"))
+            .then(|| {
+                let service = just_dodge::motion_service_async::MotionPlanService::new(
+                    just_dodge::motion_service_async::GenerativeMotionProvider::new(
+                        assets_root.clone(),
+                    ),
+                );
+                let adapter = just_dodge::motion_service_async::PlanPhaseMotionAdapter::new(
+                    [glam::Mat4::IDENTITY; just_dodge::motion::G1_NB],
+                    [glam::Mat4::IDENTITY; just_dodge::motion::G1_NB],
+                );
+                (service, adapter)
+            });
         Self {
             assets_root,
             window: None,
@@ -382,6 +401,7 @@ impl GameLoopApp {
             config: None,
             renderer: None,
             presentation: None,
+            motion,
             phase: PlanPhase::new(),
             selected: Intent::Idle,
             opponent_phase: 0,
@@ -436,6 +456,7 @@ impl GameLoopApp {
         let now = Instant::now();
         let mut stepped = 0_u8;
         while now >= self.next_truth && stepped < 4 {
+            let was_planning = self.phase.status() == PlanStatus::Planning;
             lock_next_phase(&mut self.phase, self.selected, self.opponent_phase, false);
             // Interactive freeze: the player's selection is still open — wait
             // for a key-locked intent instead of stepping without both locks.
@@ -445,9 +466,17 @@ impl GameLoopApp {
                 self.next_truth = now + TRUTH_STEP;
                 return;
             }
-            self.phase
-                .step_truth_tick()
-                .expect("window loop must only step locked PlanPhase truth");
+            if let Some((service, adapter)) = self.motion.as_mut() {
+                if was_planning {
+                    let _ = adapter.submit_locked(&self.phase, service);
+                }
+                let _ = adapter.step_truth_tick(&mut self.phase, service);
+                let _ = adapter.poll_presentation(service, self.phase.snapshot().truth_frame);
+            } else {
+                self.phase
+                    .step_truth_tick()
+                    .expect("window loop must only step locked PlanPhase truth");
+            }
             if self.phase.status() == PlanStatus::Planning {
                 self.opponent_phase = self.opponent_phase.saturating_add(1);
             }
@@ -642,8 +671,24 @@ impl GameLoopApp {
         );
         let player_model = fighter_model(player_root, opponent_root);
         let opponent_model = fighter_model(opponent_root, player_root);
-        let player_skin = presentation.skin_for(snapshot.locked[0], snapshot.truth_frame);
-        let opponent_skin = presentation.skin_for(snapshot.locked[1], snapshot.truth_frame);
+        let player_skin = if let Some((_, adapter)) = self.motion.as_ref() {
+            asset::compute_skin_matrices(
+                &adapter.playback_pose(Side::Player, snapshot.truth_frame),
+                &presentation.mesh,
+            )
+            .to_vec()
+        } else {
+            presentation.skin_for(snapshot.locked[0], snapshot.truth_frame)
+        };
+        let opponent_skin = if let Some((_, adapter)) = self.motion.as_ref() {
+            asset::compute_skin_matrices(
+                &adapter.playback_pose(Side::Opponent, snapshot.truth_frame),
+                &presentation.mesh,
+            )
+            .to_vec()
+        } else {
+            presentation.skin_for(snapshot.locked[1], snapshot.truth_frame)
+        };
         renderer.update_camera(queue, &proj_view);
         renderer.upload_debug_mvp(queue, &proj_view);
         renderer.update_contact_shadows(queue, &proj_view, player_root, opponent_root);
