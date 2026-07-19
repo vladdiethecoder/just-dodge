@@ -6,6 +6,7 @@
 
 pub mod clinch;
 pub mod combo;
+pub mod forecast;
 pub mod grab_closing;
 pub mod grab_contact;
 pub mod grab_state;
@@ -15,6 +16,7 @@ pub mod plan_phase;
 
 pub use clinch::{ClinchIntent, ClinchResolution, ClinchState};
 pub use combo::{AirState, ComboState, GRAVITY_MM_PER_TICK_SQUARED, LAUNCH_VELOCITY_MM_PER_TICK};
+pub use forecast::{ForecastOutcome, PredictedOutcome, forecast, predicted_outcome};
 pub use grab_state::{
     GRAB_ACQUIRE_RANGE_MM, GrabAttempt, GrabFailure, GrabState, SecureGrabAdmission,
 };

@@ -93,7 +93,7 @@ pub enum TruthBridgeError {
     MismatchedActionTicks { first: u64, second: u64 },
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SharedDuelPhysics {
     next_physics_tick: u64,
 }

@@ -288,7 +288,9 @@ impl ActiveAction {
 
 /// New clean simultaneous-lock game loop. This deliberately does not mutate
 /// milestone3 state; it only adapts its measured physics/truth primitives.
-#[derive(Debug)]
+/// Clone is used ONLY for forecast copies (F-110): a cloned phase simulates a
+/// hypothetical lock without mutating live truth.
+#[derive(Debug, Clone)]
 pub struct PlanPhase {
     status: PlanStatus,
     roots: [RootPosition; 2],

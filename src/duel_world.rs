@@ -52,7 +52,7 @@ pub enum DuelWorldError {
 
 /// Single-writer kinematic state required to make weapon CCD continuous across
 /// externally supplied target frames.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DuelWorld {
     physics: SharedDuelPhysics,
     previous_player_weapon: Option<HitboxProxy>,
