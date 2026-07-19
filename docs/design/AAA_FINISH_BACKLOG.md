@@ -109,9 +109,9 @@ F-007 Burst resource economy (gain on read, spend on cancel/feint) — H,G — W
 F-008 Perfect-block frame window with full negate vs chip/durability — H,G — W2 — DONE (5b1235d PERFECT_BLOCK_TICKS=3)
 F-009 Parry as timed block variant with deflect outcome — H,G — W2 — DONE (5b1235d attacker stagger)
 F-010 Counter-hit state (hit during opponent startup) with damage multiplier — H,G — W2 — DONE (5b1235d; instant hit-cancel; damage multiplier pending injury wiring)
-F-011 Hit-cancel windows per action (iasa_on_hit) — H — W2
+F-011 Hit-cancel windows per action (iasa_on_hit) — H — W2 — DONE (existing iasa_on_hit + hit_cancel; dynamic variant in d42a018)
 F-012 Free-cancel category graph (grounded/aerial strings) — H — W2 — DONE (a52b1db grounded strings; aerial deferred to air actions)
-F-013 Dynamic IASA from hit/block/landing — H — W2
+F-013 Dynamic IASA from hit/block/landing — H — W2 — DONE (d42a018; landing hook deferred to air lane)
 F-014 Clinch sub-exchange full frame data + tech/escape options — H,G — W2
 F-015 Clinch position states (over/under/back-control) with option gating — H,G — W2
 F-016 Throw/throw-tech deterministic resolution — H,G — W2
