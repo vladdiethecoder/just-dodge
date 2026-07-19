@@ -7,6 +7,7 @@
 pub mod clinch;
 pub mod combo;
 pub mod grab_closing;
+pub mod grab_contact;
 pub mod grab_state;
 #[allow(clippy::module_inception)]
 pub mod intent;

@@ -120,6 +120,12 @@ pub struct GrabAttempt {
     pub current_root: crate::intent::plan_phase::RootPosition,
     /// Opponent root position at current tick.
     pub opponent_root: crate::intent::plan_phase::RootPosition,
+    /// Canonical bilateral manifold samples at 120Hz substeps (typed contact evidence).
+    #[serde(default)]
+    pub contact_samples: Vec<super::grab_contact::ContactManifoldSample>,
+    /// The contiguous secure interval, if one satisfied every gate.
+    #[serde(default)]
+    pub secure_interval: Option<super::grab_contact::IntervalVerdict>,
 }
 
 impl GrabAttempt {
@@ -147,6 +153,8 @@ impl GrabAttempt {
             start_root,
             current_root: start_root,
             opponent_root,
+            contact_samples: Vec::new(),
+            secure_interval: None,
         }
     }
 
@@ -176,24 +184,27 @@ impl GrabAttempt {
         self.failure.is_some()
     }
 
-    /// Update the grab state based on measured contact.
-    pub fn update_contact(&mut self, contact: &crate::truth::ContactGeometry, frame: u64) {
-        self.current_root = crate::intent::plan_phase::RootPosition::new(
-            (contact.distance * 1000.0) as i32,
-            self.current_root.y_mm,
-            self.current_root.z_mm,
-        );
-
+    /// Update the grab state based on one canonical bilateral manifold sample
+    /// at one 120 Hz physics substep. Contact distance is NEVER written into
+    /// RootPosition — surface distance, proxy overlap and root transforms are
+    /// separate typed values. The root positions are owned by advance_roots.
+    pub fn update_contact(&mut self, sample: &super::grab_contact::ContactManifoldSample) {
+        self.contact_samples.push(*sample);
+        if !sample.physics_contact_active {
+            return;
+        }
         if self.first_contact_frame.is_none() {
-            self.first_contact_frame = Some(frame);
+            self.first_contact_frame = Some(sample.substep_id);
             self.state = GrabState::FirstPhysicalContact;
         }
-        self.last_contact_frame = Some(frame);
-
-        // Check if contact is sustained
-        if let Some(first) = self.first_contact_frame {
-            let duration = frame.saturating_sub(first);
-            if duration >= SECURE_GRAB_MIN_CONTACT_TICKS as u64 {
+        self.last_contact_frame = Some(sample.substep_id);
+        // Contiguous-interval evaluation derives ContactSustained/SecureGrab.
+        if let Some(v) = super::grab_contact::any_secure_interval(&self.contact_samples) {
+            self.state = GrabState::SecureGrab;
+            self.secure_interval = Some(v);
+        } else if let Some(first) = self.first_contact_frame {
+            let dur = sample.substep_id.saturating_sub(first) as u32;
+            if dur >= super::grab_contact::SECURE_GRAB_MIN_SUBSTEPS {
                 self.state = GrabState::ContactSustained;
             }
         }

@@ -639,9 +639,25 @@ impl PlanPhase {
         };
 
         // Runtime proof: wire measured runtime contact into GrabAttempt update/admission.
-        // Remove manual admission booleans and fabricated JSON truth.
+        // The truth-layer ContactGeometry carries only distance/range/attacker/surface —
+        // it does NOT carry 120Hz substep IDs, manifold identity, penetration, visible
+        // overlap, causal response or override flags. Those must come from canonical
+        // bilateral physics manifolds (DuelWorld), not from this coarse batch. Until the
+        // DuelWorld emits ContactManifoldSample, we bridge the measured fields we do have
+        // and mark the unknown evidence channels as inactive (never fabricated True).
         if let Some(grab) = self.grab.as_mut() {
-            grab.update_contact(&contact, self.truth_frame);
+            let sample = super::grab_contact::ContactManifoldSample {
+                substep_id: u64::from(measured.truth_frame) * 2, // 60Hz frame -> 120Hz substep
+                manifold_id: u64::from(attacker as u8),
+                surface_distance_mm: contact.distance * 1000.0,
+                proxy_overlap_mm: 0.0,          // not measured at this layer
+                prohibited_penetration_mm: 0.0, // not measured at this layer
+                physics_contact_active: contact.in_range,
+                visible_contact_active: false, // unknown at this layer — not fabricated
+                opponent_response_causal: false, // unknown at this layer — not fabricated
+                presentation_override: false,
+            };
+            grab.update_contact(&sample);
         }
         let active_cancellable_hitbox = attacker_action
             .intent
