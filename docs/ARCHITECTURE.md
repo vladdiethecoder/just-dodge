@@ -433,7 +433,7 @@ Target runtime path:
 CommittedCombatEvent
   → MotionIntentRequest
   → pose/root conditions
-  → MotionBricks or prebaked/action clip fallback
+  → MotionBricks generative inference (no prebaked/action clip fallback; owner ruling 2026-07-19)
   → 34-joint G1 motion
   → retarget map + IK + injury ROM clamps
   → 24+ mannequin skin matrices
@@ -628,7 +628,7 @@ Create ADRs before implementing major changes:
 2. ADR-002: Replay and Truth Hash Contract.
 3. ADR-003: PresentationBridge One-Way Data Flow.
 4. ADR-004: Asset Binary Formats: static `.bin`, SKM1, ANM1.
-5. ADR-005: MotionBricks Runtime vs Prebaked Fallback.
+5. ADR-005: MotionBricks Runtime vs Prebaked Fallback. (RESOLVED 2026-07-19: MotionBricks generative runtime only; the prebaked fallback is rejected and removed from all modes.)
 6. ADR-006: Player/Presentation/Developer UI Mode Separation.
 7. ADR-007: QA Agent Interface and Capture Contract.
 8. ADR-008: Armor Truth State vs Visual Damage State.

@@ -40,7 +40,9 @@ This overrides any older doc language describing a "minimal triangle prototype" 
 
 - **In scope:** 1v1 simultaneous-reveal dueling, 13-action matrix, deep localized injury and tissue damage, deep armor/material simulation, deep martial-arts motion via MotionBricks, deterministic AI, replay theater, fight film, local 2P, tutorial, Steam launch.
 - **Fidelity target:** For Honor visual and physical fidelity combined with YOMI Hustle simultaneous-reveal game loop.
-- **Motion engine lock:** MotionBricks is the sole animation, stance, pose, combat motion, and retargeting engine. Prebaked action clips and motion fallbacks are disallowed. MotionBricks must work for every required action; missing or broken motion is a build-blocking defect.
+- **Motion engine lock:** MotionBricks is the sole animation, stance, pose, combat motion, and retargeting engine. Prebaked action clips and motion fallbacks are disallowed. MotionBricks must work for every required action; missing or broken motion is a build-blocking defect. (Owner ruling 2026-07-19: baked clips are forbidden in every mode and tier — no baked clip libraries, pose banks, or runtime clip playback exist anywhere in the game.)
+- **Continuous combat state space:** the combat state space is continuous ("infinite"). All motion is generated per tick from the live condition packet (intent, displacement, limb state, weapon hand, opponent state, injury, momentum, speed, velocity, root transform) and resolved by deterministic physics. The game never selects from a discrete set of precomputed combat states or animations.
+- **Archetype constraint:** the infinite state space is bounded by character archetypes. A fighter's learned combat arts, weapon/build, and current physical state define which intents and motion families are reachable. Archetypes constrain options and conditioning; they never quantize motion into clips.
 - **Hitbox parity:** Collision proxies must match visual geometry exactly. No oversized hitboxes, no ghost hits, no phantom range.
 - **Out of scope:** open world, crafting/loot, MMO, narrative/dialogue trees, physics-driven comedy, networking before vertical slice.
 
@@ -63,6 +65,7 @@ This overrides any older doc language describing a "minimal triangle prototype" 
 | Shape prototype plans triangles-only. | Current source has textured arena and skinned mannequin; next prototype still targets a 3-action playable loop, using existing renderer as context only. |
 | Asset loader/extractor format ordering may mismatch. | Accept as known pipeline risk; fix before next asset import. |
 | Motion dimensions in older docs (241/329) vs code (304/413). | Current exported model metadata wins; reconcile with actual ONNX metadata before next motion milestone. |
+| Older docs permit prebaked/baked fallback clips. | SUPERSEDED by owner ruling 2026-07-19: baked clips forbidden in all modes; ship lane is the live generative MotionBricks provider via the async buffered plan service. |
 | ONNX/NPY artifacts are gitignored. | Runtime requires externally generated artifacts; packaging must include them. Missing artifacts block the build; no motion fallback exists. |
 
 ## Next Canon Amendment

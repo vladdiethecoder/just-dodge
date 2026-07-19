@@ -999,7 +999,7 @@ Add `map_truth_action` and `map_truth_stance` helpers to convert `truth::Action/
 
 ```rust
 fn current_pose(&self) -> ([Mat4; 24], [Mat4; 24]) {
-    // Prefer generated combat clip; otherwise fall back to idle clip (idle is also MotionBrains-generated, not prebaked).
+    // Use generated combat motion only; if generation is not ready, hold the last validated pose. Clip fallback is forbidden (owner ruling 2026-07-19).
     let identity = [Mat4::IDENTITY; 24];
     // ... existing idle logic ...
 }

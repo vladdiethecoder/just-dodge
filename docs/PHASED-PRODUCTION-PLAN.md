@@ -229,7 +229,7 @@ Make opponent intent readable through pose, timing, camera, and audio.
 
 - Action-to-motion presentation bridge.
 - Distinct reveal tells for actions.
-- MotionBricks or prebaked/action-authored fallback clips.
+- MotionBricks-generated motion only. Prebaked/action-authored fallback clips are forbidden (owner ruling 2026-07-19; see GAME_CANON.md motion engine lock).
 - Weapon/hand/stance readability.
 - First-person combat camera or revised readable camera.
 - Action wind-up/contact audio cues.
@@ -276,7 +276,7 @@ Each capture is audited for:
 
 ### Stop/Pivot Conditions
 
-- If MotionBricks inference is too slow or unstable, use prebaked clips and continue playable loop.
+- If MotionBricks inference is too slow or unstable, fix the inference path (async buffered plan service, horizon/quantization tuning). Using prebaked clips is forbidden (owner ruling 2026-07-19); clip substitution is never a pivot option.
 - If first-person camera fails readability, test alternate camera before adding content.
 
 ## Phase 5 — Localized Injury
