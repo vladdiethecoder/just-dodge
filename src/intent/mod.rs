@@ -7,6 +7,7 @@
 pub mod clinch;
 pub mod combo;
 pub mod forecast;
+pub mod frame_data;
 pub mod grab_closing;
 pub mod grab_contact;
 pub mod grab_state;
