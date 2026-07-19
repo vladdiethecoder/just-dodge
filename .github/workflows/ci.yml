@@ -26,6 +26,8 @@ jobs:
       - run: python3 -m json.tool tools/qa/forgelens_review_run_v1.schema.json >/dev/null
       - run: python3 tools/qa/test_asset_review.py -v
       - run: python3 tools/qa/test_forgelens_review_run_schema.py
+      - name: Python deps for QA validators (the disabled-ARDY probe imports numpy before its gate)
+        run: python3 -m pip install --quiet numpy
       - name: Build the allowlisted replay verifier (reproducible flags)
         run: RUSTFLAGS="--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME/.cargo=/.cargo --remap-path-prefix=$RUSTUP_HOME=/.rustup" cargo build --release --locked --bin m3_match
       - name: Record the CI-built verifier hash (pinned into the contract after observation)
