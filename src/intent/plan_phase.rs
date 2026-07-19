@@ -13,7 +13,7 @@ use crate::duel_physics::{Fighter, SharedPhysicsStep};
 use crate::duel_world::{DuelWorld, DuelWorldError, DuelWorldTarget, DuelWorldTruthTick};
 use crate::truth::{Action, PhysicalContactBatch, Side};
 
-use super::clinch::{self, ClinchResolution, ClinchState};
+use super::clinch::{self, ClinchIntent, ClinchResolution, ClinchState};
 use super::combo::{AirState, ComboState};
 use super::grab_state::{GrabAttempt, GrabFailure};
 use super::intent::{Intent, MoveDirection, StrikeVariant};
@@ -193,6 +193,12 @@ pub enum RepromptReason {
     GoalOutOfReach,
     GoalLostAtBoundary,
     ClinchRequired,
+    /// F-015: the clinch controller picked an escape-only option — the
+    /// controller must press (Throw/Knee/Hold).
+    ControllerMustPress,
+    /// F-015: the controlled side picked a controller-only option — it must
+    /// escape (Tech/Break) or Hold.
+    ControlledMustEscape,
     /// Feint submitted with no free-cancel charges remaining.
     NoFeintCharges,
     /// After a whiff cancel the follow-up must be an attack.
@@ -608,6 +614,27 @@ impl PlanPhase {
                 options: REPROMPT_OPTIONS,
             }]);
         }
+        // F-015 role gating: only the controller may Throw/Knee; only the
+        // controlled side may Tech/Break.
+        if let (Some(clinch_state), Intent::Clinch { sub: action }) = (self.clinch, intent) {
+            let controller = clinch_state.controller == side;
+            let legal = match action {
+                ClinchIntent::Throw | ClinchIntent::Knee => controller,
+                ClinchIntent::Tech | ClinchIntent::Break => !controller,
+                ClinchIntent::Hold => true,
+            };
+            if !legal {
+                return Ok(vec![PlanEvent::Reprompt {
+                    side,
+                    reason: if controller {
+                        RepromptReason::ControllerMustPress
+                    } else {
+                        RepromptReason::ControlledMustEscape
+                    },
+                    options: REPROMPT_OPTIONS,
+                }]);
+            }
+        }
         if self.clinch.is_none() && matches!(intent, Intent::Clinch { .. }) {
             return Err(PlanError::ClinchIntentRequired);
         }
@@ -828,12 +855,22 @@ impl PlanPhase {
             }
         }
 
-        if let Some(clinch_state) = self.clinch {
+        if let Some(mut clinch_state) = self.clinch {
             let player = clinch_intent(intents[side_index(Side::Player)]);
             let opponent = clinch_intent(intents[side_index(Side::Opponent)]);
             if let (Some(player), Some(opponent)) = (player, opponent) {
                 match clinch::resolve(player, opponent) {
-                    ClinchResolution::Continue => {}
+                    ClinchResolution::Continue => {
+                        // F-015 grapple progression: sustained double-Hold
+                        // advances the controller Overhook → BackControl.
+                        if player == ClinchIntent::Hold
+                            && opponent == ClinchIntent::Hold
+                            && clinch_state.position == super::clinch::ClinchPositionKind::Overhook
+                        {
+                            clinch_state.position = super::clinch::ClinchPositionKind::BackControl;
+                            self.clinch = Some(clinch_state);
+                        }
+                    }
                     ClinchResolution::Exit { escaped_by } => {
                         self.clinch = None;
                         // The grab attempt that opened this clinch is spent;
@@ -1267,8 +1304,16 @@ impl PlanPhase {
     /// exclusivity, feint charges, whiff-cancel follow-up gate, grab range.
     pub fn intent_available(&self, side: Side, intent: Intent) -> bool {
         let index = side_index(side);
-        if self.clinch.is_some() {
-            return matches!(intent, Intent::Clinch { .. });
+        if let Some(clinch_state) = self.clinch {
+            // F-015 role gating mirrors submit_intent.
+            return match intent {
+                Intent::Clinch { sub: action } => match action {
+                    ClinchIntent::Throw | ClinchIntent::Knee => clinch_state.controller == side,
+                    ClinchIntent::Tech | ClinchIntent::Break => clinch_state.controller != side,
+                    ClinchIntent::Hold => true,
+                },
+                _ => false,
+            };
         }
         if matches!(intent, Intent::Clinch { .. }) {
             return false;
@@ -1980,6 +2025,164 @@ mod tests {
             TEMPO_START - 4 + TEMPO_REGEN_PER_EXCHANGE + DISENGAGE_TEMPO_BONUS
         );
         assert_eq!(snap.tempo[1], TEMPO_START + TEMPO_REGEN_PER_EXCHANGE);
+    }
+
+    #[test]
+    fn probe_clinch_hold_windows() {
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        drive_until(
+            &mut phase,
+            Intent::Grab,
+            Intent::Idle,
+            |event| matches!(event, PlanEvent::ClinchEnter { .. }),
+            20,
+        );
+        for w in 0..6 {
+            let events = phase.simulate_to_boundary().unwrap_or_default();
+            println!(
+                "WINDOW {w} open={:?} locked={:?} pos={:?} events={:?}",
+                [
+                    phase.can_submit_intent(Side::Player),
+                    phase.can_submit_intent(Side::Opponent)
+                ],
+                phase.snapshot().locked,
+                phase.clinch().map(|c| c.position),
+                events
+            );
+            relock_available(
+                &mut phase,
+                Intent::Clinch {
+                    sub: ClinchIntent::Hold,
+                },
+                Intent::Clinch {
+                    sub: ClinchIntent::Hold,
+                },
+            );
+        }
+    }
+
+    /// Advance one-sided clinch boundaries (relocking neutral Holds for the
+    /// OTHER side only) until `side` may submit.
+    fn advance_until_submittable(phase: &mut PlanPhase, side: Side) {
+        let hold = Intent::Clinch {
+            sub: ClinchIntent::Hold,
+        };
+        for _ in 0..12 {
+            if phase.can_submit_intent(side) {
+                return;
+            }
+            let _ = phase.simulate_to_boundary();
+            for other in [Side::Player, Side::Opponent] {
+                if other != side && phase.can_submit_intent(other) {
+                    let _ = phase.submit_intent(other, hold);
+                }
+            }
+        }
+        panic!("side never became submittable");
+    }
+
+    /// Build a clinch (player-initiated secure grab vs idle opponent).
+    fn clinch_phase() -> PlanPhase {
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        drive_until(
+            &mut phase,
+            Intent::Grab,
+            Intent::Idle,
+            |event| matches!(event, PlanEvent::ClinchEnter { .. }),
+            20,
+        );
+        phase
+    }
+
+    #[test]
+    fn clinch_position_and_role_gating() {
+        // F-015: secure grab → clinch: initiator controls at Overhook; the
+        // controlled side cannot Throw/Knee; the controller cannot Tech.
+        let phase = clinch_phase();
+        let clinch = phase.clinch().expect("clinch after secure grab");
+        assert_eq!(clinch.controller, Side::Player);
+        assert_eq!(clinch.position, super::clinch::ClinchPositionKind::Overhook);
+
+        // Controlled side (opponent) Throw → reprompted.
+        let mut phase = clinch_phase();
+        advance_until_submittable(&mut phase, Side::Opponent);
+        let reprompt = phase
+            .submit_intent(
+                Side::Opponent,
+                Intent::Clinch {
+                    sub: ClinchIntent::Throw,
+                },
+            )
+            .unwrap();
+        assert!(reprompt.iter().any(|e| matches!(
+            e,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::ControlledMustEscape,
+                ..
+            }
+        )));
+        // Controller Tech → reprompted (controller must press).
+        let mut phase = clinch_phase();
+        advance_until_submittable(&mut phase, Side::Player);
+        let reprompt = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Clinch {
+                    sub: ClinchIntent::Tech,
+                },
+            )
+            .unwrap();
+        assert!(reprompt.iter().any(|e| matches!(
+            e,
+            PlanEvent::Reprompt {
+                reason: RepromptReason::ControllerMustPress,
+                ..
+            }
+        )));
+        // Legal: controller Throw admits (no reprompt).
+        let events = phase
+            .submit_intent(
+                Side::Player,
+                Intent::Clinch {
+                    sub: ClinchIntent::Throw,
+                },
+            )
+            .unwrap();
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, PlanEvent::Reprompt { .. })),
+            "controller Throw must be legal: {events:?}"
+        );
+    }
+
+    #[test]
+    fn clinch_double_hold_advances_to_back_control() {
+        let [player, opponent] = symmetric(300);
+        let mut phase = PlanPhase::with_roots(player, opponent);
+        drive_until(
+            &mut phase,
+            Intent::Grab,
+            Intent::Idle,
+            |event| matches!(event, PlanEvent::ClinchEnter { .. }),
+            20,
+        );
+        // Three double-Hold windows: the first clears the grab-side busy
+        // continuation, the second resolves Hold/Hold and must advance.
+        let hold = Intent::Clinch {
+            sub: ClinchIntent::Hold,
+        };
+        for _ in 0..3 {
+            let _ = phase.simulate_to_boundary();
+            relock_available(&mut phase, hold, hold);
+        }
+        assert_eq!(
+            phase.clinch().map(|c| c.position),
+            Some(super::clinch::ClinchPositionKind::BackControl),
+            "sustained double-Hold must advance the controller to BackControl"
+        );
     }
 
     #[test]

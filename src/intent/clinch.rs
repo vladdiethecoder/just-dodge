@@ -26,12 +26,25 @@ impl ClinchIntent {
         }
     }
 }
+/// F-015 clinch position: who controls the tie-up and at what depth.
+/// Overhook is the entry position; sustained double-Hold advances the
+/// controller to BackControl (dominant — full throw/strike menu).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum ClinchPositionKind {
+    Overhook,
+    BackControl,
+}
 
-/// State owned by the intent authority while two fighters are clinched.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+/// Live clinch state: which side initiated and when. The clinch forces the
+/// clinch intent set on both fighters until it resolves.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ClinchState {
     pub initiator: Side,
     pub entered_at_frame: u64,
+    /// The side currently controlling the clinch (F-015): only the
+    /// controller may Throw/Knee; only the controlled side may Tech/Break.
+    pub controller: Side,
+    pub position: ClinchPositionKind,
 }
 
 impl ClinchState {
@@ -39,6 +52,8 @@ impl ClinchState {
         Self {
             initiator,
             entered_at_frame,
+            controller: initiator,
+            position: ClinchPositionKind::Overhook,
         }
     }
 }
