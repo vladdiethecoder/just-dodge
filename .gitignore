@@ -63,3 +63,7 @@ GR00T-WholeBodyControl
 # is promoted explicitly under docs/media/latest/ with a manifest instead.
 qa_runs/
 /validation_evidence/
+# The historical ARDY-v4 authorization certificate references its consumed
+# output by path; the validator replays that chain and requires the directory
+# to exist from a clean checkout. Track this one immutable evidence bundle.
+!/validation_evidence/pvp005-ardy-v4-generation-20260716T001310Z/
