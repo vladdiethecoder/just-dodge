@@ -103,9 +103,9 @@ F-001 Data-driven 13×13 matchup matrix with per-cell golden tests — H,G — W
 F-002 Per-action timing table derived from motion analysis — H — W2
 F-003 Stance system high/neutral/low affecting matrix rows — H,G — W2
 F-004 Tempo meter with deterministic gain/loss rules — H,G — W2
-F-005 Feint (2-charge free-cancel) with cancel-category resolution — H,G — W2
-F-006 Whiff-cancel 2-frame state at 75% burst — H,G — W2
-F-007 Burst resource economy (gain on read, spend on cancel/feint) — H,G — W2
+F-005 Feint (2-charge free-cancel) with cancel-category resolution — H,G — W2 — DONE (charges/spend/recharge/gate, f2e877d; category-graph widening pending F-012)
+F-006 Whiff-cancel 2-frame state at 75% burst — H,G — W2 — DONE (f2e877d)
+F-007 Burst resource economy (gain on read, spend on cancel/feint) — H,G — W2 — DONE (spend+regen, f2e877d; gain-on-read tuning pending balance pass)
 F-008 Perfect-block frame window with full negate vs chip/durability — H,G — W2
 F-009 Parry as timed block variant with deflect outcome — H,G — W2
 F-010 Counter-hit state (hit during opponent startup) with damage multiplier — H,G — W2
