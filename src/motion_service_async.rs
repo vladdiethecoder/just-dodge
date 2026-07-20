@@ -36,7 +36,7 @@ pub type FullPose = [Mat4; G1_NB];
 /// Stable local identifier for one plan-lock presentation request.
 pub type MotionRequestId = u64;
 
-/// The six baked runtime clip families required by the M4 shipped path.
+/// Legacy embedded clip families retained only for deterministic provider tests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CoreMotionIntent {
     Strike,
@@ -49,7 +49,8 @@ pub enum CoreMotionIntent {
 
 impl CoreMotionIntent {
     /// Map non-core visual transitions to Idle rather than inventing a runtime
-    /// model condition. Core match actions retain their own baked family.
+    /// model condition. This mapping is test-only legacy-provider coverage, not
+    /// a production motion-admission policy.
     pub const fn from_intent(intent: Intent) -> Self {
         match intent {
             Intent::Strike { .. } => Self::Strike,
@@ -110,8 +111,8 @@ pub struct MotionPlanRequest {
     pub keyframes: SupportedKeyframes,
 }
 
-/// A ready presentation clip. The `Arc` permits the baked provider to serve
-/// immutable embedded data without copying it on every plan lock.
+/// A ready presentation clip. The `Arc` permits providers to share immutable
+/// generated or test-only frame buffers without per-lock copying.
 #[derive(Debug, Clone)]
 pub struct MotionClip {
     pub request_id: MotionRequestId,

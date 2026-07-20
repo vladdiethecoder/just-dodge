@@ -6,9 +6,9 @@ edition = "2024"
 [features]
 # motion-inference: embeds ONNX Runtime (ort) + the Python MotionBricks bridge
 # (pyo3/numpy) for offline motion generation and QA probes. It is ON by default
-# so existing tests and tools keep working. The shipped game executable is built
-# with --no-default-features: it ships baked, validated motion and never links a
-# generative model or a Python interpreter (JD-RC0 clean-directory contract).
+# so existing tests and tools keep working. The --no-default-features build is
+# used for deterministic truth/replay verification and never links a generative
+# model or Python; it is not production motion-admission evidence.
 default = ["motion-inference"]
 motion-inference = ["dep:ort", "dep:pyo3", "dep:numpy"]
 

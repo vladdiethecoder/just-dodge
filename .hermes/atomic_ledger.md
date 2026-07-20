@@ -1,12 +1,13 @@
 # Atomic Task Ledger
 
 ## Global Context
-**Global Goal:** Repair the GRAB07 UNIT-2 temporal CNN so it uses genuine concatenation-based exogenous conditioning, retains the strict 650 mm / 15 mm two-sided reach gate, and reports a distribution-wide condition-ablation verdict.
+**Global Goal:** Complete JD-NORTHSTAR-FULL-GAME-001 in strict SG order. The active implementation wave is SG02 cross-platform deterministic replay parity; SG03+ remain unstarted implementation work.
 **Assumptions:**
-- The corpus manifests under `qa_runs/grab07_combat_corpus/` are the intended combined CMU + Kungfu corpus.
-- The train script is the isolated source of truth for this trainer and its machine receipt.
+- The Linux golden replay suite at `b2266e5` is the current deterministic baseline.
+- Windows parity can be evaluated with a GitHub-hosted Windows runner after the branch is pushed.
+- Steam Deck parity requires a real Deck or an explicitly configured self-hosted Deck runner; cross-compilation is not a platform-execution substitute.
 **Unresolved Risks:**
-- The requested concat architecture genuinely improves the median ablation signal, but does not meet the strict 15 mm median reach gate. It remains runtime-inadmissible.
+- No authorized Steam Deck execution surface has yet been evidenced.
 
 **Status Reconciliation (required by tools/verify_pvp005_revision_baseline.py):**
 - Published feature baseline: `4e481ccd59602c1cb4eda97183c32dec48f9a801`
@@ -16,25 +17,23 @@
 ---
 
 ## Active Unit
-**Unit ID:** PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001
+**Unit ID:** SG02-CROSS-PLATFORM-PARITY-001
 **Mode:** Implementation
-**Goal:** Quarantine INVALID_EVIDENCE, rebuild corpus lineage, repair retargeting, replace leaking model path, and restore trustworthy machine evaluation.
-**Expected Behavior:** All prior UNIT-2 v7 PASS evidence is quarantined as INVALID. New evidence is built from properly licensed, lineage-disjoint positive Grab data with genuine contact conditioning.
-**Expected Files Changed:** docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/, .hermes/atomic_ledger.md, tools/qa/train_grab07_seq_conditioner.py, src/intent/grab_state.rs, src/intent/grab_closing.rs, src/intent/plan_phase.rs.
-**Exact Validation Command:** cargo fmt --check && cargo clippy --locked --all-targets -- -D warnings && cargo test --locked
-**Baseline Result:** INVALID_EVIDENCE quarantined (11 files, 101KB).
+**Goal:** Add a portable, fail-closed golden-hash receipt path for Linux and Windows CI, and define a real-Steam-Deck execution receipt without treating cross-compilation as parity evidence.
+**Expected Behavior:** Every participating platform independently runs the same no-default-features golden suite, validates the exact seven scenario hashes, emits a signed-by-content receipt, and a reducer rejects missing/mismatched platform receipts.
+**Expected Files Changed:** .github/workflows/ci.yml, .github/workflows/sg02-cross-platform.yml, tools/qa/sg02_cross_platform_receipt.py, tools/qa/sg02_cross_platform_reduce.py, tools/qa/test_sg02_cross_platform_parity.py, tools/qa/sg02_golden_hashes.json, Cargo.toml, src/motion_service_async.rs, .hermes/atomic_ledger.md.
+**Exact Validation Command:** cargo fmt --check && cargo clippy --locked --all-targets -- -D warnings && cargo test --locked && python3 tools/qa/sg02_cross_platform_receipt.py --help
+**Baseline Result:** Linux golden replay: 7 scenarios × 100 runs bit-exact; no Windows or Steam Deck receipt exists.
 **Strike Count:** 0
-**Rollback Plan:** `git checkout -- .hermes/atomic_ledger.md` if the ledger needs to be restored.
+**Rollback Plan:** `git checkout -- .github/workflows/ci.yml .github/workflows/sg02-steamdeck.yml tools/qa/sg02_cross_platform_receipt.py tools/qa/sg02_cross_platform_reduce.py tools/qa/sg02_golden_hashes.json .hermes/atomic_ledger.md`.
 **Current Status:** In Progress
 
 ---
 
 ## Pending Units
-- PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001-LINEAGE: Rebuild corpus lineage with source URI, license, raw SHA, actor, session, clip, action, root-lineage ID, conversion SHA, retarget SHA, window SHA, augmentation parent, split.
-- PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001-RETARGET: Repair retargeting with framewise marker validity, anatomically declared mappings, no numeric joint copying.
-- PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001-MODEL: Replace leaking model path with real MotionBricks or CHECKPOINT/PROVIDER_UNAVAILABLE.
-- PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001-EVAL: Action-specific evaluation (Grab: 15mm+100ms+0.5mm+overlap+causal+rotations+stable feet; Kick: foot-to-target contact+timing+velocity+balance+recovery).
-- PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001-RUNTIME: Runtime proof (measured runtime contact, no manual admission booleans, synchronized views, executable hashes).
+- SG02-CROSS-PLATFORM-PARITY-001-DECK: Execute the generated Deck receipt workflow on a real Steam Deck and archive the immutable receipt. This remains externally owned until a Deck runner is available.
+- SG02-NO-BAKED-RUNTIME-BOUNDARY-001: The legacy `BakedClipProvider` remains publicly compiled because integration tests import it. Isolate it to test-only compilation and prove no production binary exports or constructs it before any SG03 promotion.
+- SG03-THREE-ACTION-NEURAL-PHYSICAL-SLICE: Do not implement until SG02 has real Windows and Steam Deck receipts and the strict gate is promoted.
 
 ---
 

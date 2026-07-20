@@ -1,0 +1,12 @@
+{
+  "schema": "just-dodge-sg02-golden-hashes-v1",
+  "scenarios": {
+    "all_intents": "98de210569370e16",
+    "cancel_combo": "11dad11a40b4463d",
+    "clinch_grab_tech": "b98a5769a8d15989",
+    "incapacitation": "f6f448956d635f42",
+    "injury_capability_change": "63387c80c2216f4d",
+    "juggle": "14549f127fd80f4f",
+    "out_of_reach_reprompt": "885d442811870714"
+  }
+}

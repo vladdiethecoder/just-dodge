@@ -1,0 +1,92 @@
+name: SG02 full cross-platform replay parity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - run: cargo build --release --locked --no-default-features --bin golden_match
+      - run: >-
+          python3 tools/qa/sg02_cross_platform_receipt.py
+          --golden-match target/release/golden_match
+          --expected tools/qa/sg02_golden_hashes.json
+          --source-revision ${{ github.sha }}
+          --platform-label Linux
+          --out validation_evidence/sg02-cross-platform/Linux/receipt.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg02-full-receipt-Linux
+          path: validation_evidence/sg02-cross-platform/Linux/receipt.json
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - run: cargo build --release --locked --no-default-features --bin golden_match
+      - run: >-
+          python tools/qa/sg02_cross_platform_receipt.py
+          --golden-match target/release/golden_match.exe
+          --expected tools/qa/sg02_golden_hashes.json
+          --source-revision ${{ github.sha }}
+          --platform-label Windows
+          --out validation_evidence/sg02-cross-platform/Windows/receipt.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg02-full-receipt-Windows
+          path: validation_evidence/sg02-cross-platform/Windows/receipt.json
+          if-no-files-found: error
+
+  steamdeck:
+    # The runner must be a real Steam Deck provisioned by the owner with these
+    # labels. A generic Linux runner or Wine execution is rejected by the receipt
+    # tool and cannot satisfy SG02.
+    runs-on: [self-hosted, Linux, X64, steam-deck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - run: cargo build --release --locked --no-default-features --bin golden_match
+      - run: >-
+          python3 tools/qa/sg02_cross_platform_receipt.py
+          --golden-match target/release/golden_match
+          --expected tools/qa/sg02_golden_hashes.json
+          --source-revision ${{ github.sha }}
+          --platform-label SteamDeck
+          --steamdeck-os-release /etc/os-release
+          --out validation_evidence/sg02-cross-platform/SteamDeck/receipt.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg02-full-receipt-SteamDeck
+          path: validation_evidence/sg02-cross-platform/SteamDeck/receipt.json
+          if-no-files-found: error
+
+  reduce:
+    needs: [linux, windows, steamdeck]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sg02-full-receipt-*
+          path: sg02-receipts
+      - run: >-
+          python3 tools/qa/sg02_cross_platform_reduce.py
+          --expected tools/qa/sg02_golden_hashes.json
+          --receipt sg02-receipts/sg02-full-receipt-Linux/receipt.json
+          --receipt sg02-receipts/sg02-full-receipt-Windows/receipt.json
+          --receipt sg02-receipts/sg02-full-receipt-SteamDeck/receipt.json
+          --require Linux --require Windows --require SteamDeck
+          --out validation_evidence/sg02-cross-platform/reduced.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg02-full-parity-reduced
+          path: validation_evidence/sg02-cross-platform/reduced.json
+          if-no-files-found: error
