@@ -1,0 +1,40 @@
+{
+  "gate": "PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004/G3",
+  "date": "2026-07-19",
+  "verdict": "BLOCKED_DATA_PROVENANCE",
+  "stop_directive": "If qualified per-frame paired surfaces cannot be reproduced from a clean checkout, emit BLOCKED_DATA_PROVENANCE and stop. Do not manufacture meshes, distances, contact labels or license clearance.",
+  "existing_manifests": {
+    "corpus_lineage_manifest": "qa_runs/grab07_combat_corpus/corpus_lineage_manifest.json (tracked) — CMU/KungfuAthleteBot/Kyokushin single-actor lineages; missing calibration, reconstruction revisions, topology, units, coordinate transforms, uncertainty, rights evidence",
+    "paired_grabs_full_manifest": "qa_runs/grab07_combat_corpus/paired_grabs_full/manifest.json (tracked) — 16 Harmony4D grappling2 sequences, 369 frames; missing per-frame paired surfaces, reconstruction revisions, calibration, coordinate transforms, uncertainty, per-sequence license evidence",
+    "training_data": "qa_runs/grab07_combat_corpus/paired_grabs_full/training_data.json (UNTRACKED — absent from clean checkout)",
+    "HARMONY4D_QUALIFICATION": "qa_runs/grab07_combat_corpus/HARMONY4D_QUALIFICATION.json (tracked)"
+  },
+  "required_fields_absent": [
+    "dataset revision (pinned commit hash of the source corpus)",
+    "source sequence/camera/frame identification (per-frame provenance)",
+    "both actors identified per frame (paired two-actor surfaces)",
+    "calibration (intrinsics/extrinsics per camera/frame)",
+    "reconstruction code/model revisions (the exact code+model that produced the surfaces)",
+    "topology (skeleton/joint definition + parent mapping)",
+    "units (mm/m + convention)",
+    "coordinate transforms (raw -> training frame, including the G1 retarget)",
+    "raw hashes (source .npz/.bvh per segment)",
+    "generated hashes (per-frame surface/pose output)",
+    "uncertainty (per-joint or per-vertex reconstruction confidence)",
+    "rights and license evidence (per-corpus, not 'user_approved')",
+    "clean-checkout reproducibility (training_data.json + checkpoints are untracked)"
+  ],
+  "reproducibility_blocker": "The paired training data and trained checkpoints are local untracked artifacts (qa_runs is gitignored except for manifest JSONs). A clean checkout cannot reconstruct any qualified per-frame paired surface. The existing manifests record aggregate statistics, not the immutable per-frame lineage the RESET-004 G3 gate requires.",
+  "consequence": "G4 (replace v13 experiment) cannot start: there is no reproducible, leakage-free, fully-provenanced training corpus to train on. Manufacturing one without the source calibration/reconstruction/uncertainty/rights would violate the stop directive.",
+  "stop_state": {
+    "G3": "BLOCKED_DATA_PROVENANCE",
+    "G4": "BLOCKED (prerequisite G3 not qualified)",
+    "G5": "BLOCKED (no trained model to wire)",
+    "G6": "BLOCKED (no review-eligible capture without G5)",
+    "UNIT2": "NOT_MACHINE_EVIDENCE_READY",
+    "G4_HUMAN": "PENDING_HUMAN",
+    "G5_HUMAN": "PENDING_HUMAN",
+    "HUMAN_DECISION": "PENDING",
+    "PROMOTION": "BLOCKED"
+  }
+}
