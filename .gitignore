@@ -62,8 +62,10 @@ GR00T-WholeBodyControl
 # Local, timestamped QA captures and executable logs. Canonical reviewed media
 # is promoted explicitly under docs/media/latest/ with a manifest instead.
 qa_runs/
-/validation_evidence/
 # The historical ARDY-v4 authorization certificate references its consumed
 # output by path; the validator replays that chain and requires the directory
 # to exist from a clean checkout. Track this one immutable evidence bundle.
 !/validation_evidence/pvp005-ardy-v4-generation-20260716T001310Z/
+# G3: the raw-to-training manifest is the immutable provenance artifact the
+# RESET-004 gate requires from a clean checkout; track it explicitly.
+!/qa_runs/grab07_combat_corpus/raw_to_training_manifest.json
