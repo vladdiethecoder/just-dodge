@@ -510,6 +510,22 @@ fn generate_supported_keyframe_inbetweening(
     })
 }
 
+/// F-022 crossfade: number of ticks to blend between clips.
+const CROSSFADE_TICKS: usize = 4;
+
+/// Linearly blend two poses by alpha (0 = prev, 1 = current).
+/// Blends the translation component of each bone matrix.
+fn blend_pose(prev: &FullPose, current: &FullPose, alpha: f32) -> FullPose {
+    let mut result = *current;
+    for i in 0..result.len().min(prev.len()) {
+        let p = prev[i].w_axis; // Vec3 translation
+        let c = current[i].w_axis;
+        let blended = p.lerp(c, alpha);
+        result[i].w_axis = blended;
+    }
+    result
+}
+
 /// Read-only M1 lock adapter. It encodes requested displacement in the two root
 /// keyframes and passes complete start/end G1 poses to the provider.
 #[cfg(feature = "motion-inference")]
@@ -519,6 +535,9 @@ pub struct PlanPhaseMotionAdapter {
     /// F-022 clip streaming: the consumed clip and the truth tick it started,
     /// so rendering advances one generated frame per truth tick.
     active_clip: [Option<(MotionClip, u64)>; 2],
+    /// F-022 crossfade: the previous clip's final frame, captured when a new
+    /// clip replaces it. Used to blend during CROSSFADE_TICKS.
+    prev_clip_end: [Option<FullPose>; 2],
 }
 
 #[cfg(feature = "motion-inference")]
@@ -528,6 +547,7 @@ impl PlanPhaseMotionAdapter {
             requests: [None, None],
             last_pose: [initial_player_pose, initial_opponent_pose],
             active_clip: [None, None],
+            prev_clip_end: [None, None],
         }
     }
 
@@ -586,11 +606,27 @@ impl PlanPhaseMotionAdapter {
     /// F-022 playback: the generated clip's frame for this truth tick
     /// (one frame per tick, clamped at the clip end), or the last pose when
     /// no clip is active (underrun/before the first clip).
+    ///
+    /// When a new clip replaces an old one (clip boundary), the first
+    /// `CROSSFADE_TICKS` ticks linearly blend between the old clip's final
+    /// pose and the new clip's current frame, preventing visual popping.
     pub fn playback_pose(&self, side: Side, truth_tick: u64) -> FullPose {
         let index = side_index(side);
         if let Some((clip, started)) = &self.active_clip[index] {
             let offset = truth_tick.saturating_sub(*started) as usize;
-            return clip.frames[offset.min(clip.frames.len().saturating_sub(1))];
+            let frame_idx = offset.min(clip.frames.len().saturating_sub(1));
+            let current = clip.frames[frame_idx];
+
+            // F-022 crossfade: blend from the previous clip's last frame
+            // during the first CROSSFADE_TICKS ticks of the new clip.
+            if offset < CROSSFADE_TICKS {
+                let prev = &self.prev_clip_end[index];
+                if let Some(prev) = prev {
+                    let alpha = offset as f32 / CROSSFADE_TICKS as f32;
+                    return blend_pose(prev, &current, alpha);
+                }
+            }
+            return current;
         }
         self.last_pose[index]
     }
@@ -613,6 +649,14 @@ impl PlanPhaseMotionAdapter {
             };
             match service.poll(request_id) {
                 MotionPoll::Ready(clip) => {
+                    // F-022 crossfade: capture the previous clip's final frame
+                    // before replacing it, for smooth transitions.
+                    let prev = self.active_clip[index]
+                        .as_ref()
+                        .and_then(|(c, _)| c.frames.last().copied());
+                    if prev.is_some() {
+                        self.prev_clip_end[index] = prev;
+                    }
                     // F-022 streaming: keep the whole clip; playback advances
                     // one generated frame per truth tick from this sample.
                     if let Some(first) = clip.frames.first() {
