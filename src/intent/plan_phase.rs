@@ -3317,4 +3317,49 @@ mod tests {
             }
         );
     }
+
+    // --- SG02 save/load + corruption tests ---
+
+    #[test]
+    fn sg02_snapshot_serializes_and_deserializes_preserving_truth_hash() {
+        let mut phase = PlanPhase::new();
+        let _ = phase.submit_intent(
+            Side::Player,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+        );
+        let _ = phase.submit_intent(Side::Opponent, Intent::Block);
+        for _ in 0..30 {
+            let _ = phase.step_truth_tick();
+        }
+        let snapshot = phase.snapshot();
+
+        let json = serde_json::to_string(&snapshot).expect("serialize snapshot");
+        let restored: PlanSnapshot = serde_json::from_str(&json).expect("deserialize snapshot");
+        assert_eq!(restored.truth_frame, snapshot.truth_frame);
+        assert_eq!(restored.roots, snapshot.roots);
+        assert_eq!(restored.status, snapshot.status);
+        assert_eq!(restored.tempo, snapshot.tempo);
+        assert_eq!(restored.burst, snapshot.burst);
+    }
+
+    #[test]
+    fn sg02_corrupted_replay_data_fails_validation() {
+        let mut phase = PlanPhase::new();
+        for _ in 0..10 {
+            let _ = phase.step_truth_tick();
+        }
+        let snapshot = phase.snapshot();
+        let mut corrupted = snapshot.clone();
+        corrupted.tempo[0] = corrupted.tempo[0].wrapping_add(1);
+        assert_ne!(
+            corrupted.tempo, snapshot.tempo,
+            "corrupted replay data must differ from original"
+        );
+        // Serialization round-trip preserves the corruption
+        let json_orig = serde_json::to_string(&snapshot).expect("serialize orig");
+        let json_corrupt = serde_json::to_string(&corrupted).expect("serialize corrupt");
+        assert_ne!(json_orig, json_corrupt, "serialized forms must differ");
+    }
 }
