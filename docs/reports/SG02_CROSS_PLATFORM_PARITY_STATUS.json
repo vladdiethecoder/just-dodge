@@ -1,0 +1,59 @@
+{
+  "schema": "just-dodge-sg02-cross-platform-status-v1",
+  "evaluated_revision": "a4775aba347dc1f48f1ddb68bda61a1845ec9920",
+  "status": "BLOCKED",
+  "promotion": "NOT_PROMOTED",
+  "required_platforms": [
+    "Linux",
+    "Windows",
+    "SteamDeck"
+  ],
+  "verified_receipts": {
+    "Linux": {
+      "path": "docs/reports/SG02_CROSS_PLATFORM_LINUX_RECEIPT.json",
+      "file_sha256": "a95af9a5888c696bfecb7aa73339cb8672e3050bed3555de870384f4bb994522",
+      "receipt_sha256": "c0fbef31e916e7efd01f9bbf49f3f92070ad10747646179b5d37d6c0ba4e3a2f",
+      "clean_checkout": true,
+      "scenario_count": 7,
+      "runs_per_scenario": 100
+    }
+  },
+  "verification": {
+    "commands": [
+      "cargo fmt --check",
+      "cargo clippy --locked --all-targets -- -D warnings",
+      "cargo test --locked --all-targets",
+      "cargo build --locked --no-default-features --release --bin golden_match",
+      "python3 tools/qa/sg02_cross_platform_receipt.py --golden-match target/release/golden_match --expected tools/qa/sg02_golden_hashes.json --source-revision a4775aba347dc1f48f1ddb68bda61a1845ec9920 --platform-label Linux --out SG02_LINUX_RECEIPT.json",
+      "python3 tools/qa/sg02_cross_platform_reduce.py --expected tools/qa/sg02_golden_hashes.json --receipt SG02_LINUX_RECEIPT.json --require Linux --out SG02_LINUX_REDUCED.json"
+    ],
+    "clean_checkout_test_counts": [236, 159, 2, 3],
+    "linux_reducer_report_sha256": "d07b9ccd44361f1b729a3ab6df9e59379d46a52dfc0c3760be812f42ee9f57eb"
+  },
+  "non_evidence": {
+    "windows_cross_build": "A GNU-target PE32+ binary compiled locally, but was not counted as Windows execution evidence.",
+    "wine_execution": "No Wine result is admitted as Windows evidence.",
+    "linux_only_reduction": "The reducer passed only with --require Linux and rejects a required Windows receipt when it is missing."
+  },
+  "blocking_evidence": {
+    "github_self_hosted_runner_query": {
+      "command": "gh api repos/vladdiethecoder/just-dodge/actions/runners --jq .total_count",
+      "observed_total_count": 0
+    },
+    "local_host": {
+      "os": "Fedora Linux",
+      "variant": "kde",
+      "machine": "x86_64",
+      "not_steam_deck": true
+    },
+    "missing_platform_receipts": [
+      "Windows",
+      "SteamDeck"
+    ]
+  },
+  "unblock": {
+    "windows": "Push a revision containing .github/workflows/ci.yml and obtain the SG02 Linux/Windows receipt-reduction artifact from GitHub Actions; do not substitute a local cross-build or Wine run.",
+    "steamdeck": "Provision a real Steam Deck self-hosted GitHub Actions runner labelled self-hosted, Linux, X64, steam-deck. Push a revision containing .github/workflows/sg02-cross-platform.yml, dispatch that workflow on one revision, and retain its three platform receipts plus reduced artifact."
+  },
+  "remaining_integrity_gate": "SG02-NO-BAKED-RUNTIME-BOUNDARY-001 remains pending: the legacy BakedClipProvider is publicly compiled for integration tests and must be isolated from production binaries before an SG03 promotion."
+}

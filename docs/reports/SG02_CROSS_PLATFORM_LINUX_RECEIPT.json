@@ -1,0 +1,24 @@
+{
+  "expected_hashes_sha256": "22f728c0ccd7eb5c0d0a9f6dcfb6d19802546c9cc8061b086da4a94dba5be15e",
+  "golden_match_args": [
+    "--print-hashes"
+  ],
+  "golden_match_sha256": "8bd8032ac76a25f42a773a0120a3d02efbab9f37e67dfbb5f1f60e0124a5dd4e",
+  "observed_machine": "x86_64",
+  "observed_system": "Linux",
+  "platform_label": "Linux",
+  "python_version": "3.14.6",
+  "receipt_sha256": "c0fbef31e916e7efd01f9bbf49f3f92070ad10747646179b5d37d6c0ba4e3a2f",
+  "rustc_version": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+  "scenario_hashes": {
+    "all_intents": "98de210569370e16",
+    "cancel_combo": "11dad11a40b4463d",
+    "clinch_grab_tech": "b98a5769a8d15989",
+    "incapacitation": "f6f448956d635f42",
+    "injury_capability_change": "63387c80c2216f4d",
+    "juggle": "14549f127fd80f4f",
+    "out_of_reach_reprompt": "885d442811870714"
+  },
+  "schema": "just-dodge-sg02-platform-receipt-v1",
+  "source_revision": "a4775aba347dc1f48f1ddb68bda61a1845ec9920"
+}
