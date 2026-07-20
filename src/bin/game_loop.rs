@@ -191,24 +191,81 @@ fn planar_distance_m(snapshot: &PlanSnapshot) -> f32 {
     (left.x - right.x).hypot(left.z - right.z)
 }
 
-fn scripted_opponent(phase_number: u64) -> Intent {
+/// F-006 reactive AI opponent: adapts to player distance, stance, and
+/// recent action history rather than cycling a fixed script.
+fn reactive_opponent(snapshot: &PlanSnapshot, opponent_history: &[Intent]) -> Intent {
     use MoveDirection::{Approach, CircleClockwise, LateralLeft, Retreat};
-    match phase_number % 8 {
-        0 | 4 => Intent::move_standard(Approach),
-        1 => Intent::move_standard(LateralLeft),
-        2 => Intent::Block,
-        3 => Intent::Grab,
-        5 => Intent::Dodge {
-            dir: CircleClockwise,
-        },
-        6 => Intent::move_standard(Retreat),
-        _ => Intent::Strike {
-            variant: StrikeVariant::Slash,
-        },
+
+    let player_root = &snapshot.roots[0];
+    let opp_root = &snapshot.roots[1];
+    let dx = (player_root.x_mm - opp_root.x_mm) as f32 / 1000.0;
+    let dz = (player_root.z_mm - opp_root.z_mm) as f32 / 1000.0;
+    let distance = (dx * dx + dz * dz).sqrt();
+    let player_action = snapshot.locked[0]
+        .map(|a| format!("{a:?}"))
+        .unwrap_or_default();
+    let opponent_burst = snapshot.burst[1];
+    let opponent_tempo = snapshot.tempo[1];
+
+    // Close range (< 1.0m): react to player's likely action
+    if distance < 1.0 {
+        if player_action.contains("Strike") || player_action.contains("Thrust") {
+            // Player attacking — block or dodge based on tempo
+            if opponent_tempo > 40 && opponent_burst > 30 {
+                return Intent::Block;
+            }
+            return Intent::Dodge { dir: LateralLeft };
+        }
+        if player_action.contains("Grab") {
+            // Player grabbing — strike to counter or retreat
+            if opponent_burst > 50 {
+                return Intent::Strike {
+                    variant: StrikeVariant::Slash,
+                };
+            }
+            return Intent::move_standard(Retreat);
+        }
+        // Player passive or moving — press the advantage
+        if opponent_burst > 60 {
+            return Intent::Strike {
+                variant: StrikeVariant::Slash,
+            };
+        }
+        return Intent::Grab;
+    }
+
+    // Mid range (1.0-2.0m): approach or circle, occasionally attack
+    if distance < 2.0 {
+        match opponent_history.len() % 4 {
+            0 => Intent::move_standard(Approach),
+            1 => Intent::move_standard(CircleClockwise),
+            2 => {
+                if opponent_burst > 70 {
+                    Intent::Strike {
+                        variant: StrikeVariant::Slash,
+                    }
+                } else {
+                    Intent::move_standard(Approach)
+                }
+            }
+            _ => Intent::Block,
+        }
+    } else {
+        // Long range (> 2.0m): close distance
+        match opponent_history.len() % 3 {
+            0 | 1 => Intent::move_standard(Approach),
+            _ => Intent::move_standard(LateralLeft),
+        }
     }
 }
 
-fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64, auto_player: bool) {
+fn lock_next_phase(
+    phase: &mut PlanPhase,
+    player: Intent,
+    _opponent_phase: u64,
+    auto_player: bool,
+    opponent_history: &[Intent],
+) {
     if phase.status() != PlanStatus::Planning {
         return;
     }
@@ -233,7 +290,7 @@ fn lock_next_phase(phase: &mut PlanPhase, player: Intent, opponent_phase: u64, a
         );
         return;
     }
-    let opponent = scripted_opponent(opponent_phase);
+    let opponent = reactive_opponent(&phase.snapshot(), opponent_history);
     // Interactive mode: the game freezes at the player's actionability
     // boundary until the player locks (forecast/ghost preview is live during
     // the freeze). Scripted paths (shot/smoke) auto-lock the player.
@@ -290,6 +347,7 @@ fn run_smoke(ticks: u64) {
             },
             player_phase,
             true,
+            &[],
         );
         if let Some((service, adapter)) = motion.as_mut() {
             // Submit only on a fresh lock (a Planning boundary that just
@@ -457,7 +515,13 @@ impl GameLoopApp {
         let mut stepped = 0_u8;
         while now >= self.next_truth && stepped < 4 {
             let was_planning = self.phase.status() == PlanStatus::Planning;
-            lock_next_phase(&mut self.phase, self.selected, self.opponent_phase, false);
+            lock_next_phase(
+                &mut self.phase,
+                self.selected,
+                self.opponent_phase,
+                false,
+                &[],
+            );
             // Interactive freeze: the player's selection is still open — wait
             // for a key-locked intent instead of stepping without both locks.
             if self.phase.status() == PlanStatus::Planning
@@ -1092,6 +1156,7 @@ fn run_shot(ticks: u64, out_dir: &str) {
             },
             player_phase,
             true,
+            &[],
         );
         phase
             .step_truth_tick()
@@ -1183,7 +1248,7 @@ fn run_shot(ticks: u64, out_dir: &str) {
         Intent::Strike {
             variant: StrikeVariant::Slash,
         },
-        scripted_opponent(player_phase),
+        reactive_opponent(&phase.snapshot(), &[]),
     )
     .ok()
     .flatten();
