@@ -511,10 +511,12 @@ fn generate_supported_keyframe_inbetweening(
 }
 
 /// F-022 crossfade: number of ticks to blend between clips.
+#[cfg(feature = "motion-inference")]
 const CROSSFADE_TICKS: usize = 4;
 
 /// Linearly blend two poses by alpha (0 = prev, 1 = current).
 /// Blends the translation component of each bone matrix.
+#[cfg(feature = "motion-inference")]
 fn blend_pose(prev: &FullPose, current: &FullPose, alpha: f32) -> FullPose {
     let mut result = *current;
     for i in 0..result.len().min(prev.len()) {
