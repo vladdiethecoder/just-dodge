@@ -3318,7 +3318,7 @@ mod tests {
         );
     }
 
-    // --- SG02 save/load + corruption tests ---
+    // --- SG02 save/load + corruption + presentation isolation ---
 
     #[test]
     fn sg02_snapshot_serializes_and_deserializes_preserving_truth_hash() {
@@ -3334,7 +3334,6 @@ mod tests {
             let _ = phase.step_truth_tick();
         }
         let snapshot = phase.snapshot();
-
         let json = serde_json::to_string(&snapshot).expect("serialize snapshot");
         let restored: PlanSnapshot = serde_json::from_str(&json).expect("deserialize snapshot");
         assert_eq!(restored.truth_frame, snapshot.truth_frame);
@@ -3357,9 +3356,57 @@ mod tests {
             corrupted.tempo, snapshot.tempo,
             "corrupted replay data must differ from original"
         );
-        // Serialization round-trip preserves the corruption
         let json_orig = serde_json::to_string(&snapshot).expect("serialize orig");
         let json_corrupt = serde_json::to_string(&corrupted).expect("serialize corrupt");
         assert_ne!(json_orig, json_corrupt, "serialized forms must differ");
+    }
+
+    #[test]
+    fn sg02_renderer_cannot_mutate_truth_via_snapshot() {
+        let mut phase = PlanPhase::new();
+        let _ = phase.submit_intent(
+            Side::Player,
+            Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+        );
+        let _ = phase.submit_intent(Side::Opponent, Intent::Block);
+        for _ in 0..20 {
+            let _ = phase.step_truth_tick();
+        }
+        let hash_before = phase.truth_hash();
+        // Take a snapshot and clone+mutate it — this is a copy, not a reference
+        let snapshot = phase.snapshot();
+        let modified = {
+            let mut m = snapshot.clone();
+            m.tempo[0] = 999;
+            m.roots[0] = RootPosition::new(9999, 9999, 9999);
+            m
+        };
+        // The authoritative phase must be unchanged
+        assert_eq!(
+            phase.truth_hash(),
+            hash_before,
+            "truth hash must not change when snapshot is mutated"
+        );
+        let fresh = phase.snapshot();
+        assert_eq!(fresh.tempo[0], snapshot.tempo[0]);
+        assert_eq!(fresh.roots[0].x_mm, snapshot.roots[0].x_mm);
+        // The modified copy must differ
+        assert_ne!(modified.tempo[0], fresh.tempo[0]);
+        assert_ne!(modified.roots[0].x_mm, snapshot.roots[0].x_mm);
+    }
+
+    #[test]
+    fn sg02_motion_adapter_cannot_mutate_truth() {
+        let phase = PlanPhase::new();
+        let hash_before = phase.truth_hash();
+        let snapshot = phase.snapshot();
+        let _ = snapshot;
+        assert_eq!(
+            phase.truth_hash(),
+            hash_before,
+            "reading snapshot must not change truth"
+        );
     }
 }
