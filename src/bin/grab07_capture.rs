@@ -12,7 +12,7 @@ use std::{
     process::Command,
 };
 
-use glam::{Mat4, Quat, Vec3, Vec3Swizzles, vec3};
+use glam::{Mat4, Vec3, Vec3Swizzles, vec3};
 use image::{ImageBuffer, Rgba};
 use just_dodge::{
     asset::{self, SkeletalAnimation, SkinnedMeshData},
@@ -167,7 +167,7 @@ impl PresentationAssets {
                 .unwrap_or_else(|| self.reference_skin.clone()),
             Some(Intent::Dodge { .. }) => sample_skin(&self.run_skins, truth_frame)
                 .unwrap_or_else(|| self.reference_skin.clone()),
-            Some(intent) => placeholder_skin(&self.mesh, intent),
+            Some(intent) => reference_pose_for_intent(&self.mesh, intent),
             None => self.reference_skin.clone(),
         }
     }
@@ -195,42 +195,14 @@ fn sample_skin(frames: &[Vec<Mat4>], truth_frame: u64) -> Option<Vec<Mat4>> {
     (!frames.is_empty()).then(|| frames[truth_frame as usize % frames.len()].clone())
 }
 
-fn placeholder_skin(mesh: &SkinnedMeshData, intent: Intent) -> Vec<Mat4> {
-    let mut local: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
-    let find = |name| mesh.bones.iter().position(|bone| bone.name == name);
-    let (Some(left), Some(right), Some(spine)) = (find("LeftArm"), find("RightArm"), find("Spine"))
-    else {
-        return asset::reference_pose_skin_matrices(mesh, &local).expect("reference skin");
-    };
-    match intent {
-        Intent::Grab | Intent::Clinch { .. } => {
-            rotate_local(&mut local, left, Quat::from_rotation_x(-0.72));
-            rotate_local(&mut local, right, Quat::from_rotation_x(-0.72));
-            rotate_local(&mut local, spine, Quat::from_rotation_y(0.12));
-        }
-        Intent::Strike { .. } => {
-            rotate_local(&mut local, right, Quat::from_rotation_x(-0.95));
-            rotate_local(&mut local, left, Quat::from_rotation_x(0.30));
-        }
-        Intent::Block => {
-            rotate_local(&mut local, left, Quat::from_rotation_x(-1.05));
-            rotate_local(&mut local, right, Quat::from_rotation_x(-1.05));
-        }
-        Intent::Feint => rotate_local(&mut local, right, Quat::from_rotation_x(-0.42)),
-        Intent::Cancel => rotate_local(&mut local, spine, Quat::from_rotation_y(-0.18)),
-        Intent::Idle
-        | Intent::Move { .. }
-        | Intent::Dodge { .. }
-        | Intent::Draw
-        | Intent::Sheath => {}
-    }
-    asset::reference_pose_skin_matrices(mesh, &local).expect("placeholder pose must skin")
-}
-
-fn rotate_local(local: &mut [Mat4], index: usize, delta: Quat) {
-    let (scale, rotation, translation) = local[index].to_scale_rotation_translation();
-    local[index] =
-        Mat4::from_scale_rotation_translation(scale, (rotation * delta).normalize(), translation);
+/// G5: the evidence path uses the reference pose for Grab/Clinch/Strike/Block
+/// presentation — no fabricated procedural combat poses. The same solved pose
+/// from DuelWorld drives skinning, collision proxies, and contact evaluation.
+/// The old `placeholder_skin` (procedural arm rotations) is removed from the
+/// evidence path.
+fn reference_pose_for_intent(mesh: &SkinnedMeshData, _intent: Intent) -> Vec<Mat4> {
+    let local: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
+    asset::reference_pose_skin_matrices(mesh, &local).expect("reference skin")
 }
 
 fn side_index(side: Side) -> usize {

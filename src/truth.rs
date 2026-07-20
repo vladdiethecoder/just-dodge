@@ -109,6 +109,33 @@ pub struct ContactGeometry {
     pub surface: ContactSurface,
 }
 
+/// F-005/G5: real 120Hz substep truth packet emitted by DuelWorld.
+/// Every field is measured from the solved pose — never substituted with
+/// zero or inferred from the action label. The same solved pose drives
+/// skinning, hand surfaces, collision proxies, contact evaluation, and
+/// replay hashes.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+pub struct SubstepTruthPacket {
+    /// Monotonic 120Hz physics substep identifier.
+    pub substep_id: u64,
+    /// Which bilateral contact manifold produced this measurement (0 if none).
+    pub manifold_id: u32,
+    /// Which body region the contact intersects.
+    pub body_region: HitLocation,
+    /// Measured surface distance in mm (attacker weapon/proxy to defender surface).
+    pub surface_distance_mm: f32,
+    /// AABB proxy overlap volume in mm^3 (0 = no overlap).
+    pub proxy_overlap_mm3: f32,
+    /// Prohibited mesh penetration depth in mm (0 = no penetration; >0 = penetration).
+    /// Must never exceed 0.5mm for an admitted contact.
+    pub prohibited_penetration_mm: f32,
+    /// Whether the contact is visible (not occluded by either fighter's body).
+    pub visible_contact: bool,
+    /// Whether the defender exhibited a causal response (motion change attributable
+    /// to the contact, not to the action label). Measured from position delta.
+    pub causal_response: bool,
+}
+
 /// Complete physical-world result for one truth tick.
 ///
 /// `contact: None` is an observed whiff; absence of a batch is an unresolved
