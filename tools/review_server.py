@@ -190,9 +190,10 @@ function renderCheck(){
   }
   const checks=report.checks||[];
   if(currentIdx>=checks.length){
+    const total=checks.length;
     const accepted=Object.values(decisions).filter(d=>d==='accepted').length;
     const rejected=Object.values(decisions).filter(d=>d==='rejected').length;
-    const skipped=checks.length-accepted-rejected;
+    const skipped=total-accepted-rejected;
     el.innerHTML=`<div class="done-state">
       <h1>${accepted+rejected===total?'All Reviewed':'Review Complete'}</h1>
       <div class="summary">
