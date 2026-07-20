@@ -7,7 +7,7 @@
   },
   "contract_version": 1,
   "evaluation": {
-    "forgelens_source_tree_sha256": "a2141df3a75720a5d4a475cb324ccda0cd617d53157c644db0da752d202eb654",
+    "forgelens_source_tree_sha256": "a2ee2c4d4fe7c72ffc29e0be3bb53dc2519af9f382fa28fac846b868dee3a32b",
     "forgelens_sources_must_be_tracked": true,
     "revision_rule": "runtime_HEAD_must_be_a_descendant_of_subject_revision"
   },
@@ -27,7 +27,7 @@
       "tools/asset_review/index.html": "cd1fa235e7c2ffc7cb623c41d90b7e42dfeb125d986bd44821eb7e1e48b2415e",
       "tools/asset_review/styles.css": "7ccc4b2ccfdf8c77379c41543e6e6dd3543b08eeeda316566b7b9f5a5f456922",
       "tools/qa/test_asset_review.py": "268c8194ce9823127be4ca4db4eb55b27d8815128bd431f6a43708ffbddac22e",
-      "tools/qa/verify_forgelens_phase_a.py": "70e49ef34643678e4cd3d6550ad8f292e2bcb3444ad1c1d507d411cba37bcf89"
+      "tools/qa/verify_forgelens_phase_a.py": "20ceaef730c4e24af63f90f382411e2b8466a18b94570a6012a17baa1f6d6dc3"
     },
     "review_run_binding": [
       "subject_revision",
