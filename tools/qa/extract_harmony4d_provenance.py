@@ -62,13 +62,24 @@ def extract_sequence_provenance(
     # Load COLMAP transforms for coordinate-frame provenance
     colmap_transforms_hash = None
     colmap_dir = sequence_dir / "colmap"
+    # Harmony4D stores COLMAP outputs under colmap/workplace/
+    workplace_dir = colmap_dir / "workplace" if colmap_dir.is_dir() else None
     if colmap_dir.is_dir():
-        transforms_file = colmap_dir / "colmap_from_aria_transforms.pkl"
-        if transforms_file.exists():
-            colmap_transforms_hash = sha256_file(transforms_file)
+        for transforms_name in ("colmap_from_aria_transforms.pkl",):
+            tf = colmap_dir / transforms_name
+            if not tf.exists() and workplace_dir:
+                tf = workplace_dir / transforms_name
+            if tf.exists():
+                colmap_transforms_hash = sha256_file(tf)
 
     # Load camera intrinsics for calibration provenance
-    cameras_file = colmap_dir / "cameras.txt" if colmap_dir.is_dir() else None
+    cameras_file = None
+    if colmap_dir.is_dir():
+        cameras_file = colmap_dir / "cameras.txt"
+        if not cameras_file.exists() and workplace_dir:
+            cameras_file = workplace_dir / "cameras.txt"
+        if not cameras_file.exists():
+            cameras_file = None
     calibration_hash = None
     camera_count = 0
     if cameras_file and cameras_file.exists():
