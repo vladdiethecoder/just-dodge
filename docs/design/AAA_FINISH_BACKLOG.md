@@ -25,8 +25,9 @@ scenarios × 100 runs, SHA-256 manifest, Python fail-closed verifier), M4 async
 motion plan service (non-blocking 120 Hz; current provider is dev scaffolding —
 baked clips are forbidden per owner ruling 2026-07-19 and it is not a ship path),
 M2 game_loop (debug mannequin, FP/observer camera, flat arena profile), articulated integer physics
-(120 Hz quantized, 100-run hash gate). UNIT-2 v13 machine-eligible trained PASS
-(median 14.44 mm, 50.6% pass, Harmony4D paired corpus; G4/G5 PENDING_HUMAN).
+(120 Hz quantized, 100-run hash gate). UNIT-2 v11/v13 REVOKED (INVALID_EVIDENCE per RESET-004);
+G4 leakage-free MotionSeqModel retrained on Harmony4D paired corpus (67 admitted contact cases pass per-case 15mm gate);
+G4/G5 PENDING_HUMAN per RESET-004 STOP STATE.
 Workspace green: clippy --all-targets -D warnings clean, cargo test --locked green
 (188 lib tests; MotionBricks bridge env-gated test ignored as designed).
 

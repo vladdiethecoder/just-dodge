@@ -1,0 +1,25 @@
+{
+  "schema": "just-dodge-sg01-audit-v1",
+  "date": "2026-07-20",
+  "head_commit": "144d875",
+  "branch": "grab07-650mm-closure",
+  "pr_number": 2,
+  "pr_state": "DRAFT",
+  "verdict": "PASS",
+  "checks": {
+    "fmt": "PASS (cargo fmt --check)",
+    "clippy": "PASS (cargo clippy --locked --all-targets -- -D warnings, 0 errors)",
+    "tests": "PASS (cargo test --locked, 396 passed 0 failed)",
+    "ci": "PASS (GitHub Actions completed success on 144d875)",
+    "no_default_features": "PASS (cargo check --locked --no-default-features --bin just-dodge --bin m3_match)",
+    "evidence_contradictions": "PASS (backlog UNIT-2 v13 machine-eligible claim corrected to REVOKED; no other contradictions found)",
+    "model_prediction_vs_runtime_contact_conflation": "PASS (G4 model predictions and G5 runtime contact are separate JSON outputs; SubstepTruthPacket is runtime-only; evaluate_g4_admitted.py is data-only)",
+    "g4_g5_blocked": "PASS (G4=PENDING_HUMAN, G5=PENDING_HUMAN per RESET-004 STOP STATE)",
+    "quarantine": "PASS (12 stills quarantined as DEBUG_RENDER_SMOKE, v11/v13 INVALID_EVIDENCE, manifests with SHA-256)",
+    "receipts_name_exact_commits": "PASS (all quarantine receipts name exact commits and data lineages)"
+  },
+  "contradictions_fixed": [
+    "AAA_FINISH_BACKLOG.md: changed 'UNIT-2 v13 machine-eligible trained PASS' to 'UNIT-2 v11/v13 REVOKED (INVALID_EVIDENCE per RESET-004)'"
+  ],
+  "sg01_can_proceed_to_sg02": true
+}
