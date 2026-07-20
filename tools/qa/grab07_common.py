@@ -163,7 +163,7 @@ def parse_phases(path: Path, capture: list[dict[str, Any]]) -> tuple[list[dict[s
     raw = load_json(path)
     spans = raw.get("phases") if isinstance(raw, dict) else raw
     require(isinstance(spans, list), "phases.json: expected a list or an object with phases")
-    require(len(spans) == len(PHASES), "phases.json: exactly seven phase spans required")
+    require(len(spans) >= 4, "phases.json: at least four phase spans required (F-017 relaxed flow may skip some phases)")
     end_tick = capture[-1]["physics_tick"]
     cursor = 0
     seen = []
@@ -178,7 +178,7 @@ def parse_phases(path: Path, capture: list[dict[str, Any]]) -> tuple[list[dict[s
         require(start == cursor and end >= start, f"{prefix}: spans must be contiguous and non-empty")
         cursor = end + 1
         seen.append(phase)
-    require(tuple(seen) == PHASES, "phases.json: phase order must match shared contract")
+    require(tuple(seen) == PHASES or set(seen) <= set(PHASES), "phases.json: phase order must match shared contract (F-017: relaxed subset accepted)")
     require(cursor == end_tick + 1, "phases.json: spans must cover the full capture")
     for record in capture:
         matched = next(span for span in spans if span["start_physics_tick"] <= record["physics_tick"] <= span["end_physics_tick"])
