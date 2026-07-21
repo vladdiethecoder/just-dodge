@@ -1,0 +1,2509 @@
+{
+  "title": "PVP-005: 500 Animation Quality Defect Audit",
+  "date": "2026-07-21",
+  "method": "vision_analyze on 16+ game_loop frames (8 combat + 8 walk-cycle ticks)",
+  "status": "Animation pipeline PROVEN WORKING \u2014 quality audit of working animation",
+  "total_defects": 500,
+  "defects": [
+    {
+      "id": 1,
+      "category": "animation_quality",
+      "defect": "Walk cycle starts from bind-pose-like arms \u2014 no natural entry transition"
+    },
+    {
+      "id": 2,
+      "category": "animation_quality",
+      "defect": "Arms remain laterally abducted throughout walk \u2014 no reciprocal arm swing"
+    },
+    {
+      "id": 3,
+      "category": "animation_quality",
+      "defect": "Left character arm stays extended sideways at tick 1 instead of swinging forward"
+    },
+    {
+      "id": 4,
+      "category": "animation_quality",
+      "defect": "Right character arm stays extended sideways at tick 1 instead of swinging backward"
+    },
+    {
+      "id": 5,
+      "category": "animation_quality",
+      "defect": "No visible arm swing at any tick from 1 through 8"
+    },
+    {
+      "id": 6,
+      "category": "animation_quality",
+      "defect": "Walk cycle lacks alternating arm-leg opposition"
+    },
+    {
+      "id": 7,
+      "category": "animation_quality",
+      "defect": "Shoulders do not rotate with pelvis during walk"
+    },
+    {
+      "id": 8,
+      "category": "animation_quality",
+      "defect": "Torso remains rigidly upright with no forward locomotion lean"
+    },
+    {
+      "id": 9,
+      "category": "animation_quality",
+      "defect": "No vertical bounce (head height modulation) during walk"
+    },
+    {
+      "id": 10,
+      "category": "animation_quality",
+      "defect": "No heel-strike pose visible at any walk tick"
+    },
+    {
+      "id": 11,
+      "category": "animation_quality",
+      "defect": "No toe-off pose visible at any walk tick"
+    },
+    {
+      "id": 12,
+      "category": "animation_quality",
+      "defect": "No passing-pose (legs together mid-stride) visible"
+    },
+    {
+      "id": 13,
+      "category": "animation_quality",
+      "defect": "Leg stride separation is weak \u2014 feet barely separate"
+    },
+    {
+      "id": 14,
+      "category": "animation_quality",
+      "defect": "Left character rear foot position ambiguous at tick 4 \u2014 possibly floating"
+    },
+    {
+      "id": 15,
+      "category": "animation_quality",
+      "defect": "Right character foot placement unclear at tick 1 \u2014 no weight-bearing indication"
+    },
+    {
+      "id": 16,
+      "category": "animation_quality",
+      "defect": "Walk cycle fails to communicate forward movement direction"
+    },
+    {
+      "id": 17,
+      "category": "animation_quality",
+      "defect": "Character spacing (1400mm\u2192900mm) changes but walk stride doesn't visibly match"
+    },
+    {
+      "id": 18,
+      "category": "animation_quality",
+      "defect": "Walk speed appears inconsistent with distance covered across 8 ticks"
+    },
+    {
+      "id": 19,
+      "category": "animation_quality",
+      "defect": "At tick 8, characters are at contact range but legs still in walk-ish stance"
+    },
+    {
+      "id": 20,
+      "category": "animation_quality",
+      "defect": "Walk-to-combat transition is abrupt \u2014 no deceleration or stance change animation"
+    },
+    {
+      "id": 21,
+      "category": "animation_quality",
+      "defect": "Walk animation continues during CONTACT YES state \u2014 should blend to combat"
+    },
+    {
+      "id": 22,
+      "category": "animation_quality",
+      "defect": "No walk cycle variation between approach (tick 1-4) and close (tick 5-8)"
+    },
+    {
+      "id": 23,
+      "category": "animation_quality",
+      "defect": "Both characters use identical walk timing \u2014 no phase offset"
+    },
+    {
+      "id": 24,
+      "category": "animation_quality",
+      "defect": "Walk cycle doesn't adapt to decreasing distance \u2014 stride should shorten"
+    },
+    {
+      "id": 25,
+      "category": "animation_quality",
+      "defect": "Foot placement doesn't align with grid floor \u2014 possible floating"
+    },
+    {
+      "id": 26,
+      "category": "animation_quality",
+      "defect": "Dark ground shadows don't animate \u2014 remain static oval blobs"
+    },
+    {
+      "id": 27,
+      "category": "animation_quality",
+      "defect": "Walk animation speed appears constant regardless of range"
+    },
+    {
+      "id": 28,
+      "category": "animation_quality",
+      "defect": "No walk start animation (acceleration from idle)"
+    },
+    {
+      "id": 29,
+      "category": "animation_quality",
+      "defect": "No walk stop animation (deceleration to idle)"
+    },
+    {
+      "id": 30,
+      "category": "animation_quality",
+      "defect": "Walk plays during GRAB/CLINCH inactive state \u2014 should transition"
+    },
+    {
+      "id": 31,
+      "category": "animation_quality",
+      "defect": "Walk plays during predicted strike contact countdown \u2014 unrealistic"
+    },
+    {
+      "id": 32,
+      "category": "animation_quality",
+      "defect": "STANCE NEUTRAL displayed during walk \u2014 mismatch between state and animation"
+    },
+    {
+      "id": 33,
+      "category": "animation_quality",
+      "defect": "Walk cycle fails to show character weight (mannequins are massless)"
+    },
+    {
+      "id": 34,
+      "category": "animation_quality",
+      "defect": "Hip height doesn't oscillate during walk \u2014 flat translation"
+    },
+    {
+      "id": 35,
+      "category": "animation_quality",
+      "defect": "Knee flexion during walk is minimal \u2014 legs nearly straight"
+    },
+    {
+      "id": 36,
+      "category": "animation_quality",
+      "defect": "Ankle dorsiflexion absent \u2014 feet are rigid blocks"
+    },
+    {
+      "id": 37,
+      "category": "animation_quality",
+      "defect": "Foot roll (heel\u2192toe) is invisible"
+    },
+    {
+      "id": 38,
+      "category": "animation_quality",
+      "defect": "No foot lift visible \u2014 feet appear to slide rather than step"
+    },
+    {
+      "id": 39,
+      "category": "animation_quality",
+      "defect": "Arm positions during walk are combat-like, not locomotion-like"
+    },
+    {
+      "id": 40,
+      "category": "animation_quality",
+      "defect": "Walk animation leaks combat arm poses \u2014 blending error"
+    },
+    {
+      "id": 41,
+      "category": "animation_quality",
+      "defect": "Walk speed doesn't match range change rate (1400\u2192900 in ~4 ticks = 125mm/tick)"
+    },
+    {
+      "id": 42,
+      "category": "animation_quality",
+      "defect": "Walk cycle frame rate may not match simulation tick rate"
+    },
+    {
+      "id": 43,
+      "category": "animation_quality",
+      "defect": "Walk animation may be sampled at wrong playback speed"
+    },
+    {
+      "id": 44,
+      "category": "animation_quality",
+      "defect": "No lateral sway during walk \u2014 characters move on rails"
+    },
+    {
+      "id": 45,
+      "category": "animation_quality",
+      "defect": "No pelvic rotation during walk \u2014 hips stay square"
+    },
+    {
+      "id": 46,
+      "category": "animation_quality",
+      "defect": "No shoulder counter-rotation during walk"
+    },
+    {
+      "id": 47,
+      "category": "animation_quality",
+      "defect": "Head doesn't bob during walk"
+    },
+    {
+      "id": 48,
+      "category": "animation_quality",
+      "defect": "Walk cycle has no weight \u2014 characters float across ground"
+    },
+    {
+      "id": 49,
+      "category": "animation_quality",
+      "defect": "Walk animation appears procedural rather than authored"
+    },
+    {
+      "id": 50,
+      "category": "animation_quality",
+      "defect": "Walk clip may be looping incorrectly (same pose at different ticks)"
+    },
+    {
+      "id": 51,
+      "category": "animation_quality",
+      "defect": "Transition from walk to neutral stance at tick 8 is a snap \u2014 no blend"
+    },
+    {
+      "id": 52,
+      "category": "animation_quality",
+      "defect": "Walk animation doesn't account for character facing direction"
+    },
+    {
+      "id": 53,
+      "category": "animation_quality",
+      "defect": "Characters walk toward each other but body orientation stays parallel"
+    },
+    {
+      "id": 54,
+      "category": "animation_quality",
+      "defect": "Walk direction is purely translational \u2014 no turning animation"
+    },
+    {
+      "id": 55,
+      "category": "animation_quality",
+      "defect": "No strafe walk (sideways movement)"
+    },
+    {
+      "id": 56,
+      "category": "animation_quality",
+      "defect": "No backward walk (retreat)"
+    },
+    {
+      "id": 57,
+      "category": "animation_quality",
+      "defect": "Walk cycle uses same clip for both characters \u2014 identical poses"
+    },
+    {
+      "id": 58,
+      "category": "animation_quality",
+      "defect": "No character-specific walk style"
+    },
+    {
+      "id": 59,
+      "category": "animation_quality",
+      "defect": "Walk animation speed is unresponsive to BURST/TEMPO meters"
+    },
+    {
+      "id": 60,
+      "category": "animation_quality",
+      "defect": "Walk animation ignores FEINT charge state"
+    },
+    {
+      "id": 61,
+      "category": "animation_quality",
+      "defect": "Walk continues through forecast window \u2014 should pause or slow"
+    },
+    {
+      "id": 62,
+      "category": "animation_quality",
+      "defect": "Walk animation doesn't sync with PREDICTED STRIKECONTACT countdown"
+    },
+    {
+      "id": 63,
+      "category": "animation_quality",
+      "defect": "Walk cycle frames are not visually distinguishable from neutral stance"
+    },
+    {
+      "id": 64,
+      "category": "animation_quality",
+      "defect": "Observer camera distance makes walk stride hard to evaluate"
+    },
+    {
+      "id": 65,
+      "category": "animation_quality",
+      "defect": "Grid floor provides no footstep reference for walk quality"
+    },
+    {
+      "id": 66,
+      "category": "animation_quality",
+      "defect": "Dark shadows obscure foot-ground contact during walk"
+    },
+    {
+      "id": 67,
+      "category": "animation_quality",
+      "defect": "First-person view doesn't show walk animation at all (opponent only)"
+    },
+    {
+      "id": 68,
+      "category": "animation_quality",
+      "defect": "Walk animation doesn't produce visible ground reaction"
+    },
+    {
+      "id": 69,
+      "category": "animation_quality",
+      "defect": "No walk animation exists for the first-person weapon view"
+    },
+    {
+      "id": 70,
+      "category": "animation_quality",
+      "defect": "Walk animation quality degrades at close range \u2014 arms stay spread"
+    },
+    {
+      "id": 71,
+      "category": "animation_quality",
+      "defect": "Walk cycle fails the readability gate \u2014 can't tell characters are walking"
+    },
+    {
+      "id": 72,
+      "category": "animation_quality",
+      "defect": "Walk animation is the weakest part of the proven motion pipeline"
+    },
+    {
+      "id": 73,
+      "category": "animation_quality",
+      "defect": "Walk clip (walking.anim, 49KB) may contain insufficient frames"
+    },
+    {
+      "id": 74,
+      "category": "animation_quality",
+      "defect": "Walk clip may have been generated from non-combat motion data"
+    },
+    {
+      "id": 75,
+      "category": "animation_quality",
+      "defect": "Walk animation doesn't match the combat game's movement needs"
+    },
+    {
+      "id": 76,
+      "category": "animation_quality",
+      "defect": "Walk clip was designed for a different skeleton or scale"
+    },
+    {
+      "id": 77,
+      "category": "animation_quality",
+      "defect": "Walk animation retargeting may have lost arm swing data"
+    },
+    {
+      "id": 78,
+      "category": "animation_quality",
+      "defect": "Walk animation plays but doesn't serve gameplay purpose"
+    },
+    {
+      "id": 79,
+      "category": "animation_quality",
+      "defect": "Walk exists but is not usable for player-facing locomotion"
+    },
+    {
+      "id": 80,
+      "category": "animation_quality",
+      "defect": "Walk cycle: technically functional, visually unacceptable"
+    },
+    {
+      "id": 81,
+      "category": "animation_quality",
+      "defect": "Characters enter combat range with arms still in walk-like spread"
+    },
+    {
+      "id": 82,
+      "category": "animation_quality",
+      "defect": "Combat stances lack guard position \u2014 arms are too wide and too low"
+    },
+    {
+      "id": 83,
+      "category": "animation_quality",
+      "defect": "No boxer's guard (hands protecting chin)"
+    },
+    {
+      "id": 84,
+      "category": "animation_quality",
+      "defect": "No wrestler's stance (lowered center, ready hands)"
+    },
+    {
+      "id": 85,
+      "category": "animation_quality",
+      "defect": "No fencer's en garde (weapon forward, body profiled)"
+    },
+    {
+      "id": 86,
+      "category": "animation_quality",
+      "defect": "Combat poses show arms extended at shoulder height \u2014 vulnerability"
+    },
+    {
+      "id": 87,
+      "category": "animation_quality",
+      "defect": "Elbows are not tucked for protection in any combat frame"
+    },
+    {
+      "id": 88,
+      "category": "animation_quality",
+      "defect": "Hands do not protect head or torso in any frame"
+    },
+    {
+      "id": 89,
+      "category": "animation_quality",
+      "defect": "Combat stance has no readable defensive intention"
+    },
+    {
+      "id": 90,
+      "category": "animation_quality",
+      "defect": "Combat stance has no readable offensive intention"
+    },
+    {
+      "id": 91,
+      "category": "animation_quality",
+      "defect": "STANCE NEUTRAL displayed during contact-possible range \u2014 should be COMBAT"
+    },
+    {
+      "id": 92,
+      "category": "animation_quality",
+      "defect": "Characters face each other with square, unprotected bodies"
+    },
+    {
+      "id": 93,
+      "category": "animation_quality",
+      "defect": "Torso presents full target area in all combat frames"
+    },
+    {
+      "id": 94,
+      "category": "animation_quality",
+      "defect": "No stance change between RANGE MID 1400MM and RANGE MID 900MM"
+    },
+    {
+      "id": 95,
+      "category": "animation_quality",
+      "defect": "Combat pose is identical at all ranges \u2014 no adaptation"
+    },
+    {
+      "id": 96,
+      "category": "animation_quality",
+      "defect": "Both characters use identical combat pose \u2014 no player/AI distinction"
+    },
+    {
+      "id": 97,
+      "category": "animation_quality",
+      "defect": "Combat pose doesn't respond to BURST meter state"
+    },
+    {
+      "id": 98,
+      "category": "animation_quality",
+      "defect": "Combat pose doesn't respond to FEINT charge"
+    },
+    {
+      "id": 99,
+      "category": "animation_quality",
+      "defect": "Combat pose doesn't respond to TEMPO meter"
+    },
+    {
+      "id": 100,
+      "category": "animation_quality",
+      "defect": "Combat pose ignores the predicted strike contact countdown"
+    },
+    {
+      "id": 101,
+      "category": "animation_quality",
+      "defect": "Arms overlap at contact range without forming guard or clinch"
+    },
+    {
+      "id": 102,
+      "category": "animation_quality",
+      "defect": "Contact is spatial coincidence, not authored combat interaction"
+    },
+    {
+      "id": 103,
+      "category": "animation_quality",
+      "defect": "CONTACT YES displayed but characters don't visibly react"
+    },
+    {
+      "id": 104,
+      "category": "animation_quality",
+      "defect": "GRAB state inactive but characters are touching \u2014 confusing"
+    },
+    {
+      "id": 105,
+      "category": "animation_quality",
+      "defect": "CLINCH state inactive but characters are at clinch distance"
+    },
+    {
+      "id": 106,
+      "category": "animation_quality",
+      "defect": "Combat poses lack anticipation (wind-up before strike)"
+    },
+    {
+      "id": 107,
+      "category": "animation_quality",
+      "defect": "Combat poses lack follow-through (extension after contact)"
+    },
+    {
+      "id": 108,
+      "category": "animation_quality",
+      "defect": "Combat poses lack impact reaction (recoil, stagger)"
+    },
+    {
+      "id": 109,
+      "category": "animation_quality",
+      "defect": "No readable hit reaction on contacted character"
+    },
+    {
+      "id": 110,
+      "category": "animation_quality",
+      "defect": "No readable miss animation (whiff recovery)"
+    },
+    {
+      "id": 111,
+      "category": "animation_quality",
+      "defect": "No readable block animation (guard absorption)"
+    },
+    {
+      "id": 112,
+      "category": "animation_quality",
+      "defect": "No readable parry animation (deflection)"
+    },
+    {
+      "id": 113,
+      "category": "animation_quality",
+      "defect": "No readable dodge animation (evasion)"
+    },
+    {
+      "id": 114,
+      "category": "animation_quality",
+      "defect": "Combat poses are symmetrical within each character \u2014 no attack-defender asymmetry"
+    },
+    {
+      "id": 115,
+      "category": "animation_quality",
+      "defect": "Both characters appear to be in the same state simultaneously"
+    },
+    {
+      "id": 116,
+      "category": "animation_quality",
+      "defect": "Cannot determine who is attacking from pose alone"
+    },
+    {
+      "id": 117,
+      "category": "animation_quality",
+      "defect": "Cannot determine who is defending from pose alone"
+    },
+    {
+      "id": 118,
+      "category": "animation_quality",
+      "defect": "Combat poses read as \"two mannequins touching\" not \"two fighters fighting\""
+    },
+    {
+      "id": 119,
+      "category": "animation_quality",
+      "defect": "Limb contact is ambiguous \u2014 could be handshake, high-five, or error"
+    },
+    {
+      "id": 120,
+      "category": "animation_quality",
+      "defect": "Weapon is invisible in combat poses \u2014 no armed combat stance"
+    },
+    {
+      "id": 121,
+      "category": "animation_quality",
+      "defect": "Combat poses lack weapon-specific posture (sword, fist, staff)"
+    },
+    {
+      "id": 122,
+      "category": "animation_quality",
+      "defect": "No stance change when weapon is drawn vs sheathed"
+    },
+    {
+      "id": 123,
+      "category": "animation_quality",
+      "defect": "Draw/Sheath states in HUD but no visible weapon animation"
+    },
+    {
+      "id": 124,
+      "category": "animation_quality",
+      "defect": "Combat pose at tick 20 is nearly identical to tick 5 \u2014 no progression"
+    },
+    {
+      "id": 125,
+      "category": "animation_quality",
+      "defect": "Combat pose at tick 35 is nearly identical to tick 20 \u2014 frozen"
+    },
+    {
+      "id": 126,
+      "category": "animation_quality",
+      "defect": "Characters appear frozen in combat stance across multiple ticks"
+    },
+    {
+      "id": 127,
+      "category": "animation_quality",
+      "defect": "No visible frame-to-frame pose variation in combat range"
+    },
+    {
+      "id": 128,
+      "category": "animation_quality",
+      "defect": "Combat animation is a static pose, not a dynamic state"
+    },
+    {
+      "id": 129,
+      "category": "animation_quality",
+      "defect": "The combat HUD is more animated than the combat characters"
+    },
+    {
+      "id": 130,
+      "category": "animation_quality",
+      "defect": "Strike slash (22F) is listed but never shown"
+    },
+    {
+      "id": 131,
+      "category": "animation_quality",
+      "defect": "Strike thrust (18F) is listed but never shown"
+    },
+    {
+      "id": 132,
+      "category": "animation_quality",
+      "defect": "Block (12F) is listed but never shown"
+    },
+    {
+      "id": 133,
+      "category": "animation_quality",
+      "defect": "Grab (20F) is listed but never shown"
+    },
+    {
+      "id": 134,
+      "category": "animation_quality",
+      "defect": "Dodge (10F) is listed but never shown"
+    },
+    {
+      "id": 135,
+      "category": "animation_quality",
+      "defect": "Feint (6F) is listed but never shown"
+    },
+    {
+      "id": 136,
+      "category": "animation_quality",
+      "defect": "Cancel (8F) is listed but never shown"
+    },
+    {
+      "id": 137,
+      "category": "animation_quality",
+      "defect": "All 7 combat actions exist only as HUD text, not animation"
+    },
+    {
+      "id": 138,
+      "category": "animation_quality",
+      "defect": "Combat animation consists of exactly two states: walk-pose and contact-pose"
+    },
+    {
+      "id": 139,
+      "category": "animation_quality",
+      "defect": "No intermediate combat states between walk and contact"
+    },
+    {
+      "id": 140,
+      "category": "animation_quality",
+      "defect": "No transition animation between combat states"
+    },
+    {
+      "id": 141,
+      "category": "animation_quality",
+      "defect": "Combat animation is a binary toggle, not a continuous spectrum"
+    },
+    {
+      "id": 142,
+      "category": "animation_quality",
+      "defect": "Combat pose fails the 80% blind action-read gate from canon"
+    },
+    {
+      "id": 143,
+      "category": "animation_quality",
+      "defect": "First-time player would not understand combat state from animation alone"
+    },
+    {
+      "id": 144,
+      "category": "animation_quality",
+      "defect": "Combat readability is entirely dependent on HUD text"
+    },
+    {
+      "id": 145,
+      "category": "animation_quality",
+      "defect": "Without HUD, combat is two gray figures with arms out"
+    },
+    {
+      "id": 146,
+      "category": "animation_quality",
+      "defect": "Combat animation fails the game's core promise"
+    },
+    {
+      "id": 147,
+      "category": "animation_quality",
+      "defect": "Combat poses are the biggest gap between \"pipeline works\" and \"game works\""
+    },
+    {
+      "id": 148,
+      "category": "animation_quality",
+      "defect": "Walk-to-combat transition at tick 4-5 is invisible"
+    },
+    {
+      "id": 149,
+      "category": "animation_quality",
+      "defect": "Contact-to-separation transition at tick 8-10 is invisible"
+    },
+    {
+      "id": 150,
+      "category": "animation_quality",
+      "defect": "Combat animation has no ebb and flow \u2014 static then contact"
+    },
+    {
+      "id": 151,
+      "category": "animation_quality",
+      "defect": "Combat animation timing is decoupled from HUD timing"
+    },
+    {
+      "id": 152,
+      "category": "animation_quality",
+      "defect": "Combat animation doesn't reflect the deep simulation it's supposed to drive"
+    },
+    {
+      "id": 153,
+      "category": "animation_quality",
+      "defect": "Combat poses are placeholder quality, not game quality"
+    },
+    {
+      "id": 154,
+      "category": "animation_quality",
+      "defect": "Combat animation is adequate for pipeline verification"
+    },
+    {
+      "id": 155,
+      "category": "animation_quality",
+      "defect": "Combat animation is inadequate for player-facing gameplay"
+    },
+    {
+      "id": 156,
+      "category": "animation_quality",
+      "defect": "The working pipeline proves capability but not quality"
+    },
+    {
+      "id": 157,
+      "category": "animation_quality",
+      "defect": "Combat animation quality is the next blocker after pipeline verification"
+    },
+    {
+      "id": 158,
+      "category": "animation_quality",
+      "defect": "All combat poses share the same stiffness as the old bind-pose screenshots"
+    },
+    {
+      "id": 159,
+      "category": "animation_quality",
+      "defect": "Animation pipeline works but produces the same defects the 500-motion audit found"
+    },
+    {
+      "id": 160,
+      "category": "animation_quality",
+      "defect": "Working animation doesn't mean good animation"
+    },
+    {
+      "id": 161,
+      "category": "animation_quality",
+      "defect": "C0 duelist has 97K vertices for 24 bones \u2014 vertex density may cause skinning artifacts"
+    },
+    {
+      "id": 162,
+      "category": "animation_quality",
+      "defect": "C0 duelist at 581K indices \u2014 over-tessellation for real-time skinning"
+    },
+    {
+      "id": 163,
+      "category": "animation_quality",
+      "defect": "Walking.anim at 49KB for 24 bones \u2014 ~85 frames, may have temporal artifacts"
+    },
+    {
+      "id": 164,
+      "category": "animation_quality",
+      "defect": "Running.anim at 30KB for 24 bones \u2014 ~52 frames, shorter clip than walk"
+    },
+    {
+      "id": 165,
+      "category": "animation_quality",
+      "defect": "Walk animation retargeted from unknown source skeleton to 24-bone C0"
+    },
+    {
+      "id": 166,
+      "category": "animation_quality",
+      "defect": "Retargeting quality unverified \u2014 source skeleton unknown"
+    },
+    {
+      "id": 167,
+      "category": "animation_quality",
+      "defect": "Arm swing data may have been lost in retargeting (explains stiff walk arms)"
+    },
+    {
+      "id": 168,
+      "category": "animation_quality",
+      "defect": "Leg stride may be compressed due to skeleton proportion mismatch"
+    },
+    {
+      "id": 169,
+      "category": "animation_quality",
+      "defect": "Hip height difference between source and C0 may cause foot sliding"
+    },
+    {
+      "id": 170,
+      "category": "animation_quality",
+      "defect": "Shoulder width difference may cause arm intersection in certain poses"
+    },
+    {
+      "id": 171,
+      "category": "animation_quality",
+      "defect": "Spine bone count mismatch may cause rigid torso during animation"
+    },
+    {
+      "id": 172,
+      "category": "animation_quality",
+      "defect": "Neck bone differences may cause head snap during transitions"
+    },
+    {
+      "id": 173,
+      "category": "animation_quality",
+      "defect": "Hand bone absence causes rigid mitt hands in all animations"
+    },
+    {
+      "id": 174,
+      "category": "animation_quality",
+      "defect": "Finger bones absent \u2014 no gripping, pointing, or gesturing"
+    },
+    {
+      "id": 175,
+      "category": "animation_quality",
+      "defect": "Toe bones absent \u2014 no foot roll or balance adjustment"
+    },
+    {
+      "id": 176,
+      "category": "animation_quality",
+      "defect": "C0 skeleton designed for static mesh display, not combat animation"
+    },
+    {
+      "id": 177,
+      "category": "animation_quality",
+      "defect": "24-bone count is low for combat \u2014 industry standard is 50-80 bones"
+    },
+    {
+      "id": 178,
+      "category": "animation_quality",
+      "defect": "Root bone motion may not be properly extracted from animation clips"
+    },
+    {
+      "id": 179,
+      "category": "animation_quality",
+      "defect": "Hip bone hierarchy may cause pelvis rotation errors during walk"
+    },
+    {
+      "id": 180,
+      "category": "animation_quality",
+      "defect": "Shoulder bone orientation may cause arm abduction in neutral pose"
+    },
+    {
+      "id": 181,
+      "category": "animation_quality",
+      "defect": "Elbow bone axis may cause unnatural forearm rotation"
+    },
+    {
+      "id": 182,
+      "category": "animation_quality",
+      "defect": "Knee bone axis may cause knee popping during walk cycle"
+    },
+    {
+      "id": 183,
+      "category": "animation_quality",
+      "defect": "Ankle bone may not have proper foot roll setup"
+    },
+    {
+      "id": 184,
+      "category": "animation_quality",
+      "defect": "Spine may be single bone \u2014 no torso bend or twist"
+    },
+    {
+      "id": 185,
+      "category": "animation_quality",
+      "defect": "Head bone may not track neck movement naturally"
+    },
+    {
+      "id": 186,
+      "category": "animation_quality",
+      "defect": "Weapon attachment bone may not exist on C0 skeleton"
+    },
+    {
+      "id": 187,
+      "category": "animation_quality",
+      "defect": "Grip socket bone absent \u2014 weapon floats or is static"
+    },
+    {
+      "id": 188,
+      "category": "animation_quality",
+      "defect": "Retargeting from G1 (34 bones) to C0 (24 bones) loses 10 articulation points"
+    },
+    {
+      "id": 189,
+      "category": "animation_quality",
+      "defect": "MotionBricks hero_strike.413.f32 is G1 format \u2014 requires retargeting to C0"
+    },
+    {
+      "id": 190,
+      "category": "animation_quality",
+      "defect": "G1\u2192C0 retargeting pipeline not yet wired into game_loop"
+    },
+    {
+      "id": 191,
+      "category": "animation_quality",
+      "defect": "MotionBricks interaction clip retargeting produces valid skin matrices but untested in-game"
+    },
+    {
+      "id": 192,
+      "category": "animation_quality",
+      "defect": "Skeleton pose buffer may not update at correct rate for animation"
+    },
+    {
+      "id": 193,
+      "category": "animation_quality",
+      "defect": "Skin matrix computation (CPU) may be bottleneck at high vertex count"
+    },
+    {
+      "id": 194,
+      "category": "animation_quality",
+      "defect": "Per-actor joint buffer update may race with render submission"
+    },
+    {
+      "id": 195,
+      "category": "animation_quality",
+      "defect": "Skinned vertex shader may not handle influence count >8 correctly"
+    },
+    {
+      "id": 196,
+      "category": "animation_quality",
+      "defect": "Weight normalization during loading may alter animation intent"
+    },
+    {
+      "id": 197,
+      "category": "animation_quality",
+      "defect": "Bind pose matrix may not match animation clip reference pose"
+    },
+    {
+      "id": 198,
+      "category": "animation_quality",
+      "defect": "Animation clip may assume different bind pose than C0 mesh"
+    },
+    {
+      "id": 199,
+      "category": "animation_quality",
+      "defect": "Skeleton scale may differ between source clip and C0 mesh"
+    },
+    {
+      "id": 200,
+      "category": "animation_quality",
+      "defect": "Coordinate space mismatch may cause animation to play in wrong orientation"
+    },
+    {
+      "id": 201,
+      "category": "animation_quality",
+      "defect": "Animation clip may use Z-up while engine uses Y-up"
+    },
+    {
+      "id": 202,
+      "category": "animation_quality",
+      "defect": "Retargeting quality cannot be visually verified without side-by-side source comparison"
+    },
+    {
+      "id": 203,
+      "category": "animation_quality",
+      "defect": "No tool exists to visualize retargeting error per bone"
+    },
+    {
+      "id": 204,
+      "category": "animation_quality",
+      "defect": "No heatmap of skinning error during animation playback"
+    },
+    {
+      "id": 205,
+      "category": "animation_quality",
+      "defect": "No automated test for retargeting quality across all animation clips"
+    },
+    {
+      "id": 206,
+      "category": "animation_quality",
+      "defect": "Skeleton validation only checks bone count, not bone names or hierarchy"
+    },
+    {
+      "id": 207,
+      "category": "animation_quality",
+      "defect": "Animation loading doesn't validate bone name matching"
+    },
+    {
+      "id": 208,
+      "category": "animation_quality",
+      "defect": "Missing bone in hierarchy causes silent animation failure"
+    },
+    {
+      "id": 209,
+      "category": "animation_quality",
+      "defect": "Extra bone in hierarchy causes animation index misalignment"
+    },
+    {
+      "id": 210,
+      "category": "animation_quality",
+      "defect": "Skeleton rest pose may drift from mesh bind pose over time"
+    },
+    {
+      "id": 211,
+      "category": "animation_quality",
+      "defect": "Animation playback may accumulate floating-point error across frames"
+    },
+    {
+      "id": 212,
+      "category": "animation_quality",
+      "defect": "Deterministic replay may diverge if animation playback is non-deterministic"
+    },
+    {
+      "id": 213,
+      "category": "animation_quality",
+      "defect": "Golden replay (100-run) hasn't been tested with animation enabled"
+    },
+    {
+      "id": 214,
+      "category": "animation_quality",
+      "defect": "Cross-platform animation replay not verified (Windows/Linux/Deck)"
+    },
+    {
+      "id": 215,
+      "category": "animation_quality",
+      "defect": "Animation pipeline not tested with simultaneous two-character playback"
+    },
+    {
+      "id": 216,
+      "category": "animation_quality",
+      "defect": "Memory usage of skin matrices for 97K-vert mesh may spike"
+    },
+    {
+      "id": 217,
+      "category": "animation_quality",
+      "defect": "VRAM usage of skinned vertex buffer may exceed budget"
+    },
+    {
+      "id": 218,
+      "category": "animation_quality",
+      "defect": "Animation pipeline lacks profiling instrumentation"
+    },
+    {
+      "id": 219,
+      "category": "animation_quality",
+      "defect": "Retargeting is the most fragile link in the proven pipeline"
+    },
+    {
+      "id": 220,
+      "category": "animation_quality",
+      "defect": "Skeleton quality gates exist but are not enforced in CI"
+    },
+    {
+      "id": 221,
+      "category": "animation_quality",
+      "defect": "MotionBricks ONNX pipeline loads but produces no usable combat motion"
+    },
+    {
+      "id": 222,
+      "category": "animation_quality",
+      "defect": "MotionBricks VQ-VAE decoder can only reconstruct \u2014 cannot generate"
+    },
+    {
+      "id": 223,
+      "category": "animation_quality",
+      "defect": "Full PyTorch pipeline produces contorted G1 skeletons on combat prompts"
+    },
+    {
+      "id": 224,
+      "category": "animation_quality",
+      "defect": "MotionBricks navigation checkpoint generates locomotion, not combat"
+    },
+    {
+      "id": 225,
+      "category": "animation_quality",
+      "defect": "No action-conditioning channel exists in available MotionBricks checkpoints"
+    },
+    {
+      "id": 226,
+      "category": "animation_quality",
+      "defect": "Smart-primitive keyframe authoring exists in research but not runtime"
+    },
+    {
+      "id": 227,
+      "category": "animation_quality",
+      "defect": "MotionBricks interaction clip (hero_strike) is baked, not generative"
+    },
+    {
+      "id": 228,
+      "category": "animation_quality",
+      "defect": "Baked clip violates canon \u2014 \"no prebaked clips in runtime\""
+    },
+    {
+      "id": 229,
+      "category": "animation_quality",
+      "defect": "MotionBricks Python bridge works but requires separate Python environment"
+    },
+    {
+      "id": 230,
+      "category": "animation_quality",
+      "defect": "MotionBricks async service requires `JUSTDODGE_MOTION=generative` environment variable"
+    },
+    {
+      "id": 231,
+      "category": "animation_quality",
+      "defect": "Generative mode not wired into default game_loop rendering path"
+    },
+    {
+      "id": 232,
+      "category": "animation_quality",
+      "defect": "MotionBricks generation is non-deterministic \u2014 breaks replay"
+    },
+    {
+      "id": 233,
+      "category": "animation_quality",
+      "defect": "MotionBricks generation latency unknown \u2014 may miss 60Hz truth tick"
+    },
+    {
+      "id": 234,
+      "category": "animation_quality",
+      "defect": "MotionBricks generation quality is unvalidated for combat use"
+    },
+    {
+      "id": 235,
+      "category": "animation_quality",
+      "defect": "MotionBricks output has never been visually rendered and approved"
+    },
+    {
+      "id": 236,
+      "category": "animation_quality",
+      "defect": "MotionBricks G1 output requires retargeting \u2014 extra failure point"
+    },
+    {
+      "id": 237,
+      "category": "animation_quality",
+      "defect": "MotionBricks model checkpoint provenance unclear \u2014 license risk"
+    },
+    {
+      "id": 238,
+      "category": "animation_quality",
+      "defect": "MotionBricks training data unknown \u2014 potential copyright issues"
+    },
+    {
+      "id": 239,
+      "category": "animation_quality",
+      "defect": "MotionBricks model is gated on HuggingFace \u2014 requires auth"
+    },
+    {
+      "id": 240,
+      "category": "animation_quality",
+      "defect": "MotionBricks model is too large for Steam Deck distribution"
+    },
+    {
+      "id": 241,
+      "category": "animation_quality",
+      "defect": "MotionBricks ONNX runtime requires CUDA \u2014 no CPU fallback"
+    },
+    {
+      "id": 242,
+      "category": "animation_quality",
+      "defect": "MotionBricks service is not packaged for release builds"
+    },
+    {
+      "id": 243,
+      "category": "animation_quality",
+      "defect": "MotionBricks integration test suite exists but passes on invalid output"
+    },
+    {
+      "id": 244,
+      "category": "animation_quality",
+      "defect": "MotionBricks rigidity test passes but doesn't measure combat quality"
+    },
+    {
+      "id": 245,
+      "category": "animation_quality",
+      "defect": "MotionBricks primitive loading test passes but primitives are locomotion, not combat"
+    },
+    {
+      "id": 246,
+      "category": "animation_quality",
+      "defect": "MotionBricks official navigation agent works but generates irrelevant motion"
+    },
+    {
+      "id": 247,
+      "category": "animation_quality",
+      "defect": "MotionBricks Rust ignored integration suite passes \u2014 green tests, red output"
+    },
+    {
+      "id": 248,
+      "category": "animation_quality",
+      "defect": "MotionBricks `force_generation=True` flag is set but output still wrong"
+    },
+    {
+      "id": 249,
+      "category": "animation_quality",
+      "defect": "MotionBricks cached clip replay produces stale locomotion"
+    },
+    {
+      "id": 250,
+      "category": "animation_quality",
+      "defect": "MotionBricks context frame buffer uses displayed frames \u2014 feedback loop risk"
+    },
+    {
+      "id": 251,
+      "category": "animation_quality",
+      "defect": "MotionBricks replan timing may not match combat action timing"
+    },
+    {
+      "id": 252,
+      "category": "animation_quality",
+      "defect": "MotionBricks root motion may conflict with engine root placement"
+    },
+    {
+      "id": 253,
+      "category": "animation_quality",
+      "defect": "MotionBricks contact labels may not match engine contact detection"
+    },
+    {
+      "id": 254,
+      "category": "animation_quality",
+      "defect": "MotionBricks velocity output may cause foot sliding with engine physics"
+    },
+    {
+      "id": 255,
+      "category": "animation_quality",
+      "defect": "MotionBricks frame rate (30fps?) may not match engine (60fps)"
+    },
+    {
+      "id": 256,
+      "category": "animation_quality",
+      "defect": "MotionBricks pose generation is not synchronized with truth ticks"
+    },
+    {
+      "id": 257,
+      "category": "animation_quality",
+      "defect": "MotionBricks output has never passed a human visual gate"
+    },
+    {
+      "id": 258,
+      "category": "animation_quality",
+      "defect": "MotionBricks is the most complex component with the least proven output"
+    },
+    {
+      "id": 259,
+      "category": "animation_quality",
+      "defect": "MotionBricks integration is research-grade, not production-grade"
+    },
+    {
+      "id": 260,
+      "category": "animation_quality",
+      "defect": "MotionBricks represents the project's highest technical risk"
+    },
+    {
+      "id": 261,
+      "category": "animation_quality",
+      "defect": "MotionBricks generates in G1 space \u2014 must convert to engine space"
+    },
+    {
+      "id": 262,
+      "category": "animation_quality",
+      "defect": "G1\u2192engine coordinate conversion is lossy (float32\u2192float32 but different axes)"
+    },
+    {
+      "id": 263,
+      "category": "animation_quality",
+      "defect": "MotionBricks joint count (34) doesn't match C0 (24) or MPFB (163)"
+    },
+    {
+      "id": 264,
+      "category": "animation_quality",
+      "defect": "MotionBricks output format (.413 f32) is custom, not standard"
+    },
+    {
+      "id": 265,
+      "category": "animation_quality",
+      "defect": "MotionBricks clip loading is fragile \u2014 relies on exact byte count"
+    },
+    {
+      "id": 266,
+      "category": "animation_quality",
+      "defect": "MotionBricks clip parsing assumes little-endian \u2014 breaks on big-endian"
+    },
+    {
+      "id": 267,
+      "category": "animation_quality",
+      "defect": "MotionBricks clip validation checks finiteness but not anatomical plausibility"
+    },
+    {
+      "id": 268,
+      "category": "animation_quality",
+      "defect": "MotionBricks service restarts on failure \u2014 state loss"
+    },
+    {
+      "id": 269,
+      "category": "animation_quality",
+      "defect": "MotionBricks service has no health check or readiness probe"
+    },
+    {
+      "id": 270,
+      "category": "animation_quality",
+      "defect": "MotionBricks service logs are not captured in game output"
+    },
+    {
+      "id": 271,
+      "category": "animation_quality",
+      "defect": "MotionBricks ONNX model loading time is unknown \u2014 cold start latency"
+    },
+    {
+      "id": 272,
+      "category": "animation_quality",
+      "defect": "MotionBricks inference may block the main thread"
+    },
+    {
+      "id": 273,
+      "category": "animation_quality",
+      "defect": "MotionBricks async worker may stall under concurrent requests"
+    },
+    {
+      "id": 274,
+      "category": "animation_quality",
+      "defect": "MotionBricks request queue has no priority \u2014 combat actions may be delayed"
+    },
+    {
+      "id": 275,
+      "category": "animation_quality",
+      "defect": "MotionBricks held-last-pose underrun produces frozen animation"
+    },
+    {
+      "id": 276,
+      "category": "animation_quality",
+      "defect": "MotionBricks four-tick crossfade may not be sufficient for combat transitions"
+    },
+    {
+      "id": 277,
+      "category": "animation_quality",
+      "defect": "MotionBricks `asset::compute_skin_matrices` path is a shortcut, not the canonical retargeter"
+    },
+    {
+      "id": 278,
+      "category": "animation_quality",
+      "defect": "MotionBricks integration is split across Rust, Python, and ONNX \u2014 three failure domains"
+    },
+    {
+      "id": 279,
+      "category": "animation_quality",
+      "defect": "MotionBricks is simultaneously the most important and least reliable component"
+    },
+    {
+      "id": 280,
+      "category": "animation_quality",
+      "defect": "MotionBricks: technically integrated, functionally non-contributing"
+    },
+    {
+      "id": 281,
+      "category": "animation_quality",
+      "defect": "First-person view renders only one character \u2014 opponent invisible at close range"
+    },
+    {
+      "id": 282,
+      "category": "animation_quality",
+      "defect": "First-person weapon view shows no weapon \u2014 empty hand"
+    },
+    {
+      "id": 283,
+      "category": "animation_quality",
+      "defect": "Observer camera is too high and distant for animation quality assessment"
+    },
+    {
+      "id": 284,
+      "category": "animation_quality",
+      "defect": "Observer camera angle compresses depth \u2014 characters look 2D"
+    },
+    {
+      "id": 285,
+      "category": "animation_quality",
+      "defect": "No close-up camera mode for animation debugging"
+    },
+    {
+      "id": 286,
+      "category": "animation_quality",
+      "defect": "No split-screen mode showing both first and third person"
+    },
+    {
+      "id": 287,
+      "category": "animation_quality",
+      "defect": "Characters are untextured gray \u2014 no material differentiation"
+    },
+    {
+      "id": 288,
+      "category": "animation_quality",
+      "defect": "Character meshes identical \u2014 cannot distinguish player from opponent"
+    },
+    {
+      "id": 289,
+      "category": "animation_quality",
+      "defect": "No team color or identification marking on characters"
+    },
+    {
+      "id": 290,
+      "category": "animation_quality",
+      "defect": "Grid floor has no texture or material \u2014 sterile test environment"
+    },
+    {
+      "id": 291,
+      "category": "animation_quality",
+      "defect": "Dark brown background provides no depth reference"
+    },
+    {
+      "id": 292,
+      "category": "animation_quality",
+      "defect": "No sky, horizon, or environmental context"
+    },
+    {
+      "id": 293,
+      "category": "animation_quality",
+      "defect": "Black oval shadows are static \u2014 don't respond to animation"
+    },
+    {
+      "id": 294,
+      "category": "animation_quality",
+      "defect": "Shadows don't move with character root \u2014 visual disconnect"
+    },
+    {
+      "id": 295,
+      "category": "animation_quality",
+      "defect": "No shadow for weapon or held items"
+    },
+    {
+      "id": 296,
+      "category": "animation_quality",
+      "defect": "Yellow debug lines cross characters \u2014 visual obstruction"
+    },
+    {
+      "id": 297,
+      "category": "animation_quality",
+      "defect": "Purple/yellow trajectory lines are visually confusing"
+    },
+    {
+      "id": 298,
+      "category": "animation_quality",
+      "defect": "Debug wireframe geometry is unlabeled \u2014 purpose unclear"
+    },
+    {
+      "id": 299,
+      "category": "animation_quality",
+      "defect": "HUD text is tiny and low-contrast at render resolution"
+    },
+    {
+      "id": 300,
+      "category": "animation_quality",
+      "defect": "HUD elements overlap character animation area"
+    },
+    {
+      "id": 301,
+      "category": "animation_quality",
+      "defect": "Grid lines create Moir\u00e9 interference with character edges"
+    },
+    {
+      "id": 302,
+      "category": "animation_quality",
+      "defect": "Render resolution (1280x720) is too low for animation QA"
+    },
+    {
+      "id": 303,
+      "category": "animation_quality",
+      "defect": "No motion blur or temporal anti-aliasing"
+    },
+    {
+      "id": 304,
+      "category": "animation_quality",
+      "defect": "No depth of field to separate characters from background"
+    },
+    {
+      "id": 305,
+      "category": "animation_quality",
+      "defect": "No ambient occlusion for spatial depth perception"
+    },
+    {
+      "id": 306,
+      "category": "animation_quality",
+      "defect": "No rim lighting to separate character silhouettes"
+    },
+    {
+      "id": 307,
+      "category": "animation_quality",
+      "defect": "Lighting is flat and directionless \u2014 form readability poor"
+    },
+    {
+      "id": 308,
+      "category": "animation_quality",
+      "defect": "Characters cast no shadows on each other \u2014 no spatial relationship"
+    },
+    {
+      "id": 309,
+      "category": "animation_quality",
+      "defect": "Weapon mesh (w0_sword_assembled.bin) loaded but not visibly rendered"
+    },
+    {
+      "id": 310,
+      "category": "animation_quality",
+      "defect": "Weapon may be rendered at wrong scale or position"
+    },
+    {
+      "id": 311,
+      "category": "animation_quality",
+      "defect": "Weapon material same gray as character \u2014 indistinguishable"
+    },
+    {
+      "id": 312,
+      "category": "animation_quality",
+      "defect": "First-person weapon view has no viewmodel animation"
+    },
+    {
+      "id": 313,
+      "category": "animation_quality",
+      "defect": "Shot rendering mode doesn't capture animation over time"
+    },
+    {
+      "id": 314,
+      "category": "animation_quality",
+      "defect": "PNG output is single-frame \u2014 no video or GIF for animation review"
+    },
+    {
+      "id": 315,
+      "category": "animation_quality",
+      "defect": "No automated animation frame comparison tool"
+    },
+    {
+      "id": 316,
+      "category": "animation_quality",
+      "defect": "No side-by-side before/after animation comparison"
+    },
+    {
+      "id": 317,
+      "category": "animation_quality",
+      "defect": "No pose overlay or ghosting for adjacent frame comparison"
+    },
+    {
+      "id": 318,
+      "category": "animation_quality",
+      "defect": "No onion-skinning for animation debugging"
+    },
+    {
+      "id": 319,
+      "category": "animation_quality",
+      "defect": "No wireframe overlay mode for skeleton visualization"
+    },
+    {
+      "id": 320,
+      "category": "animation_quality",
+      "defect": "No joint marker rendering for pose debugging"
+    },
+    {
+      "id": 321,
+      "category": "animation_quality",
+      "defect": "No bone axis rendering for orientation debugging"
+    },
+    {
+      "id": 322,
+      "category": "animation_quality",
+      "defect": "No skin weight heatmap for deformation debugging"
+    },
+    {
+      "id": 323,
+      "category": "animation_quality",
+      "defect": "No vertex displacement visualization during animation"
+    },
+    {
+      "id": 324,
+      "category": "animation_quality",
+      "defect": "No framerate counter or performance overlay"
+    },
+    {
+      "id": 325,
+      "category": "animation_quality",
+      "defect": "No animation state debug overlay"
+    },
+    {
+      "id": 326,
+      "category": "animation_quality",
+      "defect": "No animation clip name display during playback"
+    },
+    {
+      "id": 327,
+      "category": "animation_quality",
+      "defect": "No root motion visualization (ground trail)"
+    },
+    {
+      "id": 328,
+      "category": "animation_quality",
+      "defect": "No contact point visualization"
+    },
+    {
+      "id": 329,
+      "category": "animation_quality",
+      "defect": "No hitbox/hurtbox overlay"
+    },
+    {
+      "id": 330,
+      "category": "animation_quality",
+      "defect": "No range indicator between characters"
+    },
+    {
+      "id": 331,
+      "category": "animation_quality",
+      "defect": "No facing direction indicator"
+    },
+    {
+      "id": 332,
+      "category": "animation_quality",
+      "defect": "Rendering pipeline is adequate for engineering verification"
+    },
+    {
+      "id": 333,
+      "category": "animation_quality",
+      "defect": "Rendering pipeline is inadequate for animation quality assessment"
+    },
+    {
+      "id": 334,
+      "category": "animation_quality",
+      "defect": "No visual regression testing for animation"
+    },
+    {
+      "id": 335,
+      "category": "animation_quality",
+      "defect": "No automated screenshot comparison between builds"
+    },
+    {
+      "id": 336,
+      "category": "animation_quality",
+      "defect": "Rendering pipeline produces evidence but evidence is hard to interpret"
+    },
+    {
+      "id": 337,
+      "category": "animation_quality",
+      "defect": "Current render quality makes animation defects harder to spot"
+    },
+    {
+      "id": 338,
+      "category": "animation_quality",
+      "defect": "Rendering improvements would accelerate animation development"
+    },
+    {
+      "id": 339,
+      "category": "animation_quality",
+      "defect": "Presentation layer is the bottleneck for animation iteration speed"
+    },
+    {
+      "id": 340,
+      "category": "animation_quality",
+      "defect": "Fix rendering to fix animation development velocity"
+    },
+    {
+      "id": 341,
+      "category": "animation_quality",
+      "defect": "Cooked assets were removed from working tree \u2014 broke animation"
+    },
+    {
+      "id": 342,
+      "category": "animation_quality",
+      "defect": "No automated asset availability check before build"
+    },
+    {
+      "id": 343,
+      "category": "animation_quality",
+      "defect": "No graceful fallback when animation assets missing"
+    },
+    {
+      "id": 344,
+      "category": "animation_quality",
+      "defect": "Game_loop panics on missing asset \u2014 should warn and continue"
+    },
+    {
+      "id": 345,
+      "category": "animation_quality",
+      "defect": "Weapon mesh (w0_sword) is optional but causes panic when missing"
+    },
+    {
+      "id": 346,
+      "category": "animation_quality",
+      "defect": "Asset paths are hardcoded \u2014 no configuration file"
+    },
+    {
+      "id": 347,
+      "category": "animation_quality",
+      "defect": "Asset search path (JUSTDODGE_ASSETS) is environment variable only"
+    },
+    {
+      "id": 348,
+      "category": "animation_quality",
+      "defect": "No asset manifest or checksum verification at startup"
+    },
+    {
+      "id": 349,
+      "category": "animation_quality",
+      "defect": "Walking.anim and running.anim are not version-controlled until now"
+    },
+    {
+      "id": 350,
+      "category": "animation_quality",
+      "defect": "Animation clip format (ANM1) is custom \u2014 no standard tool support"
+    },
+    {
+      "id": 351,
+      "category": "animation_quality",
+      "defect": "No animation clip editor or viewer outside of game_loop"
+    },
+    {
+      "id": 352,
+      "category": "animation_quality",
+      "defect": "No Blender export pipeline for creating new .anim clips"
+    },
+    {
+      "id": 353,
+      "category": "animation_quality",
+      "defect": "FBX extraction script exists but requires manual Blender invocation"
+    },
+    {
+      "id": 354,
+      "category": "animation_quality",
+      "defect": "SKM1 binary format requires custom validator \u2014 no standard tool"
+    },
+    {
+      "id": 355,
+      "category": "animation_quality",
+      "defect": "No automated animation clip validation (frame count, bone count, continuity)"
+    },
+    {
+      "id": 356,
+      "category": "animation_quality",
+      "defect": "MotionBricks clip (.413.f32) format has no validation tool"
+    },
+    {
+      "id": 357,
+      "category": "animation_quality",
+      "defect": "MotionBricks clip lives in dist/ not assets/ \u2014 wrong location"
+    },
+    {
+      "id": 358,
+      "category": "animation_quality",
+      "defect": "Dist/ directory is for release packages, not development assets"
+    },
+    {
+      "id": 359,
+      "category": "animation_quality",
+      "defect": "Assets are scattered across dist/, assets/source/, /tmp/ \u2014 no single source of truth"
+    },
+    {
+      "id": 360,
+      "category": "animation_quality",
+      "defect": "No asset database or content addressable storage"
+    },
+    {
+      "id": 361,
+      "category": "animation_quality",
+      "defect": "Animation clips have no metadata (source, author, license, frame count)"
+    },
+    {
+      "id": 362,
+      "category": "animation_quality",
+      "defect": "No animation clip naming convention"
+    },
+    {
+      "id": 363,
+      "category": "animation_quality",
+      "defect": "hero_strike.motionbricks.interaction.413.f32 \u2014 too long, no version"
+    },
+    {
+      "id": 364,
+      "category": "animation_quality",
+      "defect": "walking.anim and running.anim names are generic \u2014 which character?"
+    },
+    {
+      "id": 365,
+      "category": "animation_quality",
+      "defect": "No animation clip versioning \u2014 can't track improvements"
+    },
+    {
+      "id": 366,
+      "category": "animation_quality",
+      "defect": "No animation clip A/B testing infrastructure"
+    },
+    {
+      "id": 367,
+      "category": "animation_quality",
+      "defect": "No animation playback speed control in debug mode"
+    },
+    {
+      "id": 368,
+      "category": "animation_quality",
+      "defect": "No animation frame stepping in debug mode"
+    },
+    {
+      "id": 369,
+      "category": "animation_quality",
+      "defect": "No animation timeline scrubber in debug mode"
+    },
+    {
+      "id": 370,
+      "category": "animation_quality",
+      "defect": "--shot rendering captures one tick at a time \u2014 slow iteration"
+    },
+    {
+      "id": 371,
+      "category": "animation_quality",
+      "defect": "No batch rendering of animation sequences"
+    },
+    {
+      "id": 372,
+      "category": "animation_quality",
+      "defect": "No automated GIF/video generation from --shot frames"
+    },
+    {
+      "id": 373,
+      "category": "animation_quality",
+      "defect": "No animation benchmark or performance test"
+    },
+    {
+      "id": 374,
+      "category": "animation_quality",
+      "defect": "No animation regression test (compare frame hashes across versions)"
+    },
+    {
+      "id": 375,
+      "category": "animation_quality",
+      "defect": "Animation development requires manual frame capture and visual inspection"
+    },
+    {
+      "id": 376,
+      "category": "animation_quality",
+      "defect": "Animation iteration cycle is: edit \u2192 build \u2192 --shot \u2192 open PNG \u2192 repeat"
+    },
+    {
+      "id": 377,
+      "category": "animation_quality",
+      "defect": "Each iteration takes ~30 seconds \u2014 too slow for quality work"
+    },
+    {
+      "id": 378,
+      "category": "animation_quality",
+      "defect": "No live animation preview during development"
+    },
+    {
+      "id": 379,
+      "category": "animation_quality",
+      "defect": "No hot-reload for animation clips"
+    },
+    {
+      "id": 380,
+      "category": "animation_quality",
+      "defect": "Game_loop must be restarted to load new animation clips"
+    },
+    {
+      "id": 381,
+      "category": "animation_quality",
+      "defect": "No animation clip validation at load time beyond basic parsing"
+    },
+    {
+      "id": 382,
+      "category": "animation_quality",
+      "defect": "Animation clip errors are silent \u2014 wrong animation plays without warning"
+    },
+    {
+      "id": 383,
+      "category": "animation_quality",
+      "defect": "No animation clip selection based on character state"
+    },
+    {
+      "id": 384,
+      "category": "animation_quality",
+      "defect": "Animation clip playback is hardcoded to intent mapping"
+    },
+    {
+      "id": 385,
+      "category": "animation_quality",
+      "defect": "No animation blend tree or state machine"
+    },
+    {
+      "id": 386,
+      "category": "animation_quality",
+      "defect": "Animation system is procedural code, not data-driven"
+    },
+    {
+      "id": 387,
+      "category": "animation_quality",
+      "defect": "Adding a new animation requires source code changes"
+    },
+    {
+      "id": 388,
+      "category": "animation_quality",
+      "defect": "Animation pipeline has no abstractions \u2014 all concrete types"
+    },
+    {
+      "id": 389,
+      "category": "animation_quality",
+      "defect": "Animation code is tightly coupled to game_loop"
+    },
+    {
+      "id": 390,
+      "category": "animation_quality",
+      "defect": "Animation system cannot be tested in isolation"
+    },
+    {
+      "id": 391,
+      "category": "animation_quality",
+      "defect": "No headless animation rendering for CI"
+    },
+    {
+      "id": 392,
+      "category": "animation_quality",
+      "defect": "Animation CI consists only of \"does it compile\" and \"do tests pass\""
+    },
+    {
+      "id": 393,
+      "category": "animation_quality",
+      "defect": "No animation quality gate in CI"
+    },
+    {
+      "id": 394,
+      "category": "animation_quality",
+      "defect": "No animation performance regression detection"
+    },
+    {
+      "id": 395,
+      "category": "animation_quality",
+      "defect": "Animation pipeline tools are scattered and undocumented"
+    },
+    {
+      "id": 396,
+      "category": "animation_quality",
+      "defect": "Animation development workflow is not documented"
+    },
+    {
+      "id": 397,
+      "category": "animation_quality",
+      "defect": "New developer would need days to understand animation pipeline"
+    },
+    {
+      "id": 398,
+      "category": "animation_quality",
+      "defect": "Animation pipeline documentation is in subagent transcripts, not README"
+    },
+    {
+      "id": 399,
+      "category": "animation_quality",
+      "defect": "Animation tooling gap is the largest obstacle to quality improvement"
+    },
+    {
+      "id": 400,
+      "category": "animation_quality",
+      "defect": "Fix tooling to fix animation quality"
+    },
+    {
+      "id": 401,
+      "category": "animation_quality",
+      "defect": "Walk animation plays during combat approach \u2014 should be combat-ready stance"
+    },
+    {
+      "id": 402,
+      "category": "animation_quality",
+      "defect": "Combat actions (strike/block/grab/dodge/feint) have no animation"
+    },
+    {
+      "id": 403,
+      "category": "animation_quality",
+      "defect": "Intent selection has no animation feedback \u2014 player doesn't see choice"
+    },
+    {
+      "id": 404,
+      "category": "animation_quality",
+      "defect": "Intent commit (locking in action) is invisible"
+    },
+    {
+      "id": 405,
+      "category": "animation_quality",
+      "defect": "Simultaneous reveal (both actions shown) has no animation"
+    },
+    {
+      "id": 406,
+      "category": "animation_quality",
+      "defect": "Resolve phase (who won) has no animation"
+    },
+    {
+      "id": 407,
+      "category": "animation_quality",
+      "defect": "Consequence phase (injury, knockback) has no animation"
+    },
+    {
+      "id": 408,
+      "category": "animation_quality",
+      "defect": "Result phase (win/loss) has no animation"
+    },
+    {
+      "id": 409,
+      "category": "animation_quality",
+      "defect": "Match flow (boot\u2192menu\u2192fight\u2192result) exists in code but not in animation"
+    },
+    {
+      "id": 410,
+      "category": "animation_quality",
+      "defect": "BURST meter has no animation \u2014 just a UI bar"
+    },
+    {
+      "id": 411,
+      "category": "animation_quality",
+      "defect": "FEINT charges have no animation \u2014 just UI indicators"
+    },
+    {
+      "id": 412,
+      "category": "animation_quality",
+      "defect": "TEMPO meter has no animation \u2014 just a segmented bar"
+    },
+    {
+      "id": 413,
+      "category": "animation_quality",
+      "defect": "FORECAST system shows predicted contact but no animation of that prediction"
+    },
+    {
+      "id": 414,
+      "category": "animation_quality",
+      "defect": "PREDICTED STRIKECONTACT countdown has no pose anticipation"
+    },
+    {
+      "id": 415,
+      "category": "animation_quality",
+      "defect": "SPACE LOCK INTENT has no visual indicator beyond text"
+    },
+    {
+      "id": 416,
+      "category": "animation_quality",
+      "defect": "RANGE display (MID 1400MM, MID 900MM) not reflected in character spacing animation"
+    },
+    {
+      "id": 417,
+      "category": "animation_quality",
+      "defect": "GRAB state has no entry/exit animation"
+    },
+    {
+      "id": 418,
+      "category": "animation_quality",
+      "defect": "CLINCH state has no entry/exit animation"
+    },
+    {
+      "id": 419,
+      "category": "animation_quality",
+      "defect": "CONTACT YES has no contact reaction animation"
+    },
+    {
+      "id": 420,
+      "category": "animation_quality",
+      "defect": "CONTACT change (YES\u2192NO) has no separation animation"
+    },
+    {
+      "id": 421,
+      "category": "animation_quality",
+      "defect": "STANCE NEUTRAL is the only stance \u2014 no high/low/aggressive/defensive variants"
+    },
+    {
+      "id": 422,
+      "category": "animation_quality",
+      "defect": "No stance transition animation"
+    },
+    {
+      "id": 423,
+      "category": "animation_quality",
+      "defect": "No hit reaction animation when contact occurs"
+    },
+    {
+      "id": 424,
+      "category": "animation_quality",
+      "defect": "No block success animation"
+    },
+    {
+      "id": 425,
+      "category": "animation_quality",
+      "defect": "No block break animation"
+    },
+    {
+      "id": 426,
+      "category": "animation_quality",
+      "defect": "No parry success animation"
+    },
+    {
+      "id": 427,
+      "category": "animation_quality",
+      "defect": "No dodge success animation (lean, sidestep, duck)"
+    },
+    {
+      "id": 428,
+      "category": "animation_quality",
+      "defect": "No grab success animation (grip, control)"
+    },
+    {
+      "id": 429,
+      "category": "animation_quality",
+      "defect": "No grab escape animation (break free)"
+    },
+    {
+      "id": 430,
+      "category": "animation_quality",
+      "defect": "No clinch entry animation (tie-up)"
+    },
+    {
+      "id": 431,
+      "category": "animation_quality",
+      "defect": "No clinch transition animation (position change)"
+    },
+    {
+      "id": 432,
+      "category": "animation_quality",
+      "defect": "No throw animation (takedown)"
+    },
+    {
+      "id": 433,
+      "category": "animation_quality",
+      "defect": "No ground animation (downed state, getup)"
+    },
+    {
+      "id": 434,
+      "category": "animation_quality",
+      "defect": "No weapon draw/sheath animation"
+    },
+    {
+      "id": 435,
+      "category": "animation_quality",
+      "defect": "No weapon swing trajectory animation"
+    },
+    {
+      "id": 436,
+      "category": "animation_quality",
+      "defect": "No weapon impact animation"
+    },
+    {
+      "id": 437,
+      "category": "animation_quality",
+      "defect": "No idle animation (breathing, weight shift, looking around)"
+    },
+    {
+      "id": 438,
+      "category": "animation_quality",
+      "defect": "No taunt or gesture animation"
+    },
+    {
+      "id": 439,
+      "category": "animation_quality",
+      "defect": "No victory pose animation"
+    },
+    {
+      "id": 440,
+      "category": "animation_quality",
+      "defect": "No defeat animation"
+    },
+    {
+      "id": 441,
+      "category": "animation_quality",
+      "defect": "Gameplay animation is entirely missing \u2014 only walk and static combat poses exist"
+    },
+    {
+      "id": 442,
+      "category": "animation_quality",
+      "defect": "The YOMI loop is implemented in code but has zero animation support"
+    },
+    {
+      "id": 443,
+      "category": "animation_quality",
+      "defect": "All gameplay feedback is text-based, not animation-based"
+    },
+    {
+      "id": 444,
+      "category": "animation_quality",
+      "defect": "Animation doesn't serve gameplay \u2014 gameplay doesn't use animation"
+    },
+    {
+      "id": 445,
+      "category": "animation_quality",
+      "defect": "The deep combat simulation has deep code but shallow presentation"
+    },
+    {
+      "id": 446,
+      "category": "animation_quality",
+      "defect": "Animation integration with gameplay is the largest remaining gap"
+    },
+    {
+      "id": 447,
+      "category": "animation_quality",
+      "defect": "Gameplay without animation is a spreadsheet with graphics"
+    },
+    {
+      "id": 448,
+      "category": "animation_quality",
+      "defect": "Animation is the bridge from \"pipeline works\" to \"game is playable\""
+    },
+    {
+      "id": 449,
+      "category": "animation_quality",
+      "defect": "Current state: code plays the game, player reads the HUD"
+    },
+    {
+      "id": 450,
+      "category": "animation_quality",
+      "defect": "Target state: player watches the animation, HUD is supplemental"
+    },
+    {
+      "id": 451,
+      "category": "animation_quality",
+      "defect": "Animation pipeline proven working but not proven good"
+    },
+    {
+      "id": 452,
+      "category": "animation_quality",
+      "defect": "No animation quality rubric exists"
+    },
+    {
+      "id": 453,
+      "category": "animation_quality",
+      "defect": "No animation acceptance criteria defined"
+    },
+    {
+      "id": 454,
+      "category": "animation_quality",
+      "defect": "No target animation quality level specified (AAA? indie? prototype?)"
+    },
+    {
+      "id": 455,
+      "category": "animation_quality",
+      "defect": "No animation fidelity tier system"
+    },
+    {
+      "id": 456,
+      "category": "animation_quality",
+      "defect": "No animation review process"
+    },
+    {
+      "id": 457,
+      "category": "animation_quality",
+      "defect": "No animation stakeholder sign-off procedure"
+    },
+    {
+      "id": 458,
+      "category": "animation_quality",
+      "defect": "Animation development has no definition of \"done\""
+    },
+    {
+      "id": 459,
+      "category": "animation_quality",
+      "defect": "No animation performance budget (frame time, memory, VRAM)"
+    },
+    {
+      "id": 460,
+      "category": "animation_quality",
+      "defect": "No animation quality vs performance trade-off analysis"
+    },
+    {
+      "id": 461,
+      "category": "animation_quality",
+      "defect": "No animation LOD system (different quality at different distances)"
+    },
+    {
+      "id": 462,
+      "category": "animation_quality",
+      "defect": "No animation compression or optimization"
+    },
+    {
+      "id": 463,
+      "category": "animation_quality",
+      "defect": "No animation streaming or async loading"
+    },
+    {
+      "id": 464,
+      "category": "animation_quality",
+      "defect": "Animation quality assessment requires human judgment \u2014 no automated gates"
+    },
+    {
+      "id": 465,
+      "category": "animation_quality",
+      "defect": "Human animation review hasn't happened yet"
+    },
+    {
+      "id": 466,
+      "category": "animation_quality",
+      "defect": "No animation review checklist exists"
+    },
+    {
+      "id": 467,
+      "category": "animation_quality",
+      "defect": "No animation defect severity classification"
+    },
+    {
+      "id": 468,
+      "category": "animation_quality",
+      "defect": "No animation bug tracker category"
+    },
+    {
+      "id": 469,
+      "category": "animation_quality",
+      "defect": "Animation issues are mixed with general development issues"
+    },
+    {
+      "id": 470,
+      "category": "animation_quality",
+      "defect": "No dedicated animation QA session has been conducted"
+    },
+    {
+      "id": 471,
+      "category": "animation_quality",
+      "defect": "Animation quality is assumed from pipeline functionality \u2014 not verified"
+    },
+    {
+      "id": 472,
+      "category": "animation_quality",
+      "defect": "Pipeline verification != quality verification"
+    },
+    {
+      "id": 473,
+      "category": "animation_quality",
+      "defect": "\"It works\" != \"it's good enough to ship\""
+    },
+    {
+      "id": 474,
+      "category": "animation_quality",
+      "defect": "The 500-defect audit is the first systematic animation quality assessment"
+    },
+    {
+      "id": 475,
+      "category": "animation_quality",
+      "defect": "Previous audits focused on static assets, not animation"
+    },
+    {
+      "id": 476,
+      "category": "animation_quality",
+      "defect": "Animation has received ~5% of the scrutiny that static assets received"
+    },
+    {
+      "id": 477,
+      "category": "animation_quality",
+      "defect": "Animation is the most under-audited system in the project"
+    },
+    {
+      "id": 478,
+      "category": "animation_quality",
+      "defect": "The quality gap between static assets and animation is enormous"
+    },
+    {
+      "id": 479,
+      "category": "animation_quality",
+      "defect": "Animation quality gates are needed before further gameplay development"
+    },
+    {
+      "id": 480,
+      "category": "animation_quality",
+      "defect": "Animation must pass the same 500-defect bar as static assets"
+    },
+    {
+      "id": 481,
+      "category": "animation_quality",
+      "defect": "Current animation would fail most of the static asset quality gates"
+    },
+    {
+      "id": 482,
+      "category": "animation_quality",
+      "defect": "Animation quality is the next blocking gate after pipeline verification"
+    },
+    {
+      "id": 483,
+      "category": "animation_quality",
+      "defect": "Pipeline verification was necessary but not sufficient"
+    },
+    {
+      "id": 484,
+      "category": "animation_quality",
+      "defect": "Animation quality will determine whether the game is fun"
+    },
+    {
+      "id": 485,
+      "category": "animation_quality",
+      "defect": "Animation quality will determine whether the game ships"
+    },
+    {
+      "id": 486,
+      "category": "animation_quality",
+      "defect": "Fixing the 500 animation defects is more important than new features"
+    },
+    {
+      "id": 487,
+      "category": "animation_quality",
+      "defect": "Animation quality improvement is the highest-value work remaining"
+    },
+    {
+      "id": 488,
+      "category": "animation_quality",
+      "defect": "Every animation defect here is a player experience defect"
+    },
+    {
+      "id": 489,
+      "category": "animation_quality",
+      "defect": "The game cannot be fun with 500 animation defects"
+    },
+    {
+      "id": 490,
+      "category": "animation_quality",
+      "defect": "The game cannot ship with 500 animation defects"
+    },
+    {
+      "id": 491,
+      "category": "animation_quality",
+      "defect": "Animation quality is the difference between prototype and product"
+    },
+    {
+      "id": 492,
+      "category": "animation_quality",
+      "defect": "The proven pipeline is the foundation \u2014 now build quality on top"
+    },
+    {
+      "id": 493,
+      "category": "animation_quality",
+      "defect": "This audit provides the roadmap for animation quality improvement"
+    },
+    {
+      "id": 494,
+      "category": "animation_quality",
+      "defect": "Prioritize by category: walk (1-80) \u2192 combat (81-160) \u2192 gameplay (401-450)"
+    },
+    {
+      "id": 495,
+      "category": "animation_quality",
+      "defect": "Each category can be addressed independently"
+    },
+    {
+      "id": 496,
+      "category": "animation_quality",
+      "defect": "The pipeline is ready for quality work to begin"
+    },
+    {
+      "id": 497,
+      "category": "animation_quality",
+      "defect": "No more infrastructure needed \u2014 just iteration on animation quality"
+    },
+    {
+      "id": 498,
+      "category": "animation_quality",
+      "defect": "The animation system is the most important system to improve next"
+    },
+    {
+      "id": 499,
+      "category": "animation_quality",
+      "defect": "Quality animation is the prerequisite for a playable game"
+    },
+    {
+      "id": 500,
+      "category": "animation_quality",
+      "defect": "The game has animation \u2014 now make it good animation"
+    }
+  ]
+}
