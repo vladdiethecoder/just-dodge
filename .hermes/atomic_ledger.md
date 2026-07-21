@@ -8,7 +8,7 @@
 
 **Key amendment:** SG01-SG10 sequential gating consumed 95% of development on evidence infrastructure with 5% on gameplay across three projects (OATHYARD, Hustle & Honor, Just Dodge). The new pipeline delivers visual evidence at every step and gates on owner acceptance, not infrastructure completeness.
 
-**Active Phase:** PHASE-1 — Asset & Motion Proof
+**Active Phase:** PVP-005 — readable simultaneous-commit combat. Meshy asset generation demoted to candidate source. Existing 24-bone armored duelist frozen as canonical test body. Motion/readability is the active blocker, not character generation.
 
 ## Visual-First Pipeline
 

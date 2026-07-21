@@ -52,30 +52,28 @@ The same Grab intent produces a different animation and outcome depending on the
 - **Hitbox parity:** collision proxies match visual geometry. No oversized hitboxes, ghost hits, phantom range.
 - **Out of scope:** open world, crafting/loot, MMO, narrative/dialogue trees, networking before vertical slice.
 
-## Visual-First Pipeline (replaces SG01-SG10 sequential gating)
+## Asset Production Doctrine (Amended 2026-07-21 — Deep Research)
 
-The old SG01→SG10 infrastructure-first approach consumed ~95% of development time on evidence gates with ~5% on gameplay. This is now replaced:
+**Meshy is demoted from "blocker" to "candidate generator."** The repo's own
+RISK-007 prescribes building with triangles until the asset pipeline is proven.
+The existing 24-bone armored duelist (verified in M3 truth/replay) is frozen
+as the canonical test body. Meshy API provides all essential features (polycount
+control via `should_remesh`, rigging via `meshy_rig`) but character generation
+is not the active blocker — motion readability is.
 
-**Phase 1 — Asset & Motion Proof (current)**
-1. Generate properly proportioned fighter in Meshy web (multi-view, T-pose, clean topology)
-2. Show owner: screenshot + GIF checklist → 30-second accept/reject
-3. If accepted: import to Blender, validate geometry/rig, cook for engine
-4. Generate one clean strike motion (MotionBricks → retarget → skinned render)
-5. Show owner: GIF of the strike → accept/reject
-6. If accepted: generate block, grab → show GIFs → iterate
+**Body + armor separation:** Body is the deforming substrate (use existing
+duelist). Armor is an attachment/fitting problem (Blender Shrinkwrap, Surface
+Deform, bone attachments). Do not co-generate body+armor in one Meshy pass.
 
-**Phase 2 — Playable Vertical Slice**
-7. Wire the accepted fighter + motion into game_loop
-8. Implement full match flow: Boot → Observe → Plan Intent → Commit → Reveal → Resolve → Consequence → Result → Rematch
-9. Show owner: video of a complete match → accept/reject
-10. If accepted: add AI opponent, injury, camera, basic UI
+**Sequence (from repo's own roadmap):**
+1. Deterministic duel loop (M3 truth/replay — DONE)
+2. Readable simultaneous-commit combat (PVP-005 — ACTIVE BLOCKER)
+3. Coupled articulated physics
+4. Richer content (Meshy as candidate source, Blender as DCC authority)
 
-**Phase 3 — Full Game**
-11. Expand to 13 actions, multiple fighters/weapons/arenas
-12. Add replay theater, fight film, audio, tutorial
-13. Steam packaging
-
-**Every gate is a visual decision:** screenshot/GIF/video + multiple-choice checklist. No verbose evidence reports, no machine-only gates, no sequential infrastructure prerequisites blocking gameplay.
+**Meshy role:** Generate clean base bodies or single armor components.
+Post-process in Blender 5.2 LTS. Export GLB with `combat_metadata.json` sidecar.
+Validate with Khronos glTF Validator + project visual QA protocol.
 
 ## Evidence Portal (ADHD-Style)
 
