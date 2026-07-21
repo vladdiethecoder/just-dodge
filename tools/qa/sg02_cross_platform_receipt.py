@@ -44,8 +44,7 @@ def canonical_bytes(document: dict[str, Any]) -> bytes:
 
 
 def read_expected(path: Path) -> tuple[dict[str, str], str]:
-    raw = path.read_bytes()
-    document = json.loads(raw)
+    document = json.loads(path.read_bytes())
     if document.get("schema") != EXPECTED_SCHEMA:
         raise ValueError(f"unsupported expected-hash schema: {path}")
     scenarios = document.get("scenarios")
@@ -58,7 +57,7 @@ def read_expected(path: Path) -> tuple[dict[str, str], str]:
         if not re.fullmatch(r"[0-9a-f]{16}", truth_hash):
             raise ValueError(f"invalid expected truth hash for {scenario!r}")
         normalized[scenario] = truth_hash
-    return normalized, sha256_bytes(raw)
+    return normalized, sha256_bytes(canonical_bytes(document))
 
 
 def parse_hashes(output: str, expected_scenarios: set[str]) -> dict[str, str]:

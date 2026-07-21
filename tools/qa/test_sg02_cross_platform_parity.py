@@ -75,6 +75,25 @@ class CrossPlatformReceiptTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 REDUCE.read_receipt(path, self.expected, self.expected_sha256)
 
+    def test_expected_digest_is_stable_across_checkout_line_endings(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="just-dodge-sg02-test-") as temporary:
+            directory = Path(temporary)
+            document = json.loads(EXPECTED_PATH.read_text(encoding="utf-8"))
+            rendered = json.dumps(document, sort_keys=True, indent=2) + "\n"
+            lf_path = directory / "expected-lf.json"
+            crlf_path = directory / "expected-crlf.json"
+            lf_path.write_bytes(rendered.encode("utf-8"))
+            crlf_path.write_bytes(rendered.replace("\n", "\r\n").encode("utf-8"))
+
+            receipt_lf = RECEIPT.read_expected(lf_path)
+            receipt_crlf = RECEIPT.read_expected(crlf_path)
+            reducer_lf = REDUCE.read_expected(lf_path)
+            reducer_crlf = REDUCE.read_expected(crlf_path)
+
+            self.assertEqual(receipt_lf, receipt_crlf)
+            self.assertEqual(reducer_lf, reducer_crlf)
+            self.assertEqual(receipt_lf, reducer_lf)
+
     def test_steamdeck_attestation_requires_steamos_marker(self) -> None:
         with tempfile.TemporaryDirectory(prefix="just-dodge-sg02-test-") as temporary:
             path = Path(temporary) / "os-release"

@@ -25,8 +25,7 @@ def canonical_bytes(document: dict[str, Any]) -> bytes:
 
 
 def read_expected(path: Path) -> tuple[dict[str, str], str]:
-    raw = path.read_bytes()
-    document = json.loads(raw)
+    document = json.loads(path.read_bytes())
     if document.get("schema") != EXPECTED_SCHEMA:
         raise ValueError(f"unsupported expected-hash schema: {path}")
     scenarios = document.get("scenarios")
@@ -37,7 +36,7 @@ def read_expected(path: Path) -> tuple[dict[str, str], str]:
         for name, value in scenarios.items()
     ):
         raise ValueError("expected scenarios contain invalid truth hashes")
-    return scenarios, sha256_bytes(raw)
+    return scenarios, sha256_bytes(canonical_bytes(document))
 
 
 def read_receipt(path: Path, expected: dict[str, str], expected_sha256: str) -> dict[str, Any]:
