@@ -1,0 +1,25 @@
+{
+  "project_name": "text-to-3d",
+  "folder": "20260721_142949_text-to-3d_019f85f0",
+  "root_task_id": "019f85f0-ef51-7a65-b7ff-1f0588f59139",
+  "created_at": "2026-07-21T18:29:49.092Z",
+  "updated_at": "2026-07-21T18:39:53.173Z",
+  "tasks": [
+    {
+      "task_id": "019f85f0-ef51-7a65-b7ff-1f0588f59139",
+      "task_type": "text-to-3d",
+      "stage": "model",
+      "prompt": "",
+      "status": "SUCCEEDED",
+      "files": [
+        "model.glb",
+        "textures/base_color.png",
+        "textures/metallic.png",
+        "textures/roughness.png",
+        "textures/normal.png",
+        "textures/emission.png"
+      ],
+      "created_at": "2026-07-21T18:39:53.173Z"
+    }
+  ]
+}

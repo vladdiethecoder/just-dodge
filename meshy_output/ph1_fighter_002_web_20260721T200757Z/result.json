@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "StaleElementReferenceException",
+  "message": "Message: The element with the reference 1fc28a2f-c0a1-4de7-9a95-d0b82f679b56 is stale; either its node document is not the active document, or it is no longer connected to the DOM; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#stale-element-reference-exception\nStacktrace:\nRemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8\nWebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:169:5\nStaleEleme",
+  "out": "/run/media/vdubrov/NVMe-Storage1/Just Dodge/meshy_output/ph1_fighter_002_web_20260721T200757Z"
+}
