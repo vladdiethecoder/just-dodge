@@ -71,16 +71,18 @@ jobs:
           components: rustfmt, clippy
       - run: python3 tools/verify_pvp005_revision_baseline.py
       - run: python3 tools/qa/enforce_evidence_quarantine.py
+      - run: python3 tools/qa/test_sg01_evidence_boundaries.py -v
+      - run: python3 tools/qa/validate_sg01_evidence_boundaries.py
       - run: python3 tools/qa/pvp005_visual_contract.py
       - run: python3 tools/qa/test_pvp005_visual_contract.py
-      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/enforce_evidence_quarantine.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py tools/qa/test_heldout_motion_acceptance.py tools/qa/test_interaction_partition_leakage.py
+      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/enforce_evidence_quarantine.py tools/qa/validate_sg01_evidence_boundaries.py tools/qa/test_sg01_evidence_boundaries.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py tools/qa/test_heldout_motion_acceptance.py tools/qa/test_interaction_partition_leakage.py
       - run: python3 -m json.tool tools/qa/forgelens_review_run_v1.schema.json >/dev/null
       - run: python3 tools/qa/test_asset_review.py -v
       - run: python3 tools/qa/test_forgelens_review_run_schema.py
       - name: Python deps for QA validators (the disabled-ARDY probe imports numpy before its gate)
         run: python3 -m pip install --quiet numpy
-      - name: Build the allowlisted replay verifier (reproducible flags)
-        run: RUSTFLAGS="--remap-path-prefix=$PWD=. --remap-path-prefix=$HOME/.cargo=/.cargo --remap-path-prefix=$RUSTUP_HOME=/.rustup" cargo build --release --locked --bin m3_match
+      - name: Build the allowlisted replay verifier from the locked source graph
+        run: cargo build --release --locked --bin m3_match
       - name: Record the CI-built verifier hash (pinned into the contract after observation)
         run: sha256sum target/release/m3_match
       - run: python3 tools/qa/verify_forgelens_phase_a.py

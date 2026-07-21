@@ -5,7 +5,9 @@
   "branch": "grab07-650mm-closure",
   "pr_number": 2,
   "pr_state": "DRAFT",
-  "verdict": "PASS",
+  "verdict": "SUPERSEDED_NOT_CURRENT_AUTHORITY",
+  "historical_observation_verdict": "PASS_AT_144d875_ONLY",
+  "superseded_by": "docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json",
   "checks": {
     "fmt": "PASS (cargo fmt --check)",
     "clippy": "PASS (cargo clippy --locked --all-targets -- -D warnings, 0 errors)",
@@ -21,5 +23,5 @@
   "contradictions_fixed": [
     "AAA_FINISH_BACKLOG.md: changed 'UNIT-2 v13 machine-eligible trained PASS' to 'UNIT-2 v11/v13 REVOKED (INVALID_EVIDENCE per RESET-004)'"
   ],
-  "sg01_can_proceed_to_sg02": true
+  "sg01_can_proceed_to_sg02": false
 }

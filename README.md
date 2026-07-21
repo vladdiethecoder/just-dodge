@@ -6,12 +6,12 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 
 ## Project Status
 
-- Stage: PVP-005 motion/readability construction on `pvp-005-readable-live-motion`; the published feature baseline is `4e481ccd59602c1cb4eda97183c32dec48f9a801`. PLAYABLE-PROOF has not passed.
-- Selected runtime path: `main::App` → `milestone3::Session/Match` → `m3_cleanbox` → `cleanbox/duel_world/duel_physics` → `PhysicalContactBatch` → immutable `milestone3::Snapshot` → renderer/UI/replay.
-- Verified baseline: deterministic three-action M3 truth, 120 Hz cleanbox reduction, 100 replay reconstructions, frame-342 truth hash `d1a3cc1bfb9c2f67`, fmt/warning-denying clippy/check, 233 all-target tests in a hydrated clean mirror, 237 tests in the current tree, complete truth-isolated Menu-to-Replay runtime flow, release binary launch, and static integrity of the 24-bone armored duelist.
-- Isolated foundations, not live gameplay: post-Reveal ARDY proposals, quantized motion-plan packets, MotionBricks receipts, official G1 articulation data, integer hinge projection, and independent-joint active-ragdoll tracking.
-- Active PVP-005 path: deterministic visual harness first; admitted Strike/Block/Grab frozen packets; first-person blinded readability; one pose source for mesh, sword socket, and proxies; live replay/cadence determinism; revision-bound acceptance evidence. Coupled-ragdoll, final contact/damage, arena polish, networking, and five-match PLAYABLE-PROOF work remain excluded until PVP-005 passes.
-- Distribution boundary: runtime asset source identity is recorded, but complete redistribution-rights records are not; this does not halt technical development and does block redistribution claims.
+- Active gate: `SG01-EVIDENCE-CANON-RESET-002` on `grab07-650mm-closure`. SG01 is **not passed**; SG02 and later implementation are parked.
+- Exact committed local head at the SG01 baseline audit: `d4732544781ab5a4131114f59aa2b337f74d7c5a`. PR #2 still points to `b2266e578889061bef703bfe6ec997423aa69b74`, is draft, and its two current verify checks failed.
+- Dirty-worktree observation only: fmt and warning-denying clippy passed; `cargo test --locked --all-targets` observed 419 passed / 3 ignored / 0 failed. These results are not a clean-checkout or commit-bound SG01 receipt.
+- Blocking contradictions are recorded in `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`: stale revision/ForgeLens contracts, revoked Grab evidence still labeled as a machine pass, deleted runtime assets, fixed presentation clips on the normal play path, and 2.29 GB of untracked candidates/evidence.
+- `PLAYABLE-PROOF`, G4, G5, human promotion, asset promotion, camera approval, and release promotion are all blocked. Historical PVP-001–PVP-005 reports retain only their explicitly recorded revision-scoped observations.
+- Distribution boundary: complete redistribution-rights records are absent; no redistribution or release claim is authorized.
 
 ## Quick Links
 

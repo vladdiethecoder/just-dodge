@@ -1,4 +1,9 @@
-# Current State Audit — PLAYABLE-PROOF Baseline
+# Historical State Audit — PLAYABLE-PROOF Baseline
+
+> Superseded as current authority on 2026-07-21. This file preserves the
+> revision-scoped 2026-07-14 PVP-005 observation below. Current status authority:
+> `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
+> SG01 is not passed and SG02+ implementation is parked.
 
 - Audit baseline revision: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`
 - Audit UTC: 2026-07-14

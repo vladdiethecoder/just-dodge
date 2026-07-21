@@ -1,4 +1,10 @@
-# Just Dodge — Development Task List
+# Just Dodge — Historical PVP-005 Development Task List
+
+> Superseded as current task authority on 2026-07-21. The detailed PVP-005 plan
+> below is retained as historical design/task evidence. Current active unit is
+> `SG01-EVIDENCE-CANON-RESET-002` in `.hermes/atomic_ledger.md`; current measured
+> status is `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
+> SG01 is not passed and SG02+ implementation is parked.
 
 Branch: `pvp-005-readable-live-motion`, published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`, and published complete diagnostic-harness implementation `d84950f34d4a9e8fe9b08d4c47670bb4d88fea43`; one worktree. Public `main` remains at historical ancestor `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 Last updated: 2026-07-14

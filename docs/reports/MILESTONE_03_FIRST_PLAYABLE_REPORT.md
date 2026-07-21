@@ -1,4 +1,9 @@
-# Milestone 3 PLAYABLE-PROOF Report
+# Historical Milestone 3 PLAYABLE-PROOF Report
+
+> Superseded as current authority on 2026-07-21. The revision-scoped evidence
+> below remains historical. Current authority is
+> `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
+> SG01 and PLAYABLE-PROOF are not passed.
 
 - PLAYABLE-PROOF gate: **NOT PASSED**
 - Current audit baseline: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`; historical evidence remains bound to its recorded ancestor revisions

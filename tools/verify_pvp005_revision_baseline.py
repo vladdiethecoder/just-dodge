@@ -45,8 +45,13 @@ def main() -> None:
     )
     args = parser.parse_args()
     report = json.loads(REPORT.read_text())
-    if report.get("schema") != "just-dodge-pvp005-revision-baseline-v1":
+    if report.get("schema") != "just-dodge-pvp005-revision-baseline-v2":
         raise SystemExit("unsupported PVP-005 revision baseline schema")
+    if report.get("authority") != "historical_reachability_only":
+        raise SystemExit("PVP-005 historical baseline was relabeled as current authority")
+    current_status = ROOT / report["current_status_authority"]
+    if not current_status.is_file():
+        raise SystemExit("current SG01 status authority is missing")
 
     baseline = report["published_feature_baseline"]
     public_main = report["public_main"]
@@ -58,13 +63,16 @@ def main() -> None:
 
     candidate = report["candidate_packet"]
     manifest_path = ROOT / candidate["manifest"]
-    if sha256(manifest_path) != candidate["manifest_sha256"]:
-        raise SystemExit("PVP-005 candidate manifest hash drift")
-    manifest = json.loads(manifest_path.read_text())
-    if manifest.get("status") != candidate["status"]:
-        raise SystemExit("PVP-005 candidate status drift")
-    if manifest.get("runtime_promoted") is not candidate["runtime_promoted"]:
-        raise SystemExit("PVP-005 runtime promotion status drift")
+    if candidate.get("retired") is not True or candidate.get("manifest_required") is not False:
+        raise SystemExit("PVP-005 candidate retirement boundary drift")
+    if candidate.get("runtime_promoted") is not False:
+        raise SystemExit("retired PVP-005 candidate cannot be runtime-promoted")
+    if candidate.get("status") != "retired_not_current_evidence":
+        raise SystemExit("PVP-005 candidate retirement status drift")
+    if manifest_path.exists():
+        raise SystemExit("retired PVP-005 candidate manifest reappeared outside quarantine")
+    if len(candidate.get("historical_manifest_sha256", "")) != 64:
+        raise SystemExit("PVP-005 historical candidate hash is missing")
 
     pvp004 = json.loads(
         (ROOT / "docs/reports/PVP004_PACKAGE_EVIDENCE.json").read_text()
@@ -75,19 +83,28 @@ def main() -> None:
     if reachability.get("published_feature_baseline") != baseline:
         raise SystemExit("PVP-004 reachability baseline mismatch")
 
+    current_authority = report["current_status_authority"]
     required_status = {
-        "README.md": (baseline, report["published_branch"], "PLAYABLE-PROOF has not passed"),
-        ".hermes/atomic_ledger.md": (baseline, report["published_branch"]),
-        "docs/reports/CURRENT_STATE_AUDIT.md": (baseline, report["published_branch"]),
-        "docs/reports/DEVELOPMENT_TASKLIST.md": (baseline, report["published_branch"]),
-        "docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md": (baseline,),
-        "docs/design/IMPLEMENTATION_PLAN_3ACTION.md": (baseline, report["published_branch"]),
+        "README.md": ("SG01-EVIDENCE-CANON-RESET-002", current_authority, "SG01 is **not passed**"),
+        ".hermes/atomic_ledger.md": ("SG01-EVIDENCE-CANON-RESET-002", "SG01 is not PASS"),
+        "docs/reports/CURRENT_STATE_AUDIT.md": ("Historical State Audit", current_authority),
+        "docs/reports/DEVELOPMENT_TASKLIST.md": ("Historical PVP-005", current_authority),
+        "docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md": ("Historical Milestone 3", current_authority),
+        "docs/design/IMPLEMENTATION_PLAN_3ACTION.md": ("Historical Implementation Plan", current_authority),
     }
     for relative, tokens in required_status.items():
         text = (ROOT / relative).read_text()
         missing = [token for token in tokens if token not in text]
         if missing:
             raise SystemExit(f"status reconciliation missing from {relative}: {missing}")
+
+    current = json.loads(current_status.read_text())
+    if current.get("verdict") != "FAIL_BLOCKED_RECONCILIATION_REQUIRED":
+        raise SystemExit("current SG01 baseline must remain fail-closed until clean-checkout closure")
+    if current.get("sg01_can_proceed_to_sg02") is not False:
+        raise SystemExit("current SG01 baseline improperly permits SG02")
+    if current.get("promotion") != "BLOCKED" or current.get("human_decision") != "PENDING":
+        raise SystemExit("current SG01 promotion/human boundary drift")
 
     if args.remote:
         output = run(

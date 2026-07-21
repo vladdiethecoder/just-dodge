@@ -2,9 +2,12 @@
   "baseline_is_descendant_of_public_main": true,
   "candidate_packet": {
     "manifest": "assets/motion/pvp005_candidates/manifest.json",
-    "manifest_sha256": "d6a21c59efb7506d6ccf8f80489d128b253aa0c300bdc7cacb646e64e93eecaf",
+    "historical_manifest_sha256": "d6a21c59efb7506d6ccf8f80489d128b253aa0c300bdc7cacb646e64e93eecaf",
+    "manifest_required": false,
+    "retired": true,
+    "retirement_reason": "candidate packet and fixed motion artifacts were retired under the no-baked/no-canned runtime canon; absence is required and cannot be relabeled as current evidence",
     "runtime_promoted": false,
-    "status": "pending_blinded_human_trials"
+    "status": "retired_not_current_evidence"
   },
   "clean_verifier": {
     "assemblies_byte_identical": true,
@@ -34,5 +37,7 @@
   "published_branch": "pvp-005-readable-live-motion",
   "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
   "reconciliation_commit": "99de72c87a64fdc994c7b044b5fb17cb4295e36c",
-  "schema": "just-dodge-pvp005-revision-baseline-v1"
+  "authority": "historical_reachability_only",
+  "current_status_authority": "docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json",
+  "schema": "just-dodge-pvp005-revision-baseline-v2"
 }

@@ -16,33 +16,31 @@ H = headless deterministic test/probe; G = golden-replay determinism gate;
 V = ForgeLens/Evidence Studio human visual gate; P = measured performance budget;
 A = agentic playtest evidence; X = human playtest evidence; S = Steam/platform check.
 
-## Part A — Current state audit (2026-07-19)
+## Part A — Current state audit (2026-07-21)
 
-Committed and measured: M1 intent module (src/intent/, incl. grab 8-state contact
-machine + closing solution + ARDY feasibility), M5 injury truth (stable-ID atlas,
-sparse-active state, contact→injury, capability gating), M6 golden replay (7
-scenarios × 100 runs, SHA-256 manifest, Python fail-closed verifier), M4 async
-motion plan service (non-blocking 120 Hz; current provider is dev scaffolding —
-baked clips are forbidden per owner ruling 2026-07-19 and it is not a ship path),
-M2 game_loop (debug mannequin, FP/observer camera, flat arena profile), articulated integer physics
-(120 Hz quantized, 100-run hash gate). UNIT-2 v11/v13 REVOKED (INVALID_EVIDENCE per RESET-004);
-G4 leakage-free MotionSeqModel retrained on Harmony4D paired corpus (67 admitted contact cases pass per-case 15mm gate);
-G4/G5 PENDING_HUMAN per RESET-004 STOP STATE.
-Workspace green: clippy --all-targets -D warnings clean, cargo test --locked green
-(188 lib tests; MotionBricks bridge env-gated test ignored as designed).
+Active gate: `SG01-EVIDENCE-CANON-RESET-002`. SG01 is not passed; SG02 and all
+later implementation waves are parked. The exact current baseline and seven
+blocking contradictions are recorded in
+`docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
 
-In-flight uncommitted: game_loop scripted opponent uses Grab; PlanPhase::new roots
-at ±300 mm (600 mm separation, inside GRAB_ACQUIRE_RANGE_MM=650). This is the
-grab-closure scenario for the live loop; verification pending this session.
+Dirty-worktree observations only: fmt and warning-denying clippy pass;
+`cargo test --locked --all-targets` reports 419 passed / 3 ignored / 0 failed.
+These are not commit-bound clean-checkout evidence. PR #2 remains draft at
+`b2266e578889061bef703bfe6ec997423aa69b74`; both current verify checks fail.
 
-Not started (gated): forecast timeline UI (Hermes Canvas design gate), full 13-action
-matrix data authoring, stance/tempo, feint/whiff-cancel runtime, generative runtime
-provider, full injury atlas population (500–1000 structures), armor deep sim,
-audio, networking, Steam packaging, content scale-out, AAA asset promotion.
+UNIT-2 v11/v13 remain revoked INVALID_EVIDENCE. No interaction-conditioned Grab
+model is machine-admitted. G4=BLOCKED_INVALID_EVIDENCE; G5=BLOCKED_MACHINE;
+HUMAN_DECISION=PENDING; PROMOTION=BLOCKED. Model predictions, measured runtime
+contact and named human promotion are separate mandatory stages.
 
-Critical path: close grab-closure loop unit → forecast/what-if UI (Canvas gate) →
-full action matrix + stance/tempo → generative motion runtime lane → deep injury/
-armor → presentation fidelity → replay theater → content → networking → Steam.
+Current worktree blockers include deleted runtime asset dependencies, fixed
+HeroStrike/walk presentation on the normal play path, 457 tracked deletions,
+32 tracked modifications and 2.29 GB of untracked candidates/evidence. None may
+be relabeled as a current clean-checkout game receipt.
+
+Critical path: reconcile and quarantine → exact atomic candidate commit → clean
+checkout fmt/clippy/tests/verifiers/tamper gates → CI on the same commit → SG01
+receipt. Only then may SG02 implementation resume.
 
 ## Part B — Scoped canon feature inventory (from canon + PRDs + roadmap)
 
@@ -59,7 +57,7 @@ S-09 Debug mannequin + skeleton overlay + FP/observer camera      — IMPLEMENTE
 S-10 Flat-arena game_loop profile + headless --shot harness       — IMPLEMENTED
 S-11 Async motion plan service (non-blocking truth)               — IMPLEMENTED (async service; ship lane = live generative provider, W3; baked clips forbidden)
 S-12 Generative conditioning (MotionBricks/ARDY primitives)       — OFFLINE RESEARCHED; runtime lane pending
-S-13 Interaction-conditioned grab (UNIT-2 line)                   — MACHINE PASS (v13), human gate pending
+S-13 Interaction-conditioned grab (UNIT-2 line)                   — BLOCKED (v11/v13 INVALID_EVIDENCE; no qualifying model-prediction + runtime-contact + human-promotion chain)
 S-14 Integer-quantized articulated physics (120 Hz)               — IMPLEMENTED
 S-15 Forecast timeline UI + what-if ghost                         — NOT STARTED (Canvas design gate first)
 S-16 Stance system (high/low/neutral) + tempo gate                — NOT STARTED
