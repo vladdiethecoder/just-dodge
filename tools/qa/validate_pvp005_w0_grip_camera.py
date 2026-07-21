@@ -12,6 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = ROOT / "assets/qa/pvp005_w0_grip_camera_v1.json"
+RETIREMENT = ROOT / "docs/provenance/RETIRED_ASSET_CORPUS_20260720.json"
 ACTIONS = ("strike", "block", "grab")
 
 
@@ -101,12 +102,19 @@ def main() -> None:
 
     weapon = spec["weapon"]
     weapon_path = ROOT / weapon["path"]
-    require(sha256(weapon_path) == weapon["sha256"], "W0 payload hash drift")
-    measured_min, measured_max = measured_rigid_bounds(weapon_path)
-    for observed, expected in zip(measured_min, weapon["bounds_min_m"]):
-        require(abs(observed - expected) <= 2.0e-4, "W0 minimum bounds drift")
-    for observed, expected in zip(measured_max, weapon["bounds_max_m"]):
-        require(abs(observed - expected) <= 2.0e-4, "W0 maximum bounds drift")
+    retired = not weapon_path.is_file()
+    if retired:
+        retirement = json.loads(RETIREMENT.read_text(encoding="utf-8"))
+        require(retirement.get("runtime_admissible") is False, "W0 retirement became runtime-admissible")
+        retired_hashes = {entry["path"]: entry["sha256"] for entry in retirement["files"]}
+        require(retired_hashes.get(weapon["path"]) == weapon["sha256"], "missing W0 retirement hash")
+    else:
+        require(sha256(weapon_path) == weapon["sha256"], "W0 payload hash drift")
+        measured_min, measured_max = measured_rigid_bounds(weapon_path)
+        for observed, expected in zip(measured_min, weapon["bounds_min_m"]):
+            require(abs(observed - expected) <= 2.0e-4, "W0 minimum bounds drift")
+        for observed, expected in zip(measured_max, weapon["bounds_max_m"]):
+            require(abs(observed - expected) <= 2.0e-4, "W0 maximum bounds drift")
     right = weapon["right_grip_socket_m"]
     left = weapon["left_grip_socket_m"]
     separation = math.sqrt(sum((a - b) ** 2 for a, b in zip(right, left)))
@@ -167,7 +175,11 @@ def main() -> None:
     require(all(receipt["actions"][action]["left_grip_error_max_m"] > 0.01 for action in ACTIONS), "source grip falsifier missing")
 
     print(f"PVP005_W0_CONTRACT_SHA256={sha256(SPEC)}")
-    print("PVP005_W0_GRIP_CAMERA=PASS_CONTRACT_ONLY")
+    print(
+        "PVP005_W0_GRIP_CAMERA="
+        + ("PASS_RETIRED_BLOCKED" if retired else "PASS_CONTRACT_ONLY")
+    )
+    print(f"RUNTIME_ADMISSIBLE={'false' if retired else 'unreviewed'}")
     print("PVP005_CANDIDATE_GENERATION=false")
     print("PLAYABLE_PROOF=false")
 

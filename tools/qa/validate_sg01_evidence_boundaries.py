@@ -19,6 +19,7 @@ UNIT2_QUARANTINE = Path(
 )
 PVP005_BASELINE = Path("docs/reports/PVP005_REVISION_BASELINE.json")
 PVP005_VISUAL = Path("assets/qa/pvp005_visual_harness_v1.json")
+PVP005_ARDY_AUTHORIZATION = Path("assets/qa/pvp005_ardy_v4_generation_authorization_v1.json")
 RETIRED_ASSETS = Path("docs/provenance/RETIRED_ASSET_CORPUS_20260720.json")
 RETIRED_QA = Path("docs/provenance/RETIRED_QA_CORPUS_20260721.json")
 CURRENT_STATUS_FILES = (
@@ -182,6 +183,17 @@ def validate(root: Path = ROOT) -> None:
     require(visual.get("status") == "retired_not_current_evidence", "historical visual harness was reactivated")
     require(visual.get("runtime_admissible") is False, "historical visual harness became runtime-admissible")
     require(visual.get("retirement_manifest") == RETIRED_ASSETS.as_posix(), "visual harness retirement authority drift")
+
+    ardy_authorization = json.loads((root / PVP005_ARDY_AUTHORIZATION).read_text(encoding="utf-8"))
+    require(
+        ardy_authorization.get("status") == "retired_consumed_not_current_authority",
+        "consumed ARDY authorization was reactivated",
+    )
+    require(
+        ardy_authorization.get("retirement_manifest") == RETIRED_QA.as_posix(),
+        "ARDY authorization retirement authority drift",
+    )
+    require(ardy_authorization.get("runtime_admission") is False, "retired ARDY output became runtime-admitted")
 
     print("SG01_EVIDENCE_BOUNDARIES=PASS")
     print("MODEL_PREDICTION=BLOCKED_INVALID_EVIDENCE")

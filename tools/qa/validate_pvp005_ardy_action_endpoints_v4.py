@@ -30,7 +30,8 @@ ACTIONS = ("strike", "block", "grab")
 KEYPOSE_FRAMES = (0, 2, 3, 7, 15, 27, 35, 51)
 V4_SCHEMA = "just-dodge-pvp005-ardy-action-endpoints-v4"
 EXPECTED_MATERIALIZED_SHA256 = "cb35aafb8fc25c5a1f951b31199abf798509485a4b78dd82d572b44f49743ab3"
-EXPECTED_AUTHORIZATION_SHA256 = "a66da86bfdc47f453019fc00d38763405c067554fbd848779aec1ac257b92b63"
+EXPECTED_AUTHORIZATION_SHA256 = "c0d4044e1d5935c09734ac7edd59ff1730b58a857ae7220902f454f544c0911c"
+HISTORICAL_AUTHORIZATION_SHA256 = "a66da86bfdc47f453019fc00d38763405c067554fbd848779aec1ac257b92b63"
 EXPECTED_HISTORICAL_GENERATOR_SHA256 = "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7"
 
 
@@ -449,21 +450,44 @@ def main() -> None:
     )
     require(authorization_document["max_candidates"] == 6, "authorization candidate bound drift")
     require(
+        authorization_document["status"] == "retired_consumed_not_current_authority",
+        "consumed authorization was reactivated",
+    )
+    require(
+        authorization_document["historical_authorization_sha256"]
+        == HISTORICAL_AUTHORIZATION_SHA256,
+        "historical authorization identity drift",
+    )
+    require(
         authorization_document["generator_sha256"]
         == EXPECTED_HISTORICAL_GENERATOR_SHA256,
         "historical generator receipt drift",
     )
-    require(
-        (ROOT / authorization_document["output_path"]).is_dir(),
-        "historical authorization has no consumed output",
+    output_path = ROOT / authorization_document["output_path"]
+    require(not output_path.exists(), "retired ARDY output reappeared outside quarantine")
+    retirement_path = ROOT / authorization_document["retirement_manifest"]
+    retirement = json.loads(retirement_path.read_text(encoding="utf-8"))
+    require(retirement.get("promotion") == "BLOCKED", "retired ARDY evidence became promotable")
+    historical_manifest_path = (
+        Path(authorization_document["output_path"]) / "generation_manifest.json"
+    ).as_posix()
+    retired_entry = next(
+        (entry for entry in retirement["files"] if entry["path"] == historical_manifest_path),
+        None,
     )
-    generation_manifest, _ = load_strict_json(
-        ROOT / authorization_document["output_path"] / "generation_manifest.json",
-        "historical generation manifest",
-    )
+    require(retired_entry is not None, "historical generation manifest is absent from retirement inventory")
+    assert retired_entry is not None
+    historical_bytes = subprocess.run(
+        ["git", "show", f"{retirement['source_revision']}:{historical_manifest_path}"],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    require(hashlib.sha256(historical_bytes).hexdigest() == retired_entry["sha256"], "retired generation manifest hash drift")
+    generation_manifest = json.loads(historical_bytes)
     require(
         generation_manifest["authorization_sha256"]
-        == EXPECTED_AUTHORIZATION_SHA256,
+        == HISTORICAL_AUTHORIZATION_SHA256,
         "historical generation authorization receipt drift",
     )
     require(
@@ -471,7 +495,7 @@ def main() -> None:
         == EXPECTED_MATERIALIZED_SHA256,
         "historical generation materialized receipt drift",
     )
-    current_generator_rejected = False
+    retired_authorization_rejected = False
     try:
         load_authorization_certificate(
             AUTHORIZATION.relative_to(ROOT),
@@ -479,15 +503,13 @@ def main() -> None:
             spec_sha256=spec_sha256,
             spec=spec,
             materialized_sha256=materialized_sha256,
-            output=ROOT / authorization_document["output_path"],
+            output=output_path,
         )
     except SystemExit as error:
-        current_generator_rejected = "generator_sha256 drift" in str(error)
-    # The certificate is expected to authorize the current generator because the
-    # generator has not been hardened since the certificate was issued.
+        retired_authorization_rejected = "status drift" in str(error)
     require(
-        not current_generator_rejected,
-        "historical certificate must authorize the current generator",
+        retired_authorization_rejected,
+        "retired certificate still authorizes generation",
     )
 
     for action in ACTIONS:
@@ -553,8 +575,9 @@ def main() -> None:
     print(f"PVP005_ARDY_V4_CONTRACT_SHA256={spec_sha256}")
     print(f"PVP005_ARDY_V4_MATERIALIZED_SHA256={materialized_sha256}")
     print(f"PVP005_ARDY_V4_AUTHORIZATION_SHA256={EXPECTED_AUTHORIZATION_SHA256}")
+    print(f"PVP005_ARDY_V4_HISTORICAL_AUTHORIZATION_SHA256={HISTORICAL_AUTHORIZATION_SHA256}")
     print("PVP005_ARDY_V4_MATERIALIZATION=PASS_NO_GENERATION")
-    print("PVP005_ARDY_V4_ARCHITECTURE=PASS_ENDPOINT_FIRST_GENERATOR_READY")
+    print("PVP005_ARDY_V4_ARCHITECTURE=PASS_RETIRED_STATIC_CONTRACT")
     print("PVP005_ARDY_V4_GENERATION=FORBIDDEN")
     print("PLAYABLE_PROOF=false")
 

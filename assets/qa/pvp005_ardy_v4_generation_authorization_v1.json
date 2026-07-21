@@ -17,6 +17,7 @@
   "generator_path": "tools/qa/generate_pvp005_ardy_keypose_candidates.py",
   "generator_sha256": "e6a961ea1b7d89dce8b7e99351d70db8f6baf10199c488cecdb34f0b9eb4e2e7",
   "issued_utc": "2026-07-16T00:13:10Z",
+  "historical_authorization_sha256": "a66da86bfdc47f453019fc00d38763405c067554fbd848779aec1ac257b92b63",
   "materialized_sha256": "cb35aafb8fc25c5a1f951b31199abf798509485a4b78dd82d572b44f49743ab3",
   "max_candidates": 6,
   "model": "ARDY-G1-RP-25FPS-Horizon52",
@@ -31,7 +32,8 @@
   ],
   "spec_path": "assets/qa/pvp005_ardy_action_endpoints_v4.json",
   "spec_sha256": "da2ec698b0fe433a7b60ccdb1763c2172697be5a07c96f16a8ab475814660551",
-  "status": "authorized_one_bounded_offline_probe_batch",
+  "status": "retired_consumed_not_current_authority",
+  "retirement_manifest": "docs/provenance/RETIRED_QA_CORPUS_20260721.json",
   "text_conditioning": false,
   "truth_authority": false
 }
