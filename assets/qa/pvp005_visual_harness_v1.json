@@ -295,6 +295,9 @@
     "admitted",
     "live_runtime"
   ],
+  "status": "retired_not_current_evidence",
+  "runtime_admissible": false,
+  "retirement_manifest": "docs/provenance/RETIRED_ASSET_CORPUS_20260720.json",
   "schema": "just-dodge-pvp005-visual-harness-v1",
   "thresholds": {
     "max_frozen_packet_decode_ms": 16.0,

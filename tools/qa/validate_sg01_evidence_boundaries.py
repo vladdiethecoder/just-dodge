@@ -18,6 +18,7 @@ UNIT2_QUARANTINE = Path(
     "docs/evidence_quarantine/PVP005-UNIT2-EVIDENCE-INTEGRITY-RESET-001/quarantine_manifest.json"
 )
 PVP005_BASELINE = Path("docs/reports/PVP005_REVISION_BASELINE.json")
+PVP005_VISUAL = Path("assets/qa/pvp005_visual_harness_v1.json")
 RETIRED_ASSETS = Path("docs/provenance/RETIRED_ASSET_CORPUS_20260720.json")
 RETIRED_QA = Path("docs/provenance/RETIRED_QA_CORPUS_20260721.json")
 CURRENT_STATUS_FILES = (
@@ -176,6 +177,11 @@ def validate(root: Path = ROOT) -> None:
     asset_paths = {entry["path"] for entry in retired_assets["files"]}
     qa_paths = {entry["path"] for entry in retired_qa["files"]}
     require(not (asset_paths & qa_paths), "retired asset/QA manifests overlap")
+
+    visual = json.loads((root / PVP005_VISUAL).read_text(encoding="utf-8"))
+    require(visual.get("status") == "retired_not_current_evidence", "historical visual harness was reactivated")
+    require(visual.get("runtime_admissible") is False, "historical visual harness became runtime-admissible")
+    require(visual.get("retirement_manifest") == RETIRED_ASSETS.as_posix(), "visual harness retirement authority drift")
 
     print("SG01_EVIDENCE_BOUNDARIES=PASS")
     print("MODEL_PREDICTION=BLOCKED_INVALID_EVIDENCE")

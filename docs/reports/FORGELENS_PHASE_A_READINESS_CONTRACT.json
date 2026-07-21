@@ -122,7 +122,7 @@
       "required_repeat_count": 2,
       "status": "contract_only_not_admission",
       "visual_contract_path": "assets/qa/pvp005_visual_harness_v1.json",
-      "visual_contract_sha256": "40e96f81407d30144d75c5e39fe2b58f317def952588073cdc5d7c8bc94d1493"
+      "visual_contract_sha256": "1f61d7418aa487227ec4078d81524bc011dcb8ebaa0d71fb41420caa0661fa52"
     },
     "uncropped_evidence": {
       "maximum_allowed_crop_failures": 0,
