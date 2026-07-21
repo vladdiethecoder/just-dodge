@@ -61,6 +61,19 @@ class Sg01EvidenceBoundaryTests(unittest.TestCase):
         self.assertFalse(audit["sg01_can_proceed_to_sg02"])
         self.assertFalse(audit["runtime_path"]["playable_runtime_admitted"])
 
+    def test_sg01_pass_receipt_requires_same_commit_green_ci(self) -> None:
+        receipt = json.loads((MODULE.ROOT / MODULE.CLEAN_RECEIPT).read_text())
+        expected_stages = {
+            "model_prediction": "BLOCKED_INVALID_EVIDENCE",
+            "runtime_contact": "BLOCKED_MACHINE",
+            "human_promotion": "PENDING",
+        }
+        MODULE.validate_clean_receipt(receipt, expected_stages)
+
+        receipt["remote_ci"]["same_commit_checks_observed"] = False
+        with self.assertRaisesRegex(SystemExit, "lacks same-commit CI"):
+            MODULE.validate_clean_receipt(receipt, expected_stages)
+
     def test_retired_source_hash_mismatch_fails(self) -> None:
         manifest = {
             "source_revision": "a" * 40,

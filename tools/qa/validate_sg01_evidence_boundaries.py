@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -115,6 +116,49 @@ def validate_retired_manifest(root: Path, manifest: dict[str, Any]) -> list[str]
     return failures
 
 
+def validate_clean_receipt(clean_receipt: dict[str, Any], expected_stages: dict[str, str]) -> None:
+    require(clean_receipt.get("verdict") == "SG01_PASS", "SG01 clean receipt verdict drift")
+    require(clean_receipt.get("sg01_can_proceed_to_sg02") is True, "SG01 clean receipt blocks SG02")
+    require(
+        clean_receipt.get("promotion") == "SG01_PASS_G4_G5_BLOCKED",
+        "SG01 clean receipt promotion boundary drift",
+    )
+    require(clean_receipt.get("human_decision") == "PENDING", "SG01 clean receipt fabricated human approval")
+    require(clean_receipt.get("evidence_stages") == expected_stages, "SG01 clean receipt collapsed evidence stages")
+
+    revision = clean_receipt.get("subject_revision")
+    require(
+        isinstance(revision, str) and re.fullmatch(r"[0-9a-f]{40}", revision) is not None,
+        "invalid SG01 subject revision",
+    )
+    tree = clean_receipt.get("subject_tree")
+    require(
+        isinstance(tree, str) and re.fullmatch(r"[0-9a-f]{40}", tree) is not None,
+        "invalid SG01 subject tree",
+    )
+    clean = clean_receipt.get("clean_checkout", {})
+    require(clean.get("detached") is True, "SG01 receipt was not produced from a detached checkout")
+    require(clean.get("initial_status_porcelain") == "", "SG01 checkout was initially dirty")
+    require(clean.get("final_status_porcelain") == "", "SG01 checkout was finally dirty")
+    require(
+        re.fullmatch(r"[0-9a-f]{64}", str(clean.get("full_log_sha256", ""))) is not None,
+        "invalid SG01 clean-checkout log digest",
+    )
+
+    remote = clean_receipt.get("remote_ci", {})
+    require(remote.get("subject_published") is True, "SG01 subject is not published")
+    require(remote.get("same_commit_checks_observed") is True, "SG01 receipt lacks same-commit CI")
+    require(remote.get("existing_pr_head") == revision, "SG01 CI head does not match subject revision")
+    require(remote.get("status") == "PASS", "SG01 remote CI is not green")
+    runs = remote.get("runs")
+    require(isinstance(runs, list) and len(runs) >= 2, "SG01 receipt lacks push and pull-request CI runs")
+    require({run.get("event") for run in runs} >= {"push", "pull_request"}, "SG01 CI event coverage drift")
+    for run in runs:
+        require(isinstance(run.get("run_id"), int) and run["run_id"] > 0, "invalid SG01 CI run id")
+        for gate in ("receipt_reduction", "linux_golden", "windows_golden", "verify"):
+            require(run.get(gate) == "PASS", f"SG01 CI run {run['run_id']} failed {gate}")
+
+
 def validate(root: Path = ROOT) -> None:
     audit = json.loads((root / CURRENT_AUDIT).read_text(encoding="utf-8"))
     require(audit.get("schema") == "just-dodge-sg01-baseline-audit-v2", "bad SG01 audit schema")
@@ -138,11 +182,7 @@ def validate(root: Path = ROOT) -> None:
     require(runtime.get("deleted_dependencies_present") is True, "deleted runtime dependencies were hidden")
 
     clean_receipt = json.loads((root / CLEAN_RECEIPT).read_text(encoding="utf-8"))
-    require(clean_receipt.get("verdict") == "LOCAL_PASS_REMOTE_CI_PENDING", "local receipt verdict drift")
-    require(clean_receipt.get("sg01_can_proceed_to_sg02") is False, "local receipt improperly permits SG02")
-    require(clean_receipt.get("promotion") == "BLOCKED_REMOTE_CI", "local receipt promotion boundary drift")
-    require(clean_receipt.get("remote_ci", {}).get("same_commit_checks_observed") is False, "local receipt forged remote CI")
-    require(clean_receipt.get("evidence_stages") == expected_stages, "local receipt collapsed evidence stages")
+    validate_clean_receipt(clean_receipt, expected_stages)
 
     historical = json.loads((root / HISTORICAL_AUDIT).read_text(encoding="utf-8"))
     require(historical.get("verdict") == "SUPERSEDED_NOT_CURRENT_AUTHORITY", "historical SG01 receipt still claims current authority")
@@ -207,7 +247,7 @@ def validate(root: Path = ROOT) -> None:
     print("MODEL_PREDICTION=BLOCKED_INVALID_EVIDENCE")
     print("RUNTIME_CONTACT=BLOCKED_MACHINE")
     print("HUMAN_PROMOTION=PENDING")
-    print("SG02_IMPLEMENTATION=BLOCKED")
+    print("SG02_IMPLEMENTATION=AUTHORIZED_NEXT_WAVE")
     print(f"RETIRED_CORPUS_FILES={len(asset_paths) + len(qa_paths)}")
 
 

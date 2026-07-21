@@ -1,12 +1,12 @@
 {
   "schema": "just-dodge-sg01-clean-checkout-receipt-v1",
   "unit": "SG01-EVIDENCE-CANON-RESET-002",
-  "observed_utc": "2026-07-21T07:39:09Z",
-  "subject_revision": "3caa1ec680d181b244affb25ff1826a74ea6cc3b",
-  "subject_tree": "701eb1059f71b13379ced6679ab6410028df800a",
-  "verdict": "LOCAL_PASS_REMOTE_CI_PENDING",
-  "sg01_can_proceed_to_sg02": false,
-  "promotion": "BLOCKED_REMOTE_CI",
+  "observed_utc": "2026-07-21T14:49:31Z",
+  "subject_revision": "f821c98245bfe9442256d3e3032c2f5d684349c4",
+  "subject_tree": "944adad9e64afcbad5e1f3f6ae6bde9b4001533e",
+  "verdict": "SG01_PASS",
+  "sg01_can_proceed_to_sg02": true,
+  "promotion": "SG01_PASS_G4_G5_BLOCKED",
   "human_decision": "PENDING",
   "toolchain": {
     "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
@@ -18,8 +18,8 @@
     "final_status_porcelain": "",
     "cargo_target_outside_checkout": true,
     "cargo_target_reason": "The first fresh /tmp target attempt hit an environment disk quota during link. The passing rerun used the repository's ignored target directory through an ignored target symlink; source, index and checkout remained clean.",
-    "full_log_local_path": ".temp/verification/SG01-EVIDENCE-CANON-RESET-002/3caa1ec680d181b244affb25ff1826a74ea6cc3b-clean-checkout.log",
-    "full_log_sha256": "7e347b7d6825d46254d7cf862d869cb847d1e70867a6a1425c41a8788a57c97c"
+    "full_log_local_path": ".temp/verification/SG01-EVIDENCE-CANON-RESET-002/f821c98245bfe9442256d3e3032c2f5d684349c4-clean-checkout.log",
+    "full_log_sha256": "f7a0a0f1cb7869c8b8dd57b40ca1d9a5f1f8fab9d0bdbd6433160dcc6c5d8cbf"
   },
   "cargo_test_all_targets": {
     "passed": 419,
@@ -48,7 +48,7 @@
     {"name": "retired_ardy_contract", "command": "python3 tools/qa/validate_pvp005_ardy_action_endpoints_v4.py", "rc": 0, "status": "PASS_RETIRED_STATIC_CONTRACT"},
     {"name": "heldout_motion_tests", "command": "python3 tools/qa/test_heldout_motion_acceptance.py", "rc": 0, "tests": 11},
     {"name": "interaction_partition_tests", "command": "python3 tools/qa/test_interaction_partition_leakage.py", "rc": 0, "tests": 3},
-    {"name": "cross_platform_schema_tests", "command": "python3 tools/qa/test_sg02_cross_platform_parity.py", "rc": 0, "tests": 3},
+    {"name": "cross_platform_schema_tests", "command": "python3 tools/qa/test_sg02_cross_platform_parity.py -v", "rc": 0, "tests": 4},
     {"name": "mesh_tool_compile", "command": "python3 -m py_compile <mesh QA files>", "rc": 0},
     {"name": "gltf_gate", "command": "bash tools/qa/validate_gltf_assets.sh", "rc": 0, "status": "PASS_BLOCKED_NO_TRACKED_ASSETS"},
     {"name": "asset_review_javascript_parse", "command": "node --check tools/asset_review/app.js", "rc": 0},
@@ -58,7 +58,7 @@
     {"name": "cargo_test_all_targets", "command": "RUSTFLAGS=-Dwarnings cargo test --locked --all-targets", "rc": 0},
     {"name": "replay_100", "command": "cargo test --locked --lib milestone3::tests::one_hundred_replay_reconstructions_keep_the_same_truth_hash -- --nocapture", "rc": 0},
     {"name": "no_default_features", "command": "RUSTFLAGS=-Dwarnings cargo check --locked --no-default-features --bin just-dodge --bin m3_match", "rc": 0},
-    {"name": "commit_diff_check", "command": "git diff --check 3caa1ec^ 3caa1ec", "rc": 0}
+    {"name": "commit_diff_check", "command": "git diff --check f821c98^ f821c98", "rc": 0}
   ],
   "evidence_stages": {
     "model_prediction": "BLOCKED_INVALID_EVIDENCE",
@@ -66,10 +66,28 @@
     "human_promotion": "PENDING"
   },
   "remote_ci": {
-    "subject_published": false,
-    "same_commit_checks_observed": false,
+    "subject_published": true,
+    "same_commit_checks_observed": true,
     "pr_number": 2,
-    "existing_pr_head": "b2266e578889061bef703bfe6ec997423aa69b74",
-    "status": "OWNER_AUTHORITY_REQUIRED_TO_PUSH"
+    "existing_pr_head": "f821c98245bfe9442256d3e3032c2f5d684349c4",
+    "status": "PASS",
+    "runs": [
+      {
+        "run_id": 29839120974,
+        "event": "push",
+        "receipt_reduction": "PASS",
+        "linux_golden": "PASS",
+        "windows_golden": "PASS",
+        "verify": "PASS"
+      },
+      {
+        "run_id": 29839263563,
+        "event": "pull_request",
+        "receipt_reduction": "PASS",
+        "linux_golden": "PASS",
+        "windows_golden": "PASS",
+        "verify": "PASS"
+      }
+    ]
   }
 }

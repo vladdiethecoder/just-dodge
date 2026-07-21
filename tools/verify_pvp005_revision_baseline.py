@@ -99,12 +99,17 @@ def main() -> None:
             raise SystemExit(f"status reconciliation missing from {relative}: {missing}")
 
     current = json.loads(current_status.read_text())
-    if current.get("verdict") != "LOCAL_PASS_REMOTE_CI_PENDING":
-        raise SystemExit("current SG01 status is not the local clean-checkout receipt")
-    if current.get("sg01_can_proceed_to_sg02") is not False:
-        raise SystemExit("current SG01 baseline improperly permits SG02")
-    if current.get("promotion") != "BLOCKED_REMOTE_CI" or current.get("human_decision") != "PENDING":
+    if current.get("verdict") != "SG01_PASS":
+        raise SystemExit("current SG01 status is not the exact-commit PASS receipt")
+    if current.get("sg01_can_proceed_to_sg02") is not True:
+        raise SystemExit("current SG01 PASS does not permit the next wave")
+    if current.get("promotion") != "SG01_PASS_G4_G5_BLOCKED" or current.get("human_decision") != "PENDING":
         raise SystemExit("current SG01 promotion/human boundary drift")
+    remote_ci = current.get("remote_ci", {})
+    if remote_ci.get("same_commit_checks_observed") is not True or remote_ci.get("status") != "PASS":
+        raise SystemExit("current SG01 receipt lacks green same-commit CI")
+    if remote_ci.get("existing_pr_head") != current.get("subject_revision"):
+        raise SystemExit("current SG01 receipt CI head differs from its subject")
 
     if args.remote:
         if report.get("historical_branch_remote_present") is not False:
@@ -119,6 +124,11 @@ def main() -> None:
             baseline,
             remote_tip,
             "historical baseline is not reachable from current remote tip",
+        )
+        require_ancestor(
+            current["subject_revision"],
+            remote_tip,
+            "SG01 PASS subject is not reachable from current remote tip",
         )
 
     print(f"PVP005_REACHABLE_BASELINE={baseline}")
