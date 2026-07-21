@@ -1,0 +1,116 @@
+{
+  "tool": "validate_reference_images",
+  "timestamp": "2026-07-21T19:29:07.388349Z",
+  "image_dir": "assets/source/meshy/ph1_fighter_002/references",
+  "total_checks": 21,
+  "passed": 21,
+  "failed": 0,
+  "verdict": "PASS",
+  "checks": [
+    {
+      "check": "front_exists",
+      "pass": true,
+      "detail": "assets/source/meshy/ph1_fighter_002/references/front.png"
+    },
+    {
+      "check": "right_exists",
+      "pass": true,
+      "detail": "assets/source/meshy/ph1_fighter_002/references/right.png"
+    },
+    {
+      "check": "back_exists",
+      "pass": true,
+      "detail": "assets/source/meshy/ph1_fighter_002/references/back.png"
+    },
+    {
+      "check": "front_three_quarter_exists",
+      "pass": true,
+      "detail": "assets/source/meshy/ph1_fighter_002/references/front_three_quarter.png"
+    },
+    {
+      "check": "front_bg_uniformity",
+      "pass": true,
+      "detail": "Corner stddev=0.2 (must be <5)"
+    },
+    {
+      "check": "front_margin",
+      "pass": true,
+      "detail": "Left bg=98.8%, Right bg=98.8% (must be >85% each, i.e. 10% margin)"
+    },
+    {
+      "check": "front_no_specular",
+      "pass": true,
+      "detail": "Max brightness=229 (must be <250)"
+    },
+    {
+      "check": "front_resolution",
+      "pass": true,
+      "detail": "1024x1536"
+    },
+    {
+      "check": "right_bg_uniformity",
+      "pass": true,
+      "detail": "Corner stddev=0.4 (must be <5)"
+    },
+    {
+      "check": "right_margin",
+      "pass": true,
+      "detail": "Left bg=100.0%, Right bg=100.0% (must be >85% each, i.e. 10% margin)"
+    },
+    {
+      "check": "right_no_specular",
+      "pass": true,
+      "detail": "Max brightness=221 (must be <250)"
+    },
+    {
+      "check": "right_resolution",
+      "pass": true,
+      "detail": "1024x1536"
+    },
+    {
+      "check": "back_bg_uniformity",
+      "pass": true,
+      "detail": "Corner stddev=0.8 (must be <5)"
+    },
+    {
+      "check": "back_margin",
+      "pass": true,
+      "detail": "Left bg=98.7%, Right bg=98.8% (must be >85% each, i.e. 10% margin)"
+    },
+    {
+      "check": "back_no_specular",
+      "pass": true,
+      "detail": "Max brightness=243 (must be <250)"
+    },
+    {
+      "check": "back_resolution",
+      "pass": true,
+      "detail": "1024x1536"
+    },
+    {
+      "check": "front_three_quarter_bg_uniformity",
+      "pass": true,
+      "detail": "Corner stddev=0.1 (must be <5)"
+    },
+    {
+      "check": "front_three_quarter_margin",
+      "pass": true,
+      "detail": "Left bg=99.2%, Right bg=99.6% (must be >85% each, i.e. 10% margin)"
+    },
+    {
+      "check": "front_three_quarter_no_specular",
+      "pass": true,
+      "detail": "Max brightness=234 (must be <250)"
+    },
+    {
+      "check": "front_three_quarter_resolution",
+      "pass": true,
+      "detail": "1024x1536"
+    },
+    {
+      "check": "cross_view_size",
+      "pass": true,
+      "detail": "Sizes: {'front': (1024, 1536), 'right': (1024, 1536), 'back': (1024, 1536), 'front_three_quarter': (1024, 1536)}"
+    }
+  ]
+}
