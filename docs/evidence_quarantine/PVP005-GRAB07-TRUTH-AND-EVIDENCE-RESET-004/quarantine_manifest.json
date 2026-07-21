@@ -1,0 +1,161 @@
+{
+  "reset": "PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004",
+  "date": "2026-07-19",
+  "branch_head_at_reset": "1520854fa6c84fd087aae4c27c3be90fd62dbd3d",
+  "preserved": {
+    "GRAB_ACQUIRE_RANGE_MM": 650,
+    "semantics": "opportunity/acquisition boundary ONLY (src/intent/grab_state.rs:14); never an absolute hand-coordinate training target"
+  },
+  "revoked": [
+    {
+      "path": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V11_HARMONY4D_PASS.json",
+      "sha256": "0114bdf3ec233e49cd94a6343353dd65028eee9b1ab9a73b3fa4e2df0c517c32",
+      "tracked_in_git": true,
+      "verdict": "INVALID_EVIDENCE",
+      "machine_eligible": "REVOKED",
+      "reasons": [
+        "scalar distance predictor (v13: DistanceGrabModel MLP 400 distance features -> 1) is not a motion model",
+        "model inputs are distance features \u2014 target/contact distance leakage (forbidden by RESET-004 gate 4)",
+        "gates report median-only hand-to-surface; RESET-004 requires every admitted case <=15mm continuously >=100ms",
+        "no 120Hz runtime-truth emission (manifold/distance/penetration/causal response) behind the claim",
+        "evidence not reproducible from a clean checkout (qa_runs artifacts partially untracked; no checkpoint/config/seeds/hashes saved)"
+      ]
+    },
+    {
+      "path": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V13_HARMONY4D_TRAINED_PASS.json",
+      "sha256": "d3a33c97a6f61126ff8c1e50308b24238a29447a2224e4f00302f07536f49955",
+      "tracked_in_git": false,
+      "verdict": "INVALID_EVIDENCE",
+      "machine_eligible": "REVOKED",
+      "reasons": [
+        "scalar distance predictor (v13: DistanceGrabModel MLP 400 distance features -> 1) is not a motion model",
+        "model inputs are distance features \u2014 target/contact distance leakage (forbidden by RESET-004 gate 4)",
+        "gates report median-only hand-to-surface; RESET-004 requires every admitted case <=15mm continuously >=100ms",
+        "no 120Hz runtime-truth emission (manifold/distance/penetration/causal response) behind the claim",
+        "evidence not reproducible from a clean checkout (qa_runs artifacts partially untracked; no checkpoint/config/seeds/hashes saved)"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_200/game_loop_observer.png",
+      "sha256": "3b472a9e85b39ee500922749c69189bd48f1be788884c92cfc4449e81bc314a1",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_200/game_loop_first_person.png",
+      "sha256": "a29311e2a0890ee71d89674632e6a17b8e81ae7b1ed060bc670a45ffac342c20",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_500/game_loop_observer.png",
+      "sha256": "d66bf5d7b07fece5409cbdf2c4f6031b2f7791ec37a504fd0c15dbc975dc1ee7",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_500/game_loop_first_person.png",
+      "sha256": "9b6239e96c5724096846f030c53eef6b92557477b7a1fcfffdb2c6ad516a20ea",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_1000/game_loop_observer.png",
+      "sha256": "0b85ae26695f1cda427072e73e96210b15948649fd1c52af351590b80bb86c5c",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_1000/game_loop_first_person.png",
+      "sha256": "ff975ea1f16f0e4df4e2dd528d7ad2c5c39e553189c8c6541315dd3e0923cd12",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_2000/game_loop_observer.png",
+      "sha256": "2f448822f842cad8f87d2c6e2f5839c3d2b8d9d079904cc5f7aef08b452227e6",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_2000/game_loop_first_person.png",
+      "sha256": "e9ccfdca698ed20d890b51d07ce17660141345d05d4afb90b811c2d1451ac8ad",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_5000/game_loop_observer.png",
+      "sha256": "ee2557273a535753f4868deddadedbd6b37acd589b297aeda51e20737ff800f1",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_5000/game_loop_first_person.png",
+      "sha256": "26c6006d4fe42df9d60d08b064911c3a51178edc1c9bd80d972cc9079f956e49",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_10000/game_loop_observer.png",
+      "sha256": "c7b4eeb674af2c08ebb1c8671becd443e62b5c25c9109203eb3ed2c1e9ed45ae",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    },
+    {
+      "path": "qa_runs/game_loop_grab_visual_10000/game_loop_first_person.png",
+      "sha256": "7ac25dc6b7070e8ca58fe81a1054aa86424e29ab7803caf9aaab3268a18403e4",
+      "tracked_in_git": false,
+      "verdict": "DEBUG_RENDER_SMOKE_ONLY",
+      "reasons": [
+        "placeholder/procedural render smoke, not runtime-truth evidence; quarantined from any G4/G5 review path"
+      ]
+    }
+  ],
+  "missing_or_stale_record": {
+    "v12_receipt": "qa_runs/grab07_combat_train/UNIT2_RECEIPT_V12_HARMONY4D_TRAINED.json exists locally but is a FAILING experiment (median_error_mm=229.71, best_error_mm=43.74 vs gate 15mm) and is untracked",
+    "v13_training_data": "qa_runs/grab07_combat_corpus/paired_grabs_full/training_data.json exists locally; untracked = absent from clean checkout",
+    "checkpoint": "no trained checkpoint file committed (grab07_conditioner*.pt untracked local artifacts)",
+    "stale_pr_candidate_sha": "PR #2 body claims candidate 30d49b666a046c8a13300ba60bc0e5da33c13676; PR head is 3b4be519bee003a3e4056d1cb199a462e573c22d; local head is 1520854fa6c84fd087aae4c27c3be90fd62dbd3d",
+    "failed_ci": "4 consecutive CI failures on grab07-650mm-closure (runs 29686283886, 29686281626, 29685876834, 29685874917, 2026-07-19)"
+  },
+  "stop_state": {
+    "UNIT2": "NOT_MACHINE_EVIDENCE_READY",
+    "G4": "PENDING_HUMAN",
+    "G5": "PENDING_HUMAN",
+    "HUMAN_DECISION": "PENDING",
+    "PROMOTION": "BLOCKED"
+  }
+}

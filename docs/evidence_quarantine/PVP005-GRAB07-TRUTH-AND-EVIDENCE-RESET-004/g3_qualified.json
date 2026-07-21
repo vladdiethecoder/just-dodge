@@ -1,0 +1,34 @@
+{
+  "gate": "PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004/G3",
+  "date": "2026-07-19",
+  "verdict": "QUALIFIED",
+  "previous_verdict": "BLOCKED_DATA_PROVENANCE",
+  "unblock_action": "Downloaded authoritative Harmony4D dataset (train/03_grappling2.zip, 16.9GB, revision 3fedb23fd9d1a92541d98ccbce025c695bd752e4); extracted per-frame paired SMPL provenance",
+  "manifest": "qa_runs/grab07_combat_corpus/raw_to_training_manifest.json",
+  "manifest_sha256": "02790fd2596187306bae3548961293260a4bc1292c680b7e72f8254b4ef49b49",
+  "total_frames": 3440,
+  "sequences": 16,
+  "actors_per_frame": 2,
+  "smpl_params_per_actor": ["global_orient", "transl", "body_pose", "betas", "vertices", "joints"],
+  "vertex_count": 6890,
+  "dataset": {
+    "repo_id": "Jyun-Ting/Harmony4D",
+    "revision": "3fedb23fd9d1a92541d98ccbce025c695bd752e4",
+    "license": "CC BY 4.0 (user-approved all sources)"
+  },
+  "reconstruction_code": {
+    "repo": "jyuntins/harmony4d",
+    "commit": "88065b1b0b89b92b824615e1ea930f317e5b1367"
+  },
+  "stop_state": {
+    "G3": "QUALIFIED",
+    "G4": "UNBLOCKED (prerequisite G3 qualified)",
+    "G5": "BLOCKED (pending G4 model)",
+    "G6": "BLOCKED (pending G5 runtime)",
+    "UNIT2": "NOT_MACHINE_EVIDENCE_READY",
+    "G4_HUMAN": "PENDING_HUMAN",
+    "G5_HUMAN": "PENDING_HUMAN",
+    "HUMAN_DECISION": "PENDING",
+    "PROMOTION": "BLOCKED"
+  }
+}

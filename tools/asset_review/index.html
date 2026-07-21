@@ -162,6 +162,7 @@
         <button class="inspector-tab" type="button" data-tab="details">Details</button>
         <button class="inspector-tab" type="button" data-tab="evidence">Evidence</button>
         <button class="inspector-tab" type="button" data-tab="meshdoctor">Mesh Doctor</button>
+        <button class="inspector-tab" type="button" data-tab="grab07">Grab-07</button>
       </nav>
 
       <div id="reviewTab" class="tab-content is-active" data-tab-panel="review">
@@ -326,6 +327,35 @@
             </thead>
             <tbody id="meshDoctorRows"></tbody>
           </table>
+        </section>
+      </div>
+
+      <div id="grab07Tab" class="tab-content" data-tab-panel="grab07">
+        <section class="inspector-section grab07-panel">
+          <div class="section-title-row"><div><span class="eyebrow">Grab-07 promotion review</span><h2>Physics-substep review</h2></div><span id="grab07Status" class="submission-status">Loading</span></div>
+          <p id="grab07AuthorityNote" class="gate-contract">Automatic vision can prioritize findings; it cannot approve or promote. Approval and rejection are human-only, append-only receipts.</p>
+          <label class="grab07-tick">Physics tick <output id="grab07TickOutput">—</output><input id="grab07Tick" type="range" min="0" max="0" value="0" disabled></label>
+          <div class="grab07-step-actions"><button id="grab07Prev" type="button">← Previous substep</button><button id="grab07Next" type="button">Next substep →</button></div>
+          <p id="grab07Phase" class="grab07-phase">No capture bundle loaded.</p>
+          <label>Registered view <select id="grab07View"><option value="first_person">First person</option><option value="front">Front</option><option value="side">Side</option><option value="top">Top</option><option value="three_quarter">Three quarter</option></select></label>
+          <div id="grab07Passes" class="grab07-passes" aria-label="Diagnostic pass layers"></div>
+        </section>
+        <section class="inspector-section grab07-panel">
+          <div class="section-title-row"><div><span class="eyebrow">Worst substep registered images</span><h2>A / B / difference</h2></div><button id="grab07Flicker" type="button">Start flicker</button></div>
+          <div class="grab07-state-picks"><label>A <select id="grab07StateA"><option value="BEFORE">Before</option><option value="DETECTED">Detected</option><option value="REPAIR_PREVIEW">Repair preview</option><option value="AFTER">After</option></select></label><label>B <select id="grab07StateB"><option value="AFTER">After</option><option value="BEFORE">Before</option><option value="DETECTED">Detected</option><option value="REPAIR_PREVIEW">Repair preview</option></select></label><button id="grab07ShowDiff" type="button">Show AB difference</button></div>
+          <div id="grab07Compare" class="grab07-compare" aria-label="Registered side-by-side comparison"></div>
+        </section>
+        <section class="inspector-section grab07-panel">
+          <div class="section-title-row"><div><span class="eyebrow">Geometry anchored findings</span><h2>Deepest first</h2></div><span id="grab07FindingCount" class="count-badge">0</span></div>
+          <div id="grab07Findings" class="grab07-findings"></div>
+          <div id="grab07PinComposer" class="comment-composer" hidden><div id="grab07PinAnchor" class="composer-point">Geometry anchor</div><label>Comment<textarea id="grab07Comment" rows="3" maxlength="8000"></textarea></label><label>Assignee<input id="grab07Assignee" maxlength="200" placeholder="Team or person"></label><button id="grab07SavePin" class="primary-button" type="button">Save geometry pin</button></div>
+          <div id="grab07Pins" class="grab07-pins"></div>
+        </section>
+        <section class="inspector-section grab07-panel grab07-decision">
+          <span class="eyebrow">Human-only authority</span><h2>Decision or repair queue</h2>
+          <label>Reviewer<input id="grab07Reviewer" maxlength="200" placeholder="Your name"></label>
+          <div class="grab07-decision-actions"><button id="grab07Approve" class="primary-button" type="button">Human approve</button><button id="grab07Reject" type="button">Human reject</button><button id="grab07QueueRepair" type="button">Queue Blender repair</button></div>
+          <p id="grab07Receipt" class="report-receipt">Select a geometry finding to queue a new immutable repair candidate. This never mutates or auto-promotes the reviewed artifact.</p>
         </section>
       </div>
     </aside>

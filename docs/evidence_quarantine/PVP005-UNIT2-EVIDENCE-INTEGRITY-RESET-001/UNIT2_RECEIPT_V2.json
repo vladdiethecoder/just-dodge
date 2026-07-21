@@ -1,0 +1,63 @@
+{
+ "attempts": [
+  {
+   "arch": "v4-cmu-mocap",
+   "held_out": "subjects 17,79,80",
+   "held_seg": 2,
+   "result": "FAIL best=388mm median=421mm ablation_ok=True(delta=162mm)",
+   "train_seg": 68
+  },
+  {
+   "arch": "v4-cmu-mocap",
+   "held_out": "subjects 86,135",
+   "held_seg": 8,
+   "result": "FAIL best=260mm median=399mm ablation_ok=True(delta=5.4mm)",
+   "steps": 15000,
+   "train_seg": 62
+  }
+ ],
+ "baseline": {
+  "evidence": "qa_runs/grab07_650mm_closure/COMPARISON_RECEIPT.md",
+  "hand_surface_err_mm": 220.9
+ },
+ "branch": "grab07-650mm-closure",
+ "corpus": {
+  "calibrated_grab_segments": 70,
+  "label_counts": {
+   "grab": 255,
+   "kick": 42,
+   "strike": 7
+  },
+  "pipeline": "ASF/AMC -> BVH -> G1 retarget -> segment",
+  "source": "CMU Graphics Lab Motion Capture Database (public domain)",
+  "total_clips": 59,
+  "total_segments": 304
+ },
+ "gates": {
+  "bridge_tests": "PASS 3/3",
+  "cargo_check": "PASS",
+  "cargo_clippy": "PASS",
+  "cargo_fmt": "PASS (prior session)",
+  "cargo_test": "PASS 328/0/3",
+  "condition_ablation": "PASS (model uses target geometry)",
+  "hand_surface_err_mm": "FAIL (best 260mm > 15mm)",
+  "truth_clinch_at_650mm": "PRESERVED",
+  "truth_tick_nonblocking": "PASS (m4 test)"
+ },
+ "grab_reach_mm": 650,
+ "hashes": {
+  "checkpoint": "3091da689ef5c302f69dbadbc96d8e00b27cdfd76a922aceee64960637e9b796",
+  "segments_manifest": "165deff0efd027cee388d3bc6e0f1a291ff4bbddf3b0f0dc7e0ec47b42fc40e4",
+  "train_report": "53f92d2018c1039d8909481c14982591b2e2bc122603260c445f0760acfd634d"
+ },
+ "head": "d6c8e110d7f4ed032bdd344302da4bcc7ea1656e",
+ "key_finding": "Conditioner IS genuine (ablation passes, model uses target geometry). But absolute reach calibration is 260-400mm off the 650mm plane. An MLP predicting from frame-0+condition cannot learn precise distance calibration from 62 high-variance training segments.",
+ "machine_eligible": false,
+ "objective": "UNIT-2 v2: genuine trained GRAB conditioner on REAL CMU combat mocap. <=15mm at GRAB_REACH_MM=650.",
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN",
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-receipt-v2-cmu",
+ "smallest_next_falsifiable_experiment": "Replace the MLP conditioner with a sequence model (transformer or temporal CNN) that predicts per-frame pose corrections conditioned on BOTH the exogenous target AND the current trajectory state. The MLP can only learn static mappings; a sequence model can learn the forward-reach DYNAMICS needed to terminate at a specific distance. Alternatively, augment the corpus with synthesized distance-calibrated grab teachers by scaling the CMU root trajectory so the hand terminates exactly at [620,680]mm.",
+ "utc": "2026-07-18T04:29:14.511265+00:00",
+ "verdict": "FAIL"
+}

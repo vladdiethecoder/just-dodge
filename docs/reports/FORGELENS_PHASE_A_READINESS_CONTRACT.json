@@ -7,7 +7,7 @@
   },
   "contract_version": 1,
   "evaluation": {
-    "forgelens_source_tree_sha256": "c7bbb6ccdc805f4014b6bc25342f5c6af62491446157bde7f7d4dd4b490a2037",
+    "forgelens_source_tree_sha256": "a2ee2c4d4fe7c72ffc29e0be3bb53dc2519af9f382fa28fac846b868dee3a32b",
     "forgelens_sources_must_be_tracked": true,
     "revision_rule": "runtime_HEAD_must_be_a_descendant_of_subject_revision"
   },
@@ -21,13 +21,13 @@
       "server_derived_human_actor": true
     },
     "required_files": {
-      "tools/asset_review.py": "3bdef713b92e8d40ae21208e015570cfda73bb7223d6828478dd420f86e8daf0",
+      "tools/asset_review.py": "96e0de6d42f0dd1d6d0c727c9c6afb955fa90d4e47b5160f161af2931cab129d",
       "tools/asset_review/README.md": "dd26184b4989180893cb5d1635cf1df9c257332cbc1a8b2d8a1b260d4c61e3fa",
-      "tools/asset_review/app.js": "a1ca9f7d6a929e26d1686fbaa8c9f9269ab7783c2a3d9b67729a1b72d88b6991",
-      "tools/asset_review/index.html": "a7bdb9f750e21097c21edcce596c632c4f33afb614602bfe1fb4463524d86021",
-      "tools/asset_review/styles.css": "60a94eeb055629fd8b7d2593fc575875d6fbc45b3cb9229e3535ba4dfcf1c9fe",
+      "tools/asset_review/app.js": "ee7797a10f23eda96252358dbf74103206816f172b100d57cc8074df0667b097",
+      "tools/asset_review/index.html": "cd1fa235e7c2ffc7cb623c41d90b7e42dfeb125d986bd44821eb7e1e48b2415e",
+      "tools/asset_review/styles.css": "7ccc4b2ccfdf8c77379c41543e6e6dd3543b08eeeda316566b7b9f5a5f456922",
       "tools/qa/test_asset_review.py": "268c8194ce9823127be4ca4db4eb55b27d8815128bd431f6a43708ffbddac22e",
-      "tools/qa/verify_forgelens_phase_a.py": "70e49ef34643678e4cd3d6550ad8f292e2bcb3444ad1c1d507d411cba37bcf89"
+      "tools/qa/verify_forgelens_phase_a.py": "20ceaef730c4e24af63f90f382411e2b8466a18b94570a6012a17baa1f6d6dc3"
     },
     "review_run_binding": [
       "subject_revision",
@@ -114,6 +114,7 @@
       "candidate_receipt_path": "docs/reports/PVP005_CANDIDATE_VISUAL_MRT_RECEIPT.json",
       "candidate_receipt_sha256": "33d93067454c4485f06ce0ecc6d39f795746f4f83e8d7db1189edcc1982d768a",
       "historical_receipt_visual_contract_sha256": "ffc67b6f8027ad795deced1761a738a928bcd11ab3beb7d7909c6b65b282841c",
+      "historical_receipt_visual_contract_sha256_previous": "ffc67b6f8027ad795deced1761a738a928bcd11ab3beb7d7909c6b65b282841c",
       "observed_candidate_pass": false,
       "observed_exact_repeat": true,
       "required": true,
@@ -121,7 +122,7 @@
       "required_repeat_count": 2,
       "status": "contract_only_not_admission",
       "visual_contract_path": "assets/qa/pvp005_visual_harness_v1.json",
-      "visual_contract_sha256": "ffc67b6f8027ad795deced1761a738a928bcd11ab3beb7d7909c6b65b282841c"
+      "visual_contract_sha256": "1f61d7418aa487227ec4078d81524bc011dcb8ebaa0d71fb41420caa0661fa52"
     },
     "uncropped_evidence": {
       "maximum_allowed_crop_failures": 0,
@@ -175,12 +176,12 @@
     "pin_receipt_hash_rule": "sha256(canonical pin receipt object with pinReceiptSha256 omitted)",
     "replay_verifier_allowlist": [
       {
-        "build_command": "cargo build --release --bin m3_match",
+        "build_command": "cargo build --release --locked --bin m3_match",
         "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
-        "cargo_lock_sha256": "e53f8705232f9d5941f4b3a5dc4657b2e61990aef6e2cf11e0404495a67e4ac9",
+        "cargo_lock_sha256": "60f7cedbea31749986c0581f7aec583dfe108ad6c49029c92cfb1f17ac18ab2b",
         "path": "target/release/m3_match",
         "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
-        "sha256": "6d9aabf95cde05ff132726e2a0ce3ffb92d5bf28af754041ec664bb2d41d2cb6"
+        "sha256": "225f8427936400cc841f1b80b19a19b3e76ae07b5ba4bd25ca6ca84cc631aa74"
       }
     ],
     "request_limits": {

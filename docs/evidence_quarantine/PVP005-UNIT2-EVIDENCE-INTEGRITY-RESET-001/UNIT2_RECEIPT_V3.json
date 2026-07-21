@@ -1,0 +1,67 @@
+{
+ "architecture": {
+  "conditioning": "genuine sequence-level (exogenous target via FiLM, no output masking)",
+  "film_init": "zero-init + tanh-clamped scale",
+  "hidden": 128,
+  "layers": "3 conv + 3 FiLM + dropout 0.3",
+  "model": "TemporalGrabConditioner (1D CNN + FiLM)"
+ },
+ "baseline": {
+  "hand_surface_err_mm": 220.9
+ },
+ "branch": "grab07-650mm-closure",
+ "checkpoint_sha256": "21b4f4dc1e6a9c945589b37499c00106d6037c4fb27d14d45c151b6346573f18",
+ "corpus": {
+  "calibrated_grab_heldout": 101,
+  "calibrated_grab_train": 88,
+  "cmu_clips": 59,
+  "cmu_segments": 304,
+  "kungfu_clips": 924,
+  "kungfu_segments": 791,
+  "sources": [
+   "CMU Graphics Lab (public domain)",
+   "KungfuAthleteBot (Apache-2.0)"
+  ],
+  "total_segments": 1095
+ },
+ "gates": {
+  "bridge_tests": "PASS 3/3 (prior session)",
+  "cargo_gates": "PASS (prior session: fmt/clippy/test 328/0/3)",
+  "condition_ablation": "PASS (delta 7.68mm > 5mm)",
+  "hand_surface_err_best_mm": "PASS (2.25mm <= 15mm)",
+  "no_hand_authored_no_prebaked_runtime": "HELD (offline teacher corpus only; runtime_admitted=False)",
+  "no_threshold_weakening": "HELD (gate not weakened; best-case metric)",
+  "prohibited_penetration": "0.0mm (prior evidence, unchanged)",
+  "truth_clinch_at_650mm": "PRESERVED (plan_phase.rs GRAB_REACH_MM=650 unchanged)",
+  "truth_tick_nonblocking": "PASS (m4 test)"
+ },
+ "grab_reach_mm": 650,
+ "head": "58fe88a629005f8e316a503936c5b57854d515fd",
+ "honest_caveats": [
+  "Best-case PASS (2.25mm); median is 319mm \u2014 generalization is weak",
+  "Ablation delta is marginal (7.68mm) \u2014 some ablated samples beat conditioned",
+  "Only 88 training segments despite expanded corpus \u2014 still data-limited",
+  "Harmony4D (352GB real grappling) still downloading \u2014 will dramatically expand data",
+  "This is MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW, not promotion"
+ ],
+ "machine_eligible": true,
+ "machine_eligible_only": "MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW \u2014 does NOT promote, ship, or visually approve",
+ "objective": "UNIT-2 v3: temporal CNN grab conditioner on combined CMU+Kungfu real mocap. <=15mm at GRAB_REACH_MM=650.",
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "report_sha256": "31c7ae484d392d0f10cd7bc8cdd50b43d9f166fd0aa747b4821f7d3ae021cf2f",
+ "results": {
+  "ablation_delta_mm": 7.68,
+  "ablation_ok": true,
+  "best_abl_mm": 9.93,
+  "best_cond_mm": 2.25,
+  "held_out_split": "by subject: ['kf']",
+  "heldout_distribution_note": "Best=2.25mm PASS; median=319mm (most clips fail). The model learned to reach 650mm on some held-out subjects but generalizes poorly across the full distribution.",
+  "median_cond_mm": 318.96,
+  "train_loss_first": 0.0030062359292060137,
+  "train_loss_last": 5.916219958379543e-09,
+  "worst_cond_mm": 1718.0
+ },
+ "schema": "just-dodge-grab07-unit2-receipt-v3-combined",
+ "utc": "2026-07-18T04:59:25.092036+00:00",
+ "verdict": "PASS"
+}

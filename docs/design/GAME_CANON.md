@@ -1,70 +1,134 @@
 # Just Dodge — Game Canon (Locked)
 
-## Authority
-
-This document is the locked design canon for Just Dodge. Where existing docs contradict each other or the current codebase, this document resolves the contradiction. Older documents (`docs/GDD.md`, `docs/COMBAT-SYSTEM.md`, `docs/ARMOR-DAMAGE-SYSTEM.md`, `docs/SYSTEMS-DESIGN.md`, `docs/MOTIONBRICKS-RETARGETING.md`, `docs/ROADMAP.md`, `docs/PHASED-PRODUCTION-PLAN.md`, `docs/QA-AGENTIC-PLAYTESTING.md`, `docs/MILESTONES.md`, `docs/PROTOTYPES.md`, `docs/LESSONS-FROM-OATHYARD.md`, `docs/RISK-REGISTER.md`) and `docs/design/RESEARCH_SYNTHESIS.md` are source material, not overrides.
+**Amended:** 2026-07-21 — post-exhaustive-interview reset
+**Authority:** This document is the locked design canon. Older docs are source material only.
 
 ## Locked Product Identity
 
-**Working Title:** Just Dodge  
-**Genre:** First-person deterministic melee duel  
-**Players:** 1v1 (local first, networked later)  
-**Session Length:** 1–5 minutes per duel  
-**Platforms:** Linux, Windows (Steam), macOS if feasible  
-**Monetization:** Premium one-time purchase (no F2P, no loot boxes)  
+**Working Title:** Just Dodge
+**Genre:** First-person deep-simulation intent-combat game
+**Players:** 1v1 (local first, networked later)
+**Session Length:** 1–5 minutes per duel
+**Platforms:** Linux, Windows (Steam), Steam Deck
+**Monetization:** Premium one-time purchase
 
 ## Locked One-Sentence Promise
 
-"Just Dodge is a first-person duel game where you and your opponent each commit to one hidden action, reveal simultaneously, and live or die by the physics, timing, and reading of that single exchange — so you can feel like a mind-reading duelist, and you will want to share it because every match produces a clip-worthy 'I knew you would do that' moment."
+"Just Dodge is a first-person deep-simulation combat game where your grab, strike, or dodge resolves differently every time based on your exact body arrangement, limb positioning, momentum, and the opponent's state — so you read conditions, not memorize frame data, and every exchange produces an unscripted 'how did that happen' moment."
+
+## Core Combat Vision
+
+This is a **strategy game disguised as a fighting game.** Players do not memorize per-frame move properties or canned animation timings. Instead they learn to read:
+
+- Body arrangement: stance, limb positions, joint angles
+- Environmental conditions: distance, terrain, relative momentum
+- Opponent state: injury, armor integrity, weapon position, balance
+
+The same Grab intent produces a different animation and outcome depending on these conditions. The deterministic physics engine resolves contact truth; MotionBricks generates the visual motion conditioned on the full state. Complexity emerges from continuous state interaction, not from a large move list.
+
+**Key differentiator (the selling point):** No two exchanges look the same. Condition-driven generative motion + deterministic physics = unscripted, clip-worthy combat that players share.
 
 ## Locked Core Pillars
 
-1. **Mind-Game First** — every exchange is a YOMI read, not a reaction test.
-2. **Physical Truth** — hitboxes, timing, and consequences are deterministic and simulation-backed.
-3. **Motion That Reads** — every action is readable through pose, weapon motion, and audio before contact.
-4. **Emergent Depth** — simple rules, complex outcomes through matchup matrices, capability injury, and state adaptation.
+1. **Read Conditions, Not Frame Data** — every exchange outcome depends on body arrangement, limb state, environment, and opponent condition. The same intent resolves differently depending on state.
+2. **Physical Truth** — deterministic 60 Hz truth, 120 Hz contact, stable hashes, replay-identical across platforms.
+3. **Generative Motion, No Clips** — MotionBricks generates all motion per tick from the live condition packet. No canned animations, no baked pose banks, no fallback clips. Motion that fails is a build-blocking defect repaired at the source.
+4. **Emergent Depth** — simple intent rules, complex outcomes through continuous state interaction and condition-driven motion.
 5. **Presentation Isolated** — renderer, animation, camera, and audio never mutate combat truth.
 
 ## Locked Engine Decision
 
-- **Engine:** Custom Rust + wgpu.
-- **Windowing:** winit 0.30.
-- **Math:** glam 0.28.
-- **Audio:** rodio or kira (decided at implementation).
-- **Physics:** none for prototype; deterministic geometric collision only.
-- **Networking:** added only after local vertical slice is accepted fun.
-
-This overrides any older doc language describing a "minimal triangle prototype" or "Godot project." The current repository is a Rust/wgpu custom engine.
+- **Engine:** Custom Rust + wgpu 0.30, winit 0.30, glam 0.28
+- **Physics:** deterministic fixed-step contact, active-ragdoll, injury, bounded per-object material/SDF truth
+- **Motion:** MotionBricks sole animation authority; live generative, condition-driven, no clips
+- **Assets:** Meshy web (primary) + API (batch/repeatable); Blender as DCC authority; GPT Image for concepts
+- **Audio:** rodio or kira (implemented at need)
+- **Networking:** after local vertical slice accepted
 
 ## Locked Scope Boundaries
 
-- **In scope:** 1v1 simultaneous-reveal dueling, 13-action matrix, deep localized injury and tissue damage, deep armor/material simulation, deep martial-arts motion via MotionBricks, deterministic AI, replay theater, fight film, local 2P, tutorial, Steam launch.
-- **Fidelity target:** For Honor visual and physical fidelity combined with YOMI Hustle simultaneous-reveal game loop.
-- **Motion engine lock:** MotionBricks is the sole animation, stance, pose, combat motion, and retargeting engine. Prebaked action clips and motion fallbacks are disallowed. MotionBricks must work for every required action; missing or broken motion is a build-blocking defect.
-- **Hitbox parity:** Collision proxies must match visual geometry exactly. No oversized hitboxes, no ghost hits, no phantom range.
-- **Out of scope:** open world, crafting/loot, MMO, narrative/dialogue trees, physics-driven comedy, networking before vertical slice.
+- **In scope:** 1v1 simultaneous-intent dueling, 13-action matrix, deep localized injury, armor/material simulation, generative MotionBricks motion, deterministic AI, replay theater, fight film, local 2P, tutorial, Steam launch.
+- **Motion engine lock:** MotionBricks generates all motion conditioned on intent, displacement, limb state, weapon hand, opponent state, injury, momentum, speed, velocity, root transform. Continuous state space; archetype-constrained, never clip-quantized. If MotionBricks cannot generate acceptable motion for a required action, the pipeline is repaired or retrained — never downgraded to procedural fallback.
+- **Hitbox parity:** collision proxies match visual geometry. No oversized hitboxes, ghost hits, phantom range.
+- **Out of scope:** open world, crafting/loot, MMO, narrative/dialogue trees, networking before vertical slice.
+
+## Asset Production Doctrine (Amended 2026-07-21 — Deep Research)
+
+**Meshy is demoted from "blocker" to "candidate generator."** The repo's own
+RISK-007 prescribes building with triangles until the asset pipeline is proven.
+The existing 24-bone armored duelist (verified in M3 truth/replay) is frozen
+as the canonical test body. Meshy API provides all essential features (polycount
+control via `should_remesh`, rigging via `meshy_rig`) but character generation
+is not the active blocker — motion readability is.
+
+**Recommended stable carrier: MPFB2** (CC0 license, 163-bone rig, Blender-native).
+MPFB provides a repeatable humanoid base with known rig, symmetry, naming, and
+deformation behavior. Proven in earlier canary work. Body is the deforming
+substrate; armor is separate fitted pieces attached via Shrinkwrap/Surface Deform.
+
+**Body + armor separation:** Body is the deforming substrate (use MPFB2 carrier or
+existing duelist). Armor is an attachment/fitting problem (Blender Shrinkwrap, Surface
+Deform, bone attachments). Do not co-generate body+armor in one Meshy pass.
+
+**Sequence (from repo's own roadmap):**
+1. Deterministic duel loop (M3 truth/replay — DONE)
+2. Readable simultaneous-commit combat (PVP-005 — ACTIVE BLOCKER)
+3. Coupled articulated physics
+4. Richer content (Meshy as candidate source, Blender as DCC authority)
+
+**Meshy role:** Generate clean base bodies or single armor components.
+Post-process in Blender 5.2 LTS. Export GLB with `combat_metadata.json` sidecar.
+Validate with Khronos glTF Validator + project visual QA protocol.
+
+## Evidence Portal (ADHD-Style)
+
+The evidence review tool must follow these rules (derived from `ayghri/i-have-adhd`, 6.5K stars, GitHub trending #4, 2026-07-21):
+
+1. Lead with the visual (screenshot/GIF/video), not text
+2. One decision at a time, not a multi-page report
+3. Multiple choice: Accept / Reject / Needs Changes
+4. No verbose explanations, no log dumps, no "hope this helps"
+5. Show concrete next step after each decision
+6. Cap lists at 5 items
+7. Make wins visible: "3/7 accepted, 1 rejected, 3 pending"
 
 ## Locked Verification Doctrine
 
-- The game is developed to its full potential and full fidelity, regardless of single-developer constraints or engineering difficulty.
-- Fun is measured by replay requests, story retelling, clip creation, and friend referrals — not by screenshots.
-- Every stage ends with a playable build and evidence report.
+- Fun is measured by replay requests, story retelling, clip creation, and friend referrals — not screenshots.
+- Every stage ends with a playable build and a visual (not text) evidence checkpoint.
 - Truth hash must remain stable across presentation changes.
 - Player mode must never show placeholder UI or debug overlays.
-- No production scope advance until the corresponding prototype report says CONTINUE and the evidence gate passes.
+- No production scope advance until the visual gate passes.
 - Hardship or resource constraints do not justify fallbacks, placeholders, or reduced fidelity.
+- Character, equipment, weapon grip and player-camera promotion must satisfy `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md`.
+
+## Lessons Learned (from OATHYARD, Hustle & Honor, and Just Dodge SG01-SG02)
+
+1. **Infrastructure gates expand infinitely.** Evidence quarantine, cross-platform parity receipts, and CI matrices can consume 95% of development time while producing zero gameplay. Infrastructure serves the game; the game does not serve the infrastructure.
+2. **Visual evidence must be fast to judge.** If the owner cannot decide in 30 seconds from a screenshot/GIF and a multiple-choice prompt, the evidence system is broken.
+3. **The core loop must be proven before anything else.** A playable mannequin duel with basic intent→motion→contact→result teaches more than months of infrastructure work.
+4. **No asset promotion without visual acceptance.** A generated mesh that hasn't been seen in-engine is not an asset — it's a candidate. Promote only after owner visual gate.
+5. **MotionBricks must produce visual evidence or the game cannot ship.** The entire selling point depends on generative motion. The first deliverable is proof that the pipeline works end-to-end.
 
 ## Drift Resolutions
 
 | Drift | Resolution |
 |---|---|
-| README says repo is code-empty. | Repo has substantial Rust/wgpu/MotionBricks code; this canon acknowledges the real baseline. |
-| Milestone 2 mentions Godot project. | Engine is Rust/wgpu custom; milestone text is superseded. |
-| Shape prototype plans triangles-only. | Current source has textured arena and skinned mannequin; next prototype still targets a 3-action playable loop, using existing renderer as context only. |
-| Asset loader/extractor format ordering may mismatch. | Accept as known pipeline risk; fix before next asset import. |
-| Motion dimensions in older docs (241/329) vs code (304/413). | Current exported model metadata wins; reconcile with actual ONNX metadata before next motion milestone. |
-| ONNX/NPY artifacts are gitignored. | Runtime requires externally generated artifacts; packaging must include them. Missing artifacts block the build; no motion fallback exists. |
+| Old SG01-SG10 sequential gating | Replaced by visual-first pipeline (2026-07-21) |
+| Evidence review prioritized logs over visuals | Replaced by ADHD-style visual checklist (2026-07-21) |
+| Asset pipeline used MCP API as primary | Meshy web is now primary; API for batch/repeatable (2026-07-21) |
+| Game described as "simultaneous-reveal duel" | Amended to "deep-simulation intent-combat" emphasizing condition-driven emergent motion (2026-07-21) |
+| README says repo is code-empty | Repo has substantial Rust/wgpu code; canon acknowledges real baseline |
+| Older docs permit prebaked fallback clips | SUPERSEDED: baked clips forbidden in all modes |
+| ONNX/NPY artifacts gitignored | Runtime requires externally generated artifacts; packaging must include them |
 
 ## Next Canon Amendment
 
 This canon is amended only by explicit user decision, never by drift. Any amendment must update this file and the affected PRDs.
+
+## Technique Forge (Future Feature — Design Complete)
+
+**Status:** Post-first-playable. Depends on interaction-conditioned MotionBricks,
+active ragdoll, shared articulated physics, pose-derived collision.
+
+Full design: docs/design/TECHNIQUE_FORGE_DESIGN.md (to be written from 2026-07-21 session)

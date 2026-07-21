@@ -205,6 +205,8 @@ initial_seed + input_stream + ruleset_version + asset_manifest_hash
 
 ## Visual QA Protocol
 
+Character, armor, weapon, grip and player-camera evidence inherits `design/CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md` and `quality/ADVERSARIAL_VISUAL_CONTRACT.md`. The abbreviated capture list below is for gameplay-state coverage; it does not replace the permanent fixed-view/AOV/stress-pose/raw-to-runtime asset packet.
+
 ### Capture Requirements
 
 For each action or tested state, capture:
@@ -227,6 +229,8 @@ For each content combination selected for QA, capture:
 - injury/armor consequence readable;
 - UI not clipped;
 - camera not hiding state.
+
+For any asset-promotion claim, also require the permanent contract's raw, Blender, cooked and live-runtime stages; fixed multi-view set; clay/silhouette/wireframe/normals/weights/socket/proxy AOVs; deformation playback; grip macro evidence; pair-clearance reports; clean re-import; cooker verification; and named human decision. One front render remains provisional even when every visible checklist item passes.
 
 ### Visual Audit Questions
 

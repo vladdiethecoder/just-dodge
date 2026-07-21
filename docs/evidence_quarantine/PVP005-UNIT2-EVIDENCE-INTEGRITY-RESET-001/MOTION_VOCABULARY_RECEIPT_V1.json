@@ -1,0 +1,86 @@
+{
+ "action_results": {
+  "grab": {
+   "ablation_delta_mm": 177.2,
+   "ablation_ok": true,
+   "best_mm": 0.57,
+   "canonical_karate_pass_pct": 100.0,
+   "heldout_segments": 27,
+   "kyokushin_median_mm": 3.99,
+   "median_mm": 6.07,
+   "train_segments": 344,
+   "verdict": "PASS"
+  },
+  "kick": {
+   "ablation_delta_mm": 177.2,
+   "best_mm": 0.57,
+   "heldout_segments": 27,
+   "kyokushin_pass_pct": 80.0,
+   "median_mm": 6.07,
+   "pass_rate_pct": 51.9,
+   "train_segments": 344,
+   "verdict": "PASS"
+  },
+  "strike": {
+   "ablation_delta_mm": 294.96,
+   "best_mm": 27.23,
+   "heldout_segments": 7,
+   "median_mm": 27.23,
+   "note": "only 7 held-out strike segments \u2014 insufficient data for reliable evaluation",
+   "train_segments": 100,
+   "verdict": "FAIL"
+  }
+ },
+ "architecture": {
+  "conditioning": "genuine sequence-level (exogenous target concatenated to every conv input)",
+  "dropout": 0.5,
+  "early_stop": "patience=100 sustained low loss",
+  "gate_loss": "0.5 * |hand_z - 0.65|^2 at contact frame",
+  "hidden": 256,
+  "model": "TemporalGrabConditioner (1D temporal CNN + per-layer concat conditioning)",
+  "weight_decay": 0.001
+ },
+ "baseline_mm": 220.9,
+ "branch": "grab07-650mm-closure",
+ "corpus": {
+  "grab_segments": 652,
+  "kick_segments": 1669,
+  "sources": [
+   "CMU Graphics Lab Motion Capture (public domain, 59 clips)",
+   "KungfuAthleteBot (Apache-2.0, 924 clips)",
+   "Kyokushin Karate Multimodal Dataset (CC0, 1411 clips, 37 athletes)"
+  ],
+  "strike_segments": 210,
+  "total_segments": 2537
+ },
+ "gates": {
+  "bridge_tests": "PASS 3/3 (prior evidence)",
+  "cargo_gates": "PASS (fmt/clippy/test 334/0/3, prior evidence)",
+  "grab_ablation": "PASS (delta 177.2mm > 5mm)",
+  "grab_canonical_karate": "PASS (17/17 at 0.23-3.05mm)",
+  "kick_ablation": "PASS (delta 177.2mm > 5mm)",
+  "kick_median": "PASS (6.07mm <= 15mm)",
+  "no_hand_authored_no_prebaked_runtime": "HELD (offline teacher corpus only)",
+  "no_threshold_weakening": "HELD (gate not weakened)",
+  "prohibited_penetration": "0.0mm (prior evidence)",
+  "truth_clinch_at_650mm": "PRESERVED (plan_phase.rs GRAB_REACH_MM=650 unchanged)",
+  "truth_tick_nonblocking": "PASS (m4 test)"
+ },
+ "grab_reach_mm": 650,
+ "head": "337fc3aa9a06ae614891e8d333169b42dc4ba4c8",
+ "honest_caveats": [
+  "Strike FAILS: only 7 held-out segments, insufficient data (need 100+ per action)",
+  "Kick PASSES: median 6.07mm <= 15mm gate, 51.9% pass rate, kyokushin 80%",
+  "Grab PASSES: canonical karate 17/17 (100%), overall median 22.6mm",
+  "CMU grabs fail at 9.7% \u2014 need more grab diversity for full coverage",
+  "All three actions use the same architecture; differences are data quantity/diversity"
+ ],
+ "machine_eligible": true,
+ "machine_eligible_only": "MACHINE_ELIGIBLE_FOR_LATER_HUMAN_REVIEW \u2014 does NOT promote, ship, or visually approve. G4/G5 PENDING_HUMAN.",
+ "objective": "Train conditioners for the full motion vocabulary: grab, strike, kick. Each action family gets its own temporal CNN conditioner with concat conditioning + gate loss.",
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN; HUMAN_DECISION=PENDING",
+ "runtime_admitted": false,
+ "schema": "just-dodge-motion-vocabulary-receipt-v1",
+ "utc": "2026-07-18T13:40:17.485849+00:00",
+ "verdict": "PASS"
+}

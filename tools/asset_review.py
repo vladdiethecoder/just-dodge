@@ -564,6 +564,162 @@ def _mesh_doctor_report(root: Path, asset: str) -> dict[str, Any]:
     }
 
 
+# Grab-07 is a review-only surface. Capture workers own promotion artifacts;
+# ForgeLens may annotate, decide, or queue a candidate but never promotes it.
+_GRAB07_DIR = "qa_runs/grab07_promotion"
+_GRAB07_VIEWS = ("first_person", "front", "side", "top", "three_quarter")
+_GRAB07_STATES = ("BEFORE", "DETECTED", "REPAIR_PREVIEW", "AFTER", "AB_DIFFERENCE")
+_GRAB07_PASSES = (
+    "beauty", "wireframe", "skeleton", "object_id", "material_id", "normals",
+    "depth", "collision_proxies", "penetration_heatmap", "contact_points_normals",
+    "allowed_contact_masks", "trajectories",
+)
+
+
+def _grab07_path(root: Path, relative: str) -> Path:
+    base = (root / _GRAB07_DIR).resolve()
+    path = (base / relative).resolve()
+    try:
+        path.relative_to(base)
+    except ValueError as exc:
+        raise ValueError("Grab-07 path escapes its artifact directory") from exc
+    return path
+
+
+def _grab07_json(path: Path, default: Any) -> Any:
+    if not path.is_file():
+        return default
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Grab-07 JSON is unreadable: {path.name}: {exc}") from exc
+
+
+def _grab07_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        with path.open(encoding="utf-8") as handle:
+            for number, line in enumerate(handle, 1):
+                if line.strip():
+                    row = json.loads(line)
+                    if not isinstance(row, dict):
+                        raise ValueError(f"line {number} is not a JSON object")
+                    rows.append(row)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Grab-07 JSONL is unreadable: {path.name}: {exc}") from exc
+    return rows
+
+
+def _grab07_image_index(root: Path) -> dict[str, Any]:
+    image_root = _grab07_path(root, "images")
+    views: dict[str, dict[str, dict[str, str]]] = {
+        view: {"states": {}, "passes": {}} for view in _GRAB07_VIEWS
+    }
+    count = 0
+    if image_root.is_dir():
+        for path in sorted(image_root.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp", ".exr"}:
+                continue
+            for view in _GRAB07_VIEWS:
+                prefix = f"{view}_"
+                if not path.stem.startswith(prefix):
+                    continue
+                layer = path.stem[len(prefix):]
+                relative = path.relative_to(_grab07_path(root, "")).as_posix()
+                if layer in _GRAB07_STATES:
+                    views[view]["states"][layer] = relative
+                    count += 1
+                elif layer in _GRAB07_PASSES:
+                    views[view]["passes"][layer] = relative
+                    count += 1
+                break
+    return {"views": views, "count": count}
+
+
+def _grab07_artifact_hashes(root: Path) -> dict[str, str]:
+    names = ("capture.jsonl", "findings.jsonl", "phases.json", "cameras.json", "receipt.json")
+    return {name: _sha256_file(_grab07_path(root, name)) for name in names if _grab07_path(root, name).is_file()}
+
+
+def _grab07_bundle(root: Path) -> dict[str, Any]:
+    base = _grab07_path(root, "")
+    captures = _grab07_jsonl(_grab07_path(root, "capture.jsonl"))
+    findings = _grab07_jsonl(_grab07_path(root, "findings.jsonl"))
+    captures_by_tick = {str(row["physics_tick"]): row for row in captures if isinstance(row.get("physics_tick"), int)}
+    findings_by_tick: dict[str, list[dict[str, Any]]] = {}
+    for finding in findings:
+        if isinstance(finding.get("physics_tick"), int):
+            findings_by_tick.setdefault(str(finding["physics_tick"]), []).append(finding)
+    for rows in findings_by_tick.values():
+        rows.sort(key=lambda row: float(row.get("signed_depth_m", 0.0)))
+    deepest = min(findings, key=lambda row: float(row.get("signed_depth_m", 0.0)), default=None)
+    receipt = _grab07_json(_grab07_path(root, "receipt.json"), {})
+    worst = receipt.get("worst_substep") if isinstance(receipt, dict) else None
+    if not isinstance(worst, dict) and deepest is not None:
+        worst = {"physics_tick": deepest.get("physics_tick"), "render_frame": deepest.get("physics_tick", 0) // 2}
+    return {
+        "schema": "forgelens.grab07-review/v1", "available": base.is_dir(), "artifact_root": _GRAB07_DIR,
+        "phases": _grab07_json(_grab07_path(root, "phases.json"), []),
+        "captures_by_physics_tick": captures_by_tick, "findings_by_physics_tick": findings_by_tick,
+        "worst_substep": worst, "image_layers": _grab07_image_index(root),
+        "artifact_hashes": _grab07_artifact_hashes(root),
+        "review": _grab07_json(_grab07_path(root, "review/pins.json"), {"schema": "forgelens.grab07-pins/v1", "pins": []}),
+        "note": "Automatic vision can prioritize findings but cannot approve or promote this artifact.",
+    }
+
+
+def _grab07_save_pin(root: Path, payload: Any, actor_id: str) -> dict[str, Any]:
+    payload = _exact_object_fields(payload, "grab07 pin request", {"finding", "comment", "assignee"})
+    finding = _required_field(payload, "finding")
+    if not isinstance(finding, dict) or not isinstance(finding.get("physics_tick"), int) or not isinstance(finding.get("triangle_ids"), list) or not isinstance(finding.get("barycentric"), list):
+        raise ValueError("pin requires physics_tick, triangle_ids, and barycentric geometry anchor")
+    comment = _bounded_string(_required_field(payload, "comment"), "comment", maximum=MAX_COMMENT_CHARS)
+    assignee = _bounded_string(_required_field(payload, "assignee"), "assignee", maximum=200)
+    path = _grab07_path(root, "review/pins.json")
+    document = _grab07_json(path, {"schema": "forgelens.grab07-pins/v1", "pins": []})
+    pins = document.get("pins") if isinstance(document, dict) else None
+    if not isinstance(pins, list):
+        raise ValueError("Grab-07 pin sidecar has invalid pins")
+    pin = {"pin_id": secrets.token_hex(12), "created_at": utc_now(), "reviewer": actor_id, "comment": comment, "assignee": assignee, "finding": finding}
+    pins.append(pin)
+    _atomic_replace(path, _canonical_json_bytes({"schema": "forgelens.grab07-pins/v1", "pins": pins}) + b"\n")
+    return pin
+
+
+def _grab07_append_decision(root: Path, payload: Any, actor_id: str) -> dict[str, Any]:
+    payload = _exact_object_fields(payload, "grab07 decision request", {"decision", "reviewer"})
+    decision = _required_field(payload, "decision")
+    if decision not in {"approved", "rejected"}:
+        raise ValueError("decision must be approved or rejected")
+    receipt = {"schema": "forgelens.grab07-human-decision/v1", "decision": decision,
+               "reviewer": _bounded_string(_required_field(payload, "reviewer"), "reviewer", maximum=200),
+               "authenticated_actor_id": actor_id, "timestamp": utc_now(), "artifact_hashes": _grab07_artifact_hashes(root),
+               "authority_note": "Human decision only; automatic vision cannot approve or promote."}
+    digest = hashlib.sha256(_canonical_json_bytes(receipt)).hexdigest()
+    receipt["receipt_sha256"] = digest
+    _write_immutable(_grab07_path(root, f"review/decisions/{utc_now().replace(':', '').replace('-', '')}-{digest}.json"), _canonical_json_bytes(receipt) + b"\n")
+    return receipt
+
+
+def _grab07_queue_repair(root: Path, payload: Any, actor_id: str) -> dict[str, Any]:
+    payload = _exact_object_fields(payload, "grab07 repair request", {"finding", "reviewer"})
+    finding = _required_field(payload, "finding")
+    if not isinstance(finding, dict) or not isinstance(finding.get("triangle_ids"), list) or not isinstance(finding.get("barycentric"), list):
+        raise ValueError("repair candidate requires a geometry-anchored finding")
+    candidate_id = f"grab07-repair-{secrets.token_hex(10)}"
+    receipt = {"schema": "forgelens.grab07-repair-candidate/v1", "candidate_id": candidate_id, "queued_at": utc_now(),
+               "reviewer": _bounded_string(_required_field(payload, "reviewer"), "reviewer", maximum=200), "authenticated_actor_id": actor_id,
+               "source_artifact_hashes": _grab07_artifact_hashes(root), "finding": finding, "state": "queued_for_blender",
+               "immutable": True, "source_mutated": False, "promoted": False, "runtime_admitted": False,
+               "authority_note": "Queued repair creates a new candidate only; it never mutates or auto-promotes the reviewed artifact."}
+    digest = hashlib.sha256(_canonical_json_bytes(receipt)).hexdigest()
+    receipt["receipt_sha256"] = digest
+    _write_immutable(_grab07_path(root, f"review/repair_candidates/{candidate_id}/repair_receipt.json"), _canonical_json_bytes(receipt) + b"\n")
+    return receipt
+
+
 def asset_family(relative: Path) -> str:
     parts = relative.parts
     if "meshy" in parts:
@@ -4832,6 +4988,24 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
                 safe_repo_path(self.context.root, asset)
                 self._send_json(_mesh_doctor_report(self.context.root, asset))
                 return
+            if route == "/api/grab07":
+                self._require_authority(mutation=False)
+                if parsed.query:
+                    raise ValueError("Grab-07 endpoint does not accept query parameters")
+                self._send_json(_grab07_bundle(self.context.root))
+                return
+            if route.startswith("/api/grab07/image/"):
+                self._require_authority(mutation=False)
+                relative = urllib.parse.unquote(route[len("/api/grab07/image/") :])
+                if not relative.startswith("images/"):
+                    raise ValueError("Grab-07 image path must be inside images/")
+                path = _grab07_path(self.context.root, relative)
+                if not path.is_file() or path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp", ".exr"}:
+                    self._error(HTTPStatus.NOT_FOUND, "Grab-07 image not found")
+                    return
+                content_type = mimetypes.guess_type(path.name)[0] or ("image/x-exr" if path.suffix.lower() == ".exr" else "application/octet-stream")
+                self._send_bytes(path.read_bytes(), content_type, extra_headers=(("X-ForgeLens-SHA256", _sha256_file(path)),))
+                return
             if route.startswith("/file/"):
                 self._require_authority(mutation=False)
                 relative = urllib.parse.unquote(route[len("/file/") :])
@@ -4901,6 +5075,9 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
             "/api/viewer-context",
             "/api/review-run-export",
             "/api/motion-lab-annotation",
+            "/api/grab07/pin",
+            "/api/grab07/decision",
+            "/api/grab07/queue-blender-repair",
         }:
             self._error(HTTPStatus.NOT_FOUND, "route not found")
             return
@@ -4944,6 +5121,15 @@ class AssetReviewHandler(BaseHTTPRequestHandler):
                 if self.context.motion_lab is None:
                     raise ValueError("Motion Lab is disabled; annotations require --motion-lab")
                 result = self.context.motion_lab.append_annotation(payload, actor_id=authority["actorId"])
+                response_status = HTTPStatus.CREATED
+            elif route == "/api/grab07/pin":
+                result = _grab07_save_pin(self.context.root, payload, authority["actorId"])
+                response_status = HTTPStatus.CREATED
+            elif route == "/api/grab07/decision":
+                result = _grab07_append_decision(self.context.root, payload, authority["actorId"])
+                response_status = HTTPStatus.CREATED
+            elif route == "/api/grab07/queue-blender-repair":
+                result = _grab07_queue_repair(self.context.root, payload, authority["actorId"])
                 response_status = HTTPStatus.CREATED
             elif route == "/api/review-pin":
                 if self.context.review_runs is None:

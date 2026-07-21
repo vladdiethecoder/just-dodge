@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -125,15 +126,16 @@ def _euler_to_matrix(order: List[str], angles: np.ndarray) -> np.ndarray:
     CMU uses Zrotation Yrotation Xrotation -> scipy 'zyx' intrinsic.
     """
     if len(order) == 3 and all("rotation" in c.lower() for c in order):
+        # 3-channel joint: Zrotation Yrotation Xrotation
         z = angles[0] if "Z" in order[0] else 0.0
         y = angles[1] if "Y" in order[1] else 0.0
         x = angles[2] if "X" in order[2] else 0.0
         return Rotation.from_euler("zyx", [z, y, x], degrees=True).as_matrix().astype(np.float32)
     elif len(order) == 6:
         # root: Xposition Yposition Zposition Zrotation Yrotation Xrotation
-        z = angles[3]
-        y = angles[4]
-        x = angles[5]
+        z = angles[3] if len(angles) > 3 else 0.0
+        y = angles[4] if len(angles) > 4 else 0.0
+        x = angles[5] if len(angles) > 5 else 0.0
         return Rotation.from_euler("zyx", [z, y, x], degrees=True).as_matrix().astype(np.float32)
     else:
         raise ValueError(f"Unsupported channel order: {order}")
@@ -301,10 +303,20 @@ def retarget(source_path: str, source_format: str, out_path: str, target_fps: fl
     parents = g1["parents"]
     offsets = np.array(g1["offsets"], dtype=np.float32)
     cmu_map = cfg["maps"]["cmu"]
+    # Load Harmony4D-specific retarget map if available
+    h4d_map_path = Path("tools/data/g1_retarget_map_harmony4d.json")
+    if h4d_map_path.exists():
+        h4d_cfg = json.load(open(h4d_map_path))
+        cmu_map = h4d_cfg["maps"]["cmu"]
 
     # Compute scale factor so that CMU leg length matches G1 leg length.
-    # Use left leg: LeftUpLeg -> LeftLeg -> LeftFoot.
-    cmu_hip_to_ankle = _offset_chain_length(root, ["LeftUpLeg", "LeftLeg", "LeftFoot"])
+    # Use left leg: LeftLeg -> LeftShin -> LeftFoot (or LeftUpLeg -> LeftLeg -> LeftFoot for CMU)
+    leg_chain = ["LeftLeg", "LeftShin", "LeftFoot"]
+    try:
+        cmu_hip_to_ankle = _offset_chain_length(root, leg_chain)
+    except ValueError:
+        leg_chain = ["LeftUpLeg", "LeftLeg", "LeftFoot"]
+        cmu_hip_to_ankle = _offset_chain_length(root, leg_chain)
     g1_hip_to_ankle = float(
         np.linalg.norm(offsets[1])
         + np.linalg.norm(offsets[2])

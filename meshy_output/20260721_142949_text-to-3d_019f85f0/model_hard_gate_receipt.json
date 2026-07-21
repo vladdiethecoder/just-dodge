@@ -1,0 +1,70 @@
+{
+  "tool": "validate_glb_hard_gates",
+  "timestamp": "2026-07-21T20:20:20.085544Z",
+  "model_path": "meshy_output/20260721_142949_text-to-3d_019f85f0/model.glb",
+  "sha256": "5901e19262cc6494cbda9f473ebfe3221ccdd2060670a79a163ff5f833f65240",
+  "file_size": 43131612,
+  "glb_info": {
+    "file_size": 43131612,
+    "vertices": 239914,
+    "triangles": 463328,
+    "bones": 0,
+    "materials": 1,
+    "bounds": {
+      "min": [
+        -0.8536869883537292,
+        -0.9507459998130798,
+        -0.18027600646018982
+      ],
+      "max": [
+        0.8504980206489563,
+        0.9477030038833618,
+        0.17781700193881989
+      ]
+    },
+    "width": 1.7041850090026855,
+    "height": 1.8984490036964417,
+    "arm_span_to_height": 0.8977
+  },
+  "gates": [
+    {
+      "name": "vertices_ok",
+      "pass": false,
+      "detail": "239914 (\u226425,000)"
+    },
+    {
+      "name": "triangles_ok",
+      "pass": false,
+      "detail": "463328 (\u226450,000)"
+    },
+    {
+      "name": "bones_ok",
+      "pass": false,
+      "detail": "0 (\u226524)"
+    },
+    {
+      "name": "materials_ok",
+      "pass": false,
+      "detail": "1 (\u22652)"
+    },
+    {
+      "name": "arm_span_ok",
+      "pass": false,
+      "detail": "0.8977 (\u22650.95)"
+    },
+    {
+      "name": "rigging_budget_ok",
+      "pass": false,
+      "detail": "463328 (\u2264300,000 for rigging)"
+    },
+    {
+      "name": "watertight_ok",
+      "pass": null,
+      "detail": "skipped (basic gates failed)"
+    }
+  ],
+  "passed": 0,
+  "failed": 6,
+  "skipped": 1,
+  "verdict": "REJECT"
+}

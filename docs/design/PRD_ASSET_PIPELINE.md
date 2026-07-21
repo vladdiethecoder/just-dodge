@@ -25,7 +25,8 @@ Convert source art (FBX/GLB) into deterministic runtime binaries with verified m
 |---|---|---|---|
 | static_mesh_bin | .bin | PRD_RENDERER.md | Runtime static mesh |
 | skinned_mesh_skm1 | .bin | PRD_RENDERER.md | Runtime skinned mesh |
-| animation_anm1 | .anim | PRD_MOTION.md | Runtime animation clip |
+| motion_model_bundle | model + normalization + schema artifacts | PRD_MOTION.md | Live generative MotionBricks/ARDY inputs; never a runtime clip or pose bank |
+| equipment_contract_manifest | JSON | Cooker, QA | Attachment class, sockets, grip frame, clearance, coverage, material/SDF and evidence lineage |
 | asset_manifest | JSON | Build/package | Inventory of all assets |
 
 ### Events / Signals
@@ -37,10 +38,10 @@ Convert source art (FBX/GLB) into deterministic runtime binaries with verified m
 
 1. Source asset and metadata are placed in source tree.
 2. Extraction tool converts to runtime binary format.
-3. Verifier checks counts, bounds, weights, bone mapping, and metadata completeness.
+3. Verifier checks counts, bounds, transforms, topology, weights, bone mapping, attachment classes, sockets/grip frame, clearance, provenance and metadata completeness.
 4. Asset manifest is updated with entry.
 5. Runtime loader reads manifest and binaries.
-6. Visual QA capture validates final appearance.
+6. The permanent visual contract validates raw, Blender, cooked and live-runtime stages; a single still or machine-only verdict cannot promote an asset.
 
 ## 5. Control Flow
 
@@ -52,7 +53,7 @@ Convert source art (FBX/GLB) into deterministic runtime binaries with verified m
 
 - **Fail-closed:** unverified assets are rejected from build.
 - **Fail-closed:** missing texture blocks the build; no placeholder checkerboard or fallback texture is permitted.
-- **Degradation:** lower LOD or simplified mesh substitutes if high-res asset fails.
+- **No silent substitution:** a lower LOD must derive from the same admitted authority mesh and pass its own silhouette/deformation/error gates. An unrelated simplified mesh cannot replace a failed asset.
 
 ## 7. Performance Budget
 
@@ -65,8 +66,9 @@ Convert source art (FBX/GLB) into deterministic runtime binaries with verified m
 ## 8. Dependencies
 
 - PRD_RENDERER.md — consumes meshes and textures.
-- PRD_MOTION.md — consumes animations, skeletons, and MotionBricks ONNX/NPY artifacts.
-- PRD_COMBAT_TRUTH.md — may use hitbox proxy meshes derived from MotionBricks poses.
+- PRD_MOTION.md — consumes skeletons, live-model bundles, normalization data and packet schemas; Player mode consumes no animation clips.
+- PRD_COMBAT_TRUTH.md — owns deterministic contact/proxy authority and consumes only admitted, hash-bound plan/geometry inputs; it never reads renderer output.
+- CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md — attachment, grip, clearance and multi-stage evidence contract.
 
 ## 9. Open Questions
 

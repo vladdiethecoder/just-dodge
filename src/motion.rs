@@ -636,7 +636,12 @@ pub fn load_g1_frames_from_bytes(data: &[u8]) -> Result<Vec<[Mat4; 34]>> {
         );
     }
     let frame_count = data.len() / (413 * 4);
-    let floats = bytemuck::cast_slice::<u8, f32>(data);
+    // bytemuck::cast_slice panics if the byte slice is not 4-byte aligned
+    // (observed on CI x86_64 runners with include_bytes! data). Copy into an
+    // aligned buffer once — the clips are small and immutable.
+    let mut aligned: Vec<u8> = Vec::with_capacity(data.len());
+    aligned.extend_from_slice(data);
+    let floats = bytemuck::cast_slice::<u8, f32>(&aligned);
     let mut frames = Vec::with_capacity(frame_count);
     for f in 0..frame_count {
         let base = f * 413;

@@ -209,6 +209,7 @@ struct App {
     renderer: Option<renderer::Renderer>,
     ui_renderer: Option<ui::UiRenderer>,
     runtime_assets: PathBuf,
+    lifecycle_qa_mesh: Option<asset::SkinnedMeshData>,
     camera: Camera,
     development_camera: DevelopmentCamera,
     start_time: Instant,
@@ -244,6 +245,9 @@ struct App {
     /// keyboard selection; it is never the default launch mode.
     autoplay: bool,
     verify: bool,
+    journey_limit: Option<usize>,
+    journeys_completed: usize,
+    journey_evidence: JourneyEvidence,
     // Telemetry + locomotion
     telemetry: telemetry::Telemetry,
     player_pos: Vec3,
@@ -262,6 +266,109 @@ type CombatUpdate = (
     f32,
     input::PlayerIntent,
 );
+
+fn fresh_match_authorities(seed: u64) -> (m3::Session, m3_cleanbox::M3CleanboxWorld, m3::SeededAi) {
+    (
+        m3::Session::new(seed),
+        m3_cleanbox::M3CleanboxWorld::new(),
+        m3::SeededAi::new(seed),
+    )
+}
+
+const JOURNEY_QA_TICKS_PER_RENDER: u32 = 16;
+const JOURNEY_QA_MAX_TRUTH_TICKS: u32 = 20_000;
+const JOURNEY_STAGE_BOOT: u16 = 1 << 0;
+const JOURNEY_STAGE_MENU: u16 = 1 << 1;
+const JOURNEY_STAGE_SETUP: u16 = 1 << 2;
+const JOURNEY_STAGE_COUNTDOWN: u16 = 1 << 3;
+const JOURNEY_STAGE_DUEL: u16 = 1 << 4;
+const JOURNEY_STAGE_RESULT: u16 = 1 << 5;
+const JOURNEY_STAGE_REPLAY: u16 = 1 << 6;
+const JOURNEY_FIRST_REQUIRED: u16 = JOURNEY_STAGE_BOOT
+    | JOURNEY_STAGE_MENU
+    | JOURNEY_STAGE_SETUP
+    | JOURNEY_STAGE_COUNTDOWN
+    | JOURNEY_STAGE_DUEL
+    | JOURNEY_STAGE_RESULT
+    | JOURNEY_STAGE_REPLAY;
+const JOURNEY_REMATCH_REQUIRED: u16 = JOURNEY_STAGE_SETUP
+    | JOURNEY_STAGE_COUNTDOWN
+    | JOURNEY_STAGE_DUEL
+    | JOURNEY_STAGE_RESULT
+    | JOURNEY_STAGE_REPLAY;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct JourneyEvidence {
+    truth_ticks: u32,
+    stage_mask: u16,
+}
+
+impl JourneyEvidence {
+    fn observe(&mut self, stage: runtime_flow::FlowStage) {
+        self.stage_mask |= match stage {
+            runtime_flow::FlowStage::Boot => JOURNEY_STAGE_BOOT,
+            runtime_flow::FlowStage::Menu => JOURNEY_STAGE_MENU,
+            runtime_flow::FlowStage::MatchSetup => JOURNEY_STAGE_SETUP,
+            runtime_flow::FlowStage::Countdown => JOURNEY_STAGE_COUNTDOWN,
+            runtime_flow::FlowStage::Observe
+            | runtime_flow::FlowStage::Replan
+            | runtime_flow::FlowStage::Plan
+            | runtime_flow::FlowStage::Commit
+            | runtime_flow::FlowStage::Reveal
+            | runtime_flow::FlowStage::Resolve
+            | runtime_flow::FlowStage::Consequence => JOURNEY_STAGE_DUEL,
+            runtime_flow::FlowStage::Result => JOURNEY_STAGE_RESULT,
+            runtime_flow::FlowStage::Replay => JOURNEY_STAGE_REPLAY,
+            runtime_flow::FlowStage::Paused | runtime_flow::FlowStage::Quit => 0,
+        };
+    }
+
+    fn record_truth_tick(&mut self) -> Result<(), &'static str> {
+        if self.truth_ticks >= JOURNEY_QA_MAX_TRUTH_TICKS {
+            return Err("live journey exceeded deterministic truth-tick budget");
+        }
+        self.truth_ticks += 1;
+        Ok(())
+    }
+
+    fn has_required_stages(self, journey_index: usize) -> bool {
+        let required = if journey_index == 0 {
+            JOURNEY_FIRST_REQUIRED
+        } else {
+            JOURNEY_REMATCH_REQUIRED
+        };
+        self.stage_mask & required == required
+    }
+
+    fn reset_for_rematch(&mut self, initial_stage: runtime_flow::FlowStage) {
+        *self = Self::default();
+        self.observe(initial_stage);
+    }
+}
+
+fn initial_runtime_flow(journey_mode: bool, autoplay: bool) -> runtime_flow::RuntimeFlow {
+    if journey_mode {
+        runtime_flow::RuntimeFlow::boot()
+    } else if autoplay {
+        runtime_flow::RuntimeFlow::autoplay()
+    } else {
+        runtime_flow::RuntimeFlow::menu()
+    }
+}
+
+const fn qa_ticks_for_frame(journey_mode: bool, normal_ticks: u32) -> u32 {
+    if journey_mode {
+        JOURNEY_QA_TICKS_PER_RENDER
+    } else {
+        normal_ticks
+    }
+}
+
+fn runtime_replay_path(timestamp_seconds: u64, seed: u64) -> PathBuf {
+    PathBuf::from(format!(
+        "/tmp/just_dodge_m3_replay_{timestamp_seconds}_{seed:016x}.ron"
+    ))
+}
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -338,17 +445,38 @@ impl ApplicationHandler for App {
                 self.config.as_ref(),
             ) {
                 eprintln!("main: starting renderer init after first present");
-                self.renderer = Some(renderer::Renderer::new(
-                    device,
-                    queue,
-                    config,
-                    false,
-                    &self.runtime_assets,
-                ));
+                self.renderer = Some(if self.journey_limit.is_some() {
+                    renderer::Renderer::new_lifecycle_qa(
+                        device,
+                        queue,
+                        config,
+                        &self.runtime_assets,
+                        self.lifecycle_qa_mesh
+                            .as_ref()
+                            .expect("journey mode owns its procedural carrier"),
+                    )
+                } else {
+                    renderer::Renderer::new(
+                        device,
+                        queue,
+                        config,
+                        renderer::SceneProfile::Duel,
+                        &self.runtime_assets,
+                    )
+                });
                 self.ui_renderer = Some(ui::UiRenderer::new(device, queue, config));
                 self.last_frame_time = Instant::now();
                 self.fixed_step_clock = FixedStepClock::default();
                 eprintln!("main: renderer + UI init done");
+                if self.journey_limit.is_some() {
+                    let snapshot = self.session.game.snapshot();
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    assert!(self.flow.finish_boot(), "journey QA must start in Boot");
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    assert!(self.flow.start_match(), "journey QA must start from Menu");
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    eprintln!("SG02_LIVE_FLOW stage=Boot>Menu>MatchSetup");
+                }
             }
 
             if let Some(w) = self.window.as_ref() {
@@ -369,7 +497,18 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
-            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::CloseRequested => {
+                if let Some(limit) = self.journey_limit
+                    && self.journeys_completed < limit
+                {
+                    eprintln!(
+                        "SG02_LIVE_JOURNEYS=FAIL reason=window_closed completed={} required={limit}",
+                        self.journeys_completed
+                    );
+                    std::process::exit(1);
+                }
+                event_loop.exit();
+            }
 
             WindowEvent::Resized(physical) => {
                 let Some(device) = self.device.as_ref() else {
@@ -470,6 +609,57 @@ impl ApplicationHandler for App {
                         );
                         std::process::exit(1);
                     }
+                    if let Some(limit) = self.journey_limit {
+                        let stage = self.flow.stage(self.session.game.snapshot());
+                        self.journey_evidence.observe(stage);
+                        if stage == runtime_flow::FlowStage::Result {
+                            let snapshot = self.session.game.snapshot().clone();
+                            self.flow
+                                .enter_replay(&snapshot, self.session.replay.clone())
+                                .expect("verified live journey replay must enter from Result");
+                            self.journey_evidence
+                                .observe(runtime_flow::FlowStage::Replay);
+                            eprintln!("SG02_LIVE_FLOW stage=Result>Replay");
+                            return;
+                        }
+                        if stage != runtime_flow::FlowStage::Replay || !self.flow.replay_finished()
+                        {
+                            return;
+                        }
+                        assert!(
+                            self.journey_evidence
+                                .has_required_stages(self.journeys_completed),
+                            "live journey omitted a required outer-flow stage"
+                        );
+                        self.journeys_completed += 1;
+                        eprintln!(
+                            "SG02_LIVE_JOURNEY index={} seed={} terminal_hash={:016x} truth_ticks={} stage_mask={:02x} replay_verified=true",
+                            self.journeys_completed,
+                            self.session.game.snapshot().seed,
+                            self.session.game.truth_hash(),
+                            self.journey_evidence.truth_ticks,
+                            self.journey_evidence.stage_mask,
+                        );
+                        if self.journeys_completed >= limit {
+                            eprintln!(
+                                "SG02_LIVE_JOURNEYS=PASS count={} no_developer_control=true",
+                                self.journeys_completed
+                            );
+                            event_loop.exit();
+                        } else {
+                            let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
+                            assert!(self.flow.begin_rematch(self.session.game.snapshot()));
+                            self.reset_match(next_seed);
+                            self.journey_evidence
+                                .reset_for_rematch(self.flow.stage(self.session.game.snapshot()));
+                            eprintln!(
+                                "SG02_LIVE_REMATCH seed={} canonical_initial_hash={:016x} stage=MatchSetup",
+                                next_seed,
+                                self.session.game.truth_hash()
+                            );
+                        }
+                        return;
+                    }
                     event_loop.exit();
                 }
             }
@@ -490,7 +680,17 @@ impl App {
         let stage = self.flow.stage(self.session.game.snapshot());
 
         if command.quit {
+            assert!(self.flow.request_quit());
             event_loop.exit();
+            self.input.reset_flow();
+            return;
+        }
+        if command.pause {
+            if self.flow.toggle_pause(self.session.game.snapshot()) {
+                let stage = self.flow.stage(self.session.game.snapshot());
+                self.sync_cursor_capture(stage);
+                eprintln!("Player flow: {stage:?}");
+            }
             self.input.reset_flow();
             return;
         }
@@ -510,7 +710,7 @@ impl App {
             };
             self.reset_match(seed);
             assert!(self.flow.start_match());
-            eprintln!("Player flow: Establishing, seed {seed}");
+            eprintln!("Player flow: Match Setup, seed {seed}");
         } else if command.replay && stage == runtime_flow::FlowStage::Result {
             let snapshot = self.session.game.snapshot().clone();
             match self
@@ -527,9 +727,9 @@ impl App {
             )
         {
             let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
-            assert!(self.flow.begin_rematch());
+            assert!(self.flow.begin_rematch(self.session.game.snapshot()));
             self.reset_match(next_seed);
-            eprintln!("Player flow: rematch Establishing, seed {next_seed}");
+            eprintln!("Player flow: rematch Match Setup, seed {next_seed}");
         } else if command.rematch && stage.captures_cursor() {
             self.camera.reset();
             eprintln!("First-person camera reset");
@@ -538,15 +738,26 @@ impl App {
     }
 
     fn reset_match(&mut self, seed: u64) {
-        self.session = m3::Session::new(seed);
-        self.cleanbox_world = m3_cleanbox::M3CleanboxWorld::new();
-        self.ai = m3::SeededAi::new(seed);
+        (self.session, self.cleanbox_world, self.ai) = fresh_match_authorities(seed);
         self.replay_saved = false;
         self.replay_verified = false;
         self.fixed_step_clock = FixedStepClock::default();
         self.last_frame_time = Instant::now();
         self.input = input::InputState::default();
         self.camera.reset();
+
+        debug_assert_eq!(
+            self.session.game.truth_hash(),
+            m3::Match::new(seed).truth_hash()
+        );
+        debug_assert_eq!(self.session.replay.hash_trace.len(), 1);
+        debug_assert_eq!(self.cleanbox_world.next_physics_tick(), 0);
+        debug_assert_eq!(self.ai, m3::SeededAi::new(seed));
+        debug_assert!(!self.replay_saved && !self.replay_verified);
+        debug_assert_eq!(self.fixed_step_clock.tick_credit, 0);
+        debug_assert_eq!(self.camera.yaw, 0.0);
+        debug_assert_eq!(self.camera.pitch, 0.0);
+        debug_assert!(self.camera.last_mouse.is_none());
     }
 
     fn sync_cursor_capture(&mut self, stage: runtime_flow::FlowStage) {
@@ -691,11 +902,20 @@ impl App {
 
         // Advance and hash-record exactly once per authoritative 60 Hz tick.
         // A redraw can run zero or multiple ticks; fractional time is retained.
-        let ticks = self.fixed_step_clock.push_elapsed(real_dt);
+        let normal_ticks = self.fixed_step_clock.push_elapsed(real_dt);
+        let ticks = qa_ticks_for_frame(self.journey_limit.is_some(), normal_ticks);
         for _ in 0..ticks {
             let stage = self.flow.stage(self.session.game.snapshot());
+            if self.journey_limit.is_some() {
+                self.journey_evidence.observe(stage);
+                if stage.captures_cursor() {
+                    self.journey_evidence
+                        .record_truth_tick()
+                        .expect("live journey exceeded deterministic truth-tick budget");
+                }
+            }
             match stage {
-                runtime_flow::FlowStage::Establishing => {
+                runtime_flow::FlowStage::MatchSetup | runtime_flow::FlowStage::Countdown => {
                     self.flow.tick_establishing();
                 }
                 runtime_flow::FlowStage::Replay => {
@@ -703,7 +923,11 @@ impl App {
                         .advance_replay()
                         .expect("validated replay playback must remain deterministic");
                 }
-                runtime_flow::FlowStage::Menu | runtime_flow::FlowStage::Result => {}
+                runtime_flow::FlowStage::Boot
+                | runtime_flow::FlowStage::Menu
+                | runtime_flow::FlowStage::Result
+                | runtime_flow::FlowStage::Paused
+                | runtime_flow::FlowStage::Quit => {}
                 _ => {
                     debug_assert!(
                         self.flow.truth_ticks_allowed(self.session.game.snapshot()),
@@ -720,6 +944,17 @@ impl App {
                         };
                         let player_root = fighter_root(roots, m3::Side::Player);
                         let opponent_root = fighter_root(roots, m3::Side::Opponent);
+                        if self.journey_limit.is_some() {
+                            self.cleanbox_world
+                                .submit_resolve_packet(
+                                    &mut self.session,
+                                    player_root,
+                                    opponent_root,
+                                )
+                                .expect("journey QA canonical cleanbox packet must be valid");
+                            self.session.tick();
+                            continue;
+                        }
                         let player_strike_frame = hero_strike_frame(roots, m3::Side::Player)
                             .unwrap_or(hero_strike::CONTACT_FRAME);
                         let opponent_strike_frame = hero_strike_frame(roots, m3::Side::Opponent)
@@ -785,16 +1020,7 @@ impl App {
         if live_snapshot.phase == m3::Phase::MatchResult && !self.replay_saved {
             self.replay_verified = self.save_replay();
             self.replay_saved = true;
-            if self
-                .flow
-                .enter_replay(&live_snapshot, self.session.replay.clone())
-                .is_ok()
-            {
-                self.flow
-                    .advance_replay()
-                    .expect("freshly validated fight film must reach its opening action");
-                eprintln!("Player flow: automatic Fight Film");
-            }
+            eprintln!("Player flow: Result");
         }
 
         let stage = self.flow.stage(&live_snapshot);
@@ -1171,7 +1397,7 @@ impl App {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let path = PathBuf::from(format!("/tmp/just_dodge_m3_replay_{ts}.ron"));
+        let path = runtime_replay_path(ts, self.session.game.snapshot().seed);
         match self.session.replay.save(&path) {
             Ok(()) => match m3::verify_replay_file(&path) {
                 Ok(verification)
@@ -1617,6 +1843,199 @@ mod fixed_step_tests {
     use super::*;
     use std::time::Duration;
 
+    #[test]
+    fn fresh_match_authorities_reset_truth_physics_and_ai() {
+        let old_seed = 0x4d33_0200;
+        let (mut old_session, mut old_world, _) = fresh_match_authorities(old_seed);
+        while old_session.game.snapshot().phase != m3::Phase::Plan {
+            old_session.tick();
+        }
+        old_session
+            .apply(m3::Side::Player, m3::Input::Select(m3::Action::Strike))
+            .unwrap();
+        old_session
+            .apply(m3::Side::Opponent, m3::Input::Select(m3::Action::Block))
+            .unwrap();
+        old_session
+            .apply(m3::Side::Player, m3::Input::Commit)
+            .unwrap();
+        old_session
+            .apply(m3::Side::Opponent, m3::Input::Commit)
+            .unwrap();
+        while old_session.game.snapshot().phase != m3::Phase::Resolve {
+            old_session.tick();
+        }
+        old_world
+            .submit_resolve_packet(&mut old_session, vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0))
+            .unwrap();
+        assert_eq!(old_world.next_physics_tick(), 2);
+
+        let new_seed = old_seed + 1;
+        let (session, world, ai) = fresh_match_authorities(new_seed);
+        let canonical = m3::Match::new(new_seed);
+        assert_eq!(session.game.snapshot(), canonical.snapshot());
+        assert_eq!(session.game.truth_hash(), canonical.truth_hash());
+        assert_eq!(session.replay.hash_trace, vec![canonical.truth_hash()]);
+        assert_eq!(world.next_physics_tick(), 0);
+        assert_eq!(ai, m3::SeededAi::new(new_seed));
+    }
+
+    #[test]
+    fn ten_consecutive_autoplay_journeys_replay_and_rematch_canonically() {
+        let mut seed = 0x4d33_0210;
+        let (mut session, mut world, mut ai) = fresh_match_authorities(seed);
+        let mut flow = runtime_flow::RuntimeFlow::menu();
+
+        for journey in 0..10 {
+            if journey == 0 {
+                assert!(flow.start_match());
+            }
+            for _ in 0..runtime_flow::ESTABLISHING_TICKS {
+                flow.tick_establishing();
+            }
+            assert_eq!(
+                flow.stage(session.game.snapshot()),
+                runtime_flow::FlowStage::Observe
+            );
+
+            let mut ticks = 0_u32;
+            while session.game.snapshot().phase != m3::Phase::MatchResult {
+                ticks += 1;
+                assert!(ticks <= 20_000, "journey {journey} did not terminate");
+                let snapshot = session.game.snapshot().clone();
+                if snapshot.phase == m3::Phase::Plan {
+                    let opponent = ai.choose(snapshot.exchange);
+                    let player = counter_action(opponent);
+                    session
+                        .apply(m3::Side::Player, m3::Input::Select(player))
+                        .unwrap();
+                    if player == m3::Action::Move {
+                        session
+                            .apply(
+                                m3::Side::Player,
+                                m3::Input::SetRadialDi(ai.move_di(snapshot.exchange)),
+                            )
+                            .unwrap();
+                    }
+                    session.apply(m3::Side::Player, m3::Input::Commit).unwrap();
+                    session
+                        .apply(m3::Side::Opponent, m3::Input::Select(opponent))
+                        .unwrap();
+                    if opponent == m3::Action::Move {
+                        session
+                            .apply(
+                                m3::Side::Opponent,
+                                m3::Input::SetRadialDi(ai.move_di(snapshot.exchange)),
+                            )
+                            .unwrap();
+                    }
+                    session
+                        .apply(m3::Side::Opponent, m3::Input::Commit)
+                        .unwrap();
+                }
+                if session.game.snapshot().phase == m3::Phase::Resolve {
+                    let snapshot = session.game.snapshot();
+                    let player_root = fighter_root(snapshot, m3::Side::Player);
+                    let opponent_root = fighter_root(snapshot, m3::Side::Opponent);
+                    world
+                        .submit_resolve_packet(&mut session, player_root, opponent_root)
+                        .unwrap();
+                }
+                session.tick();
+            }
+
+            let terminal_hash = session.game.truth_hash();
+            let replay = session.replay.clone();
+            let reconstructed = m3::replay(&replay).unwrap();
+            assert_eq!(reconstructed.truth_hash(), terminal_hash);
+            assert_eq!(reconstructed.snapshot(), session.game.snapshot());
+            flow.enter_replay(session.game.snapshot(), replay).unwrap();
+            while flow.advance_replay().unwrap() {}
+            assert_eq!(
+                flow.replay_snapshot().unwrap(),
+                session.game.snapshot(),
+                "journey {journey} replay diverged"
+            );
+
+            if journey < 9 {
+                assert!(flow.begin_rematch(session.game.snapshot()));
+                seed = seed.wrapping_add(1);
+                (session, world, ai) = fresh_match_authorities(seed);
+                let canonical = m3::Session::new(seed);
+                assert_eq!(session.game.truth_hash(), canonical.game.truth_hash());
+                assert_eq!(session.replay, canonical.replay);
+                assert_eq!(world.next_physics_tick(), 0);
+                assert_eq!(ai, m3::SeededAi::new(seed));
+            }
+        }
+    }
+
+    #[test]
+    fn live_journey_mode_starts_at_boot_and_preserves_production_autoplay() {
+        let snapshot = m3::Match::new(0x4d33_0220).snapshot().clone();
+        assert_eq!(
+            initial_runtime_flow(true, true).stage(&snapshot),
+            runtime_flow::FlowStage::Boot
+        );
+        assert_eq!(
+            initial_runtime_flow(false, true).stage(&snapshot),
+            runtime_flow::FlowStage::Observe
+        );
+        assert_eq!(
+            initial_runtime_flow(false, false).stage(&snapshot),
+            runtime_flow::FlowStage::Menu
+        );
+    }
+
+    #[test]
+    fn live_journey_evidence_requires_full_first_flow_replay_and_bounded_ticks() {
+        let mut evidence = JourneyEvidence::default();
+        for stage in [
+            runtime_flow::FlowStage::Boot,
+            runtime_flow::FlowStage::Menu,
+            runtime_flow::FlowStage::MatchSetup,
+            runtime_flow::FlowStage::Countdown,
+            runtime_flow::FlowStage::Observe,
+            runtime_flow::FlowStage::Result,
+            runtime_flow::FlowStage::Replay,
+        ] {
+            evidence.observe(stage);
+        }
+        assert!(evidence.has_required_stages(0));
+        assert_eq!(evidence.stage_mask, JOURNEY_FIRST_REQUIRED);
+
+        evidence.reset_for_rematch(runtime_flow::FlowStage::MatchSetup);
+        for stage in [
+            runtime_flow::FlowStage::Countdown,
+            runtime_flow::FlowStage::Observe,
+            runtime_flow::FlowStage::Result,
+            runtime_flow::FlowStage::Replay,
+        ] {
+            evidence.observe(stage);
+        }
+        assert!(evidence.has_required_stages(1));
+        assert!(!evidence.has_required_stages(0));
+
+        for _ in 0..JOURNEY_QA_MAX_TRUTH_TICKS {
+            evidence.record_truth_tick().unwrap();
+        }
+        assert_eq!(
+            evidence.record_truth_tick(),
+            Err("live journey exceeded deterministic truth-tick budget")
+        );
+        assert_eq!(qa_ticks_for_frame(true, 0), JOURNEY_QA_TICKS_PER_RENDER);
+        assert_eq!(qa_ticks_for_frame(false, 3), 3);
+    }
+
+    #[test]
+    fn accelerated_journeys_cannot_overwrite_each_others_replay_files() {
+        let first = runtime_replay_path(42, 0x4d33_0001);
+        let second = runtime_replay_path(42, 0x4d33_0002);
+        assert_ne!(first, second);
+        assert!(first.to_string_lossy().contains("000000004d330001"));
+        assert!(second.to_string_lossy().contains("000000004d330002"));
+    }
+
     fn hashes_at_render_rate(render_hz: u32) -> (Vec<u64>, Vec<replay::MatchEvent>) {
         let mut clock = FixedStepClock::default();
         let mut truth = truth::CombatTruth::new();
@@ -1780,6 +2199,16 @@ fn main() {
                 .parse::<usize>()
                 .expect("--benchmark-frames must be a positive integer")
         });
+    let journey_limit = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--journeys")
+        .map(|pair| {
+            let count = pair[1]
+                .parse::<usize>()
+                .expect("--journeys must be a positive integer");
+            assert!(count > 0, "--journeys must be a positive integer");
+            count
+        });
     let window_size = arguments
         .windows(2)
         .find(|pair| pair[0] == "--resolution")
@@ -1795,36 +2224,58 @@ fn main() {
         .unwrap_or((1280, 720));
     let autoplay = !motion_lab_enabled
         && (arguments.iter().any(|argument| argument == "--autoplay")
-            || benchmark_frame_limit.is_some());
-    let verify = arguments.iter().any(|argument| argument == "--verify");
+            || benchmark_frame_limit.is_some()
+            || journey_limit.is_some());
+    let verify = arguments.iter().any(|argument| argument == "--verify") || journey_limit.is_some();
     let assets = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_string());
 
-    let c0_skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
-        format!("{assets}/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
-    });
-    let c0_mesh = asset::load_skinned(&c0_skin_path).expect("C0 armored duelist required");
-    assert_eq!(c0_mesh.bones.len(), 24, "C0 armored duelist bone contract");
+    let (c0_mesh, c0_walk_skins, hero_strike) = if journey_limit.is_some() {
+        eprintln!(
+            "LIFECYCLE_QA_PRESENTATION=QUARANTINED authority=none promotion=false source=procedural"
+        );
+        let mesh = asset::lifecycle_qa_mesh();
+        let reference_local: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
+        let reference_skin = asset::reference_pose_skin_matrices(&mesh, &reference_local)
+            .expect("lifecycle QA carrier bind pose must be valid");
+        let presentation = hero_strike::HeroStrikePresentation::lifecycle_qa(&mesh)
+            .expect("lifecycle QA presentation must be valid");
+        (mesh, vec![reference_skin], presentation)
+    } else {
+        let c0_skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
+            format!("{assets}/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+        });
+        let mesh = asset::load_skinned(&c0_skin_path).expect("C0 armored duelist required");
+        assert_eq!(mesh.bones.len(), 24, "C0 armored duelist bone contract");
+        let source = asset::load_skinned(&format!(
+            "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin"
+        ))
+        .expect("C0 source rig required for staging and radial Move");
+        let walk = asset::load_skeletal_animation(&format!(
+            "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim"
+        ))
+        .expect("C0 world-space walking clip required for radial Move");
+        let walk_skins = walk
+            .frames
+            .iter()
+            .map(|frame| asset::retarget_world_animation_frame(&source, &mesh, frame))
+            .collect::<std::io::Result<Vec<_>>>()
+            .expect("C0 world-space walking clip must retarget without geometry explosion");
+        let presentation =
+            hero_strike::HeroStrikePresentation::load(&PathBuf::from(&assets), &mesh)
+                .expect("PVP005-R6 hero Strike must load before live match start");
+        (mesh, walk_skins, presentation)
+    };
     let c0_reference_local: Vec<Mat4> = c0_mesh.bones.iter().map(|bone| bone.rest_local).collect();
     let c0_reference_skin = asset::reference_pose_skin_matrices(&c0_mesh, &c0_reference_local)
-        .expect("C0 armored duelist bind pose must produce valid skinning matrices");
-    let c0_source = asset::load_skinned(&format!(
-        "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin"
-    ))
-    .expect("C0 source rig required for staging and radial Move");
-    let c0_walk = asset::load_skeletal_animation(&format!(
-        "{assets}/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim"
-    ))
-    .expect("C0 world-space walking clip required for radial Move");
-    let c0_walk_skins = c0_walk
-        .frames
-        .iter()
-        .map(|frame| asset::retarget_world_animation_frame(&c0_source, &c0_mesh, frame))
-        .collect::<std::io::Result<Vec<_>>>()
-        .expect("C0 world-space walking clip must retarget without geometry explosion");
-    let hero_strike = hero_strike::HeroStrikePresentation::load(&PathBuf::from(&assets), &c0_mesh)
-        .expect("PVP005-R6 hero Strike must load before live match start");
+        .expect("C0 carrier bind pose must produce valid skinning matrices");
+    let lifecycle_qa_mesh = if journey_limit.is_some() {
+        Some(c0_mesh)
+    } else {
+        None
+    };
     let dodge_presentation = None;
-    let session = m3::Session::new(0x4D33_0000_0000_0000);
+    let initial_seed = 0x4D33_0000_0000_0000;
+    let (session, cleanbox_world, ai) = fresh_match_authorities(initial_seed);
     let motion_lab_truth_baseline = motion_lab_enabled.then(|| session.game.snapshot().clone());
     if motion_lab_enabled {
         let metrics = hero_strike.motion_lab_metrics(motion_lab_frame);
@@ -1849,6 +2300,7 @@ fn main() {
         renderer: None,
         ui_renderer: None,
         runtime_assets: PathBuf::from(assets),
+        lifecycle_qa_mesh,
         camera: Camera::new(),
         development_camera: if motion_lab_enabled {
             DevelopmentCamera::LeftQuarter
@@ -1874,18 +2326,17 @@ fn main() {
         motion_lab_truth_baseline,
         dodge_presentation,
         session,
-        cleanbox_world: m3_cleanbox::M3CleanboxWorld::new(),
-        ai: m3::SeededAi::new(0x4D33_0000_0000_0000),
-        flow: if autoplay {
-            runtime_flow::RuntimeFlow::autoplay()
-        } else {
-            runtime_flow::RuntimeFlow::menu()
-        },
+        cleanbox_world,
+        ai,
+        flow: initial_runtime_flow(journey_limit.is_some(), autoplay),
         cursor_captured: false,
         replay_saved: false,
         replay_verified: false,
         autoplay,
         verify,
+        journey_limit,
+        journeys_completed: 0,
+        journey_evidence: JourneyEvidence::default(),
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
         player_pos: vec3(0.0, 0.0, 1.0),
         show_debug: false,

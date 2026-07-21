@@ -1,0 +1,149 @@
+{
+  "schema": "just-dodge-sg02-cross-platform-status-v1",
+  "evaluated_revision": "a4775aba347dc1f48f1ddb68bda61a1845ec9920",
+  "status": "BLOCKED",
+  "promotion": "NOT_PROMOTED",
+  "required_platforms": [
+    "Linux",
+    "Windows",
+    "SteamDeck"
+  ],
+  "verified_receipts": {
+    "Linux": {
+      "path": "docs/reports/SG02_CROSS_PLATFORM_LINUX_RECEIPT.json",
+      "file_sha256": "a95af9a5888c696bfecb7aa73339cb8672e3050bed3555de870384f4bb994522",
+      "receipt_sha256": "c0fbef31e916e7efd01f9bbf49f3f92070ad10747646179b5d37d6c0ba4e3a2f",
+      "clean_checkout": true,
+      "scenario_count": 7,
+      "runs_per_scenario": 100
+    }
+  },
+  "verification": {
+    "commands": [
+      "cargo fmt --check",
+      "cargo clippy --locked --all-targets -- -D warnings",
+      "cargo test --locked --all-targets",
+      "cargo build --locked --no-default-features --release --bin golden_match",
+      "python3 tools/qa/sg02_cross_platform_receipt.py --golden-match target/release/golden_match --expected tools/qa/sg02_golden_hashes.json --source-revision a4775aba347dc1f48f1ddb68bda61a1845ec9920 --platform-label Linux --out SG02_LINUX_RECEIPT.json",
+      "python3 tools/qa/sg02_cross_platform_reduce.py --expected tools/qa/sg02_golden_hashes.json --receipt SG02_LINUX_RECEIPT.json --require Linux --out SG02_LINUX_REDUCED.json"
+    ],
+    "clean_checkout_test_counts": [236, 159, 2, 3],
+    "linux_reducer_report_sha256": "d07b9ccd44361f1b729a3ab6df9e59379d46a52dfc0c3760be812f42ee9f57eb"
+  },
+  "non_evidence": {
+    "windows_cross_build": "A GNU-target PE32+ binary compiled locally, but was not counted as Windows execution evidence.",
+    "wine_execution": "No Wine result is admitted as Windows evidence.",
+    "linux_only_reduction": "The reducer passed only with --require Linux and rejects a required Windows receipt when it is missing."
+  },
+  "blocking_evidence": {
+    "github_self_hosted_runner_query": {
+      "command": "gh api repos/vladdiethecoder/just-dodge/actions/runners --jq .total_count",
+      "observed_total_count": 0
+    },
+    "local_host": {
+      "os": "Fedora Linux",
+      "variant": "kde",
+      "machine": "x86_64",
+      "not_steam_deck": true
+    },
+    "missing_platform_receipts": [
+      "Windows",
+      "SteamDeck"
+    ]
+  },
+  "local_integrity_boundaries": {
+    "no_baked_runtime": {
+      "status": "PASS_VERIFIED_WORKTREE",
+      "source_parent_revision": "d4732544781ab5a4131114f59aa2b337f74d7c5a",
+      "source_diff_sha256": "eb5d41241e87fd0b945d4bf41c5cb61f89fcf399d70a5c3880ff1436956d1446",
+      "production_rlib_symbols_absent": [
+        "BakedClipProvider",
+        "MotionPlanService::baked",
+        "m4_baked"
+      ],
+      "release_game_loop_symbols_absent": [
+        "BakedClipProvider",
+        "MotionPlanService::baked",
+        "m4_baked"
+      ],
+      "test_only_contract_coverage": "motion_service_async::tests::baked_provider_returns_a_deterministic_validated_clip_for_each_core_intent",
+      "canonical_gates": {
+        "fmt": "PASS",
+        "clippy_all_targets_deny_warnings": "PASS",
+        "tests": {
+          "passed": 399,
+          "ignored": 3,
+          "failed": 0
+        },
+        "no_default_features_bins": "PASS",
+        "sg02_receipt_reducer_tests": "3 PASS"
+      },
+      "promotion_effect": "Closes the local no-baked runtime boundary only; Windows and Steam Deck parity remain blocked."
+    },
+    "quantized_substep_contact_packet": {
+      "status": "PASS_VERIFIED_WORKTREE",
+      "source_parent_revision": "d4732544781ab5a4131114f59aa2b337f74d7c5a",
+      "source_diff_sha256": "a5ade14975526e6d6368a68f07bbbfe35805c98c3d07181e5d36231fe653051a",
+      "canonical_fields": {
+        "surface_distance_um": "u32",
+        "proxy_overlap_um3": "u64",
+        "prohibited_penetration_um": "u32"
+      },
+      "float_truth_fields_removed": [
+        "surface_distance_mm: f32",
+        "proxy_overlap_mm3: f32",
+        "prohibited_penetration_mm: f32"
+      ],
+      "quantization": "Round finite non-negative metres to integer micrometres; reject non-finite/negative measurements to zero; saturate finite overflow at u32::MAX; derive overlap volume by checked-width integer cubing with u64 saturation.",
+      "presentation_boundary": "grab07_capture emits canonical integer fields plus derived human-readable millimetre mirrors; mirrors are not serialized truth.",
+      "focused_gate": "7 duel_world tests passed, including Eq/serde schema/rounding/saturation regression.",
+      "canonical_gates": {
+        "fmt": "PASS",
+        "clippy_all_targets_deny_warnings": "PASS",
+        "tests": {
+          "passed": 401,
+          "ignored": 3,
+          "failed": 0
+        },
+        "no_default_features_bins": "PASS",
+        "sg02_receipt_reducer_tests": "3 PASS"
+      },
+      "promotion_effect": "Closes the local 120 Hz substep contact-packet quantization gap only; broader contact samples and cross-platform receipts remain separate gates."
+    },
+    "quantized_grab_contact_authority": {
+      "status": "PASS_VERIFIED_WORKTREE",
+      "source_parent_revision": "d4732544781ab5a4131114f59aa2b337f74d7c5a",
+      "source_diff_sha256": "934ae32b8437142d67763fb6932bd2f12271bd5d388e06176535d82747a24063",
+      "canonical_fields": {
+        "surface_distance_um": "u32",
+        "proxy_overlap_um": "i32",
+        "prohibited_penetration_um": "u32",
+        "duration_us": "u32",
+        "surface_clearance_um": "u32"
+      },
+      "integer_thresholds": {
+        "secure_surface_max_um": 15000,
+        "prohibited_penetration_max_um": 500,
+        "secure_duration_substeps": 12
+      },
+      "focused_gate": "9 grab-contact fixtures, 12 grab plan-phase tests, quantizer rounding/non-finite/saturation regression, serde schema regression, and focused clippy passed.",
+      "canonical_gates": {
+        "fmt": "PASS",
+        "clippy_all_targets_deny_warnings": "PASS",
+        "tests": {
+          "passed": 403,
+          "ignored": 3,
+          "failed": 0
+        },
+        "no_default_features_bins": "PASS",
+        "sg02_receipt_reducer_tests": "3 PASS"
+      },
+      "promotion_effect": "Closes floating-point authority in secure-grab contact samples and admission comparisons only; cross-platform receipts remain required."
+    }
+  },
+  "unblock": {
+    "windows": "Push a revision containing .github/workflows/ci.yml and obtain the SG02 Linux/Windows receipt-reduction artifact from GitHub Actions; do not substitute a local cross-build or Wine run.",
+    "steamdeck": "Provision a real Steam Deck self-hosted GitHub Actions runner labelled self-hosted, Linux, X64, steam-deck. Push a revision containing .github/workflows/sg02-cross-platform.yml, dispatch that workflow on one revision, and retain its three platform receipts plus reduced artifact."
+  },
+  "remaining_integrity_gate": "SG02-NO-BAKED-RUNTIME-BOUNDARY-001 passed in the verified worktree; commit binding remains pending. SG02 itself remains blocked on real Windows and Steam Deck receipts."
+}

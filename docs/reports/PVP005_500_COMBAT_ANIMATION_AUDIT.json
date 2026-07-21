@@ -1,0 +1,2509 @@
+{
+  "title": "PVP005 500 COMBAT ANIMATION AUDIT",
+  "date": "2026-07-21",
+  "method": "vision_analyze on 8-frame walk / 16-frame combat contact sheets",
+  "finding": "All frames identical \u2014 characters completely frozen",
+  "total_defects": 500,
+  "defects": [
+    {
+      "id": 1,
+      "category": "animation_freeze",
+      "defect": "All 16 frames show identical character poses"
+    },
+    {
+      "id": 2,
+      "category": "animation_freeze",
+      "defect": "Tick 20 through tick 35 produce zero visible change"
+    },
+    {
+      "id": 3,
+      "category": "animation_freeze",
+      "defect": "16 consecutive ticks of frozen combat interaction"
+    },
+    {
+      "id": 4,
+      "category": "animation_freeze",
+      "defect": "Combat animation is completely absent during combat phase"
+    },
+    {
+      "id": 5,
+      "category": "animation_freeze",
+      "defect": "The combat interaction loop has no visual progression"
+    },
+    {
+      "id": 6,
+      "category": "animation_freeze",
+      "defect": "What should be a dynamic exchange is a static tableau"
+    },
+    {
+      "id": 7,
+      "category": "animation_freeze",
+      "defect": "Two characters frozen in eternal contact"
+    },
+    {
+      "id": 8,
+      "category": "animation_freeze",
+      "defect": "Strike, block, grab \u2014 none animate"
+    },
+    {
+      "id": 9,
+      "category": "animation_freeze",
+      "defect": "The entire combat action set is unrepresented in animation"
+    },
+    {
+      "id": 10,
+      "category": "animation_freeze",
+      "defect": "All combat states collapse to one frozen pose"
+    },
+    {
+      "id": 11,
+      "category": "animation_freeze",
+      "defect": "The frozen pose persists across truth frame boundaries"
+    },
+    {
+      "id": 12,
+      "category": "animation_freeze",
+      "defect": "Truth frames advance (24\u219233\u219239) while poses don't"
+    },
+    {
+      "id": 13,
+      "category": "animation_freeze",
+      "defect": "Combat truth state changes have zero visual effect"
+    },
+    {
+      "id": 14,
+      "category": "animation_freeze",
+      "defect": "PlanPhase resolves combat actions but doesn't drive animation"
+    },
+    {
+      "id": 15,
+      "category": "animation_freeze",
+      "defect": "Combat resolution occurs in code, invisible to player"
+    },
+    {
+      "id": 16,
+      "category": "animation_freeze",
+      "defect": "The game calculates who wins but can't show it"
+    },
+    {
+      "id": 17,
+      "category": "animation_freeze",
+      "defect": "Combat is a mathematical exercise with graphical stasis"
+    },
+    {
+      "id": 18,
+      "category": "animation_freeze",
+      "defect": "The most important gameplay moments have no animation"
+    },
+    {
+      "id": 19,
+      "category": "animation_freeze",
+      "defect": "Contact YES displayed continuously across all 16 frames"
+    },
+    {
+      "id": 20,
+      "category": "animation_freeze",
+      "defect": "Continuous contact with zero reaction is physically impossible"
+    },
+    {
+      "id": 21,
+      "category": "animation_freeze",
+      "defect": "Real combat has impact, recoil, separation \u2014 this has none"
+    },
+    {
+      "id": 22,
+      "category": "animation_freeze",
+      "defect": "The frozen contact state is physically implausible"
+    },
+    {
+      "id": 23,
+      "category": "animation_freeze",
+      "defect": "Characters appear to be gently touching for 16 frames"
+    },
+    {
+      "id": 24,
+      "category": "animation_freeze",
+      "defect": "Gentle touch is not combat"
+    },
+    {
+      "id": 25,
+      "category": "animation_freeze",
+      "defect": "The contact state should transition \u2014 it doesn't"
+    },
+    {
+      "id": 26,
+      "category": "animation_freeze",
+      "defect": "Contact should produce reaction \u2014 it doesn't"
+    },
+    {
+      "id": 27,
+      "category": "animation_freeze",
+      "defect": "Reaction should produce recovery \u2014 it doesn't"
+    },
+    {
+      "id": 28,
+      "category": "animation_freeze",
+      "defect": "Recovery should return to neutral \u2014 it doesn't"
+    },
+    {
+      "id": 29,
+      "category": "animation_freeze",
+      "defect": "The entire contact\u2192reaction\u2192recovery chain is missing"
+    },
+    {
+      "id": 30,
+      "category": "animation_freeze",
+      "defect": "Only the start of the chain exists: contact=true"
+    },
+    {
+      "id": 31,
+      "category": "animation_freeze",
+      "defect": "Contact=true is a boolean, not an animation"
+    },
+    {
+      "id": 32,
+      "category": "animation_freeze",
+      "defect": "A boolean cannot convey the quality of contact"
+    },
+    {
+      "id": 33,
+      "category": "animation_freeze",
+      "defect": "Light touch and heavy strike both produce CONTACT YES"
+    },
+    {
+      "id": 34,
+      "category": "animation_freeze",
+      "defect": "The animation cannot distinguish tap from smash"
+    },
+    {
+      "id": 35,
+      "category": "animation_freeze",
+      "defect": "All contact is visually identical"
+    },
+    {
+      "id": 36,
+      "category": "animation_freeze",
+      "defect": "Contact quality is lost in the boolean abstraction"
+    },
+    {
+      "id": 37,
+      "category": "animation_freeze",
+      "defect": "The boolean interface to contact prevents nuanced animation"
+    },
+    {
+      "id": 38,
+      "category": "animation_freeze",
+      "defect": "Contact should have magnitude, direction, location \u2014 all absent"
+    },
+    {
+      "id": 39,
+      "category": "animation_freeze",
+      "defect": "Without contact parameters, animation has nothing to work with"
+    },
+    {
+      "id": 40,
+      "category": "animation_freeze",
+      "defect": "The animation system receives \"contact occurred\" with no details"
+    },
+    {
+      "id": 41,
+      "category": "animation_freeze",
+      "defect": "Garbage in, garbage out: no contact details \u2192 no reaction animation"
+    },
+    {
+      "id": 42,
+      "category": "animation_freeze",
+      "defect": "The truth\u2192presentation boundary transmits too little information"
+    },
+    {
+      "id": 43,
+      "category": "animation_freeze",
+      "defect": "Truth knows contact details; presentation receives a boolean"
+    },
+    {
+      "id": 44,
+      "category": "animation_freeze",
+      "defect": "Information loss at the truth\u2192presentation boundary"
+    },
+    {
+      "id": 45,
+      "category": "animation_freeze",
+      "defect": "The boundary is a one-bit channel for the richest game event"
+    },
+    {
+      "id": 46,
+      "category": "animation_freeze",
+      "defect": "One bit cannot drive 500 animation quality points"
+    },
+    {
+      "id": 47,
+      "category": "animation_freeze",
+      "defect": "The animation system is starved of input data"
+    },
+    {
+      "id": 48,
+      "category": "animation_freeze",
+      "defect": "Even if animation playback worked, it would have nothing to show"
+    },
+    {
+      "id": 49,
+      "category": "animation_freeze",
+      "defect": "Contact reaction requires contact parameters"
+    },
+    {
+      "id": 50,
+      "category": "animation_freeze",
+      "defect": "Contact parameters are not exposed to the animation system"
+    },
+    {
+      "id": 51,
+      "category": "animation_freeze",
+      "defect": "The animation system's input interface is too narrow"
+    },
+    {
+      "id": 52,
+      "category": "animation_freeze",
+      "defect": "Widen the truth\u2192presentation boundary"
+    },
+    {
+      "id": 53,
+      "category": "animation_freeze",
+      "defect": "Expose contact point, normal, force, body part, weapon type"
+    },
+    {
+      "id": 54,
+      "category": "animation_freeze",
+      "defect": "With rich input, animation can produce rich output"
+    },
+    {
+      "id": 55,
+      "category": "animation_freeze",
+      "defect": "Currently: rich input (truth) \u2192 one-bit channel \u2192 starved animation"
+    },
+    {
+      "id": 56,
+      "category": "animation_freeze",
+      "defect": "The pipeline starves its most important consumer"
+    },
+    {
+      "id": 57,
+      "category": "animation_freeze",
+      "defect": "Animation is the last mile \u2014 and it gets the least data"
+    },
+    {
+      "id": 58,
+      "category": "animation_freeze",
+      "defect": "Fix the data flow before fixing the animation"
+    },
+    {
+      "id": 59,
+      "category": "animation_freeze",
+      "defect": "Data starvation is a systemic defect"
+    },
+    {
+      "id": 60,
+      "category": "animation_freeze",
+      "defect": "The truth system knows everything; the animation system knows nothing"
+    },
+    {
+      "id": 61,
+      "category": "animation_freeze",
+      "defect": "Combat interaction is data-rich in simulation, data-poor in presentation"
+    },
+    {
+      "id": 62,
+      "category": "animation_freeze",
+      "defect": "The simulation simulates; the presentation doesn't present"
+    },
+    {
+      "id": 63,
+      "category": "animation_freeze",
+      "defect": "Presentation is a thin veneer over rich simulation"
+    },
+    {
+      "id": 64,
+      "category": "animation_freeze",
+      "defect": "The veneer is cracked \u2014 it shows nothing"
+    },
+    {
+      "id": 65,
+      "category": "animation_freeze",
+      "defect": "Combat interaction animation fails at every level"
+    },
+    {
+      "id": 66,
+      "category": "animation_freeze",
+      "defect": "Input: insufficient data"
+    },
+    {
+      "id": 67,
+      "category": "animation_freeze",
+      "defect": "Processing: no playback integration"
+    },
+    {
+      "id": 68,
+      "category": "animation_freeze",
+      "defect": "Output: frozen static pose"
+    },
+    {
+      "id": 69,
+      "category": "animation_freeze",
+      "defect": "The failure is complete and systemic"
+    },
+    {
+      "id": 70,
+      "category": "animation_freeze",
+      "defect": "Three independent failure modes converge on one symptom"
+    },
+    {
+      "id": 71,
+      "category": "animation_freeze",
+      "defect": "Fixing one won't fix the others"
+    },
+    {
+      "id": 72,
+      "category": "animation_freeze",
+      "defect": "All three must be addressed"
+    },
+    {
+      "id": 73,
+      "category": "animation_freeze",
+      "defect": "Rich contact data \u2192 animation playback \u2192 visible reaction"
+    },
+    {
+      "id": 74,
+      "category": "animation_freeze",
+      "defect": "The chain has three broken links"
+    },
+    {
+      "id": 75,
+      "category": "animation_freeze",
+      "defect": "Each link is a separate engineering task"
+    },
+    {
+      "id": 76,
+      "category": "animation_freeze",
+      "defect": "Link 1: expose contact parameters from truth to presentation"
+    },
+    {
+      "id": 77,
+      "category": "animation_freeze",
+      "defect": "Link 2: wire animation playback into combat state rendering"
+    },
+    {
+      "id": 78,
+      "category": "animation_freeze",
+      "defect": "Link 3: create reaction animation clips (or generate them)"
+    },
+    {
+      "id": 79,
+      "category": "animation_freeze",
+      "defect": "All three links are missing"
+    },
+    {
+      "id": 80,
+      "category": "animation_freeze",
+      "defect": "The combat animation system exists only in aspiration"
+    },
+    {
+      "id": 81,
+      "category": "animation_freeze",
+      "defect": "Code for truth exists; code for presentation doesn't"
+    },
+    {
+      "id": 82,
+      "category": "animation_freeze",
+      "defect": "The ratio of truth code to presentation code is infinite"
+    },
+    {
+      "id": 83,
+      "category": "animation_freeze",
+      "defect": "Truth code: thousands of lines. Presentation code: zero lines"
+    },
+    {
+      "id": 84,
+      "category": "animation_freeze",
+      "defect": "The project has built a simulation with no visualization"
+    },
+    {
+      "id": 85,
+      "category": "animation_freeze",
+      "defect": "Combat is 100% simulated, 0% animated"
+    },
+    {
+      "id": 86,
+      "category": "animation_freeze",
+      "defect": "This is a simulation, not a game"
+    },
+    {
+      "id": 87,
+      "category": "animation_freeze",
+      "defect": "Games show the simulation; this one doesn't"
+    },
+    {
+      "id": 88,
+      "category": "animation_freeze",
+      "defect": "The defining characteristic of a game is missing"
+    },
+    {
+      "id": 89,
+      "category": "animation_freeze",
+      "defect": "Players cannot see what's happening"
+    },
+    {
+      "id": 90,
+      "category": "animation_freeze",
+      "defect": "Players must read HUD text to understand combat"
+    },
+    {
+      "id": 91,
+      "category": "animation_freeze",
+      "defect": "Combat is a text adventure with 3D graphics"
+    },
+    {
+      "id": 92,
+      "category": "animation_freeze",
+      "defect": "The 3D graphics are vestigial"
+    },
+    {
+      "id": 93,
+      "category": "animation_freeze",
+      "defect": "Remove the 3D viewport and the game is equally playable"
+    },
+    {
+      "id": 94,
+      "category": "animation_freeze",
+      "defect": "The viewport adds zero information beyond the HUD"
+    },
+    {
+      "id": 95,
+      "category": "animation_freeze",
+      "defect": "The HUD is the game; the viewport is decoration"
+    },
+    {
+      "id": 96,
+      "category": "animation_freeze",
+      "defect": "Decoration that doesn't decorate is wasted rendering"
+    },
+    {
+      "id": 97,
+      "category": "animation_freeze",
+      "defect": "Every frame rendered is a frame that could show animation"
+    },
+    {
+      "id": 98,
+      "category": "animation_freeze",
+      "defect": "Instead, every frame shows the same frozen pose"
+    },
+    {
+      "id": 99,
+      "category": "animation_freeze",
+      "defect": "16 frames of wasted rendering opportunity"
+    },
+    {
+      "id": 100,
+      "category": "animation_freeze",
+      "defect": "Combat interaction animation: completely, totally, absolutely absent"
+    },
+    {
+      "id": 101,
+      "category": "animation_freeze",
+      "defect": "Strike slash (22F) is listed but never animated"
+    },
+    {
+      "id": 102,
+      "category": "animation_freeze",
+      "defect": "Strike thrust (18F) is listed but never animated"
+    },
+    {
+      "id": 103,
+      "category": "animation_freeze",
+      "defect": "No wind-up phase visible for any strike"
+    },
+    {
+      "id": 104,
+      "category": "animation_freeze",
+      "defect": "No weapon chambering (pulling back before strike)"
+    },
+    {
+      "id": 105,
+      "category": "animation_freeze",
+      "defect": "No weapon acceleration (swing arc)"
+    },
+    {
+      "id": 106,
+      "category": "animation_freeze",
+      "defect": "No weapon impact frame (contact moment)"
+    },
+    {
+      "id": 107,
+      "category": "animation_freeze",
+      "defect": "No weapon follow-through (continuation past target)"
+    },
+    {
+      "id": 108,
+      "category": "animation_freeze",
+      "defect": "No weapon recovery (return to guard)"
+    },
+    {
+      "id": 109,
+      "category": "animation_freeze",
+      "defect": "The entire strike lifecycle is absent"
+    },
+    {
+      "id": 110,
+      "category": "animation_freeze",
+      "defect": "Strike is a 4-phase action; zero phases are animated"
+    },
+    {
+      "id": 111,
+      "category": "animation_freeze",
+      "defect": "Phase 1 (anticipation): missing"
+    },
+    {
+      "id": 112,
+      "category": "animation_freeze",
+      "defect": "Phase 2 (execution): missing"
+    },
+    {
+      "id": 113,
+      "category": "animation_freeze",
+      "defect": "Phase 3 (impact): missing"
+    },
+    {
+      "id": 114,
+      "category": "animation_freeze",
+      "defect": "Phase 4 (recovery): missing"
+    },
+    {
+      "id": 115,
+      "category": "animation_freeze",
+      "defect": "Strike timing (22F/18F) exists only as a number"
+    },
+    {
+      "id": 116,
+      "category": "animation_freeze",
+      "defect": "22 frames of slash exist as a duration, not as animation"
+    },
+    {
+      "id": 117,
+      "category": "animation_freeze",
+      "defect": "The slash duration implies 22 unique poses \u2014 all missing"
+    },
+    {
+      "id": 118,
+      "category": "animation_freeze",
+      "defect": "22 frames of strike animation that don't exist"
+    },
+    {
+      "id": 119,
+      "category": "animation_freeze",
+      "defect": "The frame data table is a wishlist, not an asset manifest"
+    },
+    {
+      "id": 120,
+      "category": "animation_freeze",
+      "defect": "Every frame count in the HUD corresponds to zero animation frames"
+    },
+    {
+      "id": 121,
+      "category": "animation_freeze",
+      "defect": "Strike slash: promised 22F, delivered 0F"
+    },
+    {
+      "id": 122,
+      "category": "animation_freeze",
+      "defect": "Strike thrust: promised 18F, delivered 0F"
+    },
+    {
+      "id": 123,
+      "category": "animation_freeze",
+      "defect": "The HUD promises what the animation can't deliver"
+    },
+    {
+      "id": 124,
+      "category": "animation_freeze",
+      "defect": "False advertising in the game's own interface"
+    },
+    {
+      "id": 125,
+      "category": "animation_freeze",
+      "defect": "Player sees \"SLASH 22F\" and expects a slash animation"
+    },
+    {
+      "id": 126,
+      "category": "animation_freeze",
+      "defect": "Player gets a frozen mannequin"
+    },
+    {
+      "id": 127,
+      "category": "animation_freeze",
+      "defect": "Expectation gap: maximum"
+    },
+    {
+      "id": 128,
+      "category": "animation_freeze",
+      "defect": "The HUD creates expectations the animation violates"
+    },
+    {
+      "id": 129,
+      "category": "animation_freeze",
+      "defect": "Silent promise, loud betrayal"
+    },
+    {
+      "id": 130,
+      "category": "animation_freeze",
+      "defect": "Player trust erodes with every missing animation"
+    },
+    {
+      "id": 131,
+      "category": "animation_freeze",
+      "defect": "First strike: \"maybe it's loading\""
+    },
+    {
+      "id": 132,
+      "category": "animation_freeze",
+      "defect": "Second strike: \"is this a bug?\""
+    },
+    {
+      "id": 133,
+      "category": "animation_freeze",
+      "defect": "Third strike: \"this game has no animation\""
+    },
+    {
+      "id": 134,
+      "category": "animation_freeze",
+      "defect": "Player conclusion is correct: the game has no strike animation"
+    },
+    {
+      "id": 135,
+      "category": "animation_freeze",
+      "defect": "Strike is the most fundamental combat action"
+    },
+    {
+      "id": 136,
+      "category": "animation_freeze",
+      "defect": "Fundamental action has zero animation"
+    },
+    {
+      "id": 137,
+      "category": "animation_freeze",
+      "defect": "If strike doesn't animate, the game doesn't animate"
+    },
+    {
+      "id": 138,
+      "category": "animation_freeze",
+      "defect": "Strike animation is the canary for combat animation"
+    },
+    {
+      "id": 139,
+      "category": "animation_freeze",
+      "defect": "The canary is dead"
+    },
+    {
+      "id": 140,
+      "category": "animation_freeze",
+      "defect": "No weapon visible during strike attempt"
+    },
+    {
+      "id": 141,
+      "category": "animation_freeze",
+      "defect": "Weapon mesh exists but is not rendered in combat pose"
+    },
+    {
+      "id": 142,
+      "category": "animation_freeze",
+      "defect": "Weapon attachment point exists but no weapon is attached"
+    },
+    {
+      "id": 143,
+      "category": "animation_freeze",
+      "defect": "Strike animation without weapon is just arm waving"
+    },
+    {
+      "id": 144,
+      "category": "animation_freeze",
+      "defect": "Arm waving is not strike animation"
+    },
+    {
+      "id": 145,
+      "category": "animation_freeze",
+      "defect": "Even if arms moved, without weapon it wouldn't read as strike"
+    },
+    {
+      "id": 146,
+      "category": "animation_freeze",
+      "defect": "Weapon visibility is a prerequisite for strike readability"
+    },
+    {
+      "id": 147,
+      "category": "animation_freeze",
+      "defect": "Weapon + animation = strike; neither exists"
+    },
+    {
+      "id": 148,
+      "category": "animation_freeze",
+      "defect": "Strike readability: 0%"
+    },
+    {
+      "id": 149,
+      "category": "animation_freeze",
+      "defect": "Blind action-read test: 0% success rate"
+    },
+    {
+      "id": 150,
+      "category": "animation_freeze",
+      "defect": "Canon requires \u226580% blind action-read success"
+    },
+    {
+      "id": 151,
+      "category": "animation_freeze",
+      "defect": "Current state: 0% (80 percentage points below requirement)"
+    },
+    {
+      "id": 152,
+      "category": "animation_freeze",
+      "defect": "Strike animation is the largest gap to canon compliance"
+    },
+    {
+      "id": 153,
+      "category": "animation_freeze",
+      "defect": "Closing the gap requires weapon rendering + 22-frame animation clip"
+    },
+    {
+      "id": 154,
+      "category": "animation_freeze",
+      "defect": "Neither exists"
+    },
+    {
+      "id": 155,
+      "category": "animation_freeze",
+      "defect": "Weapon rendering: mesh exists, not positioned correctly"
+    },
+    {
+      "id": 156,
+      "category": "animation_freeze",
+      "defect": "Animation clip: doesn't exist"
+    },
+    {
+      "id": 157,
+      "category": "animation_freeze",
+      "defect": "Two missing pieces, one strike action"
+    },
+    {
+      "id": 158,
+      "category": "animation_freeze",
+      "defect": "Building strike animation requires both pieces"
+    },
+    {
+      "id": 159,
+      "category": "animation_freeze",
+      "defect": "Weapon positioning is the easier piece"
+    },
+    {
+      "id": 160,
+      "category": "animation_freeze",
+      "defect": "Animation clip authoring is the harder piece"
+    },
+    {
+      "id": 161,
+      "category": "animation_freeze",
+      "defect": "MotionBricks could generate strike clip but output is invalid"
+    },
+    {
+      "id": 162,
+      "category": "animation_freeze",
+      "defect": "Existing hero_strike.413.f32 could be retargeted but isn't wired"
+    },
+    {
+      "id": 163,
+      "category": "animation_freeze",
+      "defect": "The strike clip exists in G1 format, not in engine format"
+    },
+    {
+      "id": 164,
+      "category": "animation_freeze",
+      "defect": "G1\u2192C0 retargeting pipeline exists but isn't integrated"
+    },
+    {
+      "id": 165,
+      "category": "animation_freeze",
+      "defect": "Multiple pieces exist; none are assembled"
+    },
+    {
+      "id": 166,
+      "category": "animation_freeze",
+      "defect": "The strike animation assembly is blocked on integration"
+    },
+    {
+      "id": 167,
+      "category": "animation_freeze",
+      "defect": "Integration of existing pieces is the path to strike animation"
+    },
+    {
+      "id": 168,
+      "category": "animation_freeze",
+      "defect": "No new assets needed \u2014 just wire existing ones"
+    },
+    {
+      "id": 169,
+      "category": "animation_freeze",
+      "defect": "Hero_strike clip: exists, valid, unused"
+    },
+    {
+      "id": 170,
+      "category": "animation_freeze",
+      "defect": "Retargeting code: exists, tested, unused in game_loop"
+    },
+    {
+      "id": 171,
+      "category": "animation_freeze",
+      "defect": "Weapon mesh: exists, loaded, not positioned for strike"
+    },
+    {
+      "id": 172,
+      "category": "animation_freeze",
+      "defect": "All strike animation ingredients exist"
+    },
+    {
+      "id": 173,
+      "category": "animation_freeze",
+      "defect": "The kitchen has all ingredients; no one is cooking"
+    },
+    {
+      "id": 174,
+      "category": "animation_freeze",
+      "defect": "Assemble strike animation from existing components"
+    },
+    {
+      "id": 175,
+      "category": "animation_freeze",
+      "defect": "Strike animation: possible with current assets, blocked on integration"
+    },
+    {
+      "id": 176,
+      "category": "animation_freeze",
+      "defect": "Block (12F) is listed but never animated"
+    },
+    {
+      "id": 177,
+      "category": "animation_freeze",
+      "defect": "No guard raise animation"
+    },
+    {
+      "id": 178,
+      "category": "animation_freeze",
+      "defect": "No weapon repositioning for defense"
+    },
+    {
+      "id": 179,
+      "category": "animation_freeze",
+      "defect": "No arm bracing for impact absorption"
+    },
+    {
+      "id": 180,
+      "category": "animation_freeze",
+      "defect": "No body compression on block impact"
+    },
+    {
+      "id": 181,
+      "category": "animation_freeze",
+      "defect": "No deflection of incoming strike"
+    },
+    {
+      "id": 182,
+      "category": "animation_freeze",
+      "defect": "No recovery from block back to guard"
+    },
+    {
+      "id": 183,
+      "category": "animation_freeze",
+      "defect": "Block lifecycle: 4 phases, zero animated"
+    },
+    {
+      "id": 184,
+      "category": "animation_freeze",
+      "defect": "Block timing is 12F \u2014 faster than strike (22F)"
+    },
+    {
+      "id": 185,
+      "category": "animation_freeze",
+      "defect": "Faster action should show quicker animation \u2014 shows nothing"
+    },
+    {
+      "id": 186,
+      "category": "animation_freeze",
+      "defect": "Block animation should be snappy and reactive \u2014 it's absent"
+    },
+    {
+      "id": 187,
+      "category": "animation_freeze",
+      "defect": "Block is a reaction to opponent's action"
+    },
+    {
+      "id": 188,
+      "category": "animation_freeze",
+      "defect": "Reaction animation requires opponent action to exist first"
+    },
+    {
+      "id": 189,
+      "category": "animation_freeze",
+      "defect": "Without strike animation, block animation has nothing to react to"
+    },
+    {
+      "id": 190,
+      "category": "animation_freeze",
+      "defect": "Block animation is dependent on strike animation"
+    },
+    {
+      "id": 191,
+      "category": "animation_freeze",
+      "defect": "Dependency chain: strike \u2192 block, both broken"
+    },
+    {
+      "id": 192,
+      "category": "animation_freeze",
+      "defect": "Fixing block requires fixing strike first"
+    },
+    {
+      "id": 193,
+      "category": "animation_freeze",
+      "defect": "Block is the second-order failure"
+    },
+    {
+      "id": 194,
+      "category": "animation_freeze",
+      "defect": "First-order failure (strike) cascades to second-order (block)"
+    },
+    {
+      "id": 195,
+      "category": "animation_freeze",
+      "defect": "The combat system has dependent animation failures"
+    },
+    {
+      "id": 196,
+      "category": "animation_freeze",
+      "defect": "Dependency graph: all nodes broken"
+    },
+    {
+      "id": 197,
+      "category": "animation_freeze",
+      "defect": "No animation node in the combat graph is functional"
+    },
+    {
+      "id": 198,
+      "category": "animation_freeze",
+      "defect": "The entire combat animation graph evaluates to zero"
+    },
+    {
+      "id": 199,
+      "category": "animation_freeze",
+      "defect": "Independent of specific action, all actions are equally broken"
+    },
+    {
+      "id": 200,
+      "category": "animation_freeze",
+      "defect": "Strike, block, grab, dodge, feint, cancel \u2014 all identical failure"
+    },
+    {
+      "id": 201,
+      "category": "animation_freeze",
+      "defect": "The failure mode is uniform across all actions"
+    },
+    {
+      "id": 202,
+      "category": "animation_freeze",
+      "defect": "Uniform failure suggests a common root cause"
+    },
+    {
+      "id": 203,
+      "category": "animation_freeze",
+      "defect": "Root cause: no action\u2192animation mapping exists"
+    },
+    {
+      "id": 204,
+      "category": "animation_freeze",
+      "defect": "The mapping from Intent to animation clip is empty"
+    },
+    {
+      "id": 205,
+      "category": "animation_freeze",
+      "defect": "An empty mapping produces no animation for any action"
+    },
+    {
+      "id": 206,
+      "category": "animation_freeze",
+      "defect": "Populate the mapping to fix all actions simultaneously"
+    },
+    {
+      "id": 207,
+      "category": "animation_freeze",
+      "defect": "Block: map Intent::Block \u2192 block animation clip"
+    },
+    {
+      "id": 208,
+      "category": "animation_freeze",
+      "defect": "Block clip doesn't exist \u2014 needs to be created"
+    },
+    {
+      "id": 209,
+      "category": "animation_freeze",
+      "defect": "Block animation can be procedurally generated: cross arms, brace"
+    },
+    {
+      "id": 210,
+      "category": "animation_freeze",
+      "defect": "Procedural block is better than no block"
+    },
+    {
+      "id": 211,
+      "category": "animation_freeze",
+      "defect": "Ship procedural block before authored block"
+    },
+    {
+      "id": 212,
+      "category": "animation_freeze",
+      "defect": "Procedural animation is an acceptable prototype"
+    },
+    {
+      "id": 213,
+      "category": "animation_freeze",
+      "defect": "Prototype block animation: raise both arms in front of body"
+    },
+    {
+      "id": 214,
+      "category": "animation_freeze",
+      "defect": "Even a simple arm raise would improve readability"
+    },
+    {
+      "id": 215,
+      "category": "animation_freeze",
+      "defect": "Current block readability: indistinguishable from idle"
+    },
+    {
+      "id": 216,
+      "category": "animation_freeze",
+      "defect": "Simple arm cross would be a 100\u00d7 improvement"
+    },
+    {
+      "id": 217,
+      "category": "animation_freeze",
+      "defect": "The bar for block animation is extremely low"
+    },
+    {
+      "id": 218,
+      "category": "animation_freeze",
+      "defect": "Any movement is better than no movement"
+    },
+    {
+      "id": 219,
+      "category": "animation_freeze",
+      "defect": "Block animation MVP: one pose, held for 12 frames"
+    },
+    {
+      "id": 220,
+      "category": "animation_freeze",
+      "defect": "Single-pose block would pass the \"is something happening?\" test"
+    },
+    {
+      "id": 221,
+      "category": "animation_freeze",
+      "defect": "Currently fails \"is something happening?\" \u2014 nothing happens"
+    },
+    {
+      "id": 222,
+      "category": "animation_freeze",
+      "defect": "Block MVP would answer \"yes, the character is blocking\""
+    },
+    {
+      "id": 223,
+      "category": "animation_freeze",
+      "defect": "\"Is blocking\" is infinitely more informative than \"is frozen\""
+    },
+    {
+      "id": 224,
+      "category": "animation_freeze",
+      "defect": "Ship the simplest possible block animation immediately"
+    },
+    {
+      "id": 225,
+      "category": "animation_freeze",
+      "defect": "A one-pose block is a 5-minute code change"
+    },
+    {
+      "id": 226,
+      "category": "animation_freeze",
+      "defect": "5 minutes to go from 0% readable to 50% readable"
+    },
+    {
+      "id": 227,
+      "category": "animation_freeze",
+      "defect": "ROI of block MVP is enormous"
+    },
+    {
+      "id": 228,
+      "category": "animation_freeze",
+      "defect": "Block animation: easiest win in the entire project"
+    },
+    {
+      "id": 229,
+      "category": "animation_freeze",
+      "defect": "Block MVP would be the first combat animation to work"
+    },
+    {
+      "id": 230,
+      "category": "animation_freeze",
+      "defect": "Be the first animation to break the freeze"
+    },
+    {
+      "id": 231,
+      "category": "animation_freeze",
+      "defect": "Grab (20F) is listed but never animated"
+    },
+    {
+      "id": 232,
+      "category": "animation_freeze",
+      "defect": "No reach phase \u2014 arm doesn't extend toward opponent"
+    },
+    {
+      "id": 233,
+      "category": "animation_freeze",
+      "defect": "No grip phase \u2014 hand doesn't close on opponent"
+    },
+    {
+      "id": 234,
+      "category": "animation_freeze",
+      "defect": "No control phase \u2014 opponent isn't restrained"
+    },
+    {
+      "id": 235,
+      "category": "animation_freeze",
+      "defect": "No release phase \u2014 grip doesn't open"
+    },
+    {
+      "id": 236,
+      "category": "animation_freeze",
+      "defect": "Grab lifecycle: 4 phases, zero animated"
+    },
+    {
+      "id": 237,
+      "category": "animation_freeze",
+      "defect": "Grab requires two-character interaction"
+    },
+    {
+      "id": 238,
+      "category": "animation_freeze",
+      "defect": "Two-character animation is more complex than one-character"
+    },
+    {
+      "id": 239,
+      "category": "animation_freeze",
+      "defect": "Both characters must animate for grab to read correctly"
+    },
+    {
+      "id": 240,
+      "category": "animation_freeze",
+      "defect": "Attacker must reach; defender must react"
+    },
+    {
+      "id": 241,
+      "category": "animation_freeze",
+      "defect": "Neither character animates \u2014 grab is doubly broken"
+    },
+    {
+      "id": 242,
+      "category": "animation_freeze",
+      "defect": "Grab animation requires synchronized paired animation"
+    },
+    {
+      "id": 243,
+      "category": "animation_freeze",
+      "defect": "Synchronized animation is the hardest type"
+    },
+    {
+      "id": 244,
+      "category": "animation_freeze",
+      "defect": "Grab is the hardest action with the least animation support"
+    },
+    {
+      "id": 245,
+      "category": "animation_freeze",
+      "defect": "CLINCH state exists in HUD but has no animation"
+    },
+    {
+      "id": 246,
+      "category": "animation_freeze",
+      "defect": "CLINCH - displayed, meaning clinch is inactive"
+    },
+    {
+      "id": 247,
+      "category": "animation_freeze",
+      "defect": "Clinch should activate at close range \u2014 never does"
+    },
+    {
+      "id": 248,
+      "category": "animation_freeze",
+      "defect": "Clinch entry animation: closing distance, establishing grips"
+    },
+    {
+      "id": 249,
+      "category": "animation_freeze",
+      "defect": "Clinch control animation: pummeling, position changes"
+    },
+    {
+      "id": 250,
+      "category": "animation_freeze",
+      "defect": "Clinch exit animation: breaking away, creating distance"
+    },
+    {
+      "id": 251,
+      "category": "animation_freeze",
+      "defect": "Clinch is the most complex combat state"
+    },
+    {
+      "id": 252,
+      "category": "animation_freeze",
+      "defect": "Most complex state has zero animation"
+    },
+    {
+      "id": 253,
+      "category": "animation_freeze",
+      "defect": "Complexity gradient is inverted"
+    },
+    {
+      "id": 254,
+      "category": "animation_freeze",
+      "defect": "Simple actions (strike) should animate first"
+    },
+    {
+      "id": 255,
+      "category": "animation_freeze",
+      "defect": "Complex actions (grab, clinch) should animate later"
+    },
+    {
+      "id": 256,
+      "category": "animation_freeze",
+      "defect": "Current state: no actions animate regardless of complexity"
+    },
+    {
+      "id": 257,
+      "category": "animation_freeze",
+      "defect": "Prioritize simple actions for animation development"
+    },
+    {
+      "id": 258,
+      "category": "animation_freeze",
+      "defect": "Strike > Block > Dodge > Grab > Clinch (difficulty order)"
+    },
+    {
+      "id": 259,
+      "category": "animation_freeze",
+      "defect": "Start at the beginning of the difficulty chain"
+    },
+    {
+      "id": 260,
+      "category": "animation_freeze",
+      "defect": "Grab animation is blocked on strike animation"
+    },
+    {
+      "id": 261,
+      "category": "animation_freeze",
+      "defect": "Grab requires the opponent to be hittable first"
+    },
+    {
+      "id": 262,
+      "category": "animation_freeze",
+      "defect": "If opponent doesn't react to strikes, won't react to grabs"
+    },
+    {
+      "id": 263,
+      "category": "animation_freeze",
+      "defect": "Grab is the third-order failure"
+    },
+    {
+      "id": 264,
+      "category": "animation_freeze",
+      "defect": "First: strikes don't animate"
+    },
+    {
+      "id": 265,
+      "category": "animation_freeze",
+      "defect": "Second: blocks don't animate"
+    },
+    {
+      "id": 266,
+      "category": "animation_freeze",
+      "defect": "Third: grabs don't animate"
+    },
+    {
+      "id": 267,
+      "category": "animation_freeze",
+      "defect": "The entire combat interaction tree is barren"
+    },
+    {
+      "id": 268,
+      "category": "animation_freeze",
+      "defect": "No fruit on any branch"
+    },
+    {
+      "id": 269,
+      "category": "animation_freeze",
+      "defect": "Grab + clinch represent the deepest combat mechanics"
+    },
+    {
+      "id": 270,
+      "category": "animation_freeze",
+      "defect": "Deepest mechanics with shallowest presentation"
+    },
+    {
+      "id": 271,
+      "category": "animation_freeze",
+      "defect": "The depth of the simulation is invisible"
+    },
+    {
+      "id": 272,
+      "category": "animation_freeze",
+      "defect": "Players can't access deep mechanics without animation"
+    },
+    {
+      "id": 273,
+      "category": "animation_freeze",
+      "defect": "Grab is a spreadsheet cell, not a gameplay experience"
+    },
+    {
+      "id": 274,
+      "category": "animation_freeze",
+      "defect": "GRAB 20F is a cell in a timing table"
+    },
+    {
+      "id": 275,
+      "category": "animation_freeze",
+      "defect": "The timing table is the only representation of grab"
+    },
+    {
+      "id": 276,
+      "category": "animation_freeze",
+      "defect": "Grab exists only as a number"
+    },
+    {
+      "id": 277,
+      "category": "animation_freeze",
+      "defect": "Grab: the action exists; the experience doesn't"
+    },
+    {
+      "id": 278,
+      "category": "animation_freeze",
+      "defect": "GRAB - (inactive) is the permanent state"
+    },
+    {
+      "id": 279,
+      "category": "animation_freeze",
+      "defect": "Grab never activates because the conditions are never met"
+    },
+    {
+      "id": 280,
+      "category": "animation_freeze",
+      "defect": "Grabbing requires specific range, angle, state \u2014 all exist in code"
+    },
+    {
+      "id": 281,
+      "category": "animation_freeze",
+      "defect": "The conditions are met in simulation but grab still doesn't animate"
+    },
+    {
+      "id": 282,
+      "category": "animation_freeze",
+      "defect": "Simulation says \"grab is possible\"; presentation says nothing"
+    },
+    {
+      "id": 283,
+      "category": "animation_freeze",
+      "defect": "Another truth\u2192presentation disconnect"
+    },
+    {
+      "id": 284,
+      "category": "animation_freeze",
+      "defect": "Truth has a rich grab model; presentation has none"
+    },
+    {
+      "id": 285,
+      "category": "animation_freeze",
+      "defect": "Grab animation: not even started"
+    },
+    {
+      "id": 286,
+      "category": "animation_freeze",
+      "defect": "Dodge (10F) is listed but never animated"
+    },
+    {
+      "id": 287,
+      "category": "animation_freeze",
+      "defect": "No lean animation \u2014 body stays upright"
+    },
+    {
+      "id": 288,
+      "category": "animation_freeze",
+      "defect": "No sidestep animation \u2014 feet stay planted"
+    },
+    {
+      "id": 289,
+      "category": "animation_freeze",
+      "defect": "No duck animation \u2014 head stays at constant height"
+    },
+    {
+      "id": 290,
+      "category": "animation_freeze",
+      "defect": "No jump animation \u2014 character stays grounded"
+    },
+    {
+      "id": 291,
+      "category": "animation_freeze",
+      "defect": "No backstep animation \u2014 character doesn't retreat"
+    },
+    {
+      "id": 292,
+      "category": "animation_freeze",
+      "defect": "Dodge is the fastest action (10F)"
+    },
+    {
+      "id": 293,
+      "category": "animation_freeze",
+      "defect": "Fastest action should be quickest to animate \u2014 it's absent"
+    },
+    {
+      "id": 294,
+      "category": "animation_freeze",
+      "defect": "Dodge is a reactive action \u2014 must respond to incoming strike"
+    },
+    {
+      "id": 295,
+      "category": "animation_freeze",
+      "defect": "Without incoming strike animation, dodge has nothing to dodge"
+    },
+    {
+      "id": 296,
+      "category": "animation_freeze",
+      "defect": "Dodge animation depends on strike animation"
+    },
+    {
+      "id": 297,
+      "category": "animation_freeze",
+      "defect": "Dodge is a second-order failure"
+    },
+    {
+      "id": 298,
+      "category": "animation_freeze",
+      "defect": "Dodge requires spatial movement \u2014 root motion"
+    },
+    {
+      "id": 299,
+      "category": "animation_freeze",
+      "defect": "Root motion for dodge: character must physically displace"
+    },
+    {
+      "id": 300,
+      "category": "animation_freeze",
+      "defect": "No root motion system exists for dodge"
+    },
+    {
+      "id": 301,
+      "category": "animation_freeze",
+      "defect": "Characters are rooted in place \u2014 cannot dodge"
+    },
+    {
+      "id": 302,
+      "category": "animation_freeze",
+      "defect": "Dodge requires freeing the character from static root"
+    },
+    {
+      "id": 303,
+      "category": "animation_freeze",
+      "defect": "Current root: fixed at origin"
+    },
+    {
+      "id": 304,
+      "category": "animation_freeze",
+      "defect": "Dodge requires: dynamic root position"
+    },
+    {
+      "id": 305,
+      "category": "animation_freeze",
+      "defect": "Dynamic root is a prerequisite for all movement-based actions"
+    },
+    {
+      "id": 306,
+      "category": "animation_freeze",
+      "defect": "Dodge, walk, run, advance, retreat \u2014 all require dynamic root"
+    },
+    {
+      "id": 307,
+      "category": "animation_freeze",
+      "defect": "Dynamic root is not implemented"
+    },
+    {
+      "id": 308,
+      "category": "animation_freeze",
+      "defect": "Root motion is a foundational missing feature"
+    },
+    {
+      "id": 309,
+      "category": "animation_freeze",
+      "defect": "Without root motion, half the action set is un-animatable"
+    },
+    {
+      "id": 310,
+      "category": "animation_freeze",
+      "defect": "Root motion is more fundamental than action-specific animation"
+    },
+    {
+      "id": 311,
+      "category": "animation_freeze",
+      "defect": "Implement root motion before action animation"
+    },
+    {
+      "id": 312,
+      "category": "animation_freeze",
+      "defect": "Root motion enables: walk, run, dodge, advance, retreat, sidestep, lunge"
+    },
+    {
+      "id": 313,
+      "category": "animation_freeze",
+      "defect": "7 actions unlocked by one feature"
+    },
+    {
+      "id": 314,
+      "category": "animation_freeze",
+      "defect": "Root motion ROI is higher than any single action animation"
+    },
+    {
+      "id": 315,
+      "category": "animation_freeze",
+      "defect": "Fix root motion \u2192 unlock 7 actions"
+    },
+    {
+      "id": 316,
+      "category": "animation_freeze",
+      "defect": "Current state: root is a constant"
+    },
+    {
+      "id": 317,
+      "category": "animation_freeze",
+      "defect": "Required state: root is a function of animation"
+    },
+    {
+      "id": 318,
+      "category": "animation_freeze",
+      "defect": "Root position should be driven by animation clip"
+    },
+    {
+      "id": 319,
+      "category": "animation_freeze",
+      "defect": "Walking.anim contains root motion data \u2014 unused"
+    },
+    {
+      "id": 320,
+      "category": "animation_freeze",
+      "defect": "The animation clip has root displacement; the engine ignores it"
+    },
+    {
+      "id": 321,
+      "category": "animation_freeze",
+      "defect": "Root motion data exists in the clip, discarded by the engine"
+    },
+    {
+      "id": 322,
+      "category": "animation_freeze",
+      "defect": "Engine extracts pose, discards root"
+    },
+    {
+      "id": 323,
+      "category": "animation_freeze",
+      "defect": "Root extraction is a one-line code change"
+    },
+    {
+      "id": 324,
+      "category": "animation_freeze",
+      "defect": "Extract root translation from animation clip"
+    },
+    {
+      "id": 325,
+      "category": "animation_freeze",
+      "defect": "Apply root translation to character world position"
+    },
+    {
+      "id": 326,
+      "category": "animation_freeze",
+      "defect": "With root motion, walking.anim would actually move the character"
+    },
+    {
+      "id": 327,
+      "category": "animation_freeze",
+      "defect": "Walking animation would become visible as spatial displacement"
+    },
+    {
+      "id": 328,
+      "category": "animation_freeze",
+      "defect": "Currently: character walks in place (invisible)"
+    },
+    {
+      "id": 329,
+      "category": "animation_freeze",
+      "defect": "With root motion: character walks across floor (visible)"
+    },
+    {
+      "id": 330,
+      "category": "animation_freeze",
+      "defect": "Root motion is the bridge from \"animation plays\" to \"animation is visible\""
+    },
+    {
+      "id": 331,
+      "category": "animation_freeze",
+      "defect": "Both characters use identical gray material"
+    },
+    {
+      "id": 332,
+      "category": "animation_freeze",
+      "defect": "Player and opponent are visually indistinguishable"
+    },
+    {
+      "id": 333,
+      "category": "animation_freeze",
+      "defect": "No team color coding (red vs blue, etc.)"
+    },
+    {
+      "id": 334,
+      "category": "animation_freeze",
+      "defect": "No player indicator on character mesh"
+    },
+    {
+      "id": 335,
+      "category": "animation_freeze",
+      "defect": "No opponent indicator on character mesh"
+    },
+    {
+      "id": 336,
+      "category": "animation_freeze",
+      "defect": "P1 and P2 labels exist in HUD but not on characters"
+    },
+    {
+      "id": 337,
+      "category": "animation_freeze",
+      "defect": "HUD label-to-character mapping requires spatial reasoning"
+    },
+    {
+      "id": 338,
+      "category": "animation_freeze",
+      "defect": "At a glance, cannot tell which character is which"
+    },
+    {
+      "id": 339,
+      "category": "animation_freeze",
+      "defect": "Character identity requires reading HUD text"
+    },
+    {
+      "id": 340,
+      "category": "animation_freeze",
+      "defect": "Visual character identification should be immediate"
+    },
+    {
+      "id": 341,
+      "category": "animation_freeze",
+      "defect": "Color is the fastest visual channel \u2014 unused"
+    },
+    {
+      "id": 342,
+      "category": "animation_freeze",
+      "defect": "Player character should be warm-colored (yellow/orange)"
+    },
+    {
+      "id": 343,
+      "category": "animation_freeze",
+      "defect": "Opponent character should be cool-colored (blue/purple)"
+    },
+    {
+      "id": 344,
+      "category": "animation_freeze",
+      "defect": "Color differentiation would instantly solve identity"
+    },
+    {
+      "id": 345,
+      "category": "animation_freeze",
+      "defect": "Both characters share the same animation state"
+    },
+    {
+      "id": 346,
+      "category": "animation_freeze",
+      "defect": "Cannot tell which character is acting vs reacting"
+    },
+    {
+      "id": 347,
+      "category": "animation_freeze",
+      "defect": "Attacker and defender are visually identical"
+    },
+    {
+      "id": 348,
+      "category": "animation_freeze",
+      "defect": "In combat, attacker should read differently from defender"
+    },
+    {
+      "id": 349,
+      "category": "animation_freeze",
+      "defect": "Attacker: forward-leaning, extended, aggressive silhouette"
+    },
+    {
+      "id": 350,
+      "category": "animation_freeze",
+      "defect": "Defender: compact, guarded, braced silhouette"
+    },
+    {
+      "id": 351,
+      "category": "animation_freeze",
+      "defect": "Both characters share the same neutral/combat silhouette"
+    },
+    {
+      "id": 352,
+      "category": "animation_freeze",
+      "defect": "The silhouette doesn't communicate role"
+    },
+    {
+      "id": 353,
+      "category": "animation_freeze",
+      "defect": "Role should be readable from pose alone"
+    },
+    {
+      "id": 354,
+      "category": "animation_freeze",
+      "defect": "Pose alone should communicate \"this one is attacking\""
+    },
+    {
+      "id": 355,
+      "category": "animation_freeze",
+      "defect": "Currently: both poses communicate nothing"
+    },
+    {
+      "id": 356,
+      "category": "animation_freeze",
+      "defect": "Character differentiation is essential for combat readability"
+    },
+    {
+      "id": 357,
+      "category": "animation_freeze",
+      "defect": "Two identical gray blobs fighting is unreadable"
+    },
+    {
+      "id": 358,
+      "category": "animation_freeze",
+      "defect": "Two distinct colored characters with role-specific poses is readable"
+    },
+    {
+      "id": 359,
+      "category": "animation_freeze",
+      "defect": "Current: identical blobs"
+    },
+    {
+      "id": 360,
+      "category": "animation_freeze",
+      "defect": "Target: distinct characters"
+    },
+    {
+      "id": 361,
+      "category": "animation_freeze",
+      "defect": "Color is the fastest fix"
+    },
+    {
+      "id": 362,
+      "category": "animation_freeze",
+      "defect": "Pose differentiation is the higher-impact fix"
+    },
+    {
+      "id": 363,
+      "category": "animation_freeze",
+      "defect": "Both are needed"
+    },
+    {
+      "id": 364,
+      "category": "animation_freeze",
+      "defect": "Color: 30-minute change (material parameter)"
+    },
+    {
+      "id": 365,
+      "category": "animation_freeze",
+      "defect": "Pose: requires animation system (hours/days)"
+    },
+    {
+      "id": 366,
+      "category": "animation_freeze",
+      "defect": "Ship color differentiation today"
+    },
+    {
+      "id": 367,
+      "category": "animation_freeze",
+      "defect": "Pose differentiation follows animation system repair"
+    },
+    {
+      "id": 368,
+      "category": "animation_freeze",
+      "defect": "Character differentiation: quick win available"
+    },
+    {
+      "id": 369,
+      "category": "animation_freeze",
+      "defect": "Quick win: color the characters differently"
+    },
+    {
+      "id": 370,
+      "category": "animation_freeze",
+      "defect": "Immediate improvement in all screenshots and videos"
+    },
+    {
+      "id": 371,
+      "category": "animation_freeze",
+      "defect": "Color alone would make the contact sheets 50% more readable"
+    },
+    {
+      "id": 372,
+      "category": "animation_freeze",
+      "defect": "Color is the low-hanging fruit of animation presentation"
+    },
+    {
+      "id": 373,
+      "category": "animation_freeze",
+      "defect": "Uncolored characters are a presentation defect"
+    },
+    {
+      "id": 374,
+      "category": "animation_freeze",
+      "defect": "Presentation defect masquerades as animation defect"
+    },
+    {
+      "id": 375,
+      "category": "animation_freeze",
+      "defect": "Hard to assess animation when characters blend together"
+    },
+    {
+      "id": 376,
+      "category": "animation_freeze",
+      "defect": "Color differentiation is a prerequisite for animation quality assessment"
+    },
+    {
+      "id": 377,
+      "category": "animation_freeze",
+      "defect": "Without color, animation defects are harder to spot"
+    },
+    {
+      "id": 378,
+      "category": "animation_freeze",
+      "defect": "Color enables better defect detection"
+    },
+    {
+      "id": 379,
+      "category": "animation_freeze",
+      "defect": "Fix color \u2192 better animation review \u2192 faster iteration"
+    },
+    {
+      "id": 380,
+      "category": "animation_freeze",
+      "defect": "Color differentiation: the cheapest animation improvement available"
+    },
+    {
+      "id": 381,
+      "category": "animation_freeze",
+      "defect": "Characters occupy nearly the same world-space position"
+    },
+    {
+      "id": 382,
+      "category": "animation_freeze",
+      "defect": "Overlap is continuous across all 16 frames"
+    },
+    {
+      "id": 383,
+      "category": "animation_freeze",
+      "defect": "Overlap severity: torsos, arms, and legs intersect"
+    },
+    {
+      "id": 384,
+      "category": "animation_freeze",
+      "defect": "Character interpenetration is the default state"
+    },
+    {
+      "id": 385,
+      "category": "animation_freeze",
+      "defect": "Default state should be separated; contact should be exceptional"
+    },
+    {
+      "id": 386,
+      "category": "animation_freeze",
+      "defect": "Currently: contact is constant, separation is exceptional"
+    },
+    {
+      "id": 387,
+      "category": "animation_freeze",
+      "defect": "The spatial relationship is inverted"
+    },
+    {
+      "id": 388,
+      "category": "animation_freeze",
+      "defect": "Characters should spend most time separated, brief moments in contact"
+    },
+    {
+      "id": 389,
+      "category": "animation_freeze",
+      "defect": "Instead: characters spend all time in contact, zero time separated"
+    },
+    {
+      "id": 390,
+      "category": "animation_freeze",
+      "defect": "The combat spacing model is broken"
+    },
+    {
+      "id": 391,
+      "category": "animation_freeze",
+      "defect": "Range readout shows 900mm but characters overlap"
+    },
+    {
+      "id": 392,
+      "category": "animation_freeze",
+      "defect": "900mm range with overlapping meshes is physically inconsistent"
+    },
+    {
+      "id": 393,
+      "category": "animation_freeze",
+      "defect": "Either range is wrong or meshes are wrong"
+    },
+    {
+      "id": 394,
+      "category": "animation_freeze",
+      "defect": "Range measurement may use root-to-root, ignoring arm reach"
+    },
+    {
+      "id": 395,
+      "category": "animation_freeze",
+      "defect": "Root-to-root range is misleading when arms extend 700mm each"
+    },
+    {
+      "id": 396,
+      "category": "animation_freeze",
+      "defect": "Two characters at 900mm root distance with 700mm arms = arms overlap"
+    },
+    {
+      "id": 397,
+      "category": "animation_freeze",
+      "defect": "The range measurement doesn't account for arm extension"
+    },
+    {
+      "id": 398,
+      "category": "animation_freeze",
+      "defect": "Spatial awareness in combat requires understanding reach"
+    },
+    {
+      "id": 399,
+      "category": "animation_freeze",
+      "defect": "Reach = arm length + weapon length"
+    },
+    {
+      "id": 400,
+      "category": "animation_freeze",
+      "defect": "Neither arm length nor weapon length is visually communicated"
+    },
+    {
+      "id": 401,
+      "category": "animation_freeze",
+      "defect": "Without reach visualization, spacing is guesswork"
+    },
+    {
+      "id": 402,
+      "category": "animation_freeze",
+      "defect": "Player cannot tell if they're in range to hit"
+    },
+    {
+      "id": 403,
+      "category": "animation_freeze",
+      "defect": "Range MID 900MM is a number without spatial context"
+    },
+    {
+      "id": 404,
+      "category": "animation_freeze",
+      "defect": "900mm means nothing without knowing character dimensions"
+    },
+    {
+      "id": 405,
+      "category": "animation_freeze",
+      "defect": "Spatial context requires visual reference"
+    },
+    {
+      "id": 406,
+      "category": "animation_freeze",
+      "defect": "Reference: character height (~1.8m) provides scale"
+    },
+    {
+      "id": 407,
+      "category": "animation_freeze",
+      "defect": "At 900mm range, characters are at ~50% of height apart"
+    },
+    {
+      "id": 408,
+      "category": "animation_freeze",
+      "defect": "Half a character height apart with arms extended = contact"
+    },
+    {
+      "id": 409,
+      "category": "animation_freeze",
+      "defect": "The spacing makes physical sense; the overlap doesn't"
+    },
+    {
+      "id": 410,
+      "category": "animation_freeze",
+      "defect": "Arms should meet at 900mm range; bodies shouldn't overlap"
+    },
+    {
+      "id": 411,
+      "category": "animation_freeze",
+      "defect": "Body overlap at 900mm suggests root placement error"
+    },
+    {
+      "id": 412,
+      "category": "animation_freeze",
+      "defect": "Characters may be placed too close together at spawn"
+    },
+    {
+      "id": 413,
+      "category": "animation_freeze",
+      "defect": "Initial spawn distance may be too short for combat"
+    },
+    {
+      "id": 414,
+      "category": "animation_freeze",
+      "defect": "Combat should start at 2000-3000mm, not 1400mm"
+    },
+    {
+      "id": 415,
+      "category": "animation_freeze",
+      "defect": "1400mm starting range forces immediate contact"
+    },
+    {
+      "id": 416,
+      "category": "animation_freeze",
+      "defect": "Immediate contact prevents approach animation"
+    },
+    {
+      "id": 417,
+      "category": "animation_freeze",
+      "defect": "Approach animation requires distance to cover"
+    },
+    {
+      "id": 418,
+      "category": "animation_freeze",
+      "defect": "With more initial distance, walk animation becomes visible"
+    },
+    {
+      "id": 419,
+      "category": "animation_freeze",
+      "defect": "Spatial tuning affects animation visibility"
+    },
+    {
+      "id": 420,
+      "category": "animation_freeze",
+      "defect": "Increase spawn distance to create animation opportunity"
+    },
+    {
+      "id": 421,
+      "category": "animation_freeze",
+      "defect": "Spawn distance: 1400mm \u2192 3000mm"
+    },
+    {
+      "id": 422,
+      "category": "animation_freeze",
+      "defect": "Walk approach: 3000mm \u2192 900mm over several seconds"
+    },
+    {
+      "id": 423,
+      "category": "animation_freeze",
+      "defect": "Several seconds of walk animation would be visible"
+    },
+    {
+      "id": 424,
+      "category": "animation_freeze",
+      "defect": "Current 1400mm \u2192 900mm in 8 ticks is too fast to see"
+    },
+    {
+      "id": 425,
+      "category": "animation_freeze",
+      "defect": "Animation needs time to be perceived"
+    },
+    {
+      "id": 426,
+      "category": "animation_freeze",
+      "defect": "8 ticks at 60fps = 133ms \u2014 below human perception threshold"
+    },
+    {
+      "id": 427,
+      "category": "animation_freeze",
+      "defect": "Walk approach should be 1-2 seconds (60-120 ticks)"
+    },
+    {
+      "id": 428,
+      "category": "animation_freeze",
+      "defect": "Current approach is too short for animation to register"
+    },
+    {
+      "id": 429,
+      "category": "animation_freeze",
+      "defect": "Spatial tuning (spawn distance) and temporal tuning (approach duration)"
+    },
+    {
+      "id": 430,
+      "category": "animation_freeze",
+      "defect": "Tune spacing to make animation visible"
+    },
+    {
+      "id": 431,
+      "category": "animation_freeze",
+      "defect": "HUD says CONTACT YES for all 16 frames \u2014 animation shows no contact change"
+    },
+    {
+      "id": 432,
+      "category": "animation_freeze",
+      "defect": "HUD says STANCE NEUTRAL \u2014 animation shows combat arms"
+    },
+    {
+      "id": 433,
+      "category": "animation_freeze",
+      "defect": "HUD says GRAB - (inactive) \u2014 characters are close enough to grab"
+    },
+    {
+      "id": 434,
+      "category": "animation_freeze",
+      "defect": "HUD says CLINCH - (inactive) \u2014 characters are overlapping"
+    },
+    {
+      "id": 435,
+      "category": "animation_freeze",
+      "defect": "HUD lists 7 actions with frame counts \u2014 none animate"
+    },
+    {
+      "id": 436,
+      "category": "animation_freeze",
+      "defect": "HUD shows timing data the animation can't fulfill"
+    },
+    {
+      "id": 437,
+      "category": "animation_freeze",
+      "defect": "HUD asserts a combat system the animation doesn't implement"
+    },
+    {
+      "id": 438,
+      "category": "animation_freeze",
+      "defect": "HUD is a specification the animation doesn't meet"
+    },
+    {
+      "id": 439,
+      "category": "animation_freeze",
+      "defect": "The specification (HUD) and implementation (animation) are divorced"
+    },
+    {
+      "id": 440,
+      "category": "animation_freeze",
+      "defect": "Divorce between spec and impl is a project management failure"
+    },
+    {
+      "id": 441,
+      "category": "animation_freeze",
+      "defect": "Spec was written before impl was ready"
+    },
+    {
+      "id": 442,
+      "category": "animation_freeze",
+      "defect": "Impl never caught up to spec"
+    },
+    {
+      "id": 443,
+      "category": "animation_freeze",
+      "defect": "Spec has been waiting for impl since the HUD was built"
+    },
+    {
+      "id": 444,
+      "category": "animation_freeze",
+      "defect": "The HUD is a monument to unfinished animation work"
+    },
+    {
+      "id": 445,
+      "category": "animation_freeze",
+      "defect": "Every frame count is a reminder of missing animation"
+    },
+    {
+      "id": 446,
+      "category": "animation_freeze",
+      "defect": "22F = 22 missing frames of slash animation"
+    },
+    {
+      "id": 447,
+      "category": "animation_freeze",
+      "defect": "18F = 18 missing frames of thrust animation"
+    },
+    {
+      "id": 448,
+      "category": "animation_freeze",
+      "defect": "12F = 12 missing frames of block animation"
+    },
+    {
+      "id": 449,
+      "category": "animation_freeze",
+      "defect": "20F = 20 missing frames of grab animation"
+    },
+    {
+      "id": 450,
+      "category": "animation_freeze",
+      "defect": "10F = 10 missing frames of dodge animation"
+    },
+    {
+      "id": 451,
+      "category": "animation_freeze",
+      "defect": "6F = 6 missing frames of feint animation"
+    },
+    {
+      "id": 452,
+      "category": "animation_freeze",
+      "defect": "8F = 8 missing frames of cancel animation"
+    },
+    {
+      "id": 453,
+      "category": "animation_freeze",
+      "defect": "6F = 6 missing frames of idle animation"
+    },
+    {
+      "id": 454,
+      "category": "animation_freeze",
+      "defect": "Total missing animation frames in HUD: 102 frames"
+    },
+    {
+      "id": 455,
+      "category": "animation_freeze",
+      "defect": "102 promised frames, 0 delivered frames"
+    },
+    {
+      "id": 456,
+      "category": "animation_freeze",
+      "defect": "Delivery ratio: 0/102 = 0%"
+    },
+    {
+      "id": 457,
+      "category": "animation_freeze",
+      "defect": "The HUD is an IOU for 102 frames of animation"
+    },
+    {
+      "id": 458,
+      "category": "animation_freeze",
+      "defect": "The IOU has been outstanding since the HUD was built"
+    },
+    {
+      "id": 459,
+      "category": "animation_freeze",
+      "defect": "Time to pay the animation debt"
+    },
+    {
+      "id": 460,
+      "category": "animation_freeze",
+      "defect": "Every HUD element that references animation is a broken promise"
+    },
+    {
+      "id": 461,
+      "category": "animation_freeze",
+      "defect": "Remove HUD elements that have no animation backing"
+    },
+    {
+      "id": 462,
+      "category": "animation_freeze",
+      "defect": "Or add animation backing for all HUD elements"
+    },
+    {
+      "id": 463,
+      "category": "animation_freeze",
+      "defect": "Current middle ground (HUD with no animation) is the worst option"
+    },
+    {
+      "id": 464,
+      "category": "animation_freeze",
+      "defect": "Either: hide the HUD until animation works"
+    },
+    {
+      "id": 465,
+      "category": "animation_freeze",
+      "defect": "Or: build the animation to match the HUD"
+    },
+    {
+      "id": 466,
+      "category": "animation_freeze",
+      "defect": "The middle ground creates false expectations"
+    },
+    {
+      "id": 467,
+      "category": "animation_freeze",
+      "defect": "False expectations \u2192 player disappointment"
+    },
+    {
+      "id": 468,
+      "category": "animation_freeze",
+      "defect": "Player disappointment \u2192 negative reviews"
+    },
+    {
+      "id": 469,
+      "category": "animation_freeze",
+      "defect": "Negative reviews \u2192 game fails"
+    },
+    {
+      "id": 470,
+      "category": "animation_freeze",
+      "defect": "The HUD/animation discord is a commercial risk"
+    },
+    {
+      "id": 471,
+      "category": "animation_freeze",
+      "defect": "Steam reviews will mention \"no animation\""
+    },
+    {
+      "id": 472,
+      "category": "animation_freeze",
+      "defect": "\"No animation\" is the top review quote waiting to happen"
+    },
+    {
+      "id": 473,
+      "category": "animation_freeze",
+      "defect": "Every frame of missing animation is a potential negative review"
+    },
+    {
+      "id": 474,
+      "category": "animation_freeze",
+      "defect": "102 missing frames = 102 potential negative reviews"
+    },
+    {
+      "id": 475,
+      "category": "animation_freeze",
+      "defect": "Animation debt has real-world consequences"
+    },
+    {
+      "id": 476,
+      "category": "animation_freeze",
+      "defect": "The HUD is a liability until animation matches it"
+    },
+    {
+      "id": 477,
+      "category": "animation_freeze",
+      "defect": "Mitigation: remove action frame counts from HUD"
+    },
+    {
+      "id": 478,
+      "category": "animation_freeze",
+      "defect": "Mitigation: remove CONTACT/GRAB/CLINCH from HUD"
+    },
+    {
+      "id": 479,
+      "category": "animation_freeze",
+      "defect": "Mitigation: strip HUD to only what animation shows"
+    },
+    {
+      "id": 480,
+      "category": "animation_freeze",
+      "defect": "HUD minimalism as a temporary fix for animation absence"
+    },
+    {
+      "id": 481,
+      "category": "animation_freeze",
+      "defect": "The combat animation system exists only as HUD text"
+    },
+    {
+      "id": 482,
+      "category": "animation_freeze",
+      "defect": "The game's core promise (readable combat) is unfulfilled"
+    },
+    {
+      "id": 483,
+      "category": "animation_freeze",
+      "defect": "Readability requires animation; animation is absent"
+    },
+    {
+      "id": 484,
+      "category": "animation_freeze",
+      "defect": "The canons require animation; the codebase doesn't deliver"
+    },
+    {
+      "id": 485,
+      "category": "animation_freeze",
+      "defect": "GAME_CANON.md describes animated combat; the binary shows frozen mannequins"
+    },
+    {
+      "id": 486,
+      "category": "animation_freeze",
+      "defect": "The gap between canon and reality is the animation system"
+    },
+    {
+      "id": 487,
+      "category": "animation_freeze",
+      "defect": "Canon: \"MotionBricks generates all motion\" \u2014 Reality: nothing generates any motion"
+    },
+    {
+      "id": 488,
+      "category": "animation_freeze",
+      "defect": "Canon: \"same Grab intent produces different animation\" \u2014 Reality: Grab produces no animation"
+    },
+    {
+      "id": 489,
+      "category": "animation_freeze",
+      "defect": "Canon: \"players read conditions, not frame data\" \u2014 Reality: players read HUD, not characters"
+    },
+    {
+      "id": 490,
+      "category": "animation_freeze",
+      "defect": "The canon describes a game that doesn't exist"
+    },
+    {
+      "id": 491,
+      "category": "animation_freeze",
+      "defect": "The codebase implements a simulation that isn't visible"
+    },
+    {
+      "id": 492,
+      "category": "animation_freeze",
+      "defect": "Simulation without visualization is academic, not commercial"
+    },
+    {
+      "id": 493,
+      "category": "animation_freeze",
+      "defect": "The project is a research simulation with game aspirations"
+    },
+    {
+      "id": 494,
+      "category": "animation_freeze",
+      "defect": "Bridging research\u2192game requires animation"
+    },
+    {
+      "id": 495,
+      "category": "animation_freeze",
+      "defect": "Animation is the research\u2192game bridge"
+    },
+    {
+      "id": 496,
+      "category": "animation_freeze",
+      "defect": "The bridge is not built"
+    },
+    {
+      "id": 497,
+      "category": "animation_freeze",
+      "defect": "Building the bridge is the project's existential challenge"
+    },
+    {
+      "id": 498,
+      "category": "animation_freeze",
+      "defect": "Without animation, Just Dodge is not a game"
+    },
+    {
+      "id": 499,
+      "category": "animation_freeze",
+      "defect": "With animation, Just Dodge could be a revolutionary game"
+    },
+    {
+      "id": 500,
+      "category": "animation_freeze",
+      "defect": "The difference between \"not a game\" and \"revolutionary game\" is animation \u2014 build it"
+    }
+  ]
+}

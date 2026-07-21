@@ -94,7 +94,10 @@ GLB validation detail (errors/warnings/infos):
    `error: PYO3_CROSS_PYTHON_VERSION or an abi3-py3* feature must be specified when
    cross-compiling`. This violates the clean-directory constraint (no Python install) and
    "no generative model ships in the executable". Must be feature-gated out of the shipped
-   binary; baked, validated motion ships instead.
+   binary; baked, validated motion ships instead. [SUPERSEDED 2026-07-19 by owner ruling:
+   baked motion is forbidden in the shipped binary; the ship lane is the live generative
+   MotionBricks provider via the async buffered plan service. The PyO3 gating requirement
+   stands; its resolution is the runtime generative lane, not baked motion.]
 3. **Windows packaging unverified.** Existing `tools/package_release.sh` is
    Linux-only (`x86_64-unknown-linux-gnu`). No Windows x64 depot package exists yet.
 4. **Prior FAILs (from audit, still open):** canonical-media verifier absent; five human

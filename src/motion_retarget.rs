@@ -381,11 +381,54 @@ mod tests {
     }
 
     fn armored_mesh() -> SkinnedMeshData {
-        asset::load_skinned(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin"
-        ))
-        .expect("load armored duelist")
+        let specs = [
+            ("Hips", -1, Vec3::ZERO),
+            ("LeftUpLeg", 0, Vec3::new(-0.1, -0.4, 0.0)),
+            ("LeftLeg", 1, Vec3::new(0.0, -0.4, 0.0)),
+            ("LeftFoot", 2, Vec3::new(0.0, -0.35, 0.0)),
+            ("LeftToeBase", 3, Vec3::new(0.0, -0.1, 0.1)),
+            ("RightUpLeg", 0, Vec3::new(0.1, -0.4, 0.0)),
+            ("RightLeg", 5, Vec3::new(0.0, -0.4, 0.0)),
+            ("RightFoot", 6, Vec3::new(0.0, -0.35, 0.0)),
+            ("RightToeBase", 7, Vec3::new(0.0, -0.1, 0.1)),
+            ("Spine", 0, Vec3::new(0.0, 0.2, 0.0)),
+            ("Spine01", 9, Vec3::new(0.0, 0.2, 0.0)),
+            ("Spine02", 10, Vec3::new(0.0, 0.2, 0.0)),
+            ("LeftShoulder", 11, Vec3::new(-0.15, 0.15, 0.0)),
+            ("LeftArm", 12, Vec3::new(-0.25, 0.0, 0.0)),
+            ("LeftForeArm", 13, Vec3::new(-0.3, 0.0, 0.0)),
+            ("LeftHand", 14, Vec3::new(-0.25, 0.0, 0.0)),
+            ("RightShoulder", 11, Vec3::new(0.15, 0.15, 0.0)),
+            ("RightArm", 16, Vec3::new(0.25, 0.0, 0.0)),
+            ("RightForeArm", 17, Vec3::new(0.3, 0.0, 0.0)),
+            ("RightHand", 18, Vec3::new(0.25, 0.0, 0.0)),
+            ("neck", 11, Vec3::new(0.0, 0.2, 0.0)),
+            ("Head", 20, Vec3::new(0.0, 0.2, 0.0)),
+            ("head_end", 21, Vec3::new(0.0, 0.2, 0.0)),
+            ("headfront", 21, Vec3::new(0.0, 0.0, 0.1)),
+        ];
+        let mut rest_world = [Mat4::IDENTITY; 24];
+        let mut bones = Vec::with_capacity(specs.len());
+        for (index, (name, parent, translation)) in specs.into_iter().enumerate() {
+            let rest_local = Mat4::from_translation(translation);
+            rest_world[index] = if parent < 0 {
+                rest_local
+            } else {
+                rest_world[parent as usize] * rest_local
+            };
+            bones.push(asset::Bone {
+                name: name.to_string(),
+                parent,
+                rest_local,
+                inverse_bind: rest_world[index].inverse(),
+            });
+        }
+        SkinnedMeshData {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            bones,
+            feet_y: -1.25,
+        }
     }
 
     #[test]

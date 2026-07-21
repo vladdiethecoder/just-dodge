@@ -84,7 +84,7 @@ async fn run() {
         &device,
         &queue,
         &config,
-        false,
+        renderer::SceneProfile::Duel,
         std::path::Path::new(assets_dir),
     );
 

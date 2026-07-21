@@ -1,0 +1,84 @@
+{
+  "source_glb": "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/model.glb",
+  "blender_version": "5.2.0 LTS",
+  "scene_units": {
+    "system": "METRIC",
+    "scale_length": 1.0,
+    "meters_per_blender_unit_assumed": 1.0,
+    "basis": "glTF units are meters; Blender import is reported in metric world units"
+  },
+  "mesh_object_count": 1,
+  "armature_object_count": 0,
+  "vertex_count_total": 248471,
+  "triangle_count_total": 474758,
+  "bone_count_total": 0,
+  "material_slot_count_total": 1,
+  "material_names": [
+    "Material_0"
+  ],
+  "uv_layer_count_total": 1,
+  "manifold": {
+    "all_meshes_closed_manifold": false,
+    "boundary_edges_total": 21816,
+    "nonmanifold_edges_total": 0,
+    "loose_edges_total": 0,
+    "degenerate_faces_total": 0,
+    "note": "closed-manifold is reported as a geometry fact; non-manifold/open surfaces are not automatically disqualifying for a game character"
+  },
+  "world_space_bbox_m": {
+    "min": [
+      -0.75798100233078,
+      -0.17688000202178955,
+      -0.950439989566803
+    ],
+    "max": [
+      0.7564560174942017,
+      0.17932599782943726,
+      0.946789026260376
+    ],
+    "size": [
+      1.5144370198249817,
+      0.3562059998512268,
+      1.897229015827179
+    ],
+    "center": [
+      -0.0007624924182891846,
+      0.0012229979038238525,
+      -0.001825481653213501
+    ]
+  },
+  "meshes": [
+    {
+      "object": "Mesh_0",
+      "mesh_data": "Mesh_0",
+      "vertices": 248471,
+      "triangles": 474758,
+      "polygons": 474758,
+      "material_slots": [
+        "Material_0"
+      ],
+      "uv_layers": [
+        "UVMap"
+      ],
+      "topology": {
+        "closed_manifold": false,
+        "boundary_edges": 21816,
+        "nonmanifold_edges": 0,
+        "loose_edges": 0,
+        "degenerate_faces": 0
+      },
+      "dimensions_blender_units": [
+        1.514436960220337,
+        0.3562059998512268,
+        1.8972289562225342
+      ]
+    }
+  ],
+  "armatures": [],
+  "rendered_views": [
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/front_y_minus.png",
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/back_y_plus.png",
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/right_x_plus.png",
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/left_x_minus.png"
+  ]
+}

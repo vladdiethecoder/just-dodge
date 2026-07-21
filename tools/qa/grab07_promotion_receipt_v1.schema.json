@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://just-dodge.invalid/schema/grab07-promotion-receipt-v1",
+  "title": "Grab-07 promotion receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "executable_revision", "executable_sha256", "build", "inputs",
+    "worst_substep", "mesh_pairs", "before", "after", "repair",
+    "source_sha256", "output_sha256", "tool_version", "deterministic_rerun_sha256",
+    "gates", "human_decision"
+  ],
+  "properties": {
+    "schema": {"const": "grab07-promotion-receipt-v1"},
+    "executable_revision": {"type": "string", "pattern": "^[0-9a-f]{40,64}$"},
+    "executable_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "build": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rustc", "blender", "python", "node"],
+      "properties": {
+        "rustc": {"type": "string", "minLength": 1},
+        "blender": {"type": "string", "minLength": 1},
+        "python": {"type": "string", "minLength": 1},
+        "node": {"type": "string", "minLength": 1}
+      }
+    },
+    "inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["motion_sha256", "mesh_sha256", "cameras_sha256", "opponent_root_offset"],
+      "properties": {
+        "motion_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "mesh_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "cameras_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "opponent_root_offset": {
+          "type": "array", "minItems": 16, "maxItems": 16,
+          "items": {"type": "number"}
+        }
+      }
+    },
+    "worst_substep": {
+      "type": "object", "additionalProperties": false,
+      "required": ["physics_tick", "render_frame"],
+      "properties": {
+        "physics_tick": {"type": "integer", "minimum": 0},
+        "render_frame": {"type": "integer", "minimum": 0}
+      }
+    },
+    "mesh_pairs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "before": {"$ref": "#/$defs/metrics"},
+    "after": {"$ref": "#/$defs/metrics"},
+    "repair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["moved_vertex_ids", "moved_vertex_count", "max_displacement_m", "rms_displacement_m"],
+      "properties": {
+        "moved_vertex_ids": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "moved_vertex_count": {"type": "integer", "minimum": 0},
+        "max_displacement_m": {"type": "number", "minimum": 0},
+        "rms_displacement_m": {"type": "number", "minimum": 0}
+      }
+    },
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "output_sha256": {"type": "string", "pattern": "^(pending|[0-9a-f]{64})$"},
+    "tool_version": {"type": "string", "minLength": 1},
+    "deterministic_rerun_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gates": {
+      "type": "object", "additionalProperties": false,
+      "required": ["G1", "G2", "G3", "G4", "G5", "G6"],
+      "properties": {
+        "G1": {"$ref": "#/$defs/gate"}, "G2": {"$ref": "#/$defs/gate"},
+        "G3": {"$ref": "#/$defs/gate"}, "G4": {"$ref": "#/$defs/gate"},
+        "G5": {"$ref": "#/$defs/gate"}, "G6": {"$ref": "#/$defs/gate"}
+      }
+    },
+    "human_decision": {"enum": ["pending", "approved", "rejected"]}
+  },
+  "$defs": {
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_penetration_m", "rms_penetration_m", "affected_area_m2", "duration_ticks", "min_clearance_m"],
+      "properties": {
+        "max_penetration_m": {"type": "number", "minimum": 0},
+        "rms_penetration_m": {"type": "number", "minimum": 0},
+        "affected_area_m2": {"type": "number", "minimum": 0},
+        "duration_ticks": {"type": "integer", "minimum": 0},
+        "min_clearance_m": {"type": "number"}
+      }
+    },
+    "gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "measured_value"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "PENDING_HUMAN"]},
+        "measured_value": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

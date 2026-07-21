@@ -90,6 +90,39 @@ pub struct SkinnedObject {
     pub model: Mat4,
 }
 
+/// Explicit scene-content profile for a `Renderer`. This replaces the ambiguous
+/// `minimal_scene` bool, which conflated "no arena props" with "no ground plane,
+/// no contact shadows, single carrier" and forced callers to guess. Each profile
+/// names a real configuration a caller needs, so scene content is chosen by
+/// intent, not by a flag whose side effects must be memorized.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SceneProfile {
+    /// Full duel arena: props (rock/gate/pillars) + ground plane + contact
+    /// shadows + both skinned carriers. Used by the shipped game.
+    Duel,
+    /// Flat verification arena: ground plane + contact shadows + both carriers,
+    /// but NO props. Used by the debug-mannequin game loop for spacing QA.
+    FlatArena,
+    /// Bare capture scene: no props, no ground, no contact shadows, a single
+    /// zero-positioned carrier. Used by headless capture harnesses.
+    Capture,
+}
+
+impl SceneProfile {
+    const fn props(self) -> bool {
+        matches!(self, Self::Duel)
+    }
+    const fn ground(self) -> bool {
+        matches!(self, Self::Duel | Self::FlatArena)
+    }
+    const fn contact_shadows(self) -> bool {
+        matches!(self, Self::Duel | Self::FlatArena)
+    }
+    const fn single_carrier(self) -> bool {
+        matches!(self, Self::Capture)
+    }
+}
+
 pub struct Renderer {
     pub pipeline: wgpu::RenderPipeline,
     pub skin_pipeline: wgpu::RenderPipeline,
@@ -110,6 +143,9 @@ pub struct Renderer {
     debug_line_count: u32,
     hitbox_vb: Option<wgpu::Buffer>,
     hitbox_line_count: u32,
+    hud_pipeline: wgpu::RenderPipeline,
+    hud_vb: Option<wgpu::Buffer>,
+    hud_line_count: u32,
     /// Parent index (-1 = root) for the active skinned carrier hierarchy.
     pub bone_parents: Vec<i32>,
 }
@@ -215,7 +251,19 @@ fn build_solid_mesh_object(
 ) -> MeshObject {
     let mesh = asset::load_binary(mesh_path)
         .unwrap_or_else(|error| panic!("failed to load {label} mesh {mesh_path}: {error}"));
-    let (vertex_buffer, index_buffer, index_count) = build_mesh_buffers(device, &mesh, label);
+    build_solid_mesh_object_from_mesh(device, queue, uniform_bgl, texture_bgl, &mesh, label, rgba)
+}
+
+fn build_solid_mesh_object_from_mesh(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    uniform_bgl: &wgpu::BindGroupLayout,
+    texture_bgl: &wgpu::BindGroupLayout,
+    mesh: &asset::MeshData,
+    label: &str,
+    rgba: [u8; 4],
+) -> MeshObject {
+    let (vertex_buffer, index_buffer, index_count) = build_mesh_buffers(device, mesh, label);
     let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some(&format!("{label} UB")),
         size: std::mem::size_of::<ObjectUniform>() as u64,
@@ -253,6 +301,37 @@ fn build_solid_mesh_object(
         uniform_bind_group,
         texture_bind_group,
         model: Mat4::IDENTITY,
+    }
+}
+
+fn lifecycle_qa_weapon_mesh() -> asset::MeshData {
+    let corners = [
+        [-0.025, -0.025, 0.0],
+        [0.025, -0.025, 0.0],
+        [0.025, 0.025, 0.0],
+        [-0.025, 0.025, 0.0],
+        [-0.025, -0.025, 1.2],
+        [0.025, -0.025, 1.2],
+        [0.025, 0.025, 1.2],
+        [-0.025, 0.025, 1.2],
+    ];
+    let mut vertices = Vec::with_capacity(24);
+    let mut normals = Vec::with_capacity(24);
+    let mut uvs = Vec::with_capacity(16);
+    for corner in corners {
+        vertices.extend_from_slice(&corner);
+        let normal = Vec3::from_array(corner).normalize_or_zero();
+        normals.extend_from_slice(&normal.to_array());
+        uvs.extend_from_slice(&[0.0, 0.0]);
+    }
+    asset::MeshData {
+        vertices,
+        normals,
+        uvs,
+        indices: vec![
+            0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7,
+            3, 3, 7, 4, 3, 4, 0,
+        ],
     }
 }
 
@@ -471,8 +550,36 @@ impl Renderer {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         config: &wgpu::SurfaceConfiguration,
-        minimal_scene: bool,
+        scene: SceneProfile,
         assets: &Path,
+    ) -> Self {
+        Self::new_internal(device, queue, config, scene, assets, None)
+    }
+
+    pub fn new_lifecycle_qa(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        config: &wgpu::SurfaceConfiguration,
+        assets: &Path,
+        mesh: &asset::SkinnedMeshData,
+    ) -> Self {
+        Self::new_internal(
+            device,
+            queue,
+            config,
+            SceneProfile::FlatArena,
+            assets,
+            Some(mesh),
+        )
+    }
+
+    fn new_internal(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        config: &wgpu::SurfaceConfiguration,
+        scene: SceneProfile,
+        assets: &Path,
+        lifecycle_qa_mesh: Option<&asset::SkinnedMeshData>,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -720,7 +827,7 @@ impl Renderer {
             vertex: wgpu::VertexState {
                 module: &debug_shader,
                 entry_point: Some("vs_main"),
-                buffers: &[Some(debug_vl)],
+                buffers: &[Some(debug_vl.clone())],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -764,6 +871,46 @@ impl Renderer {
             }],
         });
 
+        // --- HUD line pipeline (screen-space NDC, depth-always, identity MVP).
+        // Same debug shader + uniform layout; depth_compare Always so HUD
+        // strokes draw over the world at any range.
+        let hud_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("HUD Pipeline"),
+            cache: None,
+            layout: Some(&debug_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &debug_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Some(debug_vl.clone())],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &debug_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                front_face: wgpu::FrontFace::Ccw,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::Always),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+        });
+
         // --- Depth texture ---
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Depth Texture"),
@@ -784,7 +931,7 @@ impl Renderer {
         // --- Build all rigid objects ---
         let mut objects = Vec::new();
 
-        if !minimal_scene {
+        if scene.props() {
             // Frame the duel instead of placing hero assets behind the camera.
             struct ObjCfg {
                 bin: &'static str,
@@ -876,7 +1023,7 @@ impl Renderer {
         }
 
         // --- Ground plane ---
-        if !minimal_scene {
+        if scene.ground() {
             {
                 let (gv, gi, gc) = build_procedural_ground(device);
                 let (gtv, gts) = build_ground_texture(device, queue);
@@ -921,9 +1068,7 @@ impl Renderer {
             }
         }
 
-        let contact_shadow_indices = if minimal_scene {
-            None
-        } else {
+        let contact_shadow_indices = if scene.contact_shadows() {
             let first = objects.len();
             objects.push(build_contact_shadow_object(
                 device,
@@ -940,26 +1085,34 @@ impl Renderer {
                 "Opponent Contact Shadow",
             ));
             Some([first, first + 1])
+        } else {
+            None
         };
 
         // --- Skinned C0 armored-duelist carriers ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
-        let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
-            assets
-                .join("source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
-                .to_string_lossy()
-                .into_owned()
-        });
-        let mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
-            panic!("failed to load C0 armored duelist {skin_path}: {error}")
-        });
+        let loaded_mesh;
+        let mesh = if let Some(mesh) = lifecycle_qa_mesh {
+            mesh
+        } else {
+            let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
+                assets
+                    .join("source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+                    .to_string_lossy()
+                    .into_owned()
+            });
+            loaded_mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
+                panic!("failed to load C0 armored duelist {skin_path}: {error}")
+            });
+            &loaded_mesh
+        };
         assert_eq!(
             mesh.bones.len(),
             24,
             "C0 armored duelist must preserve the accepted 24-bone humanoid contract"
         );
         let bone_parents = mesh.bones.iter().map(|bone| bone.parent).collect();
-        let positions: Vec<glam::Vec3> = if minimal_scene {
+        let positions: Vec<glam::Vec3> = if scene.single_carrier() {
             vec![glam::Vec3::ZERO]
         } else {
             vec![glam::vec3(0.0, 0.0, 1.0), glam::vec3(0.0, 0.0, -1.0)]
@@ -999,13 +1152,23 @@ impl Renderer {
                     resource: sub.as_entire_binding(),
                 }],
             });
-            let texture_path = std::env::var_os("JUST_DODGE_C0_BASE_COLOR")
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|| {
-                    assets.join("source/meshy/c0_armored_duelist_001/textures/base_color.png")
-                });
-            let (_texture, stv, sts) =
-                load_texture(device, queue, texture_path.to_string_lossy().as_ref());
+            // The debug-mannequin loop deliberately uses an untextured neutral
+            // carrier so joint/weight defects stay readable. Legacy paths keep
+            // their explicit asset texture behavior.
+            let (stv, sts) = if lifecycle_qa_mesh.is_some()
+                || std::env::var_os("JUST_DODGE_C0_FLAT_COLOR").is_some()
+            {
+                build_solid_texture(device, queue, [184, 190, 198, 255])
+            } else {
+                let texture_path = std::env::var_os("JUST_DODGE_C0_BASE_COLOR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| {
+                        assets.join("source/meshy/c0_armored_duelist_001/textures/base_color.png")
+                    });
+                let (_texture, view, sampler) =
+                    load_texture(device, queue, texture_path.to_string_lossy().as_ref());
+                (view, sampler)
+            };
             let stbg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("C0 armored-duelist TBG"),
                 layout: &texture_bgl,
@@ -1054,28 +1217,34 @@ impl Renderer {
             mesh.bones.len()
         );
 
-        let first_person_weapon = build_solid_mesh_object(
-            device,
-            queue,
-            &uniform_bgl,
-            &texture_bgl,
-            &assets
-                .join("weapons/w0_sword_assembled.bin")
-                .to_string_lossy(),
-            "W0 first-person longsword",
-            [142, 151, 160, 255],
-        );
-        let opponent_weapon = build_solid_mesh_object(
-            device,
-            queue,
-            &uniform_bgl,
-            &texture_bgl,
-            &assets
-                .join("weapons/w0_sword_assembled.bin")
-                .to_string_lossy(),
-            "W0 opponent longsword",
-            [142, 151, 160, 255],
-        );
+        let lifecycle_qa_weapon = lifecycle_qa_mesh.is_some().then(lifecycle_qa_weapon_mesh);
+        let build_weapon = |label: &str| {
+            if let Some(mesh) = lifecycle_qa_weapon.as_ref() {
+                build_solid_mesh_object_from_mesh(
+                    device,
+                    queue,
+                    &uniform_bgl,
+                    &texture_bgl,
+                    mesh,
+                    label,
+                    [142, 151, 160, 255],
+                )
+            } else {
+                build_solid_mesh_object(
+                    device,
+                    queue,
+                    &uniform_bgl,
+                    &texture_bgl,
+                    &assets
+                        .join("weapons/w0_sword_assembled.bin")
+                        .to_string_lossy(),
+                    label,
+                    [142, 151, 160, 255],
+                )
+            }
+        };
+        let first_person_weapon = build_weapon("W0 first-person longsword");
+        let opponent_weapon = build_weapon("W0 opponent longsword");
 
         Self {
             pipeline,
@@ -1095,6 +1264,9 @@ impl Renderer {
             debug_line_count: 0,
             hitbox_vb: None,
             hitbox_line_count: 0,
+            hud_pipeline,
+            hud_vb: None,
+            hud_line_count: 0,
             bone_parents,
         }
     }
@@ -1167,6 +1339,43 @@ impl Renderer {
         rpass.set_bind_group(0, &self.debug_ubg, &[]);
         rpass.set_vertex_buffer(0, vb.slice(..));
         rpass.draw(0..self.debug_line_count, 0..1);
+    }
+
+    /// Upload screen-space (NDC) HUD line segments (stroke-font HUD).
+    pub fn update_hud_segments(
+        &mut self,
+        device: &wgpu::Device,
+        segments: &[(Vec3, Vec3, [f32; 3])],
+    ) {
+        let vertices = debug_segment_vertices(segments);
+        self.hud_line_count = (vertices.len() / 6) as u32;
+        if vertices.is_empty() {
+            self.hud_vb = None;
+            return;
+        }
+        self.hud_vb = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("HUD VB"),
+                contents: bytemuck::cast_slice(&vertices),
+                usage: wgpu::BufferUsages::VERTEX,
+            }),
+        );
+    }
+
+    /// Draw the HUD after all world passes: uploads the identity MVP (NDC
+    /// passthrough) and draws with the depth-always HUD pipeline. Call LAST in
+    /// the render pass; the next frame re-uploads proj_view before the world
+    /// debug overlay.
+    pub fn render_hud_overlay<'a>(&'a self, queue: &wgpu::Queue, rpass: &mut wgpu::RenderPass<'a>) {
+        let Some(ref vb) = self.hud_vb else { return };
+        if self.hud_line_count == 0 {
+            return;
+        }
+        self.upload_debug_mvp(queue, &Mat4::IDENTITY);
+        rpass.set_pipeline(&self.hud_pipeline);
+        rpass.set_bind_group(0, &self.debug_ubg, &[]);
+        rpass.set_vertex_buffer(0, vb.slice(..));
+        rpass.draw(0..self.hud_line_count, 0..1);
     }
 
     /// Upload hitbox debug line vertices.

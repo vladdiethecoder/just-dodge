@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20260721_142949_text-to-3d_019f85f0",
+      "prompt": "",
+      "task_type": "text-to-3d",
+      "root_task_id": "019f85f0-ef51-7a65-b7ff-1f0588f59139",
+      "created_at": "2026-07-21T18:29:49.092Z",
+      "updated_at": "2026-07-21T18:39:53.173Z",
+      "task_count": 1
+    },
+    {
+      "folder": "20260721_153227_text-to-3d_019f862a",
+      "prompt": "",
+      "task_type": "text-to-3d",
+      "root_task_id": "019f862a-4a36-78ef-a449-5ab983dd904c",
+      "created_at": "2026-07-21T19:32:27.571Z",
+      "updated_at": "2026-07-21T19:37:25.968Z",
+      "task_count": 1
+    },
+    {
+      "folder": "20260721_161034_text-to-3d_019f864d",
+      "prompt": "",
+      "task_type": "text-to-3d",
+      "root_task_id": "019f864d-2ef6-7cd9-90ba-3e1f3ad9f8ed",
+      "created_at": "2026-07-21T20:10:34.437Z",
+      "updated_at": "2026-07-21T20:19:17.527Z",
+      "task_count": 1
+    },
+    {
+      "folder": "20260721_162310_text-to-3d_019f8658",
+      "prompt": "",
+      "task_type": "text-to-3d",
+      "root_task_id": "019f8658-9cc8-7ea1-ae65-68d4e9738546",
+      "created_at": "2026-07-21T20:23:10.698Z",
+      "updated_at": "2026-07-21T20:24:08.167Z",
+      "task_count": 1
+    }
+  ]
+}

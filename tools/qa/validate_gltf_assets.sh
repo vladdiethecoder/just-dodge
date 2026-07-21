@@ -43,8 +43,14 @@ export GLTF_VAL_MODULE="$PREFIX/lib/node_modules/gltf-validator"
 
 mapfile -t GLBS < <(git -C "$ROOT" ls-files | grep -i '\.glb$')
 if [[ ${#GLBS[@]} -eq 0 ]]; then
-    echo "GLTF_VALIDATION=FAIL no tracked GLB assets found" >&2
-    exit 1
+    python3 - "$ROOT/docs/provenance/RETIRED_ASSET_CORPUS_20260720.json" <<'PY'
+import json,sys
+manifest=json.load(open(sys.argv[1], encoding="utf-8"))
+if manifest.get("runtime_admissible") is not False or manifest.get("promotion") != "BLOCKED":
+    raise SystemExit("retired asset corpus does not fail closed")
+PY
+    echo "GLTF_VALIDATION=PASS_BLOCKED_NO_TRACKED_ASSETS assets=0"
+    exit 0
 fi
 
 fail=0

@@ -1,5 +1,7 @@
 # Frontier Techniques for Just Dodge — Consolidated Research Synthesis
 
+> **Authority reconciliation:** research mechanisms in this document are candidates, not automatic architecture authority. `GAME_CANON.md`, `PRD_ARMOR.md`, `PRD_MOTION.md`, and `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md` supersede any language below that gives triangle meshes, presentation physics, neural deformation, baked poses/clips, or unrestricted FEM a write path into deterministic truth.
+
 **Purpose:** Ground the deep-simulation subsystems (motion, cloth/leather, chainmail, plate-FEM, brittle fracture, tissue injury, determinism, hitbox parity, camera, AI) in frontier 2023–2026 primary research, reconciled against `docs/design/GAME_CANON.md` and the repo's actual constraints (Rust 2024 + wgpu 30 + winit 0.30 + glam 0.28 + ONNX Runtime 2.0/ort with CUDA; 60 Hz deterministic combat truth; stable truth hash; presentation-isolated; MotionBricks is the sole motion engine; no motion fallbacks; hitbox parity mandatory).
 
 **Governing authorities:**

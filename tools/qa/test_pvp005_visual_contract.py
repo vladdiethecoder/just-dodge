@@ -24,6 +24,9 @@ class VisualContractTests(unittest.TestCase):
     def test_committed_contract_is_complete_and_hash_bound(self) -> None:
         result = validate_config(DEFAULT_CONFIG)
         self.assertEqual(result["background_selection"]["mode"], "paired")
+        self.assertTrue(result["retired"])
+        self.assertGreaterEqual(len(result["retired_bound_inputs"]), 1)
+        self.assertFalse(result["config"]["runtime_admissible"])
 
     def test_declared_materials_require_complementary_pair(self) -> None:
         selected = select_backgrounds(self.config)

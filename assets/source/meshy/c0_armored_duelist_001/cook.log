@@ -1,9 +1,0 @@
-IMB_loadifffile: couldn't get mapping /run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/c0_armored_duelist_001
-IMB_loadifffile: couldn't get mapping /run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/c0_armored_duelist_001
-FBX version: 7400
-Mesh: 82928 verts, 309864 idxs (dedup from loops)
-Scale factor s=1.0 (pre-bake mesh bbox height=1.80)
-Wrote assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin: 24 bones, 82928 skinned verts
-Blender 4.3.2 (hash 32f5fdce0a0a built 2024-12-17 01:31:14)
-
-Blender quit

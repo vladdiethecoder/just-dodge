@@ -1,0 +1,27 @@
+{
+  "comment": "Retarget map for GEM-X retarget BVH (Harmony4D). Maps BVH joint names to G1Skeleton34 indices.",
+  "g1_skeleton": "same as g1_retarget_map.json",
+  "maps": {
+    "cmu": {
+      "Hips": 0,
+      "Spine1": 15,
+      "Chest": 17,
+      "Neck1": 18,
+      "Head": 19,
+      "LeftShoulder": 20,
+      "LeftArm": 21,
+      "LeftForeArm": 22,
+      "LeftHand": 24,
+      "RightShoulder": 25,
+      "RightArm": 27,
+      "RightForeArm": 28,
+      "RightHand": 31,
+      "LeftLeg": 1,
+      "LeftShin": 4,
+      "LeftFoot": 5,
+      "RightLeg": 8,
+      "RightShin": 11,
+      "RightFoot": 12
+    }
+  }
+}

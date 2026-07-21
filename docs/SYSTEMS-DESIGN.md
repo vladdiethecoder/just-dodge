@@ -380,7 +380,7 @@ Motion communicates hidden intent after reveal and makes consequences legible. M
 
 - Current authored keyframe constraints in `src/combat.rs`.
 - MotionBricks VQVAE/transformer ONNX artifacts.
-- SKM1 mannequin and ANM1 baked clips.
+- SKM1 mannequin. ANM1 baked clips are removed as a source (owner ruling 2026-07-19: no baked clips in any mode).
 - Future action reference clips.
 
 ### Runtime Layers
@@ -407,10 +407,10 @@ Truth event
 
 If real-time MotionBricks inference fails latency or artifact gates:
 
-1. Keep MotionBricks export path alive as research.
-2. Use verified prebaked action clips for playable loop.
+1. Keep the MotionBricks runtime path alive; inference runs as an async buffered plan service so the 120 Hz truth tick never waits on it.
+2. Prebaked action clips are forbidden (owner ruling 2026-07-19); latency or stability problems are solved in the inference path, never by clip substitution.
 3. Keep truth/presentation boundary unchanged.
-4. Do not block combat fun on neural inference.
+4. Do not block combat fun on neural inference; presentation holds the last validated pose while truth continues.
 
 ## 9. Camera System
 

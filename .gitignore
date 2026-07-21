@@ -62,4 +62,23 @@ GR00T-WholeBodyControl
 # Local, timestamped QA captures and executable logs. Canonical reviewed media
 # is promoted explicitly under docs/media/latest/ with a manifest instead.
 qa_runs/
-/validation_evidence/
+# Local agent/tool verification receipts. Canonical lightweight manifests are
+# promoted explicitly under docs/ or validation_evidence/ after review.
+/.temp/
+
+# Quarantined SG02 DCC/Meshy candidates and Blender working files are local
+# production inputs, not SG01 source or release evidence. Promote only reviewed,
+# provenance-bound lightweight manifests until the asset gate explicitly passes.
+/assets/foundation/
+*.blend1
+
+# Generated research concepts are diagnostic references, not promoted game media.
+/docs/research/media/
+
+# The historical ARDY-v4 authorization certificate references its consumed
+# output by path; the validator replays that chain and requires the directory
+# to exist from a clean checkout. Track this one immutable evidence bundle.
+!/validation_evidence/pvp005-ardy-v4-generation-20260716T001310Z/
+# G3: the raw-to-training manifest is the immutable provenance artifact the
+# RESET-004 gate requires from a clean checkout; track it explicitly.
+!/qa_runs/grab07_combat_corpus/raw_to_training_manifest.json

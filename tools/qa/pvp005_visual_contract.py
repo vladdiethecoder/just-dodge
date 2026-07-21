@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -116,7 +117,7 @@ def select_backgrounds(config: dict[str, object]) -> dict[str, object]:
     }
 
 
-def validate_config(config_path: Path) -> dict[str, object]:
+def validate_config(config_path: Path) -> dict[str, Any]:
     config = json.loads(config_path.read_text())
     if config.get("schema") != "just-dodge-pvp005-visual-harness-v1":
         raise SystemExit("unsupported PVP-005 visual harness schema")
@@ -150,10 +151,25 @@ def validate_config(config_path: Path) -> dict[str, object]:
         raise SystemExit("visual layer contract is incomplete or contains an undeclared layer")
     if config["required_scopes"] != ["candidate", "admitted", "live_runtime"]:
         raise SystemExit("candidate/admitted/live scopes must all be required")
+    retired = config.get("status") == "retired_not_current_evidence"
+    if retired:
+        if config.get("runtime_admissible") is not False:
+            raise SystemExit("retired visual contract cannot be runtime-admissible")
+        retirement_path = ROOT / config["retirement_manifest"]
+        retirement = json.loads(retirement_path.read_text())
+        if retirement.get("runtime_admissible") is not False:
+            raise SystemExit("visual-contract retirement manifest became runtime-admissible")
+        retired_inputs = {entry["path"]: entry["sha256"] for entry in retirement["files"]}
+    else:
+        retired_inputs = {}
+    retired_bound_inputs = []
     for name, receipt in config["bound_inputs"].items():
         path = ROOT / receipt["path"]
         if not path.is_file():
-            raise SystemExit(f"missing bound visual input {name}: {receipt['path']}")
+            if retired_inputs.get(receipt["path"]) == receipt["sha256"]:
+                retired_bound_inputs.append(name)
+                continue
+            raise SystemExit(f"missing unretired bound visual input {name}: {receipt['path']}")
         if sha256(path) != receipt["sha256"]:
             raise SystemExit(f"bound visual input drift: {name}")
     selection = select_backgrounds(config)
@@ -161,7 +177,12 @@ def validate_config(config_path: Path) -> dict[str, object]:
     observed = {key: selection[key] for key in expected}
     if observed != expected:
         raise SystemExit(f"background selection drift: {observed} != {expected}")
-    return {"config": config, "background_selection": selection}
+    return {
+        "config": config,
+        "background_selection": selection,
+        "retired": retired,
+        "retired_bound_inputs": retired_bound_inputs,
+    }
 
 
 def main() -> None:
@@ -181,7 +202,12 @@ def main() -> None:
         "PVP005_BACKGROUND_SELECTION="
         + (selection["single"] if selection["mode"] == "single" else f"{selection['dark']}+{selection['light']}")
     )
-    print("PVP005_VISUAL_CONTRACT=PASS_CONFIG_ONLY")
+    if result["retired"]:
+        print(f"PVP005_RETIRED_BOUND_INPUTS={len(result['retired_bound_inputs'])}")
+        print("PVP005_VISUAL_CONTRACT=PASS_RETIRED_BLOCKED")
+        print("RUNTIME_ADMISSIBLE=false")
+    else:
+        print("PVP005_VISUAL_CONTRACT=PASS_CONFIG_ONLY")
 
 
 if __name__ == "__main__":

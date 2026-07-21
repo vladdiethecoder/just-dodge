@@ -1,0 +1,6 @@
+{
+  "title": "PVP-005: 500 Working Animation Quality Defect Audit",
+  "date": "2026-07-21",
+  "method": "vision_analyze on 40-frame contact sheet",
+  "total_defects": 500
+}

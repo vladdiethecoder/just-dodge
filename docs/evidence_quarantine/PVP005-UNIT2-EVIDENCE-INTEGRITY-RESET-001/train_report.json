@@ -1,0 +1,161 @@
+{
+ "ablation_delta_mm": 5.39,
+ "ablation_ok": true,
+ "best_abl_mm": 265.21,
+ "best_cond_mm": 259.82,
+ "cells": [
+  "high",
+  "low",
+  "nominal"
+ ],
+ "checkpoint_sha256": "3091da689ef5c302f69dbadbc96d8e00b27cdfd76a922aceee64960637e9b796",
+ "conditioning": "genuine dual-backbone (exogenous target enters pose+root INPUT)",
+ "held_out_split": "by subject: ['135', '86']",
+ "heldout_ablated": [
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 233.44,
+   "hand_surface_err_mm": 265.21,
+   "peak_reach": 0.5674,
+   "seg_id": "135_04_00_grab",
+   "subject": "135"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 764.2,
+   "hand_surface_err_mm": 405.29,
+   "peak_reach": 0.5576,
+   "seg_id": "86_03_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 482.28,
+   "hand_surface_err_mm": 359.24,
+   "peak_reach": 0.6908,
+   "seg_id": "86_04_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 327.85,
+   "hand_surface_err_mm": 419.11,
+   "peak_reach": 0.4994,
+   "seg_id": "86_05_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 503.08,
+   "hand_surface_err_mm": 611.45,
+   "peak_reach": 0.6295,
+   "seg_id": "86_08_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 276.98,
+   "hand_surface_err_mm": 276.59,
+   "peak_reach": 0.6418,
+   "seg_id": "86_08_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 511.84,
+   "hand_surface_err_mm": 424.77,
+   "peak_reach": 0.4896,
+   "seg_id": "86_08_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 552.57,
+   "hand_surface_err_mm": 449.4,
+   "peak_reach": 0.4675,
+   "seg_id": "86_08_04_grab",
+   "subject": "86"
+  }
+ ],
+ "heldout_conditioned": [
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 259.21,
+   "hand_surface_err_mm": 259.82,
+   "peak_reach": 0.5674,
+   "seg_id": "135_04_00_grab",
+   "subject": "135"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 699.4,
+   "hand_surface_err_mm": 344.87,
+   "peak_reach": 0.5576,
+   "seg_id": "86_03_07_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 433.61,
+   "hand_surface_err_mm": 392.28,
+   "peak_reach": 0.6908,
+   "seg_id": "86_04_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 267.53,
+   "hand_surface_err_mm": 483.71,
+   "peak_reach": 0.4994,
+   "seg_id": "86_05_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 417.59,
+   "hand_surface_err_mm": 656.96,
+   "peak_reach": 0.6295,
+   "seg_id": "86_08_01_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "nominal",
+   "fullbody_err_mm": 252.16,
+   "hand_surface_err_mm": 300.84,
+   "peak_reach": 0.6418,
+   "seg_id": "86_08_02_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 441.0,
+   "hand_surface_err_mm": 406.32,
+   "peak_reach": 0.4896,
+   "seg_id": "86_08_03_grab",
+   "subject": "86"
+  },
+  {
+   "cell": "low",
+   "fullbody_err_mm": 461.12,
+   "hand_surface_err_mm": 425.8,
+   "peak_reach": 0.4675,
+   "seg_id": "86_08_04_grab",
+   "subject": "86"
+  }
+ ],
+ "heldout_segments": 8,
+ "hidden": 512,
+ "lr": 0.0005,
+ "median_cond_mm": 399.3,
+ "reason": "best 259.82mm > 15mm",
+ "runtime_admitted": false,
+ "schema": "just-dodge-grab07-unit2-train-v4-cmu",
+ "seed": 20260718,
+ "source": "CMU Graphics Lab Motion Capture Database (public domain)",
+ "steps": 15000,
+ "train_loss_first": 0.552234411239624,
+ "train_loss_last": 0.03718886524438858,
+ "train_segments": 62,
+ "verdict": "FAIL",
+ "worst_cond_mm": 656.96
+}

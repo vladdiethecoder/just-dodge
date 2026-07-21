@@ -1,8 +1,10 @@
 pub mod action_matrix;
 pub mod active_ragdoll;
 pub mod armor;
+pub mod articulated_physics;
 pub mod asset;
 
+pub mod ai_script;
 pub mod cleanbox;
 pub mod combat;
 pub mod dodge_presentation;
@@ -10,10 +12,13 @@ pub mod duel_physics;
 pub mod duel_world;
 pub mod g1_articulation;
 pub mod g1_hinge_adapter;
+pub mod golden_replay;
 pub mod hero_strike;
 pub mod hinge_projection;
 pub mod hitbox;
+pub mod hud;
 pub mod injury;
+pub mod intent;
 pub mod m3_cleanbox;
 pub mod milestone3;
 pub mod motion;
@@ -24,6 +29,7 @@ pub mod motion_retarget;
 pub mod motion_runtime;
 #[cfg(feature = "motion-inference")]
 pub mod motion_service;
+pub mod motion_service_async;
 pub mod neural_plan;
 pub mod renderer;
 pub mod replay;

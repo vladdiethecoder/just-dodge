@@ -9,6 +9,57 @@ permissions:
   contents: read
 
 jobs:
+  sg02-golden-platform:
+    name: SG02 golden parity (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux
+            runner: ubuntu-24.04
+            golden_binary: target/release/golden_match
+          - label: Windows
+            runner: windows-2025
+            golden_binary: target/release/golden_match.exe
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - name: Build the no-default-features golden verifier
+        run: cargo build --release --locked --no-default-features --bin golden_match
+      - name: Emit a platform-bound SG02 receipt
+        run: >-
+          python tools/qa/sg02_cross_platform_receipt.py
+          --golden-match ${{ matrix.golden_binary }}
+          --expected tools/qa/sg02_golden_hashes.json
+          --source-revision ${{ github.sha }}
+          --platform-label ${{ matrix.label }}
+          --out validation_evidence/sg02-cross-platform/${{ matrix.label }}/receipt.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sg02-receipt-${{ matrix.label }}
+          path: validation_evidence/sg02-cross-platform/${{ matrix.label }}/receipt.json
+          if-no-files-found: error
+
+  sg02-golden-reduce:
+    name: SG02 Linux/Windows receipt reduction
+    needs: sg02-golden-platform
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sg02-receipt-*
+          path: sg02-receipts
+      - name: Reject missing or mismatched Linux/Windows receipts
+        run: >-
+          python3 tools/qa/sg02_cross_platform_reduce.py
+          --expected tools/qa/sg02_golden_hashes.json
+          --receipt sg02-receipts/sg02-receipt-Linux/receipt.json
+          --receipt sg02-receipts/sg02-receipt-Windows/receipt.json
+          --require Linux --require Windows
+          --out validation_evidence/sg02-cross-platform/reduced.json
+
   verify:
     runs-on: ubuntu-24.04
     steps:
@@ -20,17 +71,26 @@ jobs:
           components: rustfmt, clippy
       - run: python3 tools/verify_pvp005_revision_baseline.py
       - run: python3 tools/qa/enforce_evidence_quarantine.py
+      - run: python3 tools/qa/test_sg01_evidence_boundaries.py -v
+      - run: python3 tools/qa/validate_sg01_evidence_boundaries.py
       - run: python3 tools/qa/pvp005_visual_contract.py
       - run: python3 tools/qa/test_pvp005_visual_contract.py
-      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/enforce_evidence_quarantine.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py tools/qa/test_heldout_motion_acceptance.py tools/qa/test_interaction_partition_leakage.py
+      - run: python3 -m py_compile tools/asset_review.py tools/qa/test_asset_review.py tools/qa/verify_forgelens_phase_a.py tools/qa/validate_forgelens_review_run.py tools/qa/test_forgelens_review_run_schema.py tools/qa/enforce_evidence_quarantine.py tools/qa/validate_sg01_evidence_boundaries.py tools/qa/test_sg01_evidence_boundaries.py tools/qa/validate_pvp005_w0_grip_camera.py tools/qa/validate_pvp005_ardy_action_endpoints_v4.py tools/qa/test_heldout_motion_acceptance.py tools/qa/test_interaction_partition_leakage.py
       - run: python3 -m json.tool tools/qa/forgelens_review_run_v1.schema.json >/dev/null
       - run: python3 tools/qa/test_asset_review.py -v
       - run: python3 tools/qa/test_forgelens_review_run_schema.py
+      - name: Python deps for QA validators (the disabled-ARDY probe imports numpy before its gate)
+        run: python3 -m pip install --quiet numpy
+      - name: Build the allowlisted replay verifier from the locked source graph
+        run: cargo build --release --locked --bin m3_match
+      - name: Record the CI-built verifier hash (pinned into the contract after observation)
+        run: sha256sum target/release/m3_match
       - run: python3 tools/qa/verify_forgelens_phase_a.py
       - run: python3 tools/qa/validate_pvp005_w0_grip_camera.py
       - run: python3 tools/qa/validate_pvp005_ardy_action_endpoints_v4.py
       - run: python3 tools/qa/test_heldout_motion_acceptance.py
       - run: python3 tools/qa/test_interaction_partition_leakage.py
+      - run: python3 tools/qa/test_sg02_cross_platform_parity.py
       - run: python3 -m py_compile tools/qa/mesh_promotion_gate.py tools/blender/mesh_doctor_detect.py tools/blender/mesh_doctor_pair_detect.py tools/blender/mesh_doctor_sameregion_repair.py tools/blender/mesh_doctor_global_repair.py
       - run: bash tools/qa/validate_gltf_assets.sh
       - run: node --check tools/asset_review/app.js

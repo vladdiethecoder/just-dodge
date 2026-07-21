@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "InvalidArgumentException",
+  "message": "Message: Element <input class=\"hidden\" type=\"file\"> doesn't accept multiple files\nStacktrace:\nRemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8\nWebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:169:5\nInvalidArgumentError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:371:5\ninteraction.uploadFiles@chrome://remote/content/marionette/interaction.sys.mjs:566:11\nwebdriverSendKeysToElement@chrome://remote/content/marionette/interaction.sys.mjs:684:23\n",
+  "out": "/run/media/vdubrov/NVMe-Storage1/Just Dodge/meshy_output/ph1_fighter_002_web_20260721T200718Z"
+}

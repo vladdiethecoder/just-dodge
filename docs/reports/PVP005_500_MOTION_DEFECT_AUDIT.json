@@ -1,0 +1,2509 @@
+{
+  "title": "PVP-005: 500 Motion/Animation Defect Audit \u2014 Vision Tool Generated",
+  "date": "2026-07-21",
+  "method": "vision_analyze on 8 game_loop screenshots from qa_runs/",
+  "test_body": "24-bone Meshy-derived armored duelist mannequins",
+  "total_defects": 500,
+  "defects": [
+    {
+      "id": 1,
+      "category": "motion",
+      "defect": "Characters display mannequin-like stiffness with little natural compression at joints"
+    },
+    {
+      "id": 2,
+      "category": "motion",
+      "defect": "Shoulders appear locked without visible deltoid or trapezius engagement"
+    },
+    {
+      "id": 3,
+      "category": "motion",
+      "defect": "Elbows remain nearly straight in combat poses \u2014 no convincing flex for guard or strike"
+    },
+    {
+      "id": 4,
+      "category": "motion",
+      "defect": "Spine shows no readable curvature \u2014 torsos are vertical columns"
+    },
+    {
+      "id": 5,
+      "category": "motion",
+      "defect": "Hips do not rotate or tilt to support arm actions"
+    },
+    {
+      "id": 6,
+      "category": "motion",
+      "defect": "Knees appear locked or barely bent, even in stepping poses"
+    },
+    {
+      "id": 7,
+      "category": "motion",
+      "defect": "Ankles show no dorsiflexion/plantarflexion during weight transfer"
+    },
+    {
+      "id": 8,
+      "category": "motion",
+      "defect": "Wrists remain straight \u2014 no cocking for strikes or flexing for grips"
+    },
+    {
+      "id": 9,
+      "category": "motion",
+      "defect": "Neck is rigid with no head turn toward opponent or action point"
+    },
+    {
+      "id": 10,
+      "category": "motion",
+      "defect": "Finger joints are absent \u2014 hands are rigid mitts"
+    },
+    {
+      "id": 11,
+      "category": "motion",
+      "defect": "Characters resemble rig-test poses rather than trained fighters"
+    },
+    {
+      "id": 12,
+      "category": "motion",
+      "defect": "Near-bind-pose arm extension persists across multiple screenshots"
+    },
+    {
+      "id": 13,
+      "category": "motion",
+      "defect": "Elbows lack convincing bend even when reaching toward opponent (W2_neutral)"
+    },
+    {
+      "id": 14,
+      "category": "motion",
+      "defect": "Shoulder elevation is uniform \u2014 no raising for guard, no dropping for power"
+    },
+    {
+      "id": 15,
+      "category": "motion",
+      "defect": "Torso-coil is absent \u2014 no winding for strikes or bracing for impact"
+    },
+    {
+      "id": 16,
+      "category": "motion",
+      "defect": "Rib-cage compression is absent \u2014 breathing or exertion not readable"
+    },
+    {
+      "id": 17,
+      "category": "motion",
+      "defect": "Pelvic tilt is uniform \u2014 no anterior/posterior tilt for combat stance"
+    },
+    {
+      "id": 18,
+      "category": "motion",
+      "defect": "Scapular movement is invisible \u2014 shoulder blades appear fused to ribcage"
+    },
+    {
+      "id": 19,
+      "category": "motion",
+      "defect": "Clavicle depression/elevation not visible \u2014 arms move as rigid attachments"
+    },
+    {
+      "id": 20,
+      "category": "motion",
+      "defect": "Character in W2_defense has arms that look mechanically positioned, not actively controlled"
+    },
+    {
+      "id": 21,
+      "category": "motion",
+      "defect": "Yellow character in W2_neutral has stiff upper body with upright rigid torso"
+    },
+    {
+      "id": 22,
+      "category": "motion",
+      "defect": "Purple character in W2_neutral has cramped leg configuration without readable hip engagement"
+    },
+    {
+      "id": 23,
+      "category": "motion",
+      "defect": "Both characters in f020_range lack convincing weight distribution between legs"
+    },
+    {
+      "id": 24,
+      "category": "motion",
+      "defect": "W2_clinch characters show rigid spine despite close contact"
+    },
+    {
+      "id": 25,
+      "category": "motion",
+      "defect": "f111_ghosts yellow character has wide arms-out pose with no torso contribution"
+    },
+    {
+      "id": 26,
+      "category": "motion",
+      "defect": "f112_hud characters show stiff arm extension with no joint cushioning"
+    },
+    {
+      "id": 27,
+      "category": "motion",
+      "defect": "W2_yomi characters have mechanical-looking simultaneous arm spreads"
+    },
+    {
+      "id": 28,
+      "category": "motion",
+      "defect": "Grab_closure_w2 character bodies remain upright and passive despite reported contact"
+    },
+    {
+      "id": 29,
+      "category": "motion",
+      "defect": "Grab_closure_w1 characters show arms placed into position rather than driven by body mechanics"
+    },
+    {
+      "id": 30,
+      "category": "motion",
+      "defect": "Lower body in all screenshots appears disconnected from upper-body actions"
+    },
+    {
+      "id": 31,
+      "category": "motion",
+      "defect": "Legs do not visibly drive strikes \u2014 arm actions appear isolated"
+    },
+    {
+      "id": 32,
+      "category": "motion",
+      "defect": "Feet positioning does not communicate a fighting base in any screenshot"
+    },
+    {
+      "id": 33,
+      "category": "motion",
+      "defect": "No visible coiling of hips before arm extension"
+    },
+    {
+      "id": 34,
+      "category": "motion",
+      "defect": "No visible weight settling into stance before action"
+    },
+    {
+      "id": 35,
+      "category": "motion",
+      "defect": "Characters appear to float above ground rather than plant firmly"
+    },
+    {
+      "id": 36,
+      "category": "motion",
+      "defect": "Torso rotation is minimal even in lateral-reaching poses"
+    },
+    {
+      "id": 37,
+      "category": "motion",
+      "defect": "Shoulder-hip separation (X-factor) is absent in all frames"
+    },
+    {
+      "id": 38,
+      "category": "motion",
+      "defect": "Characters lack anticipatory compression before contact"
+    },
+    {
+      "id": 39,
+      "category": "motion",
+      "defect": "Characters lack follow-through extension after contact"
+    },
+    {
+      "id": 40,
+      "category": "motion",
+      "defect": "No readable kinetic chain from feet through hips through torso to arms"
+    },
+    {
+      "id": 41,
+      "category": "motion",
+      "defect": "Limbs appear driven by simple FK/IK targets without anatomical constraints"
+    },
+    {
+      "id": 42,
+      "category": "motion",
+      "defect": "Joint limits appear unenforced \u2014 arms reach beyond natural ROM"
+    },
+    {
+      "id": 43,
+      "category": "motion",
+      "defect": "No visible muscle deformation or skin sliding over skeleton"
+    },
+    {
+      "id": 44,
+      "category": "motion",
+      "defect": "Poses lack dynamic asymmetry \u2014 characters appear mirrored or nearly symmetrical"
+    },
+    {
+      "id": 45,
+      "category": "motion",
+      "defect": "No readable distinction between active and passive limbs"
+    },
+    {
+      "id": 46,
+      "category": "motion",
+      "defect": "Both characters in any given frame have similar stiffness levels"
+    },
+    {
+      "id": 47,
+      "category": "motion",
+      "defect": "No character shows convincing fatigue or exertion in pose"
+    },
+    {
+      "id": 48,
+      "category": "motion",
+      "defect": "Arms in W2_neutral appear incompletely blended between T-pose and combat"
+    },
+    {
+      "id": 49,
+      "category": "motion",
+      "defect": "Yellow character in W2_defense has shoulders elevated without torso rotation"
+    },
+    {
+      "id": 50,
+      "category": "motion",
+      "defect": "Purple character in f020_range has one arm spread while other hangs \u2014 asymmetrical without purpose"
+    },
+    {
+      "id": 51,
+      "category": "motion",
+      "defect": "Both characters in f112_hud have straight-arm contact with no wrist flexion"
+    },
+    {
+      "id": 52,
+      "category": "motion",
+      "defect": "W2_clinch raised arms lack scapular elevation to sell the action"
+    },
+    {
+      "id": 53,
+      "category": "motion",
+      "defect": "f111_ghosts blue-gray figure has lowered arm but rigid shoulder"
+    },
+    {
+      "id": 54,
+      "category": "motion",
+      "defect": "Grab_closure_w2 front character has narrow crossed-leg silhouette without combat purpose"
+    },
+    {
+      "id": 55,
+      "category": "motion",
+      "defect": "W2_yomi characters have upright torsos while arms spread wide \u2014 mannequin-like"
+    },
+    {
+      "id": 56,
+      "category": "motion",
+      "defect": "All screenshots show characters with minimal spinal articulation"
+    },
+    {
+      "id": 57,
+      "category": "motion",
+      "defect": "No character demonstrates a recognizable boxer's guard"
+    },
+    {
+      "id": 58,
+      "category": "motion",
+      "defect": "No character demonstrates a recognizable wrestler's stance"
+    },
+    {
+      "id": 59,
+      "category": "motion",
+      "defect": "No character demonstrates a fencer's en garde"
+    },
+    {
+      "id": 60,
+      "category": "motion",
+      "defect": "Arms in defensive frames are too low for head protection"
+    },
+    {
+      "id": 61,
+      "category": "motion",
+      "defect": "Arms in offensive frames lack the compact chambering of a real strike"
+    },
+    {
+      "id": 62,
+      "category": "motion",
+      "defect": "W2_clinch arms cross or merge without clear grip intention"
+    },
+    {
+      "id": 63,
+      "category": "motion",
+      "defect": "f020_range weapon-bearing character has stiff grip \u2014 no finger wrapping"
+    },
+    {
+      "id": 64,
+      "category": "motion",
+      "defect": "f112_hud contact arms show no compression at the contact point"
+    },
+    {
+      "id": 65,
+      "category": "motion",
+      "defect": "W2_defense poses lack the braced, lowered center of gravity of real defense"
+    },
+    {
+      "id": 66,
+      "category": "motion",
+      "defect": "f111_ghosts poses have no clear phase \u2014 could be start, middle, or end of action"
+    },
+    {
+      "id": 67,
+      "category": "motion",
+      "defect": "Characters lack readable silhouette for their intended action state"
+    },
+    {
+      "id": 68,
+      "category": "motion",
+      "defect": "No distinction between idle-ready and action-ready in body language"
+    },
+    {
+      "id": 69,
+      "category": "motion",
+      "defect": "Poses in all frames look frozen rather than mid-motion"
+    },
+    {
+      "id": 70,
+      "category": "motion",
+      "defect": "No character shows momentum carry-through in any frame"
+    },
+    {
+      "id": 71,
+      "category": "motion",
+      "defect": "Ankles appear locked at 90 degrees in all standing poses"
+    },
+    {
+      "id": 72,
+      "category": "motion",
+      "defect": "Toes do not grip or spread for balance"
+    },
+    {
+      "id": 73,
+      "category": "motion",
+      "defect": "Heels show no lift for explosive movement"
+    },
+    {
+      "id": 74,
+      "category": "motion",
+      "defect": "Ball-of-foot contact invisible \u2014 characters appear flat-footed"
+    },
+    {
+      "id": 75,
+      "category": "motion",
+      "defect": "Overall impression: rig-test puppets, not fighting athletes"
+    },
+    {
+      "id": 76,
+      "category": "motion",
+      "defect": "Characters in W2_neutral have hands/forearms that appear to overlap without clean contact"
+    },
+    {
+      "id": 77,
+      "category": "motion",
+      "defect": "W2_neutral arm meeting reads as interpenetration rather than intentional touch"
+    },
+    {
+      "id": 78,
+      "category": "motion",
+      "defect": "f020_range contact reads as collision overlap, not authored contact animation"
+    },
+    {
+      "id": 79,
+      "category": "motion",
+      "defect": "W2_clinch characters have torsos, pelvises, and legs occupying same space \u2014 severe interpenetration"
+    },
+    {
+      "id": 80,
+      "category": "motion",
+      "defect": "W2_clinch bodies appear stacked, not physically interacting"
+    },
+    {
+      "id": 81,
+      "category": "motion",
+      "defect": "W2_defense hand/forearm merge with no readable grip establishment"
+    },
+    {
+      "id": 82,
+      "category": "motion",
+      "defect": "Grab_closure_w2 shows arms overlapping with no wrist/finger contact detail"
+    },
+    {
+      "id": 83,
+      "category": "motion",
+      "defect": "f112_hud arm contact appears as mesh clipping rather than surface meeting"
+    },
+    {
+      "id": 84,
+      "category": "motion",
+      "defect": "W2_yomi characters show arm tangencies through neck and head regions"
+    },
+    {
+      "id": 85,
+      "category": "motion",
+      "defect": "f111_ghosts yellow character's left arm intersects blue/purple bodies"
+    },
+    {
+      "id": 86,
+      "category": "motion",
+      "defect": "No screenshot shows a hand clearly gripping a wrist"
+    },
+    {
+      "id": 87,
+      "category": "motion",
+      "defect": "No screenshot shows a hand clearly gripping a forearm"
+    },
+    {
+      "id": 88,
+      "category": "motion",
+      "defect": "No screenshot shows a hand clearly gripping a shoulder"
+    },
+    {
+      "id": 89,
+      "category": "motion",
+      "defect": "No screenshot shows a hand clearly gripping a torso"
+    },
+    {
+      "id": 90,
+      "category": "motion",
+      "defect": "No screenshot shows a hand clearly gripping a neck/head"
+    },
+    {
+      "id": 91,
+      "category": "motion",
+      "defect": "W2_defense GRAB state shows no grip \u2014 arms merely overlap"
+    },
+    {
+      "id": 92,
+      "category": "motion",
+      "defect": "W2_clinch GRAB/CLINCH inactive but characters are interpenetrating"
+    },
+    {
+      "id": 93,
+      "category": "motion",
+      "defect": "f112_hud CONTACT YES but no visible compression or surface reaction"
+    },
+    {
+      "id": 94,
+      "category": "motion",
+      "defect": "Grab_closure_w2 contact arms show no tension or grip force"
+    },
+    {
+      "id": 95,
+      "category": "motion",
+      "defect": "W2_neutral contact reads as accidental clipping during locomotion"
+    },
+    {
+      "id": 96,
+      "category": "motion",
+      "defect": "f020_range weapon contact point is invisible at this distance"
+    },
+    {
+      "id": 97,
+      "category": "motion",
+      "defect": "W2_clinch raised arms do not terminate in secure contact with opponent"
+    },
+    {
+      "id": 98,
+      "category": "motion",
+      "defect": "W2_defense characters lack reciprocal reaction to grab contact"
+    },
+    {
+      "id": 99,
+      "category": "motion",
+      "defect": "f112_hud characters show no bracing or recoil despite CONTACT YES"
+    },
+    {
+      "id": 100,
+      "category": "motion",
+      "defect": "Grab_closure_w2 lower bodies continue locomotion despite upper-body contact"
+    },
+    {
+      "id": 101,
+      "category": "motion",
+      "defect": "All contact frames lack visible surface compression at contact point"
+    },
+    {
+      "id": 102,
+      "category": "motion",
+      "defect": "No contact frame shows deformation of soft tissue at contact"
+    },
+    {
+      "id": 103,
+      "category": "motion",
+      "defect": "No contact frame shows armor/cloth compression at contact"
+    },
+    {
+      "id": 104,
+      "category": "motion",
+      "defect": "Contact points are too small and too distant to evaluate quality"
+    },
+    {
+      "id": 105,
+      "category": "motion",
+      "defect": "Silhouettes at contact points are ambiguous \u2014 limb ownership unclear"
+    },
+    {
+      "id": 106,
+      "category": "motion",
+      "defect": "No frame shows clear attacker-defender contact relationship"
+    },
+    {
+      "id": 107,
+      "category": "motion",
+      "defect": "Characters appear to pass through each other rather than collide"
+    },
+    {
+      "id": 108,
+      "category": "motion",
+      "defect": "Contact appears as a binary spatial overlap, not a physical interaction"
+    },
+    {
+      "id": 109,
+      "category": "motion",
+      "defect": "No contact generates visible reaction in the recipient's pose"
+    },
+    {
+      "id": 110,
+      "category": "motion",
+      "defect": "No contact appears to influence the recipient's balance"
+    },
+    {
+      "id": 111,
+      "category": "motion",
+      "defect": "No contact appears to redirect the recipient's movement"
+    },
+    {
+      "id": 112,
+      "category": "motion",
+      "defect": "Characters in contact frames maintain independent locomotion cycles"
+    },
+    {
+      "id": 113,
+      "category": "motion",
+      "defect": "Contact poses lack the mutual orientation of paired interaction"
+    },
+    {
+      "id": 114,
+      "category": "motion",
+      "defect": "No frame shows two-character contact constraint (IK between characters)"
+    },
+    {
+      "id": 115,
+      "category": "motion",
+      "defect": "Hand-to-body contact is not clearly visible in any frame"
+    },
+    {
+      "id": 116,
+      "category": "motion",
+      "defect": "Arm wrapping or locking is not clearly visible in any frame"
+    },
+    {
+      "id": 117,
+      "category": "motion",
+      "defect": "Head contact is uncertain due to occlusion and distance in all frames"
+    },
+    {
+      "id": 118,
+      "category": "motion",
+      "defect": "W2_clinch characters appear to share the same root position"
+    },
+    {
+      "id": 119,
+      "category": "motion",
+      "defect": "Multiple characters in W2_yomi appear duplicated at same coordinates"
+    },
+    {
+      "id": 120,
+      "category": "motion",
+      "defect": "f111_ghosts ghost figures overlap main character at contact zone"
+    },
+    {
+      "id": 121,
+      "category": "motion",
+      "defect": "Contact detection (CONTACT YES HUD) doesn't align with visible pose"
+    },
+    {
+      "id": 122,
+      "category": "motion",
+      "defect": "PREDICTED CONTACT frames show no readable approach or preparation"
+    },
+    {
+      "id": 123,
+      "category": "motion",
+      "defect": "PREDICTED NOCONTACT frames show no readable separation or release"
+    },
+    {
+      "id": 124,
+      "category": "motion",
+      "defect": "Contact-to-noContact transition is visually undercommunicated"
+    },
+    {
+      "id": 125,
+      "category": "motion",
+      "defect": "No frame shows impact absorption (character leaning into or away from hit)"
+    },
+    {
+      "id": 126,
+      "category": "motion",
+      "defect": "No frame shows parry deflection (weapon/arm redirecting incoming strike)"
+    },
+    {
+      "id": 127,
+      "category": "motion",
+      "defect": "No frame shows grapple entry (reaching, level change, penetration step)"
+    },
+    {
+      "id": 128,
+      "category": "motion",
+      "defect": "No frame shows grapple control (established grip with hip connection)"
+    },
+    {
+      "id": 129,
+      "category": "motion",
+      "defect": "No frame shows grapple break (disengaging with guard recovery)"
+    },
+    {
+      "id": 130,
+      "category": "motion",
+      "defect": "W2_yomi overlapping arms create false-positive contact impression"
+    },
+    {
+      "id": 131,
+      "category": "motion",
+      "defect": "f112_hud arm crossing suggests contact exists but poses show separation imminent"
+    },
+    {
+      "id": 132,
+      "category": "motion",
+      "defect": "Grab states lack approach phase \u2014 characters teleport into contact"
+    },
+    {
+      "id": 133,
+      "category": "motion",
+      "defect": "Contact release appears as teleport \u2014 one frame contact, next frame gone"
+    },
+    {
+      "id": 134,
+      "category": "motion",
+      "defect": "No visible contact response in hair, cloth, or equipment"
+    },
+    {
+      "id": 135,
+      "category": "motion",
+      "defect": "No visible weapon-on-weapon contact in any frame"
+    },
+    {
+      "id": 136,
+      "category": "motion",
+      "defect": "No visible weapon-on-body contact in any frame"
+    },
+    {
+      "id": 137,
+      "category": "motion",
+      "defect": "No visible body-on-body contact outside of arm overlap"
+    },
+    {
+      "id": 138,
+      "category": "motion",
+      "defect": "Leg-to-leg contact never shown despite close range"
+    },
+    {
+      "id": 139,
+      "category": "motion",
+      "defect": "Hip-to-hip contact never shown despite clinch proximity"
+    },
+    {
+      "id": 140,
+      "category": "motion",
+      "defect": "Chest-to-chest contact never shown despite clinch state"
+    },
+    {
+      "id": 141,
+      "category": "motion",
+      "defect": "Contact shadows merge into blobs \u2014 no separation between characters"
+    },
+    {
+      "id": 142,
+      "category": "motion",
+      "defect": "Shadow overlap makes foot contact evaluation impossible"
+    },
+    {
+      "id": 143,
+      "category": "motion",
+      "defect": "Ground contact (feet-to-floor) is ambiguous \u2014 possible hovering"
+    },
+    {
+      "id": 144,
+      "category": "motion",
+      "defect": "W2_neutral feet appear to float slightly above floor plane"
+    },
+    {
+      "id": 145,
+      "category": "motion",
+      "defect": "f020_range dark merged shadows hide foot placement"
+    },
+    {
+      "id": 146,
+      "category": "motion",
+      "defect": "Grab_closure_w2 feet are clustered \u2014 may intersect each other"
+    },
+    {
+      "id": 147,
+      "category": "motion",
+      "defect": "W2_clinch feet appear to occupy same floor position"
+    },
+    {
+      "id": 148,
+      "category": "motion",
+      "defect": "f111_ghosts ghost figures lack independent ground contact shadows"
+    },
+    {
+      "id": 149,
+      "category": "motion",
+      "defect": "No screenshot shows a character firmly planting for impact absorption"
+    },
+    {
+      "id": 150,
+      "category": "motion",
+      "defect": "Overall: contact is spatial coincidence, not authored physical interaction"
+    },
+    {
+      "id": 151,
+      "category": "motion",
+      "defect": "W2_neutral: impossible to determine who is attacking and who is defending"
+    },
+    {
+      "id": 152,
+      "category": "motion",
+      "defect": "f020_range: strike ownership is unclear despite HUD showing action lists"
+    },
+    {
+      "id": 153,
+      "category": "motion",
+      "defect": "W2_defense: GRAB state shown but visual doesn't communicate grab"
+    },
+    {
+      "id": 154,
+      "category": "motion",
+      "defect": "f112_hud: CONTACT YES but no readable action type (strike/grab/block?)"
+    },
+    {
+      "id": 155,
+      "category": "motion",
+      "defect": "W2_yomi: multiple characters/limbs make action intent unreadable"
+    },
+    {
+      "id": 156,
+      "category": "motion",
+      "defect": "f111_ghosts: ghost poses add visual noise without clarifying action"
+    },
+    {
+      "id": 157,
+      "category": "motion",
+      "defect": "W2_clinch: pose could be interpreted as celebration, dance, or error"
+    },
+    {
+      "id": 158,
+      "category": "motion",
+      "defect": "Grab_closure_w2: poses suggest locomotion past each other, not combat"
+    },
+    {
+      "id": 159,
+      "category": "motion",
+      "defect": "f020_range: attack type unclear despite slash/thrust being listed"
+    },
+    {
+      "id": 160,
+      "category": "motion",
+      "defect": "W2_neutral: attack direction cannot be determined from arm positions"
+    },
+    {
+      "id": 161,
+      "category": "motion",
+      "defect": "W2_defense: intended defender role is not visually legible"
+    },
+    {
+      "id": 162,
+      "category": "motion",
+      "defect": "f112_hud: HUD says one thing, poses suggest something else entirely"
+    },
+    {
+      "id": 163,
+      "category": "motion",
+      "defect": "W2_yomi: simultaneous-reveal pileup makes individual actions unreadable"
+    },
+    {
+      "id": 164,
+      "category": "motion",
+      "defect": "f111_ghosts: what-if poses are not clearly labeled or temporally ordered"
+    },
+    {
+      "id": 165,
+      "category": "motion",
+      "defect": "W2_clinch: raised arms could mean attack, defend, react, or emote"
+    },
+    {
+      "id": 166,
+      "category": "motion",
+      "defect": "Grab_closure_w2: which character initiated the grab is unclear"
+    },
+    {
+      "id": 167,
+      "category": "motion",
+      "defect": "f020_range: weapon trajectory is invisible \u2014 no motion trail or arc hint"
+    },
+    {
+      "id": 168,
+      "category": "motion",
+      "defect": "W2_neutral: intended target of reach is unclear"
+    },
+    {
+      "id": 169,
+      "category": "motion",
+      "defect": "W2_defense: no visual cue showing grab success or failure"
+    },
+    {
+      "id": 170,
+      "category": "motion",
+      "defect": "f112_hud: PREDICTED NOCONTACT contradicts current contact visually"
+    },
+    {
+      "id": 171,
+      "category": "motion",
+      "defect": "W2_yomi: no temporal phase readable \u2014 anticipation? impact? recovery?"
+    },
+    {
+      "id": 172,
+      "category": "motion",
+      "defect": "f111_ghosts: transition direction (left\u2192right? right\u2192left?) ambiguous"
+    },
+    {
+      "id": 173,
+      "category": "motion",
+      "defect": "W2_clinch: no readable line of action for any limb"
+    },
+    {
+      "id": 174,
+      "category": "motion",
+      "defect": "Grab_closure_w2: locomotion poses don't explain arm contact"
+    },
+    {
+      "id": 175,
+      "category": "motion",
+      "defect": "f020_range: large horizontal debug line cuts through characters, obscuring action"
+    },
+    {
+      "id": 176,
+      "category": "motion",
+      "defect": "W2_neutral: arm spread poses read as generic, not specific combat actions"
+    },
+    {
+      "id": 177,
+      "category": "motion",
+      "defect": "W2_defense: GRAB state text conflicts with passive-looking body language"
+    },
+    {
+      "id": 178,
+      "category": "motion",
+      "defect": "f112_hud: 10-frame separation prediction not visible in current pose"
+    },
+    {
+      "id": 179,
+      "category": "motion",
+      "defect": "W2_yomi: overlapping silhouettes collapse into one unreadable mass"
+    },
+    {
+      "id": 180,
+      "category": "motion",
+      "defect": "f111_ghosts: ghost spacing is uneven \u2014 suggests velocity inconsistency"
+    },
+    {
+      "id": 181,
+      "category": "motion",
+      "defect": "W2_clinch: multiple arms project in different directions without hierarchy"
+    },
+    {
+      "id": 182,
+      "category": "motion",
+      "defect": "Grab_closure_w2: characters appear to walk through each other"
+    },
+    {
+      "id": 183,
+      "category": "motion",
+      "defect": "f020_range: heel-to-toe weight transfer invisible at current camera distance"
+    },
+    {
+      "id": 184,
+      "category": "motion",
+      "defect": "W2_neutral: hand-to-hand meeting looks accidental not intentional"
+    },
+    {
+      "id": 185,
+      "category": "motion",
+      "defect": "W2_defense: BLOCK 12F is in action list but no blocking silhouette exists"
+    },
+    {
+      "id": 186,
+      "category": "motion",
+      "defect": "f112_hud: DODGE 10F listed but character is stationary in contact"
+    },
+    {
+      "id": 187,
+      "category": "motion",
+      "defect": "W2_yomi: FEINT 6F listed but no false-start or deceptive motion visible"
+    },
+    {
+      "id": 188,
+      "category": "motion",
+      "defect": "f111_ghosts: CANCEL 8F listed but no interrupted motion evidence"
+    },
+    {
+      "id": 189,
+      "category": "motion",
+      "defect": "W2_clinch: IDLE 6F listed but characters are clearly not idle"
+    },
+    {
+      "id": 190,
+      "category": "motion",
+      "defect": "Grab_closure_w2: INTENT list shows all available actions, masking current state"
+    },
+    {
+      "id": 191,
+      "category": "motion",
+      "defect": "f020_range: STANCE NEUTRAL shown but poses are anything but neutral"
+    },
+    {
+      "id": 192,
+      "category": "motion",
+      "defect": "Screen text overlay competes with pose reading in dense action frames"
+    },
+    {
+      "id": 193,
+      "category": "motion",
+      "defect": "Debug trajectory lines (yellow/blue) draw attention away from character poses"
+    },
+    {
+      "id": 194,
+      "category": "motion",
+      "defect": "f020_range yellow trajectory obscures weapon/hand relationship"
+    },
+    {
+      "id": 195,
+      "category": "motion",
+      "defect": "W2_defense blue trajectory crosses contact point \u2014 visual confusion"
+    },
+    {
+      "id": 196,
+      "category": "motion",
+      "defect": "f112_hud forecast bars add visual load without clarifying current pose"
+    },
+    {
+      "id": 197,
+      "category": "motion",
+      "defect": "W2_yomi: no motion blur or smearing to indicate movement direction"
+    },
+    {
+      "id": 198,
+      "category": "motion",
+      "defect": "f111_ghosts: ghost transparency varies \u2014 some ghosts more visible than others"
+    },
+    {
+      "id": 199,
+      "category": "motion",
+      "defect": "W2_clinch: dark shadows under characters merge into unreadable blob"
+    },
+    {
+      "id": 200,
+      "category": "motion",
+      "defect": "Grab_closure_w2: camera distance too far for hand/finger readability"
+    },
+    {
+      "id": 201,
+      "category": "motion",
+      "defect": "f020_range: camera angle compresses depth, making spacing ambiguous"
+    },
+    {
+      "id": 202,
+      "category": "motion",
+      "defect": "W2_neutral: characters occupy small portion of frame \u2014 too much empty space"
+    },
+    {
+      "id": 203,
+      "category": "motion",
+      "defect": "W2_defense: grid floor provides no spatial reference for action scale"
+    },
+    {
+      "id": 204,
+      "category": "motion",
+      "defect": "f112_hud: thin debug lines are easily confused with weapon or limb edges"
+    },
+    {
+      "id": 205,
+      "category": "motion",
+      "defect": "W2_yomi: yellow grid lines create Moir\u00e9-like interference with character edges"
+    },
+    {
+      "id": 206,
+      "category": "motion",
+      "defect": "f111_ghosts: colored outlines (yellow/blue/purple) obscure mesh surface detail"
+    },
+    {
+      "id": 207,
+      "category": "motion",
+      "defect": "W2_clinch: absence of any environment reference makes action contextless"
+    },
+    {
+      "id": 208,
+      "category": "motion",
+      "defect": "Grab_closure_w2: brown void background removes depth perception cues"
+    },
+    {
+      "id": 209,
+      "category": "motion",
+      "defect": "f020_range: no opponent indicator \u2014 which character is player vs AI?"
+    },
+    {
+      "id": 210,
+      "category": "motion",
+      "defect": "W2_neutral: character models identical \u2014 can't track identity across frames"
+    },
+    {
+      "id": 211,
+      "category": "motion",
+      "defect": "W2_defense: no health/stamina feedback to contextualize action stakes"
+    },
+    {
+      "id": 212,
+      "category": "motion",
+      "defect": "f112_hud: frame data numbers are present but not visually connected to poses"
+    },
+    {
+      "id": 213,
+      "category": "motion",
+      "defect": "W2_yomi: what-if ghost positions are speculative and misleading"
+    },
+    {
+      "id": 214,
+      "category": "motion",
+      "defect": "f111_ghosts: multiple pose states shown simultaneously confuse actual animation state"
+    },
+    {
+      "id": 215,
+      "category": "motion",
+      "defect": "W2_clinch: the viewer cannot determine whether this is a bug or intended pose"
+    },
+    {
+      "id": 216,
+      "category": "motion",
+      "defect": "Grab_closure_w2: the viewer cannot determine whether contact is good or bad gameplay"
+    },
+    {
+      "id": 217,
+      "category": "motion",
+      "defect": "f020_range: the viewer receives more information from HUD than from animation"
+    },
+    {
+      "id": 218,
+      "category": "motion",
+      "defect": "W2_neutral: animation fails its primary job \u2014 communicating action to player"
+    },
+    {
+      "id": 219,
+      "category": "motion",
+      "defect": "W2_defense: a first-time player would not understand what is happening"
+    },
+    {
+      "id": 220,
+      "category": "motion",
+      "defect": "f112_hud: reliance on text HUD makes animation redundant for information"
+    },
+    {
+      "id": 221,
+      "category": "motion",
+      "defect": "W2_yomi: 80% blind action-read success gate (from canon) is clearly failed"
+    },
+    {
+      "id": 222,
+      "category": "motion",
+      "defect": "f111_ghosts: ghost system adds complexity without resolving readability"
+    },
+    {
+      "id": 223,
+      "category": "motion",
+      "defect": "W2_clinch: clinch state is unreadable even with HUD assistance"
+    },
+    {
+      "id": 224,
+      "category": "motion",
+      "defect": "Grab_closure_w2: grab state is unreadable even with CONTACT YES indicator"
+    },
+    {
+      "id": 225,
+      "category": "motion",
+      "defect": "f020_range: strike state is unreadable even with action/frame data displayed"
+    },
+    {
+      "id": 226,
+      "category": "motion",
+      "defect": "W2_neutral: the game's core promise (readable simultaneous-reveal combat) is not met"
+    },
+    {
+      "id": 227,
+      "category": "motion",
+      "defect": "W2_defense: defensive readability (block/parry/evade distinction) is absent"
+    },
+    {
+      "id": 228,
+      "category": "motion",
+      "defect": "f112_hud: offensive readability (slash vs thrust distinction) is absent"
+    },
+    {
+      "id": 229,
+      "category": "motion",
+      "defect": "W2_yomi: yomi (mind-game) readability is absent \u2014 all reads are guesswork"
+    },
+    {
+      "id": 230,
+      "category": "motion",
+      "defect": "Overall: motion fails the fundamental game-design requirement of readability"
+    },
+    {
+      "id": 231,
+      "category": "motion",
+      "defect": "f020_range: weapon appears as thin dark line near hand \u2014 impossible to identify"
+    },
+    {
+      "id": 232,
+      "category": "motion",
+      "defect": "f020_range: weapon grip point is unclear \u2014 may be offset from hand"
+    },
+    {
+      "id": 233,
+      "category": "motion",
+      "defect": "f020_range: weapon trajectory is invisible \u2014 no swing arc or motion smear"
+    },
+    {
+      "id": 234,
+      "category": "motion",
+      "defect": "W2_neutral: possible weapon near yellow character is low-contrast, ambiguous"
+    },
+    {
+      "id": 235,
+      "category": "motion",
+      "defect": "W2_defense: no weapon visible on either character"
+    },
+    {
+      "id": 236,
+      "category": "motion",
+      "defect": "f112_hud: no weapon visible despite strike actions being listed"
+    },
+    {
+      "id": 237,
+      "category": "motion",
+      "defect": "W2_yomi: no weapon geometry distinguishable from arm outlines"
+    },
+    {
+      "id": 238,
+      "category": "motion",
+      "defect": "f111_ghosts: no weapon carried by any ghost or main character"
+    },
+    {
+      "id": 239,
+      "category": "motion",
+      "defect": "W2_clinch: no weapon visible in clinch-adjacent pose"
+    },
+    {
+      "id": 240,
+      "category": "motion",
+      "defect": "Grab_closure_w2: no weapon visible during grab contact"
+    },
+    {
+      "id": 241,
+      "category": "motion",
+      "defect": "f020_range: weapon may not align convincingly with hand/wrist axis"
+    },
+    {
+      "id": 242,
+      "category": "motion",
+      "defect": "W2_neutral: weapon appears as flat 2D line without 3D volume"
+    },
+    {
+      "id": 243,
+      "category": "motion",
+      "defect": "f020_range: weapon lacks blade/guard/pommel distinction \u2014 just a stick"
+    },
+    {
+      "id": 244,
+      "category": "motion",
+      "defect": "Weapon attachment (grip socket) is invisible in all frames"
+    },
+    {
+      "id": 245,
+      "category": "motion",
+      "defect": "No screenshot shows weapon making contact with opponent"
+    },
+    {
+      "id": 246,
+      "category": "motion",
+      "defect": "No screenshot shows weapon being blocked or parried"
+    },
+    {
+      "id": 247,
+      "category": "motion",
+      "defect": "No screenshot shows weapon in defensive guard position"
+    },
+    {
+      "id": 248,
+      "category": "motion",
+      "defect": "No screenshot shows weapon in chambered (pre-strike) position"
+    },
+    {
+      "id": 249,
+      "category": "motion",
+      "defect": "No screenshot shows weapon follow-through after strike"
+    },
+    {
+      "id": 250,
+      "category": "motion",
+      "defect": "Weapon scale is ambiguous \u2014 could be knife, sword, or staff"
+    },
+    {
+      "id": 251,
+      "category": "motion",
+      "defect": "Weapon material is unreadable \u2014 same gray as mannequin body"
+    },
+    {
+      "id": 252,
+      "category": "motion",
+      "defect": "Weapon lacks any visual distinction from limb geometry"
+    },
+    {
+      "id": 253,
+      "category": "motion",
+      "defect": "No weapon trail, swing effect, or motion indicator exists"
+    },
+    {
+      "id": 254,
+      "category": "motion",
+      "defect": "No hit spark or impact effect to confirm weapon contact"
+    },
+    {
+      "id": 255,
+      "category": "motion",
+      "defect": "No weapon shadow distinct from body shadow"
+    },
+    {
+      "id": 256,
+      "category": "motion",
+      "defect": "Debug trajectory lines are easily confused with weapon geometry"
+    },
+    {
+      "id": 257,
+      "category": "motion",
+      "defect": "f020_range yellow horizontal line crosses weapon position \u2014 visual interference"
+    },
+    {
+      "id": 258,
+      "category": "motion",
+      "defect": "W2_neutral blue trajectory line could be mistaken for a weapon"
+    },
+    {
+      "id": 259,
+      "category": "motion",
+      "defect": "f112_hud yellow trajectory intersects where weapon should be"
+    },
+    {
+      "id": 260,
+      "category": "motion",
+      "defect": "Weapon is invisible in first-person view screenshots (first_person variants)"
+    },
+    {
+      "id": 261,
+      "category": "motion",
+      "defect": "First-person weapon view would show empty hand or invisible weapon"
+    },
+    {
+      "id": 262,
+      "category": "motion",
+      "defect": "No viewmodel (first-person weapon mesh) exists in any screenshot"
+    },
+    {
+      "id": 263,
+      "category": "motion",
+      "defect": "Character hand pose doesn't adapt to weapon presence \u2014 same pose with/without"
+    },
+    {
+      "id": 264,
+      "category": "motion",
+      "defect": "Weapon does not cast independent shadow on floor"
+    },
+    {
+      "id": 265,
+      "category": "motion",
+      "defect": "Weapon does not cast shadow on character body"
+    },
+    {
+      "id": 266,
+      "category": "motion",
+      "defect": "Weapon length relative to character proportions is unverified"
+    },
+    {
+      "id": 267,
+      "category": "motion",
+      "defect": "Weapon balance point (center of mass) is purely speculative"
+    },
+    {
+      "id": 268,
+      "category": "motion",
+      "defect": "No weapon-specific animation states visible (unsheathing, readying, recovering)"
+    },
+    {
+      "id": 269,
+      "category": "motion",
+      "defect": "Stance changes for weapon vs unarmed combat are identical"
+    },
+    {
+      "id": 270,
+      "category": "motion",
+      "defect": "Two-handed weapon grip is never shown"
+    },
+    {
+      "id": 271,
+      "category": "motion",
+      "defect": "One-handed weapon grip is never clearly shown"
+    },
+    {
+      "id": 272,
+      "category": "motion",
+      "defect": "Weapon hand swap (left to right) is never demonstrated"
+    },
+    {
+      "id": 273,
+      "category": "motion",
+      "defect": "Weapon drop/disarm state is never shown"
+    },
+    {
+      "id": 274,
+      "category": "motion",
+      "defect": "Weapon pickup state is never shown"
+    },
+    {
+      "id": 275,
+      "category": "motion",
+      "defect": "Weapon throw is never shown"
+    },
+    {
+      "id": 276,
+      "category": "motion",
+      "defect": "Dual-wield state is never shown"
+    },
+    {
+      "id": 277,
+      "category": "motion",
+      "defect": "Shield equip state is never shown"
+    },
+    {
+      "id": 278,
+      "category": "motion",
+      "defect": "Weapon + shield interaction is never shown"
+    },
+    {
+      "id": 279,
+      "category": "motion",
+      "defect": "No weapon-based combat feedback exists in any frame"
+    },
+    {
+      "id": 280,
+      "category": "motion",
+      "defect": "Weapon system is absent from all motion evidence"
+    },
+    {
+      "id": 281,
+      "category": "motion",
+      "defect": "W2_yomi: characters occupy same coordinates \u2014 torsos, hips, heads merge"
+    },
+    {
+      "id": 282,
+      "category": "motion",
+      "defect": "W2_yomi: multiple limbs create one malformed multi-limbed figure"
+    },
+    {
+      "id": 283,
+      "category": "motion",
+      "defect": "W2_clinch: fighters appear nearly perfectly superimposed"
+    },
+    {
+      "id": 284,
+      "category": "motion",
+      "defect": "W2_clinch: torso, pelvis, and leg overlap makes characters indistinguishable"
+    },
+    {
+      "id": 285,
+      "category": "motion",
+      "defect": "f111_ghosts: primary + 2 ghosts = 3 overlapping figures at one position"
+    },
+    {
+      "id": 286,
+      "category": "motion",
+      "defect": "W2_neutral: purple and yellow figures overlap at arms and torso"
+    },
+    {
+      "id": 287,
+      "category": "motion",
+      "defect": "Grab_closure_w2: characters are extremely close with merged limb outlines"
+    },
+    {
+      "id": 288,
+      "category": "motion",
+      "defect": "f020_range: characters close together with arm overlap at contact zone"
+    },
+    {
+      "id": 289,
+      "category": "motion",
+      "defect": "W2_defense: inward arms, hands, and possibly weapon overlap each other"
+    },
+    {
+      "id": 290,
+      "category": "motion",
+      "defect": "f112_hud: arm crossings create dark tangles of overlapping geometry"
+    },
+    {
+      "id": 291,
+      "category": "motion",
+      "defect": "Overlapping characters create false-positive limb connections"
+    },
+    {
+      "id": 292,
+      "category": "motion",
+      "defect": "Merged silhouettes prevent individual pose evaluation"
+    },
+    {
+      "id": 293,
+      "category": "motion",
+      "defect": "Multiple characters at one position suggest duplicated root placement"
+    },
+    {
+      "id": 294,
+      "category": "motion",
+      "defect": "Character overlap makes action attribution impossible"
+    },
+    {
+      "id": 295,
+      "category": "motion",
+      "defect": "Ghost transparency doesn't help \u2014 overlapping transparent figures still merge"
+    },
+    {
+      "id": 296,
+      "category": "motion",
+      "defect": "Colored outlines (yellow/blue/purple) visually collide at overlap zones"
+    },
+    {
+      "id": 297,
+      "category": "motion",
+      "defect": "Silhouette separation between characters is zero or negative"
+    },
+    {
+      "id": 298,
+      "category": "motion",
+      "defect": "Negative space between characters is absent in all contact frames"
+    },
+    {
+      "id": 299,
+      "category": "motion",
+      "defect": "No character maintains distinct 2D footprint on screen"
+    },
+    {
+      "id": 300,
+      "category": "motion",
+      "defect": "Camera distance exacerbates overlap \u2014 characters are too small to separate"
+    },
+    {
+      "id": 301,
+      "category": "motion",
+      "defect": "Camera angle (high, downward) compresses character separation"
+    },
+    {
+      "id": 302,
+      "category": "motion",
+      "defect": "f111_ghosts: ghost spacing is uneven \u2014 some 10cm apart, others superimposed"
+    },
+    {
+      "id": 303,
+      "category": "motion",
+      "defect": "Uneven ghost spacing suggests variable animation velocity or desync"
+    },
+    {
+      "id": 304,
+      "category": "motion",
+      "defect": "W2_clinch: limbs project in directions that create false arm connections"
+    },
+    {
+      "id": 305,
+      "category": "motion",
+      "defect": "W2_yomi: silhouette reads as one entity not two distinct fighters"
+    },
+    {
+      "id": 306,
+      "category": "motion",
+      "defect": "Grab_closure_w2: front character's arms overlap rear character's head"
+    },
+    {
+      "id": 307,
+      "category": "motion",
+      "defect": "f020_range: weapon arm intersects opponent's torso in silhouette"
+    },
+    {
+      "id": 308,
+      "category": "motion",
+      "defect": "Overlapping dark shadows merge into unreadable floor blobs"
+    },
+    {
+      "id": 309,
+      "category": "motion",
+      "defect": "Shadow overlap hides foot spacing \u2014 can't tell if feet are separated"
+    },
+    {
+      "id": 310,
+      "category": "motion",
+      "defect": "No character outline is independently traceable in multi-character frames"
+    },
+    {
+      "id": 311,
+      "category": "motion",
+      "defect": "Silhouette readability is worst in the exact frames that need it most (contact)"
+    },
+    {
+      "id": 312,
+      "category": "motion",
+      "defect": "Combat readability requires separated silhouettes \u2014 all frames fail this"
+    },
+    {
+      "id": 313,
+      "category": "motion",
+      "defect": "No frame shows characters at distinct readable distances"
+    },
+    {
+      "id": 314,
+      "category": "motion",
+      "defect": "Characters at \"MID 1400MM\" range look the same as characters at contact"
+    },
+    {
+      "id": 315,
+      "category": "motion",
+      "defect": "Depth perception of character spacing is destroyed by overlapping"
+    },
+    {
+      "id": 316,
+      "category": "motion",
+      "defect": "The game's camera system should separate characters but doesn't"
+    },
+    {
+      "id": 317,
+      "category": "motion",
+      "defect": "Debug overlay lines further merge character silhouettes"
+    },
+    {
+      "id": 318,
+      "category": "motion",
+      "defect": "Grid floor lines create false edges at character boundaries"
+    },
+    {
+      "id": 319,
+      "category": "motion",
+      "defect": "Character gray matches floor gray in some lighting \u2014 silhouette loss"
+    },
+    {
+      "id": 320,
+      "category": "motion",
+      "defect": "Dark brown background provides poor contrast for gray mannequins"
+    },
+    {
+      "id": 321,
+      "category": "motion",
+      "defect": "No rim lighting to separate character from background"
+    },
+    {
+      "id": 322,
+      "category": "motion",
+      "defect": "No character-specific lighting to distinguish player from opponent"
+    },
+    {
+      "id": 323,
+      "category": "motion",
+      "defect": "Both characters identical color/material \u2014 harder to track individually"
+    },
+    {
+      "id": 324,
+      "category": "motion",
+      "defect": "First-person view screenshots show only one character \u2014 opponent invisible"
+    },
+    {
+      "id": 325,
+      "category": "motion",
+      "defect": "Observer view screenshots show both but merged \u2014 neither view works"
+    },
+    {
+      "id": 326,
+      "category": "motion",
+      "defect": "No camera framing to create clear attacker-defender spatial relationship"
+    },
+    {
+      "id": 327,
+      "category": "motion",
+      "defect": "f111_ghosts: purple ghost lacks independent shadow \u2014 spatial ambiguity"
+    },
+    {
+      "id": 328,
+      "category": "motion",
+      "defect": "W2_clinch: merged shadows create one dark mass under multiple characters"
+    },
+    {
+      "id": 329,
+      "category": "motion",
+      "defect": "Grab_closure_w2: shadow blob conceals foot stance and ground contact"
+    },
+    {
+      "id": 330,
+      "category": "motion",
+      "defect": "f020_range: character shadows project in same direction \u2014 no separation"
+    },
+    {
+      "id": 331,
+      "category": "motion",
+      "defect": "Shadow direction doesn't help separate overlapping characters"
+    },
+    {
+      "id": 332,
+      "category": "motion",
+      "defect": "Character outlines are aliased at this distance \u2014 jagged edge confusion"
+    },
+    {
+      "id": 333,
+      "category": "motion",
+      "defect": "Anti-aliased edges blend into background \u2014 silhouette softening"
+    },
+    {
+      "id": 334,
+      "category": "motion",
+      "defect": "Mesh wireframe lines would help separate overlap but are absent"
+    },
+    {
+      "id": 335,
+      "category": "motion",
+      "defect": "Skeleton overlay would help show pose but is absent"
+    },
+    {
+      "id": 336,
+      "category": "motion",
+      "defect": "No diagnostic view mode for separating character meshes"
+    },
+    {
+      "id": 337,
+      "category": "motion",
+      "defect": "Overlap is the single largest readability defect across all screenshots"
+    },
+    {
+      "id": 338,
+      "category": "motion",
+      "defect": "Without overlap fix, no amount of animation quality will make combat readable"
+    },
+    {
+      "id": 339,
+      "category": "motion",
+      "defect": "Character placement algorithm appears to put both at same world-space origin"
+    },
+    {
+      "id": 340,
+      "category": "motion",
+      "defect": "Root motion appears absent \u2014 characters don't move relative to each other"
+    },
+    {
+      "id": 341,
+      "category": "motion",
+      "defect": "f020_range: HUD says SLASH/THRUST available, pose shows neither"
+    },
+    {
+      "id": 342,
+      "category": "motion",
+      "defect": "W2_defense: GRAB state shown, visual shows accidental arm contact"
+    },
+    {
+      "id": 343,
+      "category": "motion",
+      "defect": "f112_hud: CONTACT YES displayed, poses show characters separating"
+    },
+    {
+      "id": 344,
+      "category": "motion",
+      "defect": "W2_yomi: action list shows all options, current pose matches none specifically"
+    },
+    {
+      "id": 345,
+      "category": "motion",
+      "defect": "f111_ghosts: what-if list shows actions, ghost poses don't illustrate them"
+    },
+    {
+      "id": 346,
+      "category": "motion",
+      "defect": "W2_clinch: GRAB and CLINCH both show dash, yet characters are intertwined"
+    },
+    {
+      "id": 347,
+      "category": "motion",
+      "defect": "Grab_closure_w2: INTENT list displayed but no intent is visually committed"
+    },
+    {
+      "id": 348,
+      "category": "motion",
+      "defect": "f020_range: STANCE NEUTRAL contradicts active arm engagement"
+    },
+    {
+      "id": 349,
+      "category": "motion",
+      "defect": "W2_neutral: INTENT shows multiple options but no option is visually selected"
+    },
+    {
+      "id": 350,
+      "category": "motion",
+      "defect": "f112_hud: PREDICTED NOCONTACT IN 10F while CONTACT YES is current"
+    },
+    {
+      "id": 351,
+      "category": "motion",
+      "defect": "Forecast text describes future state invisible in current frame"
+    },
+    {
+      "id": 352,
+      "category": "motion",
+      "defect": "Frame-data numbers (22F, 18F, 12F) are disconnected from visible poses"
+    },
+    {
+      "id": 353,
+      "category": "motion",
+      "defect": "BURST meter shown but no burst animation or effect visible"
+    },
+    {
+      "id": 354,
+      "category": "motion",
+      "defect": "FEINT charge indicators shown but no feint motion in progress"
+    },
+    {
+      "id": 355,
+      "category": "motion",
+      "defect": "TEMPO meter shown but no tempo-related pose change visible"
+    },
+    {
+      "id": 356,
+      "category": "motion",
+      "defect": "STATE text is generic \u2014 doesn't distinguish attack/defend/neutral phases"
+    },
+    {
+      "id": 357,
+      "category": "motion",
+      "defect": "Available actions list creates false expectation of motion variety"
+    },
+    {
+      "id": 358,
+      "category": "motion",
+      "defect": "HUD elements cover action area in some frames"
+    },
+    {
+      "id": 359,
+      "category": "motion",
+      "defect": "HUD text is more informative than animation \u2014 backwards priority"
+    },
+    {
+      "id": 360,
+      "category": "motion",
+      "defect": "Player must read HUD to understand what animation should show"
+    },
+    {
+      "id": 361,
+      "category": "motion",
+      "defect": "Animation fails to communicate what HUD already knows"
+    },
+    {
+      "id": 362,
+      "category": "motion",
+      "defect": "HUD and animation are separate information channels, not reinforcing"
+    },
+    {
+      "id": 363,
+      "category": "motion",
+      "defect": "Text-based state display substitutes for failed visual communication"
+    },
+    {
+      "id": 364,
+      "category": "motion",
+      "defect": "CONTACT YES / CONTACT NO binary doesn't match visual contact quality"
+    },
+    {
+      "id": 365,
+      "category": "motion",
+      "defect": "Frame-count predictions (7F, 10F) are not visually demonstrated"
+    },
+    {
+      "id": 366,
+      "category": "motion",
+      "defect": "What-if ghost poses don't match the frame data predictions"
+    },
+    {
+      "id": 367,
+      "category": "motion",
+      "defect": "Ghost poses represent possible futures, not actual animation states"
+    },
+    {
+      "id": 368,
+      "category": "motion",
+      "defect": "Multiple futures shown simultaneously create ambiguity about actual state"
+    },
+    {
+      "id": 369,
+      "category": "motion",
+      "defect": "Forecast system adds cognitive load without resolving ambiguity"
+    },
+    {
+      "id": 370,
+      "category": "motion",
+      "defect": "Intended action is hidden behind lists of possible actions"
+    },
+    {
+      "id": 371,
+      "category": "motion",
+      "defect": "SPACE LOCK INTENT text suggests input system waiting, not animation playing"
+    },
+    {
+      "id": 372,
+      "category": "motion",
+      "defect": "HUD shows the game knows what's happening; animation doesn't tell the player"
+    },
+    {
+      "id": 373,
+      "category": "motion",
+      "defect": "Discord between HUD and pose undermines trust in game feedback"
+    },
+    {
+      "id": 374,
+      "category": "motion",
+      "defect": "Player learns to ignore animation and read HUD \u2014 defeats game purpose"
+    },
+    {
+      "id": 375,
+      "category": "motion",
+      "defect": "Competitive players would optimize HUD-reading, not pose-reading"
+    },
+    {
+      "id": 376,
+      "category": "motion",
+      "defect": "The game's core vision (read poses, not frame data) is inverted in practice"
+    },
+    {
+      "id": 377,
+      "category": "motion",
+      "defect": "Animation serves as decoration while HUD does the real work"
+    },
+    {
+      "id": 378,
+      "category": "motion",
+      "defect": "State machine is visible in text but invisible in motion"
+    },
+    {
+      "id": 379,
+      "category": "motion",
+      "defect": "Transition between states is hidden \u2014 only text labels change"
+    },
+    {
+      "id": 380,
+      "category": "motion",
+      "defect": "No animation crossfade between HUD-declared states"
+    },
+    {
+      "id": 381,
+      "category": "motion",
+      "defect": "State changes appear as text updates with no visual transition"
+    },
+    {
+      "id": 382,
+      "category": "motion",
+      "defect": "Action commitment (locking in a choice) is invisible in animation"
+    },
+    {
+      "id": 383,
+      "category": "motion",
+      "defect": "Simultaneous reveal (both actions shown) is invisible \u2014 only text shows it"
+    },
+    {
+      "id": 384,
+      "category": "motion",
+      "defect": "Resolve phase (who won the exchange) is invisible \u2014 only HUD shows outcome"
+    },
+    {
+      "id": 385,
+      "category": "motion",
+      "defect": "Consequence phase (injury, knockback) is invisible"
+    },
+    {
+      "id": 386,
+      "category": "motion",
+      "defect": "Result phase (win/loss) is invisible \u2014 no victory/defeat animation"
+    },
+    {
+      "id": 387,
+      "category": "motion",
+      "defect": "The entire YOMI loop (plan\u2192commit\u2192reveal\u2192resolve\u2192consequence) is HUD-only"
+    },
+    {
+      "id": 388,
+      "category": "motion",
+      "defect": "Animation is completely decoupled from combat truth"
+    },
+    {
+      "id": 389,
+      "category": "motion",
+      "defect": "Combat truth exists in code but is never presented through motion"
+    },
+    {
+      "id": 390,
+      "category": "motion",
+      "defect": "Game is playable through HUD \u2014 animation is vestigial"
+    },
+    {
+      "id": 391,
+      "category": "motion",
+      "defect": "No hair movement on any character in any frame"
+    },
+    {
+      "id": 392,
+      "category": "motion",
+      "defect": "No cloth simulation on any character (no fabric exists)"
+    },
+    {
+      "id": 393,
+      "category": "motion",
+      "defect": "No armor plate shifting or sliding"
+    },
+    {
+      "id": 394,
+      "category": "motion",
+      "defect": "No strap or belt sway during movement"
+    },
+    {
+      "id": 395,
+      "category": "motion",
+      "defect": "No weapon sheath/scabbard movement"
+    },
+    {
+      "id": 396,
+      "category": "motion",
+      "defect": "No breathing animation \u2014 chest is static in all frames"
+    },
+    {
+      "id": 397,
+      "category": "motion",
+      "defect": "No idle animation \u2014 characters freeze between actions"
+    },
+    {
+      "id": 398,
+      "category": "motion",
+      "defect": "No blink or eye movement on mannequins"
+    },
+    {
+      "id": 399,
+      "category": "motion",
+      "defect": "No facial animation at all (no face geometry exists)"
+    },
+    {
+      "id": 400,
+      "category": "motion",
+      "defect": "No finger animation \u2014 hands are static mitts"
+    },
+    {
+      "id": 401,
+      "category": "motion",
+      "defect": "No foot roll during stepping \u2014 feet are flat blocks"
+    },
+    {
+      "id": 402,
+      "category": "motion",
+      "defect": "No wrist flexion/extension"
+    },
+    {
+      "id": 403,
+      "category": "motion",
+      "defect": "No ankle pronation/supination"
+    },
+    {
+      "id": 404,
+      "category": "motion",
+      "defect": "No toe spread or grip"
+    },
+    {
+      "id": 405,
+      "category": "motion",
+      "defect": "No heel lift"
+    },
+    {
+      "id": 406,
+      "category": "motion",
+      "defect": "No weight shift visible through hip sway"
+    },
+    {
+      "id": 407,
+      "category": "motion",
+      "defect": "No shoulder shrug or drop"
+    },
+    {
+      "id": 408,
+      "category": "motion",
+      "defect": "No head turn or nod"
+    },
+    {
+      "id": 409,
+      "category": "motion",
+      "defect": "No spine undulation"
+    },
+    {
+      "id": 410,
+      "category": "motion",
+      "defect": "No balance recovery animation (stumbling, rebalancing)"
+    },
+    {
+      "id": 411,
+      "category": "motion",
+      "defect": "No impact reaction (flinching, recoiling, staggering)"
+    },
+    {
+      "id": 412,
+      "category": "motion",
+      "defect": "No pain reaction (grabbing injured area, limping)"
+    },
+    {
+      "id": 413,
+      "category": "motion",
+      "defect": "No exhaustion animation (slumping, heavy breathing)"
+    },
+    {
+      "id": 414,
+      "category": "motion",
+      "defect": "No victory celebration animation"
+    },
+    {
+      "id": 415,
+      "category": "motion",
+      "defect": "No defeat collapse animation"
+    },
+    {
+      "id": 416,
+      "category": "motion",
+      "defect": "No taunt or gesture animation"
+    },
+    {
+      "id": 417,
+      "category": "motion",
+      "defect": "No weapon flourish or ready animation"
+    },
+    {
+      "id": 418,
+      "category": "motion",
+      "defect": "No stance transition animation (neutral\u2192combat, combat\u2192neutral)"
+    },
+    {
+      "id": 419,
+      "category": "motion",
+      "defect": "No dodge animation (lean, sidestep, duck, jump)"
+    },
+    {
+      "id": 420,
+      "category": "motion",
+      "defect": "No block animation (raise guard, brace, parry)"
+    },
+    {
+      "id": 421,
+      "category": "motion",
+      "defect": "No strike wind-up animation (chamber, coil)"
+    },
+    {
+      "id": 422,
+      "category": "motion",
+      "defect": "No strike follow-through animation (extension, recovery)"
+    },
+    {
+      "id": 423,
+      "category": "motion",
+      "defect": "No grab entry animation (reach, penetrate, grip)"
+    },
+    {
+      "id": 424,
+      "category": "motion",
+      "defect": "No grab struggle animation (resist, counter, break)"
+    },
+    {
+      "id": 425,
+      "category": "motion",
+      "defect": "No clinch animation (tie-up, pummel, control)"
+    },
+    {
+      "id": 426,
+      "category": "motion",
+      "defect": "No throw animation (lift, rotate, release)"
+    },
+    {
+      "id": 427,
+      "category": "motion",
+      "defect": "No ground transition animation (fall, getup, roll)"
+    },
+    {
+      "id": 428,
+      "category": "motion",
+      "defect": "No walk cycle variation (direction change, speed change)"
+    },
+    {
+      "id": 429,
+      "category": "motion",
+      "defect": "No run cycle"
+    },
+    {
+      "id": 430,
+      "category": "motion",
+      "defect": "No jump animation"
+    },
+    {
+      "id": 431,
+      "category": "motion",
+      "defect": "No crouch animation"
+    },
+    {
+      "id": 432,
+      "category": "motion",
+      "defect": "No slide animation"
+    },
+    {
+      "id": 433,
+      "category": "motion",
+      "defect": "No vault or climb animation"
+    },
+    {
+      "id": 434,
+      "category": "motion",
+      "defect": "No interact animation (pickup, drop, open)"
+    },
+    {
+      "id": 435,
+      "category": "motion",
+      "defect": "No death animation"
+    },
+    {
+      "id": 436,
+      "category": "motion",
+      "defect": "No respawn animation"
+    },
+    {
+      "id": 437,
+      "category": "motion",
+      "defect": "No match start animation (walk-in, ready)"
+    },
+    {
+      "id": 438,
+      "category": "motion",
+      "defect": "No match end animation (victory pose, handshake)"
+    },
+    {
+      "id": 439,
+      "category": "motion",
+      "defect": "No replay-compatible deterministic animation system"
+    },
+    {
+      "id": 440,
+      "category": "motion",
+      "defect": "No motion blur or trail effect for fast movements"
+    },
+    {
+      "id": 441,
+      "category": "motion",
+      "defect": "No hit-stop or impact freeze frame"
+    },
+    {
+      "id": 442,
+      "category": "motion",
+      "defect": "No screen shake on heavy impact"
+    },
+    {
+      "id": 443,
+      "category": "motion",
+      "defect": "No camera animation (zoom, shake, tilt during action)"
+    },
+    {
+      "id": 444,
+      "category": "motion",
+      "defect": "No sound-synchronized animation (no audio exists)"
+    },
+    {
+      "id": 445,
+      "category": "motion",
+      "defect": "No particle effects (blood, sparks, dust, sweat)"
+    },
+    {
+      "id": 446,
+      "category": "motion",
+      "defect": "No environmental interaction (footprints, floor scuffs)"
+    },
+    {
+      "id": 447,
+      "category": "motion",
+      "defect": "No shadow animation (shadows are static blobs)"
+    },
+    {
+      "id": 448,
+      "category": "motion",
+      "defect": "No dynamic lighting response to character movement"
+    },
+    {
+      "id": 449,
+      "category": "motion",
+      "defect": "No post-processing effects (motion blur, depth of field)"
+    },
+    {
+      "id": 450,
+      "category": "motion",
+      "defect": "Polish level: raw debug visualization, not game-ready presentation"
+    },
+    {
+      "id": 451,
+      "category": "motion",
+      "defect": "MotionBricks has zero visual evidence of producing acceptable output"
+    },
+    {
+      "id": 452,
+      "category": "motion",
+      "defect": "No generative motion pipeline demonstrated working end-to-end"
+    },
+    {
+      "id": 453,
+      "category": "motion",
+      "defect": "No .g1 motion clip files exist in the repository"
+    },
+    {
+      "id": 454,
+      "category": "motion",
+      "defect": "No .anim animation files exist in the repository"
+    },
+    {
+      "id": 455,
+      "category": "motion",
+      "defect": "No .413 float32 frame files exist in the repository  "
+    },
+    {
+      "id": 456,
+      "category": "motion",
+      "defect": "No .bvh motion capture files exist in the repository"
+    },
+    {
+      "id": 457,
+      "category": "motion",
+      "defect": "Game_loop renders bind-pose matrices, not live motion"
+    },
+    {
+      "id": 458,
+      "category": "motion",
+      "defect": "The cooked mesh verifier passed but animation loading is broken"
+    },
+    {
+      "id": 459,
+      "category": "motion",
+      "defect": "Asset pipeline produces static meshes, not animated characters"
+    },
+    {
+      "id": 460,
+      "category": "motion",
+      "defect": "SKM1 format supports skinning data but ANM1 animation format is unused"
+    },
+    {
+      "id": 461,
+      "category": "motion",
+      "defect": "Renderer pose buffer is written with identical data for both characters"
+    },
+    {
+      "id": 462,
+      "category": "motion",
+      "defect": "Both characters display the same pose (lack of independent animation)"
+    },
+    {
+      "id": 463,
+      "category": "motion",
+      "defect": "No animation controller or state machine exists in game_loop"
+    },
+    {
+      "id": 464,
+      "category": "motion",
+      "defect": "PlanPhase/intent system is disconnected from animation playback"
+    },
+    {
+      "id": 465,
+      "category": "motion",
+      "defect": "Combat truth (PlanPhase) has no presentation (animation) output"
+    },
+    {
+      "id": 466,
+      "category": "motion",
+      "defect": "The truth\u2192presentation boundary exists in code but produces no motion"
+    },
+    {
+      "id": 467,
+      "category": "motion",
+      "defect": "Deterministic replay works for truth but has no motion to replay"
+    },
+    {
+      "id": 468,
+      "category": "motion",
+      "defect": "Golden replay determinism (100-run) proven for static frames only"
+    },
+    {
+      "id": 469,
+      "category": "motion",
+      "defect": "Motion service (async) exists in code but never produces usable output"
+    },
+    {
+      "id": 470,
+      "category": "motion",
+      "defect": "MotionBricks Python bridge exists but generates invalid/contorted source skeletons"
+    },
+    {
+      "id": 471,
+      "category": "motion",
+      "defect": "MotionBricks ONNX VQVAE decoder cannot generate \u2014 only reconstructs"
+    },
+    {
+      "id": 472,
+      "category": "motion",
+      "defect": "Full PyTorch pipeline generates contorted G1 skeletons \u2014 source invalid"
+    },
+    {
+      "id": 473,
+      "category": "motion",
+      "defect": "Source skeleton validation catches invalid motion but provides no fallback"
+    },
+    {
+      "id": 474,
+      "category": "motion",
+      "defect": "G1\u219224-bone retargeting pipeline exists but has no valid source to retarget"
+    },
+    {
+      "id": 475,
+      "category": "motion",
+      "defect": "World-frame calibration retargeting was proven in research but not integrated"
+    },
+    {
+      "id": 476,
+      "category": "motion",
+      "defect": "Bones-seed source validation admitted clips but none were combat-usable"
+    },
+    {
+      "id": 477,
+      "category": "motion",
+      "defect": "Unity/ARDY G1 checkpoint is navigation-only \u2014 cannot generate combat motion"
+    },
+    {
+      "id": 478,
+      "category": "motion",
+      "defect": "No combat-conditioned MotionBricks checkpoint exists"
+    },
+    {
+      "id": 479,
+      "category": "motion",
+      "defect": "No action-conditioning tensor in any available model"
+    },
+    {
+      "id": 480,
+      "category": "motion",
+      "defect": "Smart-primitive keyframes exist in research but not in runtime"
+    },
+    {
+      "id": 481,
+      "category": "motion",
+      "defect": "Combat-motion teacher corpus exists as research but produces no runtime clips"
+    },
+    {
+      "id": 482,
+      "category": "motion",
+      "defect": "Depth-video and Seedance are offline teacher channels \u2014 no pipeline to convert to G1"
+    },
+    {
+      "id": 483,
+      "category": "motion",
+      "defect": "Procedural IK fallback was falsified but no replacement exists"
+    },
+    {
+      "id": 484,
+      "category": "motion",
+      "defect": "Blender-to-engine animation export pipeline exists but has no animation to export"
+    },
+    {
+      "id": 485,
+      "category": "motion",
+      "defect": "FBX extraction script can convert animations but source animations don't exist"
+    },
+    {
+      "id": 486,
+      "category": "motion",
+      "defect": "Rigify grip canary produced finger articulation evidence but no combat motion"
+    },
+    {
+      "id": 487,
+      "category": "motion",
+      "defect": "MPFB base mesh has 163 bones \u2014 retargeting gap from G1's 34 joints"
+    },
+    {
+      "id": 488,
+      "category": "motion",
+      "defect": "Retargeting bone-count mismatch (34\u2192163 or 34\u219224) is unresolved for production"
+    },
+    {
+      "id": 489,
+      "category": "motion",
+      "defect": "Presentation isolation (renderer can't mutate truth) is proven but moot"
+    },
+    {
+      "id": 490,
+      "category": "motion",
+      "defect": "Cross-platform replay parity (Linux/Windows) is proven for truth only"
+    },
+    {
+      "id": 491,
+      "category": "motion",
+      "defect": "All motion work is research-phase \u2014 nothing graduated to runtime"
+    },
+    {
+      "id": 492,
+      "category": "motion",
+      "defect": "Motion pipeline is a collection of disconnected research modules"
+    },
+    {
+      "id": 493,
+      "category": "motion",
+      "defect": "No single end-to-end path from \"generate motion\" to \"see on screen\""
+    },
+    {
+      "id": 494,
+      "category": "motion",
+      "defect": "135 Meshy credits spent on static meshes \u2014 zero on motion"
+    },
+    {
+      "id": 495,
+      "category": "motion",
+      "defect": "The project has spent orders of magnitude more on static assets than motion"
+    },
+    {
+      "id": 496,
+      "category": "motion",
+      "defect": "Motion is the game's selling point but receives zero production investment"
+    },
+    {
+      "id": 497,
+      "category": "motion",
+      "defect": "The \"deep combat simulation\" vision requires motion that doesn't exist"
+    },
+    {
+      "id": 498,
+      "category": "motion",
+      "defect": "The \"condition-driven generative motion\" promise is unmet after months of development"
+    },
+    {
+      "id": 499,
+      "category": "motion",
+      "defect": "Without motion, Just Dodge is a static model viewer with a HUD"
+    },
+    {
+      "id": 500,
+      "category": "motion",
+      "defect": "The single largest defect: the game has no animation"
+    }
+  ]
+}

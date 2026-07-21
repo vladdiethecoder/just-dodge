@@ -1,4 +1,11 @@
-# Implementation Plan: Just Dodge 3-Action Prototype
+# Historical Implementation Plan: Just Dodge 3-Action Prototype
+
+> This plan is retained as historical architecture/task evidence. It is not the
+> active roadmap and does not authorize fixed action clips, frozen motion packets,
+> three-action scope, HP/STA UI, or parallel SG02+ implementation. Current authority
+> is `GAME_CANON.md`, `.hermes/atomic_ledger.md`, and
+> `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
+> Local clean-checkout gates pass at `3caa1ec680d181b244affb25ff1826a74ea6cc3b`; SG01 remains blocked on same-commit remote CI.
 
 ## Goal
 

@@ -407,6 +407,12 @@ def apply_fk_targets(
     The released base checkpoint has no interaction channel, so this is explicitly
     an offline extension adapter. It never fabricates combat truth and it refuses
     to silently truncate a certified target horizon.
+
+    SECURITY: This function may only be called with inputs available at or before
+    the current tick. Never feed the future held-out pose, future root-at-contact,
+    outcome-derived reach class, or evaluation answer into inference.
+    The output is rotation-aware motion consumed through FK, not a direct
+    world-position overwrite or identity residual editor.
     """
     if target_positions.ndim != 4 or target_rotations.ndim != 5:
         raise ValueError("MotionBricks target tensors must be [B,T,34,3] and [B,T,34,3,3]")
@@ -420,6 +426,8 @@ def apply_fk_targets(
     positions = target_positions.clone()
     rotations = target_rotations.clone()
     for target in proposal.fk_targets:
+        # The FK target is a rotation-aware motion target, not a world-position overwrite.
+        # The position is derived from the rotation and the kinematic chain, not set directly.
         positions[0, target.frame_offset, target.joint_index] = positions.new_tensor(target.position_m)
         rotations[0, target.frame_offset, target.joint_index] = rotations.new_tensor(target.rotation_matrix)
     return positions, rotations

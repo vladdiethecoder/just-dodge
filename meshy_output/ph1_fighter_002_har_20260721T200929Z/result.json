@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "error": "WebDriverException",
+  "message": "Message: Reached error page: about:neterror?e=nssFailure2&u=https%3A//www.meshy.ai/workspace&c=UTF-8&d=The%20connection%20to%20the%20server%20was%20reset%20while%20the%20page%20was%20loading.&a=\nStacktrace:\nRemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8\nWebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:169:5\nUnknownError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:944:5\ncheckReadyState@chrome://remote/content/marionette/navigate.sys.mjs:59:24\n",
+  "out": "/run/media/vdubrov/NVMe-Storage1/Just Dodge/meshy_output/ph1_fighter_002_har_20260721T200929Z"
+}

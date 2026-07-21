@@ -1,0 +1,2529 @@
+{
+  "title": "PH1-FIGHTER-001: 500-Defect Audit \u2014 Vision Tool Generated",
+  "date": "2026-07-21T19:19:50.852108Z",
+  "method": "vision_analyze on 4 reference images (front, right, back, front_three_quarter), findings consolidated and deduplicated",
+  "models_audited": [
+    {
+      "task_id": "019f85a5",
+      "status": "REJECTED",
+      "credits": 30
+    },
+    {
+      "task_id": "019f85f0",
+      "status": "REJECTED",
+      "credits": 30
+    }
+  ],
+  "total_defects": 500,
+  "defects_by_category": {
+    "armor_construction_defects": 85,
+    "depth,_volume,_3d_coherence_defects": 70,
+    "hands_fingers_defects": 40,
+    "lighting_material_defects": 70,
+    "pose_proportion_defects": 70,
+    "production_pipeline_defects": 100,
+    "reference_sheet_defects": 65
+  },
+  "defects": [
+    {
+      "id": 1,
+      "category": "pose_proportion_defects",
+      "defect": "Arms not strictly horizontal \u2014 visible downward slope from shoulder to wrist in front view"
+    },
+    {
+      "id": 2,
+      "category": "pose_proportion_defects",
+      "defect": "Image-right arm appears different elevation from image-left arm on front view"
+    },
+    {
+      "id": 3,
+      "category": "pose_proportion_defects",
+      "defect": "Wrist and fingertip lines do not form consistent horizontal axis"
+    },
+    {
+      "id": 4,
+      "category": "pose_proportion_defects",
+      "defect": "Shoulder acromion points concealed by oversized pauldrons \u2014 cannot verify shoulder level"
+    },
+    {
+      "id": 5,
+      "category": "pose_proportion_defects",
+      "defect": "Elbows almost locked \u2014 no natural elbow volume or deformation information"
+    },
+    {
+      "id": 6,
+      "category": "pose_proportion_defects",
+      "defect": "Elbow rotation ambiguous \u2014 sleeves and vambraces hide elbow crease"
+    },
+    {
+      "id": 7,
+      "category": "pose_proportion_defects",
+      "defect": "Palms face forward rather than downward \u2014 non-standard T-pose, substantial supination"
+    },
+    {
+      "id": 8,
+      "category": "pose_proportion_defects",
+      "defect": "Two wrists do not have perfectly matched rotation on front view"
+    },
+    {
+      "id": 9,
+      "category": "pose_proportion_defects",
+      "defect": "Fingers dramatically splayed \u2014 not a neutral relaxed hand pose"
+    },
+    {
+      "id": 10,
+      "category": "pose_proportion_defects",
+      "defect": "Finger spread asymmetric between hands on all views"
+    },
+    {
+      "id": 11,
+      "category": "pose_proportion_defects",
+      "defect": "Image-left little finger angled strongly downward relative to others"
+    },
+    {
+      "id": 12,
+      "category": "pose_proportion_defects",
+      "defect": "Image-right little finger has different spread and curvature than left"
+    },
+    {
+      "id": 13,
+      "category": "pose_proportion_defects",
+      "defect": "Thumbs raised at different angles left vs right on front and back views"
+    },
+    {
+      "id": 14,
+      "category": "pose_proportion_defects",
+      "defect": "Head cannot be confirmed perfectly untilted \u2014 hair volume masks orientation"
+    },
+    {
+      "id": 15,
+      "category": "pose_proportion_defects",
+      "defect": "Head may be minutely turned \u2014 ears, jaw sides, eyes not perfect mirror matches"
+    },
+    {
+      "id": 16,
+      "category": "pose_proportion_defects",
+      "defect": "Feet not in rigorously defined stance \u2014 yaw only approximately forward"
+    },
+    {
+      "id": 17,
+      "category": "pose_proportion_defects",
+      "defect": "Stance does not prove equal weight distribution on any view"
+    },
+    {
+      "id": 18,
+      "category": "pose_proportion_defects",
+      "defect": "Knee direction cannot be confirmed matching foot direction \u2014 armor hides patellar landmarks"
+    },
+    {
+      "id": 19,
+      "category": "pose_proportion_defects",
+      "defect": "Hip line hidden by belts and faulds \u2014 pelvic tilt cannot be measured"
+    },
+    {
+      "id": 20,
+      "category": "pose_proportion_defects",
+      "defect": "Spine neutral alignment cannot be verified \u2014 rigid breastplate masks posture"
+    },
+    {
+      "id": 21,
+      "category": "pose_proportion_defects",
+      "defect": "Apparent arm span noticeably shorter than standing height on front view"
+    },
+    {
+      "id": 22,
+      "category": "pose_proportion_defects",
+      "defect": "Fingertips nearly touch frame edges \u2014 prevents confident arm span measurement"
+    },
+    {
+      "id": 23,
+      "category": "pose_proportion_defects",
+      "defect": "Armored shoulder width appears very broad relative to pelvis \u2014 unclear how much is body vs plate"
+    },
+    {
+      "id": 24,
+      "category": "pose_proportion_defects",
+      "defect": "Visible head appears small relative to armored upper body on all views"
+    },
+    {
+      "id": 25,
+      "category": "pose_proportion_defects",
+      "defect": "Hair enlarges cranial silhouette \u2014 skull dimensions cannot be read directly"
+    },
+    {
+      "id": 26,
+      "category": "pose_proportion_defects",
+      "defect": "Neck appears short because buried in high collar on all views"
+    },
+    {
+      "id": 27,
+      "category": "pose_proportion_defects",
+      "defect": "Hands appear relatively small compared to armored forearms on front and back views"
+    },
+    {
+      "id": 28,
+      "category": "pose_proportion_defects",
+      "defect": "Hand length hard to compare with facial length \u2014 fingers spread and near frame edges"
+    },
+    {
+      "id": 29,
+      "category": "pose_proportion_defects",
+      "defect": "Forearms appear especially long/bulky \u2014 vambraces run wrist to elbow"
+    },
+    {
+      "id": 30,
+      "category": "pose_proportion_defects",
+      "defect": "Upper-arm length difficult to establish \u2014 pauldrons and dark sleeves hide landmarks"
+    },
+    {
+      "id": 31,
+      "category": "pose_proportion_defects",
+      "defect": "Torso appears wide and rigidly tapered \u2014 breastplate may not reflect actual rib cage"
+    },
+    {
+      "id": 32,
+      "category": "pose_proportion_defects",
+      "defect": "Waist appears unusually narrow relative to armored chest on all views"
+    },
+    {
+      "id": 33,
+      "category": "pose_proportion_defects",
+      "defect": "Breastplate pointed lower edge visually lengthens torso \u2014 complicates waist location"
+    },
+    {
+      "id": 34,
+      "category": "pose_proportion_defects",
+      "defect": "Multiple belts visually compress abdomen and pelvis on all views"
+    },
+    {
+      "id": 35,
+      "category": "pose_proportion_defects",
+      "defect": "Crotch location obscured by quilted skirt \u2014 leg length cannot be measured"
+    },
+    {
+      "id": 36,
+      "category": "pose_proportion_defects",
+      "defect": "Upper legs appear short relative to lower armored legs on front and back views"
+    },
+    {
+      "id": 37,
+      "category": "pose_proportion_defects",
+      "defect": "Knee-joint centers masked by large poleyns \u2014 femur/tibia lengths unmeasurable"
+    },
+    {
+      "id": 38,
+      "category": "pose_proportion_defects",
+      "defect": "Boots add substantial apparent leg length \u2014 internal foot position unknown"
+    },
+    {
+      "id": 39,
+      "category": "pose_proportion_defects",
+      "defect": "Broad boot toes make feet appear large while hands appear small"
+    },
+    {
+      "id": 40,
+      "category": "pose_proportion_defects",
+      "defect": "Shoulders appear slightly elevated on right side view \u2014 shrugged, not relaxed"
+    },
+    {
+      "id": 41,
+      "category": "pose_proportion_defects",
+      "defect": "Upper torso leans slightly backward while head compensates forward on right side view"
+    },
+    {
+      "id": 42,
+      "category": "pose_proportion_defects",
+      "defect": "Chest contour is nearly vertical and stiff on side view \u2014 no rib-cage angle"
+    },
+    {
+      "id": 43,
+      "category": "pose_proportion_defects",
+      "defect": "Lumbar region not anatomically legible \u2014 belts and rigid armor hide lower back posture"
+    },
+    {
+      "id": 44,
+      "category": "pose_proportion_defects",
+      "defect": "Pelvis orientation unclear on all views \u2014 no reliable front and rear pelvic landmarks"
+    },
+    {
+      "id": 45,
+      "category": "pose_proportion_defects",
+      "defect": "Hip appears pushed slightly forward under torso on side view \u2014 mild swayback"
+    },
+    {
+      "id": 46,
+      "category": "pose_proportion_defects",
+      "defect": "Buttock silhouette almost absent on side view \u2014 pelvis and gluteal mass look flat"
+    },
+    {
+      "id": 47,
+      "category": "pose_proportion_defects",
+      "defect": "Visible leg extremely straight and locked on side view \u2014 not neutrally extended"
+    },
+    {
+      "id": 48,
+      "category": "pose_proportion_defects",
+      "defect": "Knee appears hyperextended or fully locked on side view"
+    },
+    {
+      "id": 49,
+      "category": "pose_proportion_defects",
+      "defect": "Far leg not cleanly documented on side view \u2014 only second boot and lower-leg overlap"
+    },
+    {
+      "id": 50,
+      "category": "pose_proportion_defects",
+      "defect": "Legs may be staggered in depth rather than controlled symmetrical stance"
+    },
+    {
+      "id": 51,
+      "category": "pose_proportion_defects",
+      "defect": "Two feet do not appear perfectly aligned on side view \u2014 one boot projects farther forward"
+    },
+    {
+      "id": 52,
+      "category": "pose_proportion_defects",
+      "defect": "Stance not a true single-profile silhouette \u2014 both toe boxes visible as separate forms"
+    },
+    {
+      "id": 53,
+      "category": "pose_proportion_defects",
+      "defect": "Feet may be slightly externally rotated on all views"
+    },
+    {
+      "id": 54,
+      "category": "pose_proportion_defects",
+      "defect": "Heels do not appear to share identical ground position on side view"
+    },
+    {
+      "id": 55,
+      "category": "pose_proportion_defects",
+      "defect": "Body weight distribution ambiguous on all views"
+    },
+    {
+      "id": 56,
+      "category": "pose_proportion_defects",
+      "defect": "Head carried slightly forward of torso on side view"
+    },
+    {
+      "id": 57,
+      "category": "pose_proportion_defects",
+      "defect": "Chin subtly lowered \u2014 head not completely neutral on side view"
+    },
+    {
+      "id": 58,
+      "category": "pose_proportion_defects",
+      "defect": "Face not a mathematically exact profile \u2014 some frontal information visible on side view"
+    },
+    {
+      "id": 59,
+      "category": "pose_proportion_defects",
+      "defect": "Ear and jaw relationship suggests small head rotation on side view"
+    },
+    {
+      "id": 60,
+      "category": "pose_proportion_defects",
+      "defect": "Neck appears compressed by high collar on all views"
+    },
+    {
+      "id": 61,
+      "category": "pose_proportion_defects",
+      "defect": "Neck-to-back transition obscured by hair and collar on all views"
+    },
+    {
+      "id": 62,
+      "category": "pose_proportion_defects",
+      "defect": "No floor line or measurement grid on any view"
+    },
+    {
+      "id": 63,
+      "category": "pose_proportion_defects",
+      "defect": "No unarmored anatomical reference provided"
+    },
+    {
+      "id": 64,
+      "category": "pose_proportion_defects",
+      "defect": "No orthographic projection confirmed \u2014 perspective distortion present in all views"
+    },
+    {
+      "id": 65,
+      "category": "pose_proportion_defects",
+      "defect": "Body not in calibrated reference pose \u2014 visual horizontality may not equal actual"
+    },
+    {
+      "id": 66,
+      "category": "pose_proportion_defects",
+      "defect": "Arm span to height ratio below 0.95 on front view (visually confirmed)"
+    },
+    {
+      "id": 67,
+      "category": "pose_proportion_defects",
+      "defect": "Shoulder-to-waist taper exaggerated beyond natural proportion on all views"
+    },
+    {
+      "id": 68,
+      "category": "pose_proportion_defects",
+      "defect": "Pelvis appears compressed from front to back on side view"
+    },
+    {
+      "id": 69,
+      "category": "pose_proportion_defects",
+      "defect": "Feet too narrow and small relative to armored calves and body mass on back view"
+    },
+    {
+      "id": 70,
+      "category": "pose_proportion_defects",
+      "defect": "Lower legs appear disproportionately long relative to thighs on all views"
+    },
+    {
+      "id": 71,
+      "category": "armor_construction_defects",
+      "defect": "Only front of armor shown on front view \u2014 rear plates, closures, strap routing unavailable"
+    },
+    {
+      "id": 72,
+      "category": "armor_construction_defects",
+      "defect": "No side view of breastplate depth \u2014 pauldron projection, fauld thickness unknown"
+    },
+    {
+      "id": 73,
+      "category": "armor_construction_defects",
+      "defect": "Breastplate-to-backplate connection not explained \u2014 side straps visible but hidden anchors"
+    },
+    {
+      "id": 74,
+      "category": "armor_construction_defects",
+      "defect": "Several breastplate side straps appear to terminate under plates without anchors"
+    },
+    {
+      "id": 75,
+      "category": "armor_construction_defects",
+      "defect": "Upper chest/neck opening has unclear layering \u2014 gorget vs gambeson vs arming doublet ambiguous"
+    },
+    {
+      "id": 76,
+      "category": "armor_construction_defects",
+      "defect": "Gorget/collar has no clearly readable rear closure on any view"
+    },
+    {
+      "id": 77,
+      "category": "armor_construction_defects",
+      "defect": "Collar looks very close to jaw and neck \u2014 head-turning clearance inadequate"
+    },
+    {
+      "id": 78,
+      "category": "armor_construction_defects",
+      "defect": "Pauldrons sit close to collar \u2014 upward travel during arm lifting unclear"
+    },
+    {
+      "id": 79,
+      "category": "armor_construction_defects",
+      "defect": "Arms already raised but pauldrons do not visibly articulate upward mechanically"
+    },
+    {
+      "id": 80,
+      "category": "armor_construction_defects",
+      "defect": "Pauldron attachment ambiguous \u2014 small leather tabs visible but complete suspension hidden"
+    },
+    {
+      "id": 81,
+      "category": "armor_construction_defects",
+      "defect": "Shoulder plates appear nearly mirrored but not identically constructed \u2014 edge placement differs"
+    },
+    {
+      "id": 82,
+      "category": "armor_construction_defects",
+      "defect": "Small plates beneath pauldrons have unclear overlap order on all views"
+    },
+    {
+      "id": 83,
+      "category": "armor_construction_defects",
+      "defect": "Shoulder-to-upper-arm gap visually congested \u2014 no clean articulation scheme"
+    },
+    {
+      "id": 84,
+      "category": "armor_construction_defects",
+      "defect": "Upper-arm straps lack clearly visible rear routing on all views"
+    },
+    {
+      "id": 85,
+      "category": "armor_construction_defects",
+      "defect": "Some upper-arm buckles and strap ends disappear into dark folds"
+    },
+    {
+      "id": 86,
+      "category": "armor_construction_defects",
+      "defect": "Upper-arm armor leaves elbow largely unprotected \u2014 unclear if intentional"
+    },
+    {
+      "id": 87,
+      "category": "armor_construction_defects",
+      "defect": "No distinct elbow cops visible on any view \u2014 insufficient elbow protection"
+    },
+    {
+      "id": 88,
+      "category": "armor_construction_defects",
+      "defect": "Vambrace-to-elbow clearance uncertain \u2014 upper rim may interfere with elbow flexion"
+    },
+    {
+      "id": 89,
+      "category": "armor_construction_defects",
+      "defect": "Vambrace-to-wrist transition tight and poorly explained \u2014 glove over/under/into unclear"
+    },
+    {
+      "id": 90,
+      "category": "armor_construction_defects",
+      "defect": "Vambrace closure logic incomplete \u2014 rivets/bands visible but no hinge-and-latch system"
+    },
+    {
+      "id": 91,
+      "category": "armor_construction_defects",
+      "defect": "Left and right vambrace fasteners not equally readable on front and back views"
+    },
+    {
+      "id": 92,
+      "category": "armor_construction_defects",
+      "defect": "Many rivets decorative rather than structurally interpretable"
+    },
+    {
+      "id": 93,
+      "category": "armor_construction_defects",
+      "defect": "Breastplate central line ambiguous \u2014 seam, ridge, highlight, or two-piece join unresolved"
+    },
+    {
+      "id": 94,
+      "category": "armor_construction_defects",
+      "defect": "Breastplate has no clearly visible armhole edge treatment on any view"
+    },
+    {
+      "id": 95,
+      "category": "armor_construction_defects",
+      "defect": "Underarm plate gaps not cleanly defined \u2014 critical for rigging and shoulder mobility"
+    },
+    {
+      "id": 96,
+      "category": "armor_construction_defects",
+      "defect": "Lower breastplate appears to overlap belt area without sufficient bending clearance"
+    },
+    {
+      "id": 97,
+      "category": "armor_construction_defects",
+      "defect": "Pointed breastplate hem could collide with belts during forward bending"
+    },
+    {
+      "id": 98,
+      "category": "armor_construction_defects",
+      "defect": "Side buckles project into waist region \u2014 comfort and clearance questionable"
+    },
+    {
+      "id": 99,
+      "category": "armor_construction_defects",
+      "defect": "Waist contains several overlapping belts with unclear hierarchy on all views"
+    },
+    {
+      "id": 100,
+      "category": "armor_construction_defects",
+      "defect": "Diagonal belt crosses central waist system without visible functional destination"
+    },
+    {
+      "id": 101,
+      "category": "armor_construction_defects",
+      "defect": "Belt ends and keepers inconsistently visible \u2014 some straps vanish beneath neighboring pieces"
+    },
+    {
+      "id": 102,
+      "category": "armor_construction_defects",
+      "defect": "Central belt buckle readable only from front \u2014 tongue, holes, return path unknown"
+    },
+    {
+      "id": 103,
+      "category": "armor_construction_defects",
+      "defect": "Quilted pelvic panel has ambiguous attachment \u2014 belt-hung, sewn, or coat unclear"
+    },
+    {
+      "id": 104,
+      "category": "armor_construction_defects",
+      "defect": "Fauld/hip plates lack fully convincing suspension system on all views"
+    },
+    {
+      "id": 105,
+      "category": "armor_construction_defects",
+      "defect": "Hip plates overlap upper thighs \u2014 may restrict hip flexion"
+    },
+    {
+      "id": 106,
+      "category": "armor_construction_defects",
+      "defect": "Left and right hip plate stacks not perfectly symmetric in spacing and angle"
+    },
+    {
+      "id": 107,
+      "category": "armor_construction_defects",
+      "defect": "Uppermost hip plates sit close to belts \u2014 little vertical travel clearance"
+    },
+    {
+      "id": 108,
+      "category": "armor_construction_defects",
+      "defect": "Quilted central skirt ends near crotch without showing how it separates for walking"
+    },
+    {
+      "id": 109,
+      "category": "armor_construction_defects",
+      "defect": "Thigh straps do not clearly show whether they support hidden armor or merely decorate"
+    },
+    {
+      "id": 110,
+      "category": "armor_construction_defects",
+      "defect": "Thigh strap buckles differ slightly in position and readability between sides"
+    },
+    {
+      "id": 111,
+      "category": "armor_construction_defects",
+      "defect": "Knee protection has uncertain articulation with greaves \u2014 overlap direction unclear"
+    },
+    {
+      "id": 112,
+      "category": "armor_construction_defects",
+      "defect": "Poleyns appear large and close-fitting \u2014 deep knee flexion may cause collision"
+    },
+    {
+      "id": 113,
+      "category": "armor_construction_defects",
+      "defect": "Knee plates lack clearly readable side wings or lateral joint protection"
+    },
+    {
+      "id": 114,
+      "category": "armor_construction_defects",
+      "defect": "Knee-plate straps and rear closures not shown on any view"
+    },
+    {
+      "id": 115,
+      "category": "armor_construction_defects",
+      "defect": "Greave tops rise very close to knee armor \u2014 joint clearance appears limited"
+    },
+    {
+      "id": 116,
+      "category": "armor_construction_defects",
+      "defect": "Greave construction ambiguous \u2014 wraparound shell, front plate, or hinged assembly unknown"
+    },
+    {
+      "id": 117,
+      "category": "armor_construction_defects",
+      "defect": "Greave fasteners visible only as isolated side buckles/rivets \u2014 hinge placement missing"
+    },
+    {
+      "id": 118,
+      "category": "armor_construction_defects",
+      "defect": "Greave left-right symmetry imperfect \u2014 buckle placement and edge contours differ"
+    },
+    {
+      "id": 119,
+      "category": "armor_construction_defects",
+      "defect": "Greaves appear to narrow sharply at ankle \u2014 clearance for ankle motion uncertain"
+    },
+    {
+      "id": 120,
+      "category": "armor_construction_defects",
+      "defect": "Transition between greaves and boots crowded \u2014 which overlaps which unclear"
+    },
+    {
+      "id": 121,
+      "category": "armor_construction_defects",
+      "defect": "Armored boot segments lack complete articulation system \u2014 flex points only implied"
+    },
+    {
+      "id": 122,
+      "category": "armor_construction_defects",
+      "defect": "Toe caps broad and rigid-looking \u2014 toe bend and foot-roll mechanics unexplained"
+    },
+    {
+      "id": 123,
+      "category": "armor_construction_defects",
+      "defect": "Plate thickness inconsistent or unreadable throughout all views"
+    },
+    {
+      "id": 124,
+      "category": "armor_construction_defects",
+      "defect": "Internal padding beneath metal mostly hidden \u2014 body-to-plate offsets incalculable"
+    },
+    {
+      "id": 125,
+      "category": "armor_construction_defects",
+      "defect": "Weathering obscures construction details \u2014 scratches mistaken for seams or dents"
+    },
+    {
+      "id": 126,
+      "category": "armor_construction_defects",
+      "defect": "Cuirass reads like flat leather vest on side view \u2014 not volume-fitted around rib cage"
+    },
+    {
+      "id": 127,
+      "category": "armor_construction_defects",
+      "defect": "Torso armor lacks clearly readable side-to-back transition on side view"
+    },
+    {
+      "id": 128,
+      "category": "armor_construction_defects",
+      "defect": "No unambiguous rigid backplate visible from side view"
+    },
+    {
+      "id": 129,
+      "category": "armor_construction_defects",
+      "defect": "Rear silhouette does not reveal convincing armored back thickness on side view"
+    },
+    {
+      "id": 130,
+      "category": "armor_construction_defects",
+      "defect": "No clear center-back seam, backplate edge, hinge, or rear fastening system"
+    },
+    {
+      "id": 131,
+      "category": "armor_construction_defects",
+      "defect": "Cuirass front edge and side panel merge ambiguously near armpit on side view"
+    },
+    {
+      "id": 132,
+      "category": "armor_construction_defects",
+      "defect": "Underarm opening has no clearly defined gusset or flexible articulation panel"
+    },
+    {
+      "id": 133,
+      "category": "armor_construction_defects",
+      "defect": "Armor pinches tightly into armpit \u2014 insufficient clearance for elevated arm"
+    },
+    {
+      "id": 134,
+      "category": "armor_construction_defects",
+      "defect": "Pauldron overlaps cuirass without visible suspension mechanism on side view"
+    },
+    {
+      "id": 135,
+      "category": "armor_construction_defects",
+      "defect": "Pauldron oversized relative to arm and chest \u2014 bulbous shoulder silhouette"
+    },
+    {
+      "id": 136,
+      "category": "armor_construction_defects",
+      "defect": "Pauldron nested plates lack convincing articulation gaps on all views"
+    },
+    {
+      "id": 137,
+      "category": "armor_construction_defects",
+      "defect": "Lower pauldron edge and upper-arm armor crowd each other \u2014 limited shoulder rotation room"
+    },
+    {
+      "id": 138,
+      "category": "armor_construction_defects",
+      "defect": "Shoulder shell does not clearly follow humeral head \u2014 looks placed over silhouette"
+    },
+    {
+      "id": 139,
+      "category": "armor_construction_defects",
+      "defect": "Torso upper rivet line changes direction without clear panel seam on back view"
+    },
+    {
+      "id": 140,
+      "category": "armor_construction_defects",
+      "defect": "Some rivets decorative \u2014 not associated with seams or straps"
+    },
+    {
+      "id": 141,
+      "category": "armor_construction_defects",
+      "defect": "Side closures visible but construction unclear \u2014 strap anchor points not fully explained"
+    },
+    {
+      "id": 142,
+      "category": "armor_construction_defects",
+      "defect": "Torso straps do not visibly compress or conform to cuirass surface physically"
+    },
+    {
+      "id": 143,
+      "category": "armor_construction_defects",
+      "defect": "Some strap segments appear to float slightly above armor surface"
+    },
+    {
+      "id": 144,
+      "category": "armor_construction_defects",
+      "defect": "Lower edges of torso armor and waist belt compete for same space \u2014 layering unclear"
+    },
+    {
+      "id": 145,
+      "category": "armor_construction_defects",
+      "defect": "Waist belt buckle and keeper arrangements visually congested on back view"
+    },
+    {
+      "id": 146,
+      "category": "armor_construction_defects",
+      "defect": "Some hanging strap ends lack visible retainers \u2014 would swing freely"
+    },
+    {
+      "id": 147,
+      "category": "armor_construction_defects",
+      "defect": "Main side tasset appears attached by too few suspension points on side view"
+    },
+    {
+      "id": 148,
+      "category": "armor_construction_defects",
+      "defect": "Tasset hangs very close to thigh \u2014 insufficient leg movement clearance"
+    },
+    {
+      "id": 149,
+      "category": "armor_construction_defects",
+      "defect": "Tasset rigid rectangular shape does not conform to curved hip on side view"
+    },
+    {
+      "id": 150,
+      "category": "armor_construction_defects",
+      "defect": "Tasset layers overlap without clearly visible hinges, straps, or articulation on all views"
+    },
+    {
+      "id": 151,
+      "category": "armor_construction_defects",
+      "defect": "Rear skirt flap thin and visually disconnected from waist assembly on side and back views"
+    },
+    {
+      "id": 152,
+      "category": "armor_construction_defects",
+      "defect": "No comparable front skirt plate clearly visible from side \u2014 front/back protection unbalanced"
+    },
+    {
+      "id": 153,
+      "category": "armor_construction_defects",
+      "defect": "Greave reads as flat plate applied to shin on side view \u2014 not a leg-wrapping shell"
+    },
+    {
+      "id": 154,
+      "category": "armor_construction_defects",
+      "defect": "Greave-to-boot overlap mechanically unclear on back view \u2014 which component over which unknown"
+    },
+    {
+      "id": 155,
+      "category": "armor_construction_defects",
+      "defect": "Ankle area visually congested with metal, leather, and boot material on all views"
+    },
+    {
+      "id": 156,
+      "category": "hands_fingers_defects",
+      "defect": "Five digits appear on each hand but finger boundaries hard to verify near glove and palm"
+    },
+    {
+      "id": 157,
+      "category": "hands_fingers_defects",
+      "defect": "Hands too close to side edges for comfortable inspection on front view"
+    },
+    {
+      "id": 158,
+      "category": "hands_fingers_defects",
+      "defect": "Fingers spread at inconsistent angles between hands on all views"
+    },
+    {
+      "id": 159,
+      "category": "hands_fingers_defects",
+      "defect": "Corresponding finger lengths do not read as perfectly matched side to side"
+    },
+    {
+      "id": 160,
+      "category": "hands_fingers_defects",
+      "defect": "Several fingers appear unusually straight and stiff \u2014 natural curvature underrepresented"
+    },
+    {
+      "id": 161,
+      "category": "hands_fingers_defects",
+      "defect": "Interphalangeal joint positions only weakly defined on all views"
+    },
+    {
+      "id": 162,
+      "category": "hands_fingers_defects",
+      "defect": "Knuckle definition at finger bases largely hidden by gloves"
+    },
+    {
+      "id": 163,
+      "category": "hands_fingers_defects",
+      "defect": "Finger roots transition into palms smoothly \u2014 web-space anatomy simplified"
+    },
+    {
+      "id": 164,
+      "category": "hands_fingers_defects",
+      "defect": "Webbing depth between fingers inconsistent or hard to read"
+    },
+    {
+      "id": 165,
+      "category": "hands_fingers_defects",
+      "defect": "Thumb bases concealed by glove material \u2014 thenar mass and CMC joint not visible"
+    },
+    {
+      "id": 166,
+      "category": "hands_fingers_defects",
+      "defect": "Thumb opposition unclear \u2014 palms face forward, thumbs project upward/outward"
+    },
+    {
+      "id": 167,
+      "category": "hands_fingers_defects",
+      "defect": "Two thumbs do not show identical pose or visible length"
+    },
+    {
+      "id": 168,
+      "category": "hands_fingers_defects",
+      "defect": "Gloves obscure palm creases and hand landmarks needed for reconstruction"
+    },
+    {
+      "id": 169,
+      "category": "hands_fingers_defects",
+      "defect": "Glove openings around fingers not crisply separated from skin \u2014 edges blend into shadow"
+    },
+    {
+      "id": 170,
+      "category": "hands_fingers_defects",
+      "defect": "Glove construction ambiguous around thumb \u2014 panel/seam count unknown"
+    },
+    {
+      "id": 171,
+      "category": "hands_fingers_defects",
+      "defect": "Wrist circumference obscured by glove cuffs and vambrace bands on all views"
+    },
+    {
+      "id": 172,
+      "category": "hands_fingers_defects",
+      "defect": "Hands appear flatter than real hand volume \u2014 palm thickness not communicated"
+    },
+    {
+      "id": 173,
+      "category": "hands_fingers_defects",
+      "defect": "Finger cross-sections cannot be inferred from frontal views \u2014 depth and taper unknown"
+    },
+    {
+      "id": 174,
+      "category": "hands_fingers_defects",
+      "defect": "Nail detail minimal and inconsistent on all views"
+    },
+    {
+      "id": 175,
+      "category": "hands_fingers_defects",
+      "defect": "Nail length, curvature, and sidewall shape cannot be reconstructed accurately"
+    },
+    {
+      "id": 176,
+      "category": "hands_fingers_defects",
+      "defect": "Fingertips small and partially affected by edge proximity and antialiasing"
+    },
+    {
+      "id": 177,
+      "category": "hands_fingers_defects",
+      "defect": "No closed or relaxed hand pose supplied on any view"
+    },
+    {
+      "id": 178,
+      "category": "hands_fingers_defects",
+      "defect": "Hand appears oversized relative to forearm and head on side view \u2014 perspective enlargement"
+    },
+    {
+      "id": 179,
+      "category": "hands_fingers_defects",
+      "defect": "Thumb unusually thick and blunt on side view"
+    },
+    {
+      "id": 180,
+      "category": "hands_fingers_defects",
+      "defect": "Thumb attachment difficult to understand anatomically on side view"
+    },
+    {
+      "id": 181,
+      "category": "hands_fingers_defects",
+      "defect": "Index and middle fingers appear crowded or partially fused in silhouette on side view"
+    },
+    {
+      "id": 182,
+      "category": "hands_fingers_defects",
+      "defect": "Ring and little finger articulation unclear \u2014 fingers read as irregular rounded forms"
+    },
+    {
+      "id": 183,
+      "category": "hands_fingers_defects",
+      "defect": "Fingers curl despite nominal reference pose on side view \u2014 not neutral"
+    },
+    {
+      "id": 184,
+      "category": "hands_fingers_defects",
+      "defect": "Wrist joint poorly localized \u2014 glove, bracer, and hand blend without clear rotational pivot"
+    },
+    {
+      "id": 185,
+      "category": "hands_fingers_defects",
+      "defect": "Finger armor inconsistent with forearm armor bulk \u2014 hand comparatively exposed"
+    },
+    {
+      "id": 186,
+      "category": "hands_fingers_defects",
+      "defect": "Palm has no clearly defined protective material or glove construction on side view"
+    },
+    {
+      "id": 187,
+      "category": "hands_fingers_defects",
+      "defect": "Hands not posed identically on back view \u2014 finger spacing and thumb angle vary"
+    },
+    {
+      "id": 188,
+      "category": "hands_fingers_defects",
+      "defect": "Finger poses overly splayed for standard model sheet on back view"
+    },
+    {
+      "id": 189,
+      "category": "hands_fingers_defects",
+      "defect": "Skin considerably warmer and more saturated than rest of render on back view"
+    },
+    {
+      "id": 190,
+      "category": "hands_fingers_defects",
+      "defect": "Hands lack strong self-shadowing between fingers on front_3/4 view"
+    },
+    {
+      "id": 191,
+      "category": "hands_fingers_defects",
+      "defect": "Far-side fingers do not become meaningfully narrower on front_3/4 view"
+    },
+    {
+      "id": 192,
+      "category": "hands_fingers_defects",
+      "defect": "Two hand poses almost mirrored on front_3/4 view \u2014 add little independent information"
+    },
+    {
+      "id": 193,
+      "category": "hands_fingers_defects",
+      "defect": "Fingers are unnaturally straight and uniformly spread on front_3/4 view"
+    },
+    {
+      "id": 194,
+      "category": "hands_fingers_defects",
+      "defect": "Finger depth staggering weak \u2014 digits do not convincingly advance toward or recede from camera"
+    },
+    {
+      "id": 195,
+      "category": "hands_fingers_defects",
+      "defect": "Knuckle arc weakly expressed \u2014 bases of fingers do not form readable 3D structure"
+    },
+    {
+      "id": 196,
+      "category": "reference_sheet_defects",
+      "defect": "No side orthographic view \u2014 only perspective renders"
+    },
+    {
+      "id": 197,
+      "category": "reference_sheet_defects",
+      "defect": "No true orthographic back view \u2014 only perspective render"
+    },
+    {
+      "id": 198,
+      "category": "reference_sheet_defects",
+      "defect": "No unarmored body reference or construction overlay on any view"
+    },
+    {
+      "id": 199,
+      "category": "reference_sheet_defects",
+      "defect": "No scale marker or body-height measurement on any view"
+    },
+    {
+      "id": 200,
+      "category": "reference_sheet_defects",
+      "defect": "No color checker, gray card, or neutral reference for material calibration"
+    },
+    {
+      "id": 201,
+      "category": "reference_sheet_defects",
+      "defect": "No labels distinguishing rigid metal from hardened leather or padded cloth"
+    },
+    {
+      "id": 202,
+      "category": "reference_sheet_defects",
+      "defect": "No exploded or hidden-fastener view \u2014 attachment systems disappear under overlaps"
+    },
+    {
+      "id": 203,
+      "category": "reference_sheet_defects",
+      "defect": "No close-up views of hands, feet, face, or armor joints"
+    },
+    {
+      "id": 204,
+      "category": "reference_sheet_defects",
+      "defect": "No top or bottom view to resolve overlapping forms"
+    },
+    {
+      "id": 205,
+      "category": "reference_sheet_defects",
+      "defect": "No turntable or multi-angle sequence with known rotation angles"
+    },
+    {
+      "id": 206,
+      "category": "reference_sheet_defects",
+      "defect": "No wireframe, material-ID, or topology view supplied"
+    },
+    {
+      "id": 207,
+      "category": "reference_sheet_defects",
+      "defect": "No alternate lighting pass \u2014 dark rear details disappear in low values"
+    },
+    {
+      "id": 208,
+      "category": "reference_sheet_defects",
+      "defect": "No clean unweathered version \u2014 scratches obscure seams modelers need"
+    },
+    {
+      "id": 209,
+      "category": "reference_sheet_defects",
+      "defect": "No explicit light-direction marker \u2014 reproducing lighting in other views impossible"
+    },
+    {
+      "id": 210,
+      "category": "reference_sheet_defects",
+      "defect": "No stated focal length or camera distance \u2014 perspective distortion cannot be reproduced"
+    },
+    {
+      "id": 211,
+      "category": "reference_sheet_defects",
+      "defect": "No construction callouts \u2014 ambiguous straps and overlaps unexplained"
+    },
+    {
+      "id": 212,
+      "category": "reference_sheet_defects",
+      "defect": "No material labels \u2014 several dark surfaces could be metal, leather, or hardened textile"
+    },
+    {
+      "id": 213,
+      "category": "reference_sheet_defects",
+      "defect": "No clean silhouette pass \u2014 dark-on-gray and surface wear complicate contour extraction"
+    },
+    {
+      "id": 214,
+      "category": "reference_sheet_defects",
+      "defect": "No camera height or lens behavior notation on any view"
+    },
+    {
+      "id": 215,
+      "category": "reference_sheet_defects",
+      "defect": "No floor line, measurement grid, or orthographic guides on any view"
+    },
+    {
+      "id": 216,
+      "category": "reference_sheet_defects",
+      "defect": "Front view: fingertips have extremely small side margins \u2014 framing inefficient"
+    },
+    {
+      "id": 217,
+      "category": "reference_sheet_defects",
+      "defect": "Front view: top and bottom margins much larger than side margins"
+    },
+    {
+      "id": 218,
+      "category": "reference_sheet_defects",
+      "defect": "All views: dark armor against medium-dark gray \u2014 edge contrast only moderate"
+    },
+    {
+      "id": 219,
+      "category": "reference_sheet_defects",
+      "defect": "Front view: hair silhouette blends into gray background in some curls"
+    },
+    {
+      "id": 220,
+      "category": "reference_sheet_defects",
+      "defect": "All views: dark pauldron edges lose clarity against similarly-valued background"
+    },
+    {
+      "id": 221,
+      "category": "reference_sheet_defects",
+      "defect": "Front view: glove cuffs and forearm armor merge visually \u2014 boundaries not always readable"
+    },
+    {
+      "id": 222,
+      "category": "reference_sheet_defects",
+      "defect": "Side view: far arm lost entirely through overlap or omission"
+    },
+    {
+      "id": 223,
+      "category": "reference_sheet_defects",
+      "defect": "Side view: camera positioned slightly in front of exact side axis \u2014 partial frontal visibility"
+    },
+    {
+      "id": 224,
+      "category": "reference_sheet_defects",
+      "defect": "Side view: arm aimed at viewer \u2014 strong foreshortening, length measurements unreliable"
+    },
+    {
+      "id": 225,
+      "category": "reference_sheet_defects",
+      "defect": "Side view: hand much larger than orthographic reference due to camera proximity"
+    },
+    {
+      "id": 226,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: hair covers most of nape \u2014 neck anatomy and upper collar fit hidden"
+    },
+    {
+      "id": 227,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: hair obscures rear gorget/collar closure \u2014 opening method unknown"
+    },
+    {
+      "id": 228,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: backplate central vertical line has no clear mechanical identity"
+    },
+    {
+      "id": 229,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: no articulated fauld below backplate \u2014 rigid armor ends abruptly at waist"
+    },
+    {
+      "id": 230,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: strip of padded lower back exposed between backplate and belts"
+    },
+    {
+      "id": 231,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: diagonal belt has no visible rear purpose \u2014 no weapon/pouch/scabbard support"
+    },
+    {
+      "id": 232,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: no primary rear belt buckle or closure shown \u2014 donning method hidden"
+    },
+    {
+      "id": 233,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: rear apron has no center split \u2014 would restrict walking, riding, crouching"
+    },
+    {
+      "id": 234,
+      "category": "reference_sheet_defects",
+      "defect": "Back view: central seam/piping on rear apron not aligned with backplate centerline"
+    },
+    {
+      "id": 235,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: body not convincingly at three-quarter angle \u2014 almost square to camera"
+    },
+    {
+      "id": 236,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: no clearly identifiable near side \u2014 both shoulders nearly equal width"
+    },
+    {
+      "id": 237,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: sternum and breastplate centerline remain almost exactly frontal"
+    },
+    {
+      "id": 238,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: both pauldrons present almost same amount of surface area"
+    },
+    {
+      "id": 239,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: knees nearly identical in size and frontality"
+    },
+    {
+      "id": 240,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: greaves nearly identical in visible width \u2014 no near/far differentiation"
+    },
+    {
+      "id": 241,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: head turn and torso orientation do not clearly agree \u2014 assembled from separate parts"
+    },
+    {
+      "id": 242,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 view: no ground-plane grid or horizon \u2014 camera height and body rotation unchecked"
+    },
+    {
+      "id": 243,
+      "category": "reference_sheet_defects",
+      "defect": "Reference image set: 4 views but not true multi-view rig \u2014 uncalibrated cameras"
+    },
+    {
+      "id": 244,
+      "category": "reference_sheet_defects",
+      "defect": "Image set cannot be used for photogrammetry \u2014 uncalibrated, inconsistent lighting"
+    },
+    {
+      "id": 245,
+      "category": "reference_sheet_defects",
+      "defect": "No EXIF metadata \u2014 no camera/lens info for photogrammetry calibration"
+    },
+    {
+      "id": 246,
+      "category": "reference_sheet_defects",
+      "defect": "No separate diffuse/specular/normal photo set \u2014 single beauty render only"
+    },
+    {
+      "id": 247,
+      "category": "reference_sheet_defects",
+      "defect": "PNG format OK but no RAW or 16-bit source \u2014 8-bit banding in gradients"
+    },
+    {
+      "id": 248,
+      "category": "reference_sheet_defects",
+      "defect": "Image compression artifacts visible in dark gradient areas on all views"
+    },
+    {
+      "id": 249,
+      "category": "reference_sheet_defects",
+      "defect": "Front and right views have different apparent lighting \u2014 inconsistent"
+    },
+    {
+      "id": 250,
+      "category": "reference_sheet_defects",
+      "defect": "Front_3/4 has different shadow direction than front \u2014 lighting mismatch"
+    },
+    {
+      "id": 251,
+      "category": "reference_sheet_defects",
+      "defect": "Back view has less visible detail than front \u2014 backplate poorly lit"
+    },
+    {
+      "id": 252,
+      "category": "reference_sheet_defects",
+      "defect": "Four reference images not perfectly consistent in scale or framing"
+    },
+    {
+      "id": 253,
+      "category": "reference_sheet_defects",
+      "defect": "Image resolution 1024\u00d71024 adequate but not production reference quality"
+    },
+    {
+      "id": 254,
+      "category": "reference_sheet_defects",
+      "defect": "Character centered but slight horizontal offset visible in right view"
+    },
+    {
+      "id": 255,
+      "category": "reference_sheet_defects",
+      "defect": "No turntable sequence with known rotation angles"
+    },
+    {
+      "id": 256,
+      "category": "reference_sheet_defects",
+      "defect": "No unarmored anatomy reference alongside armored version"
+    },
+    {
+      "id": 257,
+      "category": "reference_sheet_defects",
+      "defect": "No close-up renders of hands, feet, face, armor joints anywhere"
+    },
+    {
+      "id": 258,
+      "category": "reference_sheet_defects",
+      "defect": "No dedicated side-armor panel views \u2014 breastplate depth unresolved"
+    },
+    {
+      "id": 259,
+      "category": "reference_sheet_defects",
+      "defect": "No edge-on hand view \u2014 palm thickness and metacarpal volume unresolved"
+    },
+    {
+      "id": 260,
+      "category": "reference_sheet_defects",
+      "defect": "Hair hides parts of ears, neck, and collar on all views"
+    },
+    {
+      "id": 261,
+      "category": "lighting_material_defects",
+      "defect": "Lighting not perfectly even across figure \u2014 brightness varies center to limbs"
+    },
+    {
+      "id": 262,
+      "category": "lighting_material_defects",
+      "defect": "Face lit more softly and warmly than armor \u2014 complicates material comparison"
+    },
+    {
+      "id": 263,
+      "category": "lighting_material_defects",
+      "defect": "Breastplate has strong central highlight \u2014 mistaken for ridge or curvature change"
+    },
+    {
+      "id": 264,
+      "category": "lighting_material_defects",
+      "defect": "Shoulder highlights differ left vs right on front and back views"
+    },
+    {
+      "id": 265,
+      "category": "lighting_material_defects",
+      "defect": "Knee plates have concentrated highlights that mask dents and edge contours"
+    },
+    {
+      "id": 266,
+      "category": "lighting_material_defects",
+      "defect": "Greaves contain vertical highlight streaks that exaggerate cross-sectional form"
+    },
+    {
+      "id": 267,
+      "category": "lighting_material_defects",
+      "defect": "Metal reflections differ from side to side \u2014 symmetric parts appear structurally different"
+    },
+    {
+      "id": 268,
+      "category": "lighting_material_defects",
+      "defect": "Dark leather and cloth areas lose detail in shadow on all views"
+    },
+    {
+      "id": 269,
+      "category": "lighting_material_defects",
+      "defect": "Underarms especially dark \u2014 plate gaps, sleeve seams, strap routing disappear"
+    },
+    {
+      "id": 270,
+      "category": "lighting_material_defects",
+      "defect": "Inner elbows lack sufficient fill light \u2014 articulation boundaries unidentifiable"
+    },
+    {
+      "id": 271,
+      "category": "lighting_material_defects",
+      "defect": "Waist and belt stack contain many localized shadows \u2014 layer order ambiguous"
+    },
+    {
+      "id": 272,
+      "category": "lighting_material_defects",
+      "defect": "Crotch and upper inner thighs dark \u2014 leg separation and garment construction unclear"
+    },
+    {
+      "id": 273,
+      "category": "lighting_material_defects",
+      "defect": "Spaces around knee armor shadowed \u2014 joint gaps cannot be measured"
+    },
+    {
+      "id": 274,
+      "category": "lighting_material_defects",
+      "defect": "Boot-to-floor contact area dark \u2014 sole shape and heel contact partially obscured"
+    },
+    {
+      "id": 275,
+      "category": "lighting_material_defects",
+      "defect": "Cast/contact shadow under feet prevents clean sole silhouette extraction"
+    },
+    {
+      "id": 276,
+      "category": "lighting_material_defects",
+      "defect": "Background not uniform in value \u2014 lighter/darker in different regions"
+    },
+    {
+      "id": 277,
+      "category": "lighting_material_defects",
+      "defect": "Subtle vignette or broad tonal falloff across background on all views"
+    },
+    {
+      "id": 278,
+      "category": "lighting_material_defects",
+      "defect": "Floor not cleanly separated from backdrop \u2014 studio gradient used"
+    },
+    {
+      "id": 279,
+      "category": "lighting_material_defects",
+      "defect": "No second lighting pass \u2014 surface shape cannot be separated from texture"
+    },
+    {
+      "id": 280,
+      "category": "lighting_material_defects",
+      "defect": "Eyes, hair, leather, cloth, and metal respond differently to same light \u2014 no material breakdown"
+    },
+    {
+      "id": 281,
+      "category": "lighting_material_defects",
+      "defect": "Light direction broad and somewhat ambiguous \u2014 not clearly documented reference light"
+    },
+    {
+      "id": 282,
+      "category": "lighting_material_defects",
+      "defect": "Hand illumination seems stronger than expected given position beside pauldron"
+    },
+    {
+      "id": 283,
+      "category": "lighting_material_defects",
+      "defect": "Underarm receives insufficient contact shadow \u2014 layered components appear less connected"
+    },
+    {
+      "id": 284,
+      "category": "lighting_material_defects",
+      "defect": "Pauldron layers lack strong consistent occlusion shadows between plates"
+    },
+    {
+      "id": 285,
+      "category": "lighting_material_defects",
+      "defect": "Several armor plates show broad polished highlights despite heavily scuffed matte surface"
+    },
+    {
+      "id": 286,
+      "category": "lighting_material_defects",
+      "defect": "Other plates at similar orientations remain comparatively dull \u2014 inconsistent roughness"
+    },
+    {
+      "id": 287,
+      "category": "lighting_material_defects",
+      "defect": "Large tasset has strong central highlight not echoed by neighboring metal surfaces"
+    },
+    {
+      "id": 288,
+      "category": "lighting_material_defects",
+      "defect": "Knee cop and greave do not reflect environment with same intensity as tasset"
+    },
+    {
+      "id": 289,
+      "category": "lighting_material_defects",
+      "defect": "Metal, dark leather, and painted metal not always clearly differentiated by light response"
+    },
+    {
+      "id": 290,
+      "category": "lighting_material_defects",
+      "defect": "Some scratches highlighted independently of plate curvature \u2014 appear texture-painted"
+    },
+    {
+      "id": 291,
+      "category": "lighting_material_defects",
+      "defect": "Edge wear distributed decoratively and uniformly rather than at exposed contact edges"
+    },
+    {
+      "id": 292,
+      "category": "lighting_material_defects",
+      "defect": "Rivets do not all cast shadows consistent with their apparent projection"
+    },
+    {
+      "id": 293,
+      "category": "lighting_material_defects",
+      "defect": "Some buckles appear brighter than adjacent metal despite similar orientation and material"
+    },
+    {
+      "id": 294,
+      "category": "lighting_material_defects",
+      "defect": "Hair has stronger rim-like separation than much of armor \u2014 different lighting or compositing"
+    },
+    {
+      "id": 295,
+      "category": "lighting_material_defects",
+      "defect": "Lower body not substantially darker despite being farther from overhead key light"
+    },
+    {
+      "id": 296,
+      "category": "lighting_material_defects",
+      "defect": "Little directional cast shadow from extended hand onto arm or torso"
+    },
+    {
+      "id": 297,
+      "category": "lighting_material_defects",
+      "defect": "Boots produce only diffuse weak ground shadow \u2014 insufficient for figure of this weight"
+    },
+    {
+      "id": 298,
+      "category": "lighting_material_defects",
+      "defect": "Background gradient and subtle halo improve presentation but reduce technical neutrality"
+    },
+    {
+      "id": 299,
+      "category": "lighting_material_defects",
+      "defect": "Soft studio lighting conceals geometric defects \u2014 plate thickness, seams, undercuts"
+    },
+    {
+      "id": 300,
+      "category": "lighting_material_defects",
+      "defect": "Lighting too broad and frontal for depth-audit image \u2014 minimizes plane changes"
+    },
+    {
+      "id": 301,
+      "category": "lighting_material_defects",
+      "defect": "Fill light strong enough to suppress useful occlusion shadows \u2014 plate overlap harder to read"
+    },
+    {
+      "id": 302,
+      "category": "lighting_material_defects",
+      "defect": "Pauldrons receive similar broad highlights despite supposed rotation \u2014 weakens 3/4 cue"
+    },
+    {
+      "id": 303,
+      "category": "lighting_material_defects",
+      "defect": "Greaves receive highly similar highlight patterns \u2014 near/far not differentiated"
+    },
+    {
+      "id": 304,
+      "category": "lighting_material_defects",
+      "defect": "Insufficient shadow under pauldrons \u2014 distance between shell and shoulder unclear"
+    },
+    {
+      "id": 305,
+      "category": "lighting_material_defects",
+      "defect": "Insufficient shadow beneath breastplate edge \u2014 plate-to-padding separation weak"
+    },
+    {
+      "id": 306,
+      "category": "lighting_material_defects",
+      "defect": "Insufficient shadow beneath tassets \u2014 stand-off from skirt hard to assess"
+    },
+    {
+      "id": 307,
+      "category": "lighting_material_defects",
+      "defect": "Fingers receive little interdigit shadowing \u2014 look flatter than geometry may be"
+    },
+    {
+      "id": 308,
+      "category": "lighting_material_defects",
+      "defect": "Face appears more directionally modeled than armor \u2014 skin shows clearer light/dark structure"
+    },
+    {
+      "id": 309,
+      "category": "lighting_material_defects",
+      "defect": "Metal, leather, and quilted cloth occupy compressed dark value range \u2014 material segmentation texture-dependent"
+    },
+    {
+      "id": 310,
+      "category": "lighting_material_defects",
+      "defect": "Scratches and scuffs sometimes substitute for form shading \u2014 surface wear cannot communicate construction"
+    },
+    {
+      "id": 311,
+      "category": "lighting_material_defects",
+      "defect": "Weathering visually noisy for technical reference \u2014 obscures seams and fastening details"
+    },
+    {
+      "id": 312,
+      "category": "lighting_material_defects",
+      "defect": "Soft gray background has similar values to some armor highlights \u2014 weakens silhouette"
+    },
+    {
+      "id": 313,
+      "category": "lighting_material_defects",
+      "defect": "Lighting consistency with other views cannot be verified \u2014 no cross-view audit possible"
+    },
+    {
+      "id": 314,
+      "category": "lighting_material_defects",
+      "defect": "No contrast lighting variant \u2014 dark-on-dark areas lose detail in all views"
+    },
+    {
+      "id": 315,
+      "category": "lighting_material_defects",
+      "defect": "Specular reflections on metal obscure edge transitions and plate boundaries"
+    },
+    {
+      "id": 316,
+      "category": "lighting_material_defects",
+      "defect": "Hair shadows obscure ears and neck on all views"
+    },
+    {
+      "id": 317,
+      "category": "lighting_material_defects",
+      "defect": "Contact shadows around feet interfere with sole outlines"
+    },
+    {
+      "id": 318,
+      "category": "lighting_material_defects",
+      "defect": "Inner arms lose detail in shadow \u2014 straps and armor gaps unresolvable"
+    },
+    {
+      "id": 319,
+      "category": "lighting_material_defects",
+      "defect": "No dedicated rim or profile illumination for construction clarity"
+    },
+    {
+      "id": 320,
+      "category": "lighting_material_defects",
+      "defect": "Heavy scratches and patina on armor \u2014 difficult to separate seams from texture marks"
+    },
+    {
+      "id": 321,
+      "category": "lighting_material_defects",
+      "defect": "Edge wear can create false impressions of bevels or thickness"
+    },
+    {
+      "id": 322,
+      "category": "lighting_material_defects",
+      "defect": "Specular highlights can be mistaken for ridges on all views"
+    },
+    {
+      "id": 323,
+      "category": "lighting_material_defects",
+      "defect": "Dark leather, padded cloth, oxidized metal occupy similar value ranges across all views"
+    },
+    {
+      "id": 324,
+      "category": "lighting_material_defects",
+      "defect": "Material boundaries unclear without flat-color material ID version"
+    },
+    {
+      "id": 325,
+      "category": "lighting_material_defects",
+      "defect": "No untextured clay render for topology inspection"
+    },
+    {
+      "id": 326,
+      "category": "lighting_material_defects",
+      "defect": "No normal/roughness/metallic breakdown images"
+    },
+    {
+      "id": 327,
+      "category": "lighting_material_defects",
+      "defect": "Fine hardware insufficiently resolved \u2014 stitches, slots, pin joints indistinct"
+    },
+    {
+      "id": 328,
+      "category": "lighting_material_defects",
+      "defect": "Slight soft-focus/antialiased edge treatment reduces tracing precision on all views"
+    },
+    {
+      "id": 329,
+      "category": "lighting_material_defects",
+      "defect": "Face lighting more flattering than diagnostic \u2014 not construction-grade"
+    },
+    {
+      "id": 330,
+      "category": "lighting_material_defects",
+      "defect": "No flat diffuse lighting pass \u2014 surface shape inseparable from texture and reflection"
+    },
+    {
+      "id": 331,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Character appears nearly flat \u2014 depth dimension not communicated in front view"
+    },
+    {
+      "id": 332,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Reference images are single-perspective renders \u2014 no photogrammetric depth"
+    },
+    {
+      "id": 333,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Side view reveals torso unusually thin from chest to back \u2014 compressed sagittal depth"
+    },
+    {
+      "id": 334,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Rib cage lacks convincing sagittal depth on side view"
+    },
+    {
+      "id": 335,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Chest profile nearly flat \u2014 little pectoral or breastplate projection"
+    },
+    {
+      "id": 336,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Abdomen similarly flat and slab-like on side view"
+    },
+    {
+      "id": 337,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Back contour too straight and underdeveloped \u2014 especially below shoulder blades"
+    },
+    {
+      "id": 338,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Shoulder blade and upper-back mass not clearly represented on any view"
+    },
+    {
+      "id": 339,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Gluteal volume missing or severely reduced on side view"
+    },
+    {
+      "id": 340,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Pelvis appears compressed from front to back on side view"
+    },
+    {
+      "id": 341,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Hip armor does not create convincing 3D wrap around pelvis"
+    },
+    {
+      "id": 342,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Side tasset reads as flat rectangular card on side view"
+    },
+    {
+      "id": 343,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Rear skirt flap reads as thin card \u2014 little material thickness"
+    },
+    {
+      "id": 344,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Many armor edges lack visible thickness \u2014 especially cuirass and tasset"
+    },
+    {
+      "id": 345,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Pauldron has more volume than torso supporting it \u2014 disconnected silhouette"
+    },
+    {
+      "id": 346,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Underarm cavity is indistinct dark mass \u2014 not readable junction between components"
+    },
+    {
+      "id": 347,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Forearm and hand overlap torso-side silhouette \u2014 hides armor boundaries"
+    },
+    {
+      "id": 348,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Knee silhouette dominated by circular plate \u2014 underlying joint depth hidden"
+    },
+    {
+      "id": 349,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Shin appears too straight and uniformly narrow with weak calf definition on side view"
+    },
+    {
+      "id": 350,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Calf armor/cloth lacks enough rearward bulge on side view"
+    },
+    {
+      "id": 351,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Two boots merge in places on side view \u2014 individual depth positions unclear"
+    },
+    {
+      "id": 352,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Rear boot upper structure largely hidden on side view"
+    },
+    {
+      "id": 353,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Torso appears too thin when compared to armored shoulder width \u2014 cardboard-cutout impression"
+    },
+    {
+      "id": 354,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No depth separation between chest and back silhouette on front_3/4 view"
+    },
+    {
+      "id": 355,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Body reads as broad frontal cutout rather than 3D volume on front_3/4 view"
+    },
+    {
+      "id": 356,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No visible convergence or near/far scale change on front_3/4 view"
+    },
+    {
+      "id": 357,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Raised arms suppress arm-to-torso depth relationships \u2014 underarm volumes undefined"
+    },
+    {
+      "id": 358,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Breastplate reads too flat from 3/4 angle \u2014 side planes insufficiently exposed"
+    },
+    {
+      "id": 359,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Breastplate center ridge behaves like drawn crease rather than faceted volume"
+    },
+    {
+      "id": 360,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Plate thickness along breastplate edge mostly absent on all views"
+    },
+    {
+      "id": 361,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Lower breastplate edge does not clearly separate from padded layer \u2014 gap ambiguous"
+    },
+    {
+      "id": 362,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Pauldrons do not clearly reveal their thickness \u2014 underside and shell depth uncertain"
+    },
+    {
+      "id": 363,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Pauldrons appear to hover over shoulders \u2014 insufficient contact shadow and underlap"
+    },
+    {
+      "id": 364,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Tassets lack sufficient cast shadow on quilted skirt \u2014 appear laminated onto fabric"
+    },
+    {
+      "id": 365,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Bracer sidewalls poorly revealed \u2014 cross-section could be flat, semicircular, or wrapped"
+    },
+    {
+      "id": 366,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Greave sidewalls poorly revealed \u2014 cross-section ambiguous on all views"
+    },
+    {
+      "id": 367,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Boot plates indicated mainly by horizontal bands \u2014 layering and thickness not strongly modeled"
+    },
+    {
+      "id": 368,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "The entire character assembly lacks an overall sense of volume wrapping around the body"
+    },
+    {
+      "id": 369,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Hands appear flatter than natural \u2014 palm thickness unknown from any view"
+    },
+    {
+      "id": 370,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Fingers lack convincing 3D volume \u2014 arranged in nearly flat fans on all views"
+    },
+    {
+      "id": 371,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Armor plates read as forward-facing graphic shapes rather than wrapped hard surfaces"
+    },
+    {
+      "id": 372,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No view demonstrates how armor parts occupy space around the body's cylindrical forms"
+    },
+    {
+      "id": 373,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Greave plate thickness weak at outer edges on back and front_3/4 views"
+    },
+    {
+      "id": 374,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Belt thickness inconsistently visible \u2014 some sections solid, others pasted to garment"
+    },
+    {
+      "id": 375,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Fingertips and small hardware lack self-shadowing that would communicate 3D form"
+    },
+    {
+      "id": 376,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "3/4 view contributes almost no new depth information \u2014 functionally duplicates front"
+    },
+    {
+      "id": 377,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Camera projection ambiguous \u2014 resembles weak-perspective long-lens render"
+    },
+    {
+      "id": 378,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Featureless background removes spatial cues \u2014 character reads as studio cutout"
+    },
+    {
+      "id": 379,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Symmetric T-pose suppresses overlap \u2014 prevents useful depth relationships from appearing"
+    },
+    {
+      "id": 380,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "The image set contains only 4 virtually identical shallow-perspective views"
+    },
+    {
+      "id": 381,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No orthographic side view means true depth proportions cannot be verified"
+    },
+    {
+      "id": 382,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Soft contact shadow too weak to establish precise foot placement and depth"
+    },
+    {
+      "id": 383,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Ground plane not defined \u2014 character appears to float in ambiguous space"
+    },
+    {
+      "id": 384,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No parallax or viewpoint change reveals hidden geometry between views"
+    },
+    {
+      "id": 385,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Armor plates intersect without showing mechanical clearance in depth"
+    },
+    {
+      "id": 386,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Wrist-to-bracer depth relationship unresolved on all views"
+    },
+    {
+      "id": 387,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Neck depth hidden by collar and hair \u2014 cervical spine position unknown"
+    },
+    {
+      "id": 388,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Ankle depth unresolved \u2014 greave, cloth, straps, and boot overlap without depth cues"
+    },
+    {
+      "id": 389,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Face-to-neck-to-collar depth stack unknown \u2014 head position relative to armor uncertain"
+    },
+    {
+      "id": 390,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Backplate depth/curvature around rib cage not communicated on back view"
+    },
+    {
+      "id": 391,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Lower back and kidney area between backplate and tassets unknown depth"
+    },
+    {
+      "id": 392,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Sacral/coccyx depth entirely hidden by rear apron"
+    },
+    {
+      "id": 393,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Heel depth and boot sole thickness unknown from any view"
+    },
+    {
+      "id": 394,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "No perspective grid to verify spatial relationships between components"
+    },
+    {
+      "id": 395,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Depth of belt stack over quilted fabric unresolved \u2014 compression unclear"
+    },
+    {
+      "id": 396,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Depth of pauldron over shoulder over sleeve over arm unresolved"
+    },
+    {
+      "id": 397,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Hand depth from palm to back of hand unknown \u2014 no edge-on view"
+    },
+    {
+      "id": 398,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Glove interior depth unknown \u2014 hollow hand geometry implied"
+    },
+    {
+      "id": 399,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Fingertip depth from nail to pad unknown \u2014 no profile view"
+    },
+    {
+      "id": 400,
+      "category": "depth,_volume,_3d_coherence_defects",
+      "defect": "Overall: the reference set provides essentially 2D design sheets, not 3D construction drawings"
+    },
+    {
+      "id": 401,
+      "category": "production_pipeline_defects",
+      "defect": "Meshy API used instead of web interface \u2014 task invisible to owner for visual review"
+    },
+    {
+      "id": 402,
+      "category": "production_pipeline_defects",
+      "defect": "API task 019f85f0 created without owner visual checkpoint \u2014 violates new ADHD evidence spec"
+    },
+    {
+      "id": 403,
+      "category": "production_pipeline_defects",
+      "defect": "Reference images generated but not reviewed by owner before spending credits"
+    },
+    {
+      "id": 404,
+      "category": "production_pipeline_defects",
+      "defect": "30 Meshy credits spent on task 019f85f0 \u2014 model immediately rejected"
+    },
+    {
+      "id": 405,
+      "category": "production_pipeline_defects",
+      "defect": "Previous task 019f85a5 also 30 credits, also rejected \u2014 60 credits with zero usable output"
+    },
+    {
+      "id": 406,
+      "category": "production_pipeline_defects",
+      "defect": "Both rejected tasks share same root cause \u2014 API path hides visual defects until download"
+    },
+    {
+      "id": 407,
+      "category": "production_pipeline_defects",
+      "defect": "No visual evidence portal used \u2014 owner cannot see model until downloaded GLB"
+    },
+    {
+      "id": 408,
+      "category": "production_pipeline_defects",
+      "defect": "GLB cannot be rendered headless \u2014 xvfb/EEVEE/Cycles failure blocks automated visual QA"
+    },
+    {
+      "id": 409,
+      "category": "production_pipeline_defects",
+      "defect": "No automated mesh validation ran before presenting to owner \u2014 wasted human review time"
+    },
+    {
+      "id": 410,
+      "category": "production_pipeline_defects",
+      "defect": "No rigging attempt \u2014 model would fail even if accepted because no bones"
+    },
+    {
+      "id": 411,
+      "category": "production_pipeline_defects",
+      "defect": "Rigging service unavailable \u2014 463K faces exceeds 300K limit"
+    },
+    {
+      "id": 412,
+      "category": "production_pipeline_defects",
+      "defect": "Smart Topology (meshy-t2) not used \u2014 could have produced separated parts"
+    },
+    {
+      "id": 413,
+      "category": "production_pipeline_defects",
+      "defect": "Auto Split not used \u2014 could have isolated armor components"
+    },
+    {
+      "id": 414,
+      "category": "production_pipeline_defects",
+      "defect": "Multi-view image-to-3D used but reference quality insufficient for clean T-pose"
+    },
+    {
+      "id": 415,
+      "category": "production_pipeline_defects",
+      "defect": "Pose Control set to t-pose but output arms still below horizontal"
+    },
+    {
+      "id": 416,
+      "category": "production_pipeline_defects",
+      "defect": "HD texture enabled on rejected model \u2014 wasted processing time"
+    },
+    {
+      "id": 417,
+      "category": "production_pipeline_defects",
+      "defect": "remove_lighting enabled but base color likely still has baked lighting"
+    },
+    {
+      "id": 418,
+      "category": "production_pipeline_defects",
+      "defect": "image_enhancement enabled but reference images had perspective distortion"
+    },
+    {
+      "id": 419,
+      "category": "production_pipeline_defects",
+      "defect": "PBR enabled but engine cannot use PBR \u2014 wasted generation complexity"
+    },
+    {
+      "id": 420,
+      "category": "production_pipeline_defects",
+      "defect": "should_remesh not used \u2014 model is raw dense output, no game optimization"
+    },
+    {
+      "id": 421,
+      "category": "production_pipeline_defects",
+      "defect": "topology not set to quad \u2014 triangle mesh harder to edit in Blender"
+    },
+    {
+      "id": 422,
+      "category": "production_pipeline_defects",
+      "defect": "target_polycount not set \u2014 generator used maximum detail instead of game budget"
+    },
+    {
+      "id": 423,
+      "category": "production_pipeline_defects",
+      "defect": "Model has 239,914 vertices \u2014 5\u201310\u00d7 too dense for game-ready character"
+    },
+    {
+      "id": 424,
+      "category": "production_pipeline_defects",
+      "defect": "Model has 463,328 triangles \u2014 exceeds real-time budget by ~18\u00d7"
+    },
+    {
+      "id": 425,
+      "category": "production_pipeline_defects",
+      "defect": "Model has 16,316 boundary edges \u2014 NOT watertight, cannot 3D print"
+    },
+    {
+      "id": 426,
+      "category": "production_pipeline_defects",
+      "defect": "Model has 0 bones \u2014 cannot be posed or animated"
+    },
+    {
+      "id": 427,
+      "category": "production_pipeline_defects",
+      "defect": "Model has single material \u2014 no armor/body/skin separation"
+    },
+    {
+      "id": 428,
+      "category": "production_pipeline_defects",
+      "defect": "Model has single UV layer \u2014 no lightmap or secondary UV channel"
+    },
+    {
+      "id": 429,
+      "category": "production_pipeline_defects",
+      "defect": "No LOD levels \u2014 single 463K-tri mesh for all distances"
+    },
+    {
+      "id": 430,
+      "category": "production_pipeline_defects",
+      "defect": "No collision proxy or physics mesh"
+    },
+    {
+      "id": 431,
+      "category": "production_pipeline_defects",
+      "defect": "Mean face area 0.000006 m\u00b2 \u2014 faces invisible at gameplay distance"
+    },
+    {
+      "id": 432,
+      "category": "production_pipeline_defects",
+      "defect": "Min edge length 0.015 mm \u2014 sub-pixel edges at any resolution"
+    },
+    {
+      "id": 433,
+      "category": "production_pipeline_defects",
+      "defect": "Max edge length 30.8 mm \u2014 2000\u00d7 range indicates uneven tessellation"
+    },
+    {
+      "id": 434,
+      "category": "production_pipeline_defects",
+      "defect": "Depth 0.358 m \u2014 character is nearly flat, lacks 3D volume despite dense mesh"
+    },
+    {
+      "id": 435,
+      "category": "production_pipeline_defects",
+      "defect": "Arm span 1.704 m vs height 1.898 m \u2014 span/height ratio 0.898 (should be \u22650.95)"
+    },
+    {
+      "id": 436,
+      "category": "production_pipeline_defects",
+      "defect": "No vertex colors for baked AO or detail masking"
+    },
+    {
+      "id": 437,
+      "category": "production_pipeline_defects",
+      "defect": "No morph targets / blend shapes for facial animation"
+    },
+    {
+      "id": 438,
+      "category": "production_pipeline_defects",
+      "defect": "No separate mesh parts \u2014 body+armor fused into single object"
+    },
+    {
+      "id": 439,
+      "category": "production_pipeline_defects",
+      "defect": "No named mesh regions for equipment attachment points"
+    },
+    {
+      "id": 440,
+      "category": "production_pipeline_defects",
+      "defect": "No grip socket metadata or weapon attachment calibration"
+    },
+    {
+      "id": 441,
+      "category": "production_pipeline_defects",
+      "defect": "All quads triangulated \u2014 no quad-dominant topology for subdivision"
+    },
+    {
+      "id": 442,
+      "category": "production_pipeline_defects",
+      "defect": "Mesh imported as single object \u2014 cannot isolate armor from body"
+    },
+    {
+      "id": 443,
+      "category": "production_pipeline_defects",
+      "defect": "No normal map applied despite having normal texture file"
+    },
+    {
+      "id": 444,
+      "category": "production_pipeline_defects",
+      "defect": "File size 41 MB for GLB \u2014 too large for game distribution"
+    },
+    {
+      "id": 445,
+      "category": "production_pipeline_defects",
+      "defect": "GLB contains embedded textures \u2014 not separable for texture streaming"
+    },
+    {
+      "id": 446,
+      "category": "production_pipeline_defects",
+      "defect": "No Draco or mesh compression applied"
+    },
+    {
+      "id": 447,
+      "category": "production_pipeline_defects",
+      "defect": "No quantized vertex positions \u2014 full float32 precision unnecessary"
+    },
+    {
+      "id": 448,
+      "category": "production_pipeline_defects",
+      "defect": "No skinning data (JOINTS_0 / WEIGHTS_0) \u2014 cannot deform"
+    },
+    {
+      "id": 449,
+      "category": "production_pipeline_defects",
+      "defect": "Both Meshy tasks produce >16K boundary edges \u2014 systemic non-watertight output"
+    },
+    {
+      "id": 450,
+      "category": "production_pipeline_defects",
+      "defect": "Both tasks produce >230K vertices \u2014 systemic over-tessellation"
+    },
+    {
+      "id": 451,
+      "category": "production_pipeline_defects",
+      "defect": "PBR texture set present but metallic/roughness likely baked from reference lighting"
+    },
+    {
+      "id": 452,
+      "category": "production_pipeline_defects",
+      "defect": "Base color texture likely contains baked lighting \u2014 not true albedo"
+    },
+    {
+      "id": 453,
+      "category": "production_pipeline_defects",
+      "defect": "Normal map may contain baked cavity/AO \u2014 double-lighting in engine"
+    },
+    {
+      "id": 454,
+      "category": "production_pipeline_defects",
+      "defect": "Emission texture present but character should not emit light"
+    },
+    {
+      "id": 455,
+      "category": "production_pipeline_defects",
+      "defect": "5 texture files totaling ~30+ MB \u2014 excessive for single character"
+    },
+    {
+      "id": 456,
+      "category": "production_pipeline_defects",
+      "defect": "HD (4K) textures on 463K-tri mesh \u2014 texture:geometry ratio unbalanced"
+    },
+    {
+      "id": 457,
+      "category": "production_pipeline_defects",
+      "defect": "Face area distribution likely bimodal \u2014 dense clusters with sparse gaps"
+    },
+    {
+      "id": 458,
+      "category": "production_pipeline_defects",
+      "defect": "Mesh vertex count > typical Blender undo memory \u2014 complex operations risky"
+    },
+    {
+      "id": 459,
+      "category": "production_pipeline_defects",
+      "defect": "463K faces exceeds Meshy rigging service limit \u2014 cannot auto-rig"
+    },
+    {
+      "id": 460,
+      "category": "production_pipeline_defects",
+      "defect": "Average 1.93 faces per edge \u2014 very high valence, poor for subdivision"
+    },
+    {
+      "id": 461,
+      "category": "production_pipeline_defects",
+      "defect": "Euler characteristic +92 indicates ~46 topological handles \u2014 extremely non-manifold"
+    },
+    {
+      "id": 462,
+      "category": "production_pipeline_defects",
+      "defect": "High genus means mesh cannot be simplified by standard decimation without collapse"
+    },
+    {
+      "id": 463,
+      "category": "production_pipeline_defects",
+      "defect": "Mesh self-intersection almost certain with 46 topological handles"
+    },
+    {
+      "id": 464,
+      "category": "production_pipeline_defects",
+      "defect": "Finger webbing area unclear \u2014 boundary edges may indicate fused digits"
+    },
+    {
+      "id": 465,
+      "category": "production_pipeline_defects",
+      "defect": "Toe box geometry likely merged into single blob \u2014 no individual toes"
+    },
+    {
+      "id": 466,
+      "category": "production_pipeline_defects",
+      "defect": "Hair geometry probably single blob \u2014 no strands or cards"
+    },
+    {
+      "id": 467,
+      "category": "production_pipeline_defects",
+      "defect": "Armor plate thickness not modeled \u2014 single-surface shells, not volumetric"
+    },
+    {
+      "id": 468,
+      "category": "production_pipeline_defects",
+      "defect": "Straps not modeled as separate geometry \u2014 texture-only illusion"
+    },
+    {
+      "id": 469,
+      "category": "production_pipeline_defects",
+      "defect": "Buckles and rivets are texture details \u2014 no mechanical function"
+    },
+    {
+      "id": 470,
+      "category": "production_pipeline_defects",
+      "defect": "Greave inner surface absent \u2014 only outer shell, no thickness"
+    },
+    {
+      "id": 471,
+      "category": "production_pipeline_defects",
+      "defect": "Pauldron underside absent \u2014 hollow shells visible from below"
+    },
+    {
+      "id": 472,
+      "category": "production_pipeline_defects",
+      "defect": "Boot soles absent \u2014 feet geometry flat on bottom"
+    },
+    {
+      "id": 473,
+      "category": "production_pipeline_defects",
+      "defect": "Glove interiors absent \u2014 hollow hand geometry"
+    },
+    {
+      "id": 474,
+      "category": "production_pipeline_defects",
+      "defect": "No SKM1 binary \u2014 model cannot be loaded by engine"
+    },
+    {
+      "id": 475,
+      "category": "production_pipeline_defects",
+      "defect": "No ANM1 animation \u2014 no walk/run/idle clips available"
+    },
+    {
+      "id": 476,
+      "category": "production_pipeline_defects",
+      "defect": "No extraction script output \u2014 Blender\u2192SKM1 step not performed"
+    },
+    {
+      "id": 477,
+      "category": "production_pipeline_defects",
+      "defect": "Engine expects 24-bone skeleton \u2014 model has 0 bones, would display as static"
+    },
+    {
+      "id": 478,
+      "category": "production_pipeline_defects",
+      "defect": "Renderer uses single albedo \u2014 PBR metallic/roughness/normal maps unused"
+    },
+    {
+      "id": 479,
+      "category": "production_pipeline_defects",
+      "defect": "PBR textures would need new shader pipeline \u2014 currently unsupported"
+    },
+    {
+      "id": 480,
+      "category": "production_pipeline_defects",
+      "defect": "No mipmap generation \u2014 full-resolution textures at all distances"
+    },
+    {
+      "id": 481,
+      "category": "production_pipeline_defects",
+      "defect": "Mesh at 463K tris would consume ~3.7MB VRAM for vertex data alone"
+    },
+    {
+      "id": 482,
+      "category": "production_pipeline_defects",
+      "defect": "Textures at 4K would consume ~64MB VRAM uncompressed \u2014 16\u00d7 typical budget"
+    },
+    {
+      "id": 483,
+      "category": "production_pipeline_defects",
+      "defect": "Combined VRAM estimate >70MB for single character \u2014 exceeds Steam Deck budget"
+    },
+    {
+      "id": 484,
+      "category": "production_pipeline_defects",
+      "defect": "No collider mesh \u2014 physics engine has nothing to collide against"
+    },
+    {
+      "id": 485,
+      "category": "production_pipeline_defects",
+      "defect": "No ragdoll bone mapping \u2014 injury system cannot map damage to body parts"
+    },
+    {
+      "id": 486,
+      "category": "production_pipeline_defects",
+      "defect": "No material ID separation \u2014 armor/body/skin all one material, no damage mapping"
+    },
+    {
+      "id": 487,
+      "category": "production_pipeline_defects",
+      "defect": "No weapon socket definition \u2014 engine cannot attach weapon to hand"
+    },
+    {
+      "id": 488,
+      "category": "production_pipeline_defects",
+      "defect": "No grip calibration data \u2014 weapon attachment would be guesswork"
+    },
+    {
+      "id": 489,
+      "category": "production_pipeline_defects",
+      "defect": "No foot placement data \u2014 engine cannot align feet to ground plane"
+    },
+    {
+      "id": 490,
+      "category": "production_pipeline_defects",
+      "defect": "No head/eye position \u2014 camera placement would be guesswork"
+    },
+    {
+      "id": 491,
+      "category": "production_pipeline_defects",
+      "defect": "Pipeline research (FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md) ignored \u2014 API used instead of web"
+    },
+    {
+      "id": 492,
+      "category": "production_pipeline_defects",
+      "defect": "No asset brief filled before generation \u2014 no target specs documented"
+    },
+    {
+      "id": 493,
+      "category": "production_pipeline_defects",
+      "defect": "No component manifest \u2014 body/armor/weapon not planned as separate parts"
+    },
+    {
+      "id": 494,
+      "category": "production_pipeline_defects",
+      "defect": "No G0 art brief gate passed before spending credits"
+    },
+    {
+      "id": 495,
+      "category": "production_pipeline_defects",
+      "defect": "No G1 human concept approval before 3D generation"
+    },
+    {
+      "id": 496,
+      "category": "production_pipeline_defects",
+      "defect": "Reference images generated without owner review \u2014 approval skipped"
+    },
+    {
+      "id": 497,
+      "category": "production_pipeline_defects",
+      "defect": "No cost analysis \u2014 could have tested text-to-3d first (cheaper)"
+    },
+    {
+      "id": 498,
+      "category": "production_pipeline_defects",
+      "defect": "No comparison with other providers (Tripo, Rodin, Hunyuan3D)"
+    },
+    {
+      "id": 499,
+      "category": "production_pipeline_defects",
+      "defect": "No seed recorded \u2014 cannot reproduce exact same model"
+    },
+    {
+      "id": 500,
+      "category": "production_pipeline_defects",
+      "defect": "All 60 credits spent produced zero usable game assets \u2014 systemic pipeline failure"
+    }
+  ]
+}

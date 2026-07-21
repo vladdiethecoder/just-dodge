@@ -109,6 +109,50 @@ pub struct ContactGeometry {
     pub surface: ContactSurface,
 }
 
+/// F-005/G5: real 120Hz substep truth packet emitted by DuelWorld.
+/// Every field is measured from the solved pose — never substituted with
+/// zero or inferred from the action label. The same solved pose drives
+/// skinning, hand surfaces, collision proxies, contact evaluation, and
+/// replay hashes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, Deserialize)]
+pub struct SubstepTruthPacket {
+    /// Monotonic 120Hz physics substep identifier.
+    pub substep_id: u64,
+    /// Which bilateral contact manifold produced this measurement (0 if none).
+    pub manifold_id: u32,
+    /// Which body region the contact intersects.
+    pub body_region: HitLocation,
+    /// Measured surface distance in integer micrometres.
+    pub surface_distance_um: u32,
+    /// AABB proxy overlap volume in integer cubic micrometres.
+    pub proxy_overlap_um3: u64,
+    /// Prohibited mesh penetration depth in integer micrometres.
+    /// Must never exceed 500um for an admitted contact.
+    pub prohibited_penetration_um: u32,
+    /// Whether the contact is visible (not occluded by either fighter's body).
+    pub visible_contact: bool,
+    /// Whether the defender exhibited a causal response (motion change attributable
+    /// to the contact, not to the action label). Measured from position delta.
+    pub causal_response: bool,
+}
+
+impl SubstepTruthPacket {
+    /// Human-readable presentation conversion; never serialized as truth.
+    pub fn surface_distance_mm(self) -> f64 {
+        f64::from(self.surface_distance_um) / 1_000.0
+    }
+
+    /// Human-readable presentation conversion; never serialized as truth.
+    pub fn proxy_overlap_mm3(self) -> f64 {
+        self.proxy_overlap_um3 as f64 / 1_000_000_000.0
+    }
+
+    /// Human-readable presentation conversion; never serialized as truth.
+    pub fn prohibited_penetration_mm(self) -> f64 {
+        f64::from(self.prohibited_penetration_um) / 1_000.0
+    }
+}
+
 /// Complete physical-world result for one truth tick.
 ///
 /// `contact: None` is an observed whiff; absence of a batch is an unresolved
@@ -117,6 +161,8 @@ pub struct ContactGeometry {
 pub struct PhysicalContactBatch {
     pub truth_frame: u32,
     pub contact: Option<ContactGeometry>,
+    #[serde(default)]
+    pub opposing_contact: Option<ContactGeometry>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,7 +173,7 @@ pub enum ContactSubmissionError {
 }
 
 /// Where on the body a hit lands.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, Deserialize)]
 pub enum HitLocation {
     Head,
     Torso,
@@ -570,6 +616,7 @@ mod tests {
             .submit_physical_contact(PhysicalContactBatch {
                 truth_frame: truth.expected_contact_frame().unwrap(),
                 contact: None,
+                opposing_contact: None,
             })
             .unwrap();
         tick(&mut truth, 30);
@@ -650,6 +697,7 @@ mod tests {
         let stale = PhysicalContactBatch {
             truth_frame: expected - 1,
             contact: None,
+            opposing_contact: None,
         };
         assert_eq!(
             truth.submit_physical_contact(stale),
@@ -680,6 +728,7 @@ mod tests {
                     attacker: Side::Player,
                     surface: ContactSurface::Guard,
                 }),
+                opposing_contact: None,
             })
             .unwrap();
         tick(&mut truth, 1);

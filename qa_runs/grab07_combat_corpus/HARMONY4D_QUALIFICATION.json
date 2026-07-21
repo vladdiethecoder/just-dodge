@@ -1,0 +1,38 @@
+{
+ "content_qualification": {
+  "activities": [
+   "grappling",
+   "hugging",
+   "mma",
+   "karate",
+   "fencing",
+   "dancing",
+   "ballroom",
+   "sword"
+  ],
+  "cameras": 21,
+  "close_contact": true,
+  "grappling_sequences": 16,
+  "subjects_per_sequence": 2,
+  "verdict": "QUALIFIED \u2014 2 subjects, close contact, grappling"
+ },
+ "data_format_qualification": {
+  "fo3d_scene": "YES (scene graph with PLY references)",
+  "per_frame_smpl_meshes": "NO \u2014 dataset does not ship per-frame SMPL meshes",
+  "smpl_parameters": "NO \u2014 no SMPL parameters in the dataset",
+  "trajectory_ply": "YES (full-trajectory point clouds, not per-frame meshes)",
+  "verdict": "NOT QUALIFIED \u2014 no per-frame SMPL meshes for hand-to-opponent-surface distance",
+  "video_files": "YES (.mp4 for 20 cameras + 2 subjects)"
+ },
+ "dataset": "Voxel51/Harmony4D (arXiv 2410.20294, NeurIPS 2024, CMU)",
+ "exact_unblock": "Run the Harmony4D pipeline (GitHub: jyuntins/harmony4d) to produce per-frame SMPL meshes from video. Requires SMPL model + GPU. OR find a source with per-frame SMPL meshes already computed.",
+ "not_permitted": [
+  "manufacture per-frame SMPL meshes from trajectory PLYs",
+  "use trajectory PLYs as per-frame proxy",
+  "weaken 650mm or 15mm semantics"
+ ],
+ "promotion": "BLOCKED; G4/G5 PENDING_HUMAN",
+ "required_for_gate": "per-frame SMPL meshes in one coordinate frame -> hand-to-opponent-surface distance",
+ "schema": "just-dodge-harmony4d-qualification-v1",
+ "utc": "2026-07-19T04:12:43.199343+00:00"
+}

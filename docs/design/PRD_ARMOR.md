@@ -7,7 +7,8 @@ Simulate armor and material response at For Honor-level physical fidelity, produ
 ## 2. Invariants
 
 - Armor truth state is deterministic and serializable.
-- Material response uses physics-backed models: XPBD/PBD for cloth/leather, rigid-body constraint networks for chainmail, corotational tetrahedral FEM for plate, brittle fracture for Rune-Marble and bone.
+- Gameplay authority is a bounded sparse per-object material/SDF field plus quantized cut, stress, connectivity and constraint events. Triangle meshes, neural deformation and asynchronous remeshing are presentation only.
+- Rigid plates are semantic links with explicit sockets, pivots, limits and contact proxies; flexible straps/cloth may use XPBD/PBD or offline-derived deterministic correctives.
 - Visual damage may exceed truth detail, but gameplay consequences derive only from truth state.
 - Armor failure events are deterministic and data-authored, not random.
 - Loadout classes are distinguishable by silhouette, sound, movement, and damage behavior.
@@ -44,27 +45,23 @@ Simulate armor and material response at For Honor-level physical fidelity, produ
 1. Match setup initializes armor pieces from loadout with material properties.
 2. On contact, armor subsystem queries the piece covering the hit location.
 3. Effective force is computed from weapon mass, velocity, contact area, and contact angle.
-4. Material solver evaluates response:
-   - Cloth/leather: XPBD/PBD tear/crease.
-   - Chainmail: rigid-body ring constraint network.
-   - Plate: corotational tetrahedral FEM for dent/buckling/petal hole.
-   - Rune-Marble/bone: brittle fracture and Voronoi shatter.
-5. Integrity, deformation maps, crack graphs, and ring states are updated deterministically.
+4. Truth updates the bounded material/SDF cells and quantized cut, stress, connectivity, ring, plate-constraint and fracture events.
+5. Presentation consumes those events for cloth/leather motion, chainmail, plate dent/buckling, brittle fracture and asynchronous surface reconstruction; presentation geometry cannot author the event.
 6. Residual force, exposed regions, and secondary fragments are returned to injury.
 7. Capability modifiers are derived from mass, ROM clamps, and noise.
 
 ## 5. Control Flow
 
 - **Who calls it:** PRD_COMBAT_TRUTH.md during Resolve phase after hitbox contact.
-- **Tick rate:** Per exchange resolution; material solvers may run sub-steps for stability.
-- **Threading model:** Main thread; GPU compute optional for cloth/chainmail/FEM.
+- **Tick rate:** Deterministic 120 Hz truth/contact updates plus exchange-level material events.
+- **Threading model:** Canonical truth update in stable object/cell order. GPU/neural/mesh presentation work is asynchronous and cannot gate or mutate a truth tick.
 
 ## 6. Error Handling
 
 - **Fail-open:** uncovered body regions pass full force to injury.
-- **Fail-closed:** unknown material defaults to bare skin.
+- **Fail-closed:** unknown material or missing material/SDF schema blocks the loadout or match before simulation.
 - **Fail-closed:** non-deterministic material solver output aborts the match with a determinism error.
-- **Degradation:** if a full solver is not ready for a material, a deterministic simplified response is used temporarily and logged.
+- **No silent degradation:** an unimplemented material remains unavailable; it is not silently replaced with bare skin or a weaker solver in a release candidate.
 
 ## 7. Performance Budget
 
@@ -85,8 +82,8 @@ Simulate armor and material response at For Honor-level physical fidelity, produ
 
 ## 9. Open Questions
 
-- Solver determinism strategy for cloth/FEM (fixed substeps, integer math, deterministic RNG).
-- How to serialize deformation maps and crack graphs deterministically.
+- Fixed-point/quantized representation and tolerances for material/SDF cells and connectivity events.
+- How to serialize bounded fields, cut/stress events and connectivity graphs deterministically.
 - Whether persistent armor damage survives across matches or resets per duel.
 
 ## 10. Agent Notes
@@ -96,4 +93,8 @@ Simulate armor and material response at For Honor-level physical fidelity, produ
 - **Rationale:** User canon amendment: deep material, injury, motion, and martial-arts simulations are required.
 - **Blocker:** Determinism and truth-hash stability for solvers must be proven before netcode; performance budget is now much tighter.
 - **Status:** ACTIVE.
-- **Next:** Prototype a deterministic plate-FEM dent and chainmail ring-gap solver for one armor piece before expanding to all materials.
+- **Next:** Prototype one deterministic bounded material/SDF plate region and one chainmail ring-gap region, with quantized event/replay hashes, before expanding to all materials.
+
+## 11. Character-equipment promotion dependency
+
+Armor geometry, attachment and clearance follow `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md`. Nearest-surface weight transfer cannot promote a rigid plate across a joint. A single front render cannot prove fit, reverse topology, stress-pose clearance, LOD, cooker preservation or live-runtime attachment.

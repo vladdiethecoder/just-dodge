@@ -157,7 +157,7 @@ Current baseline: Rust/wgpu custom engine, textured arena renderer, orbital came
 
 **Dependencies:** Phase 3 complete.
 
-**Risk:** MotionBricks inference is too slow or produces unreadable or inauthentic poses; first-person camera hides tells. Prebaked clips are not the default solution.
+**Risk:** MotionBricks inference is too slow or produces unreadable or inauthentic poses; first-person camera hides tells. Prebaked clips, authored pose banks and alternate motion sources are forbidden rather than fallback options.
 
 **Exit Gate:** ✅ Readability prototype report says CONTINUE.
 
@@ -170,7 +170,7 @@ Current baseline: Rust/wgpu custom engine, textured arena renderer, orbital came
 
 **Deliverables:**
 - Full anatomical injury model: bone, muscle, tendon, ligament, organ, joint layers (PRD_INJURY.md).
-- Full armor material simulation: cloth/leather PBD, chainmail constraint networks, plate FEM, Rune-Marble/bone brittle fracture (PRD_ARMOR.md).
+- Full armor material simulation: bounded per-object material/SDF truth with quantized cut/stress/connectivity events; cloth/leather, chainmail, plate and brittle-fracture solvers are deterministic truth implementations or asynchronous presentation consumers as defined by PRD_ARMOR.md.
 - Six loadout classes with readable silhouette, sound, movement, and failure behavior.
 - Persistent damage event records for replay and save/load.
 - Material resistance table and residual-force routing.

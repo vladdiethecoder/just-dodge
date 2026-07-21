@@ -1,0 +1,30 @@
+{
+  "gate": "PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004/G6",
+  "date": "2026-07-19",
+  "verdict": "PARTIALLY_COMPLETE",
+  "completed": [
+    "One immutable replay: grab07_capture produces byte-identical capture.jsonl + findings.jsonl across two fresh runs (determinism proven)",
+    "Exact packaged executable: executable SHA-256 recorded in phases.json",
+    "Tick/substep hashes: truth_hash deterministic, physics_tick + action_tick emitted per substep",
+    "State hashes: worst_substep.json + worst_substep_pose.json deterministic",
+    "Contact overlays: DuelWorld contact_batch per truth tick (G5 SubstepTruthPacket emission)",
+    "Single-pose first_person + observer + three-quarter renders at the worst substep (existing render_views)"
+  ],
+  "remaining": [
+    "Uncut 1080p60 VIDEO capture (not single-frame stills): the full tell->acquisition->hold->response->release sequence must be rendered as continuous video, not a snapshot at the worst substep",
+    "Matching diagnostic view alongside FP + observer: a third camera angle showing both fighters + contact overlays continuously",
+    "Frame-time telemetry with dropped/repeated frame detection across the full sequence",
+    "G5 substep truth packets must be wired INTO the capture.jsonl output (currently DuelWorld emits them but grab07_capture doesn't serialize SubstepTruthPacket to the capture stream)",
+    "First-person must not render head/torso through the camera (camera near-clip culling)",
+    "Observer view must keep both actors large and readable (camera framing)"
+  ],
+  "blocker": "G6 requires continuous video rendering of the full combat sequence at 1080p60 with three synchronized camera angles and real-time contact overlays. The existing render pipeline renders single static snapshots (wgpu offscreen at the worst substep). Producing the full video requires either (a) a render loop that steps PlanPhase + DuelWorld per frame and writes each frame to a video, or (b) an FFmpeg frame-sequence pipeline. This is a significant render-pipeline addition.",
+  "stop_state": {
+    "G6": "PARTIALLY_COMPLETE",
+    "UNIT2": "NOT_MACHINE_EVIDENCE_READY",
+    "G4_HUMAN": "PENDING_HUMAN",
+    "G5_HUMAN": "PENDING_HUMAN",
+    "HUMAN_DECISION": "PENDING",
+    "PROMOTION": "BLOCKED"
+  }
+}

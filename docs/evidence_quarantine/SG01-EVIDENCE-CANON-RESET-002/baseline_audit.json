@@ -1,0 +1,139 @@
+{
+  "schema": "just-dodge-sg01-baseline-audit-v2",
+  "observed_utc_date": "2026-07-21",
+  "unit": "SG01-EVIDENCE-CANON-RESET-002",
+  "verdict": "FAIL_BLOCKED_RECONCILIATION_REQUIRED",
+  "sg01_can_proceed_to_sg02": false,
+  "promotion": "BLOCKED",
+  "g4": "BLOCKED_INVALID_EVIDENCE",
+  "g5": "BLOCKED_MACHINE",
+  "human_decision": "PENDING",
+  "evidence_stages": {
+    "model_prediction": "BLOCKED_INVALID_EVIDENCE",
+    "runtime_contact": "BLOCKED_MACHINE",
+    "human_promotion": "PENDING"
+  },
+  "sg02_implementation_blocked": true,
+  "runtime_path": {
+    "playable_runtime_admitted": false,
+    "forbidden_fixed_presentation_present": true,
+    "deleted_dependencies_present": true,
+    "classification": "BLOCKED_NOT_RELEASE_EVIDENCE"
+  },
+  "revision_binding": {
+    "local_head": "d4732544781ab5a4131114f59aa2b337f74d7c5a",
+    "branch": "grab07-650mm-closure",
+    "upstream_head": "b2266e578889061bef703bfe6ec997423aa69b74",
+    "pr_number": 2,
+    "pr_head": "b2266e578889061bef703bfe6ec997423aa69b74",
+    "pr_draft": true,
+    "local_commits_ahead_of_pr": 2,
+    "worktree_diff_sha256": "ec3ffb0bd59b0713c5aa623f8220306acd84c622e70e95c506842b595c6ac293",
+    "staged_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "untracked_path_size_inventory_sha256": "213d72961975c8da99ce630e7a55ee4e58e7df78e670ff85a056477b4db45a92",
+    "untracked_file_count": 394,
+    "untracked_total_bytes": 2290709016,
+    "git_status_entries": 506,
+    "tracked_modified": 32,
+    "tracked_deleted": 457,
+    "untracked_status_roots": 17,
+    "clean_checkout": false
+  },
+  "observed_gates": {
+    "cargo_fmt_check": {
+      "status": "PASS_DIRTY_WORKTREE",
+      "exit_code": 0
+    },
+    "cargo_clippy_locked_all_targets_deny_warnings": {
+      "status": "PASS_DIRTY_WORKTREE",
+      "exit_code": 0
+    },
+    "cargo_test_locked_all_targets": {
+      "status": "PASS_DIRTY_WORKTREE",
+      "passed": 419,
+      "ignored": 3,
+      "failed": 0,
+      "exit_code": 0
+    },
+    "revision_baseline": {
+      "status": "FAIL",
+      "exit_code": 1,
+      "error": "docs/reports/PVP005_REVISION_BASELINE.json references deleted assets/motion/pvp005_candidates/manifest.json"
+    },
+    "evidence_quarantine": {
+      "status": "PASS_NARROW_SCOPE_ONLY",
+      "exit_code": 0,
+      "limitation": "Current gate scans tracked textual references for only the dynamic-combat-demo marker family; it does not validate every quarantine manifest, deleted source path, new untracked evidence artifact, or promotion-state contradiction."
+    },
+    "forgelens_phase_a": {
+      "status": "FAIL",
+      "exit_code": 1,
+      "error": "replay verifier Cargo.lock hash mismatch",
+      "contract_cargo_lock_sha256": "e53f8705232f9d5941f4b3a5dc4657b2e61990aef6e2cf11e0404495a67e4ac9",
+      "current_cargo_lock_sha256": "60f7cedbea31749986c0581f7aec583dfe108ad6c49029c92cfb1f17ac18ab2b"
+    },
+    "sg02_cross_platform_reducer_tests": {
+      "status": "PASS_LOCAL_TEST",
+      "passed": 3,
+      "exit_code": 0
+    },
+    "pr_checks": {
+      "status": "FAIL",
+      "failed_check_run_ids": [88288735216, 88288724518],
+      "failed_workflow_run_ids": [29722654697, 29722651255],
+      "observed_failure": "verify_forgelens_phase_a.py rejected the stale Cargo.lock hash before later CI gates ran"
+    }
+  },
+  "contradictions": [
+    {
+      "id": "SG01-C001",
+      "severity": "blocking",
+      "path": "docs/evidence_quarantine/PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004/sg01_audit.json",
+      "finding": "Historical receipt says verdict PASS and sg01_can_proceed_to_sg02=true for abbreviated head 144d875, but current local head is d473254, PR head is b2266e5, both current PR checks fail, and the worktree is dirty."
+    },
+    {
+      "id": "SG01-C002",
+      "severity": "blocking",
+      "path": "docs/design/AAA_FINISH_BACKLOG.md",
+      "finding": "Lines 29 and 62 still claim 67 admitted G4 contact cases and MACHINE PASS v13 while RESET-004 explicitly revoked v11/v13 as INVALID_EVIDENCE for target/contact leakage and missing runtime contact proof."
+    },
+    {
+      "id": "SG01-C003",
+      "severity": "blocking",
+      "path": "docs/reports/PVP005_REVISION_BASELINE.json",
+      "finding": "Candidate packet points to a deleted manifest and the report names the superseded pvp-005-readable-live-motion branch/baseline as current status. The repo-native revision gate crashes on the missing file instead of reporting a classified fail-closed finding."
+    },
+    {
+      "id": "SG01-C004",
+      "severity": "blocking",
+      "path": "docs/reports/FORGELENS_PHASE_A_READINESS_CONTRACT.json",
+      "finding": "Pinned Cargo.lock hash is stale, causing both PR verify runs to fail. The contract also remains scoped to an older three-action Phase-A subject rather than a current SG01 receipt."
+    },
+    {
+      "id": "SG01-C005",
+      "severity": "blocking",
+      "path": "README.md and canonical status reports",
+      "finding": "README/current-state/task-list/milestone/implementation-plan still present 2026-07-14 branch, active-unit and 233/237-test claims as current. Current dirty-tree observation is 419 passed/3 ignored, but cannot become a clean-checkout claim until committed and reproduced."
+    },
+    {
+      "id": "SG01-C006",
+      "severity": "blocking",
+      "path": "src/main.rs and deleted runtime assets",
+      "finding": "Normal startup still requires deleted C0 carrier/source/walk and hero-strike files. current_pose uses fixed HeroStrikePresentation frames for Strike, a stored walking animation for Move, and reference skin otherwise. This is incompatible with the locked no-baked/no-canned runtime-motion canon and prevents a current clean-checkout playable-path claim. SG01 must classify the path honestly; SG02 owns replacement implementation after SG01 passes."
+    },
+    {
+      "id": "SG01-C007",
+      "severity": "blocking",
+      "path": "working tree",
+      "finding": "The candidate state spans 457 tracked deletions, 32 tracked modifications and 394 untracked files totaling 2,290,709,016 bytes. No exact commit contains this state; no clean checkout can reproduce it."
+    }
+  ],
+  "required_reconciliation": [
+    "Replace current-status claims with one exact candidate revision and distinguish historical receipts from present observations.",
+    "Revoke the remaining AAA backlog G4/MACHINE PASS contradictions and keep G4/G5 blocked.",
+    "Make revision/quarantine validators fail closed with classified output for missing/deleted lineage instead of traceback or narrow marker-only coverage.",
+    "Repair the ForgeLens source-integrity binding only after deciding the exact committed Cargo.lock and subject revision.",
+    "Define a tracked allowlist for source/tool/docs changes and keep multi-gigabyte generated candidates/evidence ignored or quarantined; do not commit bulky outputs accidentally.",
+    "Create a clean candidate commit, reproduce every SG01 gate from a separate clean checkout, then obtain CI on that same commit."
+  ]
+}

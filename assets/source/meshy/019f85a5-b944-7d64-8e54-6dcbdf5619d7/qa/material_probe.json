@@ -1,0 +1,79 @@
+{
+  "blender_version": "5.2.0 LTS",
+  "materials": [
+    {
+      "name": "Material_0",
+      "use_nodes": true,
+      "diffuse_color": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "node_types": [
+        "BSDF_PRINCIPLED",
+        "NORMAL_MAP",
+        "OUTPUT_MATERIAL",
+        "SEPARATE_COLOR",
+        "TEX_IMAGE",
+        "TEX_IMAGE",
+        "TEX_IMAGE",
+        "TEX_IMAGE"
+      ],
+      "image_nodes": [
+        {
+          "node": "Image Texture",
+          "image": "Image_3",
+          "filepath": "",
+          "size_px": [
+            2048,
+            2048
+          ],
+          "channels": 4,
+          "packed": true,
+          "colorspace": "sRGB"
+        },
+        {
+          "node": "Image Texture.001",
+          "image": "Image_0",
+          "filepath": "",
+          "size_px": [
+            4096,
+            4096
+          ],
+          "channels": 4,
+          "packed": true,
+          "colorspace": "sRGB"
+        },
+        {
+          "node": "Image Texture.002",
+          "image": "Image_1",
+          "filepath": "",
+          "size_px": [
+            2048,
+            2048
+          ],
+          "channels": 4,
+          "packed": true,
+          "colorspace": "Non-Color"
+        },
+        {
+          "node": "Image Texture.003",
+          "image": "Image_2",
+          "filepath": "",
+          "size_px": [
+            4096,
+            4096
+          ],
+          "channels": 4,
+          "packed": true,
+          "colorspace": "Non-Color"
+        }
+      ]
+    }
+  ],
+  "pbr_views": [
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/pbr_front_y_minus.png",
+    "/run/media/vdubrov/NVMe-Storage1/Just Dodge/assets/source/meshy/019f85a5-b944-7d64-8e54-6dcbdf5619d7/qa/pbr_back_y_plus.png"
+  ]
+}

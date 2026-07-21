@@ -49,6 +49,12 @@ const state = {
   activeReviewRun: null,
   motionLab: null,
   meshDoctor: null,
+  grab07: null,
+  grab07Tick: 0,
+  grab07View: "first_person",
+  grab07Passes: new Set(["beauty"]),
+  grab07SelectedFinding: null,
+  grab07Flicker: null,
   visualEvidence: {status: "not_captured", reason: null, invalidatedAt: null},
 };
 
@@ -976,10 +982,61 @@ function renderMeshDoctor(){
   });
 }
 
+// ---------------------------------------------------------------------------
+// Grab-07 review surface. All review state is artifact-bound and human-gated.
+const GRAB07_PASSES = ["beauty","wireframe","skeleton","object_id","material_id","normals","depth","collision_proxies","penetration_heatmap","contact_points_normals","allowed_contact_masks","trajectories"];
+function grab07ImageUrl(path){return `/api/grab07/image/${encodeURIComponent(path)}`;}
+function grab07Ticks(){return Object.keys(state.grab07?.captures_by_physics_tick||{}).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);}
+function grab07CurrentFinding(){return state.grab07SelectedFinding;}
+function grab07Phase(tick){const phases=state.grab07?.phases||[];return phases.find(phase=>tick>=phase.start_physics_tick&&tick<=phase.end_physics_tick)?.phase||"unlabeled";}
+function grab07SetTick(tick){const ticks=grab07Ticks();if(!ticks.length)return;const nearest=ticks.reduce((best,value)=>Math.abs(value-tick)<Math.abs(best-tick)?value:best,ticks[0]);state.grab07Tick=nearest;byId("grab07Tick").value=String(nearest);renderGrab07();}
+async function loadGrab07(){
+  try{const response=await apiFetch("/api/grab07");const payload=await response.json();if(!response.ok)throw new Error(payload.error||`Grab-07 HTTP ${response.status}`);state.grab07=payload;const ticks=grab07Ticks();state.grab07Tick=ticks.includes(state.grab07Tick)?state.grab07Tick:(payload.worst_substep?.physics_tick??ticks[0]??0);renderGrab07();}
+  catch(error){console.error(error);state.grab07={available:false,note:error.message};renderGrab07();}
+}
+function openGrab07Image(path){byId("imageDialogPreview").src=grab07ImageUrl(path);byId("imageDialogCaption").textContent=path;byId("imageDialog").showModal();}
+function grab07ImageCard(label,path){const card=element("article","grab07-image-card");card.append(element("strong",null,label));if(path&&path.endsWith(".exr"))card.append(element("p","muted",`${path.split("/").at(-1)} (EXR; indexed but not browser-displayable)`));else if(path){const image=element("img");image.src=grab07ImageUrl(path);image.alt=`Grab-07 ${label}`;image.loading="lazy";card.append(image);image.addEventListener("click",()=>openGrab07Image(path));}else card.append(element("p","muted","Layer not present in capture bundle."));return card;}
+function renderGrab07(){
+  const bundle=state.grab07,status=byId("grab07Status"),tickInput=byId("grab07Tick");
+  if(!bundle||!bundle.available){status.textContent="Unavailable";byId("grab07Phase").textContent=bundle?.note||"Grab-07 capture artifacts are not present yet.";tickInput.disabled=true;byId("grab07Passes").replaceChildren();byId("grab07Compare").replaceChildren();byId("grab07Findings").replaceChildren();byId("grab07Pins").replaceChildren();return;}
+  status.textContent="Artifact bound";const ticks=grab07Ticks();tickInput.disabled=!ticks.length;tickInput.min=String(ticks[0]??0);tickInput.max=String(ticks.at(-1)??0);tickInput.value=String(state.grab07Tick);byId("grab07TickOutput").textContent=`${state.grab07Tick} · frame ${Math.floor(state.grab07Tick/2)} · substep ${state.grab07Tick%2}`;byId("grab07Phase").textContent=`Phase: ${grab07Phase(state.grab07Tick)}${bundle.worst_substep?.physics_tick===state.grab07Tick?" · worst substep":""}`;
+  const layers=bundle.image_layers?.views?.[state.grab07View]||{states:{},passes:{}};
+  const passes=byId("grab07Passes");passes.replaceChildren();for(const pass of GRAB07_PASSES){const button=element("button",state.grab07Passes.has(pass)?"is-active":"",pass.replaceAll("_"," "));button.type="button";button.disabled=!layers.passes?.[pass];button.addEventListener("click",()=>{state.grab07Passes.has(pass)?state.grab07Passes.delete(pass):state.grab07Passes.add(pass);renderGrab07();});passes.append(button);}
+  renderGrab07Compare(layers);renderGrab07Findings();renderGrab07Pins();
+}
+function renderGrab07Compare(layers){
+  const compare=byId("grab07Compare"),a=byId("grab07StateA").value,b=byId("grab07StateB").value;compare.replaceChildren();
+  const row=element("div","grab07-image-row");row.append(grab07ImageCard(`A · ${a}`,layers.states?.[a]),grab07ImageCard(`B · ${b}`,layers.states?.[b]));compare.append(row);
+  const selected=[...state.grab07Passes].filter(pass=>layers.passes?.[pass]);if(selected.length){const passGrid=element("div","grab07-pass-images");for(const pass of selected)passGrid.append(grab07ImageCard(pass.replaceAll("_"," "),layers.passes[pass]));compare.append(passGrid);}
+}
+function renderGrab07Findings(){
+  const root=byId("grab07Findings"),findings=[...(state.grab07?.findings_by_physics_tick?.[String(state.grab07Tick)]||[])].sort((a,b)=>Math.abs(b.signed_depth_m||0)-Math.abs(a.signed_depth_m||0));root.replaceChildren();byId("grab07FindingCount").textContent=String(findings.length);
+  for(const finding of findings){const card=element("article",`grab07-finding${finding===state.grab07SelectedFinding?" is-selected":""}`),depth=Math.abs(Number(finding.signed_depth_m||0))*1000;card.append(element("strong",null,`${depth.toFixed(3)} mm · ${(finding.mesh_pair||finding.object_pair||"mesh pair")}`),element("p",null,`triangles ${(finding.triangle_ids||[]).join(", ")} · barycentric ${(finding.barycentric||[]).map(value=>Number(value).toFixed(4)).join(", ")}`));const pin=element("button",null,"Pin geometry finding");pin.type="button";pin.addEventListener("click",()=>{state.grab07SelectedFinding=finding;byId("grab07PinAnchor").textContent=`Tick ${finding.physics_tick} · triangles ${(finding.triangle_ids||[]).join(", ")} · barycentric ${(finding.barycentric||[]).join(", ")}`;byId("grab07PinComposer").hidden=false;renderGrab07Findings();});card.append(pin);root.append(card);}
+  if(!findings.length)root.append(element("p","comment-empty","No Mesh Doctor finding at this physics substep."));
+}
+function renderGrab07Pins(){const root=byId("grab07Pins");root.replaceChildren();const pins=state.grab07?.review?.pins||[];for(const pin of pins){const card=element("article","grab07-pin");card.append(element("strong",null,`T${pin.finding?.physics_tick??"?"} · ${pin.assignee}`),element("p",null,pin.comment),element("code",null,`triangles ${(pin.finding?.triangle_ids||[]).join(", ")} · ${(pin.created_at||"")}`));root.append(card);}if(!pins.length)root.append(element("p","muted","No persisted Grab-07 geometry pins."));}
+async function saveGrab07Pin(){const finding=grab07CurrentFinding(),comment=byId("grab07Comment").value.trim(),assignee=byId("grab07Assignee").value.trim();if(!finding||!comment||!assignee){toast("Select a geometry finding, comment, and assignee",true);return;}try{const response=await apiFetch("/api/grab07/pin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({finding,comment,assignee})}),payload=await response.json();if(!response.ok)throw new Error(payload.error||`Grab-07 pin HTTP ${response.status}`);byId("grab07Comment").value="";byId("grab07PinComposer").hidden=true;await loadGrab07();toast("Geometry-anchored Grab-07 pin persisted");}catch(error){toast(error.message,true);}}
+async function submitGrab07Decision(decision){const reviewer=byId("grab07Reviewer").value.trim();if(!reviewer){toast("Reviewer name is required for a human decision",true);return;}try{const response=await apiFetch("/api/grab07/decision",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision,reviewer})}),payload=await response.json();if(!response.ok)throw new Error(payload.error||`Grab-07 decision HTTP ${response.status}`);byId("grab07Receipt").textContent=`Append-only human ${decision} receipt ${payload.receipt_sha256}`;toast(`Human ${decision} receipt recorded; no automatic promotion occurred.`);}catch(error){toast(error.message,true);}}
+async function queueGrab07Repair(){const reviewer=byId("grab07Reviewer").value.trim(),finding=grab07CurrentFinding();if(!reviewer||!finding){toast("Reviewer and selected geometry finding are required to queue repair",true);return;}try{const response=await apiFetch("/api/grab07/queue-blender-repair",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reviewer,finding})}),payload=await response.json();if(!response.ok)throw new Error(payload.error||`Grab-07 repair HTTP ${response.status}`);byId("grab07Receipt").textContent=`Queued immutable candidate ${payload.candidate_id}; reviewed artifact was not mutated or promoted.`;toast("New immutable Blender repair candidate queued");}catch(error){toast(error.message,true);}}
+function showGrab07Difference(){const layers=state.grab07?.image_layers?.views?.[state.grab07View]||{states:{}};const compare=byId("grab07Compare");compare.replaceChildren();const row=element("div","grab07-image-row");row.append(grab07ImageCard("A · BEFORE",layers.states?.BEFORE),grab07ImageCard("AB DIFFERENCE",layers.states?.AB_DIFFERENCE));compare.append(row);}
+function toggleGrab07Flicker(){const button=byId("grab07Flicker"),compare=byId("grab07Compare");if(state.grab07Flicker){clearInterval(state.grab07Flicker);state.grab07Flicker=null;button.textContent="Start flicker";renderGrab07();return;}const cards=$$(".grab07-image-row .grab07-image-card",compare);if(cards.length<2){toast("Both registered A/B images are required for flicker",true);return;}let visible=0;state.grab07Flicker=setInterval(()=>{visible=1-visible;cards.forEach((card,index)=>{card.hidden=index!==visible;});},250);button.textContent="Stop flicker";}
+
 async function loadMotionLab(){const response=await apiFetch("/api/motion-lab");if(response.status===404){state.motionLab=null;renderMotionLab();return;}const payload=await response.json();if(!response.ok)throw new Error(payload.error||`Motion Lab HTTP ${response.status}`);state.motionLab=payload;renderMotionLab();}
 async function appendMotionAnnotation(event){event.preventDefault();const snapshot=state.motionLab;if(!snapshot)return;const text=byId("motionAnnotationText").value.trim();const coordinates=[byId("motionWorldX"),byId("motionWorldY"),byId("motionWorldZ")].map(input=>Number(input.value));if(!text||coordinates.some(value=>!Number.isFinite(value))){toast("Motion Lab annotations require text and finite world coordinates",true);return;}const lab=snapshot.motionLab,button=$("button[type=submit]",byId("motionAnnotationForm"));button.disabled=true;try{const response=await apiFetch("/api/motion-lab-annotation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({motionLabId:lab.motionLabId,sourceSha256:snapshot.source.sha256,reviewerKind:byId("motionReviewerKind").value,text,revision:lab.revision,frame:motionFrame(),jointId:byId("motionJointId").value.trim(),objectId:byId("motionObjectId").value.trim(),worldPoint:coordinates})});const payload=await response.json();if(!response.ok)throw new Error(payload.error||`Motion Lab annotation HTTP ${response.status}`);byId("motionAnnotationText").value="";await loadMotionLab();toast("Append-only Motion Lab annotation recorded");}catch(error){console.error(error);toast(error.message,true);}finally{button.disabled=false;}}
 
 function bindUi(){
+  byId("grab07Tick").addEventListener("input",event=>grab07SetTick(Number(event.target.value)));
+  byId("grab07Prev").addEventListener("click",()=>grab07SetTick(state.grab07Tick-1));
+  byId("grab07Next").addEventListener("click",()=>grab07SetTick(state.grab07Tick+1));
+  byId("grab07View").addEventListener("change",event=>{state.grab07View=event.target.value;renderGrab07();});
+  byId("grab07StateA").addEventListener("change",renderGrab07);
+  byId("grab07StateB").addEventListener("change",renderGrab07);
+  byId("grab07Flicker").addEventListener("click",toggleGrab07Flicker);
+  byId("grab07ShowDiff").addEventListener("click",showGrab07Difference);
+  byId("grab07SavePin").addEventListener("click",saveGrab07Pin);
+  byId("grab07Approve").addEventListener("click",()=>submitGrab07Decision("approved"));
+  byId("grab07Reject").addEventListener("click",()=>submitGrab07Decision("rejected"));
+  byId("grab07QueueRepair").addEventListener("click",queueGrab07Repair);
   byId("motionLabFrame").addEventListener("input",()=>renderMotionLab());
   byId("motionCandidateA").addEventListener("change",renderMotionLab);
   byId("motionCandidateB").addEventListener("change",renderMotionLab);
@@ -1015,7 +1072,7 @@ function bindUi(){
 }
 
 async function init(){
-  try{state.renderer=new Renderer(byId("glCanvas"));window.__forgeLens=state;bindUi();const sessionResponse=await fetch("/api/session",{credentials:"same-origin"});if(!sessionResponse.ok)throw new Error(`Browser authority HTTP ${sessionResponse.status}`);state.authority=await sessionResponse.json();const [response,replayResponse,activeRunResponse]=await Promise.all([apiFetch("/api/catalog"),apiFetch("/api/replay-run"),apiFetch("/api/active-review-run")]);if(!response.ok)throw new Error(`Catalog HTTP ${response.status}`);if(!replayResponse.ok)throw new Error(`Replay HTTP ${replayResponse.status}`);if(!activeRunResponse.ok)throw new Error(`Active ReviewRun HTTP ${activeRunResponse.status}`);const catalog=await response.json();state.replayRun=await replayResponse.json();state.activeReviewRun=await activeRunResponse.json();renderReplayRun();renderReviewRunGate();await loadMotionLab();state.catalog=catalog.assets||[];renderLibrary();const requested=new URLSearchParams(location.search).get("asset")||catalog.initialAsset;const initial=state.catalog.find(record=>record.path===requested)||state.catalog[0];if(initial)await selectAsset(initial);else byId("viewportEmpty").querySelector("p").textContent="No GLB files were indexed under assets/.";}
+  try{state.renderer=new Renderer(byId("glCanvas"));window.__forgeLens=state;bindUi();const sessionResponse=await fetch("/api/session",{credentials:"same-origin"});if(!sessionResponse.ok)throw new Error(`Browser authority HTTP ${sessionResponse.status}`);state.authority=await sessionResponse.json();const [response,replayResponse,activeRunResponse]=await Promise.all([apiFetch("/api/catalog"),apiFetch("/api/replay-run"),apiFetch("/api/active-review-run")]);if(!response.ok)throw new Error(`Catalog HTTP ${response.status}`);if(!replayResponse.ok)throw new Error(`Replay HTTP ${replayResponse.status}`);if(!activeRunResponse.ok)throw new Error(`Active ReviewRun HTTP ${activeRunResponse.status}`);const catalog=await response.json();state.replayRun=await replayResponse.json();state.activeReviewRun=await activeRunResponse.json();renderReplayRun();renderReviewRunGate();await Promise.all([loadMotionLab(),loadGrab07()]);state.catalog=catalog.assets||[];renderLibrary();const requested=new URLSearchParams(location.search).get("asset")||catalog.initialAsset;const initial=state.catalog.find(record=>record.path===requested)||state.catalog[0];if(initial)await selectAsset(initial);else byId("viewportEmpty").querySelector("p").textContent="No GLB files were indexed under assets/.";}
   catch(error){console.error(error);toast(`Studio initialization failed: ${error.message}`,true);byId("viewportEmpty").querySelector("h2").textContent="Initialization failed";byId("viewportEmpty").querySelector("p").textContent=error.message;}
 }
 

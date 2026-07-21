@@ -93,7 +93,7 @@ pub enum TruthBridgeError {
     MismatchedActionTicks { first: u64, second: u64 },
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SharedDuelPhysics {
     next_physics_tick: u64,
 }
@@ -169,23 +169,27 @@ pub fn physical_contact_batch(
         });
     }
 
-    let contact = first
-        .contacts
-        .iter()
-        .chain(second.contacts.iter())
-        .min_by(semantic_contact_order)
-        .map(|contact| TruthContactGeometry {
-            distance: 0.0,
-            in_range: true,
-            attacker: contact.attacker.to_side(),
-            surface: match contact.defender_role {
-                ProxyRole::WeaponGuard => ContactSurface::Guard,
-                ProxyRole::Body | ProxyRole::WeaponEdge => ContactSurface::Body,
-            },
-        });
+    let contacts = || first.contacts.iter().chain(second.contacts.iter());
+    let reduce = |fighter| {
+        contacts()
+            .filter(|contact| contact.attacker == fighter)
+            .min_by(semantic_contact_order)
+            .map(|contact| TruthContactGeometry {
+                distance: 0.0,
+                in_range: true,
+                attacker: contact.attacker.to_side(),
+                surface: match contact.defender_role {
+                    ProxyRole::WeaponGuard => ContactSurface::Guard,
+                    ProxyRole::Body | ProxyRole::WeaponEdge => ContactSurface::Body,
+                },
+            })
+    };
+    let player_contact = reduce(Fighter::Player);
+    let opponent_contact = reduce(Fighter::Opponent);
     Ok(PhysicalContactBatch {
         truth_frame,
-        contact,
+        contact: player_contact.or(opponent_contact),
+        opposing_contact: player_contact.and(opponent_contact),
     })
 }
 
@@ -369,6 +373,17 @@ mod tests {
                 surface: ContactSurface::Guard,
             })
         );
+    }
+
+    #[test]
+    fn reducer_preserves_one_contact_per_attacker_in_a_bilateral_truth_tick() {
+        let player = measured(Fighter::Player, ProxyRole::Body, 0.25);
+        let opponent = measured(Fighter::Opponent, ProxyRole::Body, 0.10);
+        let packet =
+            physical_contact_batch(8, &step(0, vec![opponent, player]), &step(1, vec![])).unwrap();
+
+        assert_eq!(packet.contact.unwrap().attacker, Side::Player);
+        assert_eq!(packet.opposing_contact.unwrap().attacker, Side::Opponent);
     }
 
     #[test]
