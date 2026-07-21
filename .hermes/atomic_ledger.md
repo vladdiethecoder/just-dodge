@@ -47,7 +47,7 @@
 5. Load in game_loop, capture native screenshot + GIF
 6. Show owner: visual checklist → Accept/Reject/Needs Changes
 **Baseline:** One completed but uninspected Meshy task (`019f85a5-b944-7d64-8e54-6dcbdf5619d7`) exists. Inspect it first; if acceptable, use it; if not, generate fresh.
-**Current Status:** IN PROGRESS — Two API-generated Meshy candidates (019f85a5, 019f85f0) REJECTED after 500-defect audit. 60 credits spent, zero usable output. Hard numeric gates established (≤25K verts, ≤50K tris, watertight, ≥24 bones). Next: owner must review reference images BEFORE any Meshy credit spend. Meshy web interface mandatory for next attempt; API/MCP locked to repeatable batches only. Full audit: `docs/reports/PH1_FIGHTER_001_500_DEFECT_AUDIT.json` (SHA-256: `f609a91c`). game-asset-pipeline skill hardened with API-vs-Web Gate and Reference Image Quality Gates.
+**Current Status:** PH1-FIGHTER-001: 3 Meshy API attempts REJECTED (019f85a5, 019f85f0, 019f862a — 90 credits, zero usable output). Meshy API retired. Canonical workflow: Agent generates + validates reference images → Owner submits via Meshy web UI (Smart Topology + T-Pose + Multi-view) → Owner reviews preview → Agent validates downloaded GLB. ph1_fighter_002 references validated (21/21 PASS). Waiting for owner web submission. Hard numeric gates: ≤25K verts, ≤50K tris, watertight, ≥24 bones. game-asset-pipeline skill: API replaced by web workflow.
 
 ## Pending Units
 
