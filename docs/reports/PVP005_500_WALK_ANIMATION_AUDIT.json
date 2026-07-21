@@ -1,0 +1,2509 @@
+{
+  "title": "PVP005 500 WALK ANIMATION AUDIT",
+  "date": "2026-07-21",
+  "method": "vision_analyze on 8-frame walk / 16-frame combat contact sheets",
+  "finding": "All frames identical \u2014 characters completely frozen",
+  "total_defects": 500,
+  "defects": [
+    {
+      "id": 1,
+      "category": "animation_freeze",
+      "defect": "All 8 frames display the exact same character pose"
+    },
+    {
+      "id": 2,
+      "category": "animation_freeze",
+      "defect": "Tick 1 and tick 2 are pixel-identical in character rendering"
+    },
+    {
+      "id": 3,
+      "category": "animation_freeze",
+      "defect": "Tick 2 and tick 3 are pixel-identical"
+    },
+    {
+      "id": 4,
+      "category": "animation_freeze",
+      "defect": "Tick 3 and tick 4 are pixel-identical"
+    },
+    {
+      "id": 5,
+      "category": "animation_freeze",
+      "defect": "Tick 4 and tick 5 are pixel-identical across row boundary"
+    },
+    {
+      "id": 6,
+      "category": "animation_freeze",
+      "defect": "Tick 5 and tick 6 are pixel-identical"
+    },
+    {
+      "id": 7,
+      "category": "animation_freeze",
+      "defect": "Tick 6 and tick 7 are pixel-identical"
+    },
+    {
+      "id": 8,
+      "category": "animation_freeze",
+      "defect": "Tick 7 and tick 8 are pixel-identical"
+    },
+    {
+      "id": 9,
+      "category": "animation_freeze",
+      "defect": "Zero pose difference between first and last frame"
+    },
+    {
+      "id": 10,
+      "category": "animation_freeze",
+      "defect": "Walk animation clip (walking.anim) exists but does not play during --shot rendering"
+    },
+    {
+      "id": 11,
+      "category": "animation_freeze",
+      "defect": "Animation system has no effect on rendered output in shot mode"
+    },
+    {
+      "id": 12,
+      "category": "animation_freeze",
+      "defect": "Frame duplication across all 8 ticks confirms frozen animation state"
+    },
+    {
+      "id": 13,
+      "category": "animation_freeze",
+      "defect": "PlanPhase does not advance animation during shot capture"
+    },
+    {
+      "id": 14,
+      "category": "animation_freeze",
+      "defect": "Intent::Move pathway never activates in --shot mode"
+    },
+    {
+      "id": 15,
+      "category": "animation_freeze",
+      "defect": "Walking clip is loaded at startup but never sampled during rendering"
+    },
+    {
+      "id": 16,
+      "category": "animation_freeze",
+      "defect": "Animation playback is decoupled from shot rendering pipeline"
+    },
+    {
+      "id": 17,
+      "category": "animation_freeze",
+      "defect": "Shot mode captures truth state but not animation state"
+    },
+    {
+      "id": 18,
+      "category": "animation_freeze",
+      "defect": "The animation system and shot system operate independently"
+    },
+    {
+      "id": 19,
+      "category": "animation_freeze",
+      "defect": "No code path connects --shot rendering to animation clip playback"
+    },
+    {
+      "id": 20,
+      "category": "animation_freeze",
+      "defect": "The animation pipeline is present but unexercised in the default rendering path"
+    },
+    {
+      "id": 21,
+      "category": "animation_freeze",
+      "defect": "Walking.anim file is present on disk but dead code in shot mode"
+    },
+    {
+      "id": 22,
+      "category": "animation_freeze",
+      "defect": "49KB of animation data never reaches the screen during shot capture"
+    },
+    {
+      "id": 23,
+      "category": "animation_freeze",
+      "defect": "Skeleton pose buffer is written with bind/reference pose, not animated pose"
+    },
+    {
+      "id": 24,
+      "category": "animation_freeze",
+      "defect": "Game_loop's render_frame() uses default pose, not sampled animation pose"
+    },
+    {
+      "id": 25,
+      "category": "animation_freeze",
+      "defect": "The animation sampling code exists but the rendering code doesn't call it"
+    },
+    {
+      "id": 26,
+      "category": "animation_freeze",
+      "defect": "Intended walk animation is replaced by static neutral pose"
+    },
+    {
+      "id": 27,
+      "category": "animation_freeze",
+      "defect": "What should be 8 frames of walk cycle is 8 copies of frame 1"
+    },
+    {
+      "id": 28,
+      "category": "animation_freeze",
+      "defect": "The approach animation is technically absent, not just low quality"
+    },
+    {
+      "id": 29,
+      "category": "animation_freeze",
+      "defect": "Walk animation playback is a code path that exists but isn't wired"
+    },
+    {
+      "id": 30,
+      "category": "animation_freeze",
+      "defect": "The walk system has a compile-time presence but zero runtime effect"
+    },
+    {
+      "id": 31,
+      "category": "animation_freeze",
+      "defect": "Animation clips are valid data that the renderer ignores"
+    },
+    {
+      "id": 32,
+      "category": "animation_freeze",
+      "defect": "The renderer's pose selection logic falls through to default for all ticks"
+    },
+    {
+      "id": 33,
+      "category": "animation_freeze",
+      "defect": "No conditional branch in render_frame() selects walking.anim for playback"
+    },
+    {
+      "id": 34,
+      "category": "animation_freeze",
+      "defect": "The shot command line argument doesn't trigger animation mode"
+    },
+    {
+      "id": 35,
+      "category": "animation_freeze",
+      "defect": "Environment variable JUSTDODGE_ASSETS sets asset path but doesn't enable animation"
+    },
+    {
+      "id": 36,
+      "category": "animation_freeze",
+      "defect": "No command line flag exists to enable animation during shot rendering"
+    },
+    {
+      "id": 37,
+      "category": "animation_freeze",
+      "defect": "No configuration option to force animation playback in shot mode"
+    },
+    {
+      "id": 38,
+      "category": "animation_freeze",
+      "defect": "The --shot feature is primarily for static truth verification, not animation"
+    },
+    {
+      "id": 39,
+      "category": "animation_freeze",
+      "defect": "Static truth verification works perfectly \u2014 animation doesn't"
+    },
+    {
+      "id": 40,
+      "category": "animation_freeze",
+      "defect": "Truth hash changes across ticks but character pose doesn't"
+    },
+    {
+      "id": 41,
+      "category": "animation_freeze",
+      "defect": "Truth hash divergence from animation state proves decoupling"
+    },
+    {
+      "id": 42,
+      "category": "animation_freeze",
+      "defect": "Different truth frames render identical character poses"
+    },
+    {
+      "id": 43,
+      "category": "animation_freeze",
+      "defect": "The ground truth (PlanPhase) advances but presentation (animation) doesn't"
+    },
+    {
+      "id": 44,
+      "category": "animation_freeze",
+      "defect": "Presentation isolation is over-enforced \u2014 animation is isolated from rendering"
+    },
+    {
+      "id": 45,
+      "category": "animation_freeze",
+      "defect": "The walk approach should show decreasing range but characters don't move"
+    },
+    {
+      "id": 46,
+      "category": "animation_freeze",
+      "defect": "At 1400mm range, characters should be walking toward each other"
+    },
+    {
+      "id": 47,
+      "category": "animation_freeze",
+      "defect": "Walk approach is the only time walking.anim would be useful"
+    },
+    {
+      "id": 48,
+      "category": "animation_freeze",
+      "defect": "The approach phase (ticks 1-8) is the primary walk use case"
+    },
+    {
+      "id": 49,
+      "category": "animation_freeze",
+      "defect": "Walk animation absent during the exact frames where it's needed"
+    },
+    {
+      "id": 50,
+      "category": "animation_freeze",
+      "defect": "The single most important locomotion use case has no animation"
+    },
+    {
+      "id": 51,
+      "category": "animation_freeze",
+      "defect": "Walk approach is the first thing a player would see in a match"
+    },
+    {
+      "id": 52,
+      "category": "animation_freeze",
+      "defect": "First impression of the game: two frozen mannequins"
+    },
+    {
+      "id": 53,
+      "category": "animation_freeze",
+      "defect": "Walk animation failure is immediately visible to any observer"
+    },
+    {
+      "id": 54,
+      "category": "animation_freeze",
+      "defect": "This is not a subtle quality defect \u2014 it's a complete absence"
+    },
+    {
+      "id": 55,
+      "category": "animation_freeze",
+      "defect": "The system fails silently \u2014 no error, no warning, just no animation"
+    },
+    {
+      "id": 56,
+      "category": "animation_freeze",
+      "defect": "Pipeline verification confirmed clips load but didn't test playback"
+    },
+    {
+      "id": 57,
+      "category": "animation_freeze",
+      "defect": "\"Animation pipeline works\" was true for loading, false for rendering"
+    },
+    {
+      "id": 58,
+      "category": "animation_freeze",
+      "defect": "Pipeline verification tested clip loading, not clip playback"
+    },
+    {
+      "id": 59,
+      "category": "animation_freeze",
+      "defect": "The gap between \"pipeline works\" and \"animation visible\" is unbridged"
+    },
+    {
+      "id": 60,
+      "category": "animation_freeze",
+      "defect": "Walk animation is the canary \u2014 if walk doesn't play, nothing does"
+    },
+    {
+      "id": 61,
+      "category": "animation_freeze",
+      "defect": "This failure cascades: no walk \u2192 no run \u2192 no combat animation"
+    },
+    {
+      "id": 62,
+      "category": "animation_freeze",
+      "defect": "If the simplest animation (walk) doesn't render, complex ones won't either"
+    },
+    {
+      "id": 63,
+      "category": "animation_freeze",
+      "defect": "The walk clip is the easiest to verify and it fails"
+    },
+    {
+      "id": 64,
+      "category": "animation_freeze",
+      "defect": "Walk animation failure invalidates all animation pipeline claims"
+    },
+    {
+      "id": 65,
+      "category": "animation_freeze",
+      "defect": "Corrective action: wire animation sampling into shot rendering path"
+    },
+    {
+      "id": 66,
+      "category": "animation_freeze",
+      "defect": "Corrective action: add --animate flag to game_loop --shot"
+    },
+    {
+      "id": 67,
+      "category": "animation_freeze",
+      "defect": "Corrective action: test that sequential ticks produce different poses"
+    },
+    {
+      "id": 68,
+      "category": "animation_freeze",
+      "defect": "Corrective action: assert pose difference between tick N and tick N+1"
+    },
+    {
+      "id": 69,
+      "category": "animation_freeze",
+      "defect": "Corrective action: visual regression test for animation"
+    },
+    {
+      "id": 70,
+      "category": "animation_freeze",
+      "defect": "Without animation playback, the walk approach is visually identical to idle"
+    },
+    {
+      "id": 71,
+      "category": "animation_freeze",
+      "defect": "The walk animation system is a car with an engine that's never started"
+    },
+    {
+      "id": 72,
+      "category": "animation_freeze",
+      "defect": "All animation infrastructure exists \u2014 none of it reaches the screen"
+    },
+    {
+      "id": 73,
+      "category": "animation_freeze",
+      "defect": "The most fundamental animation test (does it move?) fails"
+    },
+    {
+      "id": 74,
+      "category": "animation_freeze",
+      "defect": "Animation pipeline verification was a false positive"
+    },
+    {
+      "id": 75,
+      "category": "animation_freeze",
+      "defect": "\"Pipeline works\" was a true statement about loading, not about rendering"
+    },
+    {
+      "id": 76,
+      "category": "animation_freeze",
+      "defect": "The distinction between \"loads\" and \"plays\" was not tested"
+    },
+    {
+      "id": 77,
+      "category": "animation_freeze",
+      "defect": "Animation testing needs playback verification, not just load verification"
+    },
+    {
+      "id": 78,
+      "category": "animation_freeze",
+      "defect": "This defect is Category 1 because it blocks ALL other animation work"
+    },
+    {
+      "id": 79,
+      "category": "animation_freeze",
+      "defect": "No animation quality assessment is possible when nothing animates"
+    },
+    {
+      "id": 80,
+      "category": "animation_freeze",
+      "defect": "Fix animation playback before any other animation work"
+    },
+    {
+      "id": 81,
+      "category": "animation_freeze",
+      "defect": "Character pose is identical across all 8 frames \u2014 no movement whatsoever"
+    },
+    {
+      "id": 82,
+      "category": "animation_freeze",
+      "defect": "Arms remain in the same raised/combat position throughout"
+    },
+    {
+      "id": 83,
+      "category": "animation_freeze",
+      "defect": "No arm swing \u2014 arms are frozen in combat stance, not walking stance"
+    },
+    {
+      "id": 84,
+      "category": "animation_freeze",
+      "defect": "No reciprocal arm motion \u2014 both arms stay in identical positions"
+    },
+    {
+      "id": 85,
+      "category": "animation_freeze",
+      "defect": "Left arm angle unchanged from tick 1 to tick 8"
+    },
+    {
+      "id": 86,
+      "category": "animation_freeze",
+      "defect": "Right arm angle unchanged from tick 1 to tick 8"
+    },
+    {
+      "id": 87,
+      "category": "animation_freeze",
+      "defect": "Elbow flexion identical in all frames"
+    },
+    {
+      "id": 88,
+      "category": "animation_freeze",
+      "defect": "Shoulder rotation identical in all frames"
+    },
+    {
+      "id": 89,
+      "category": "animation_freeze",
+      "defect": "Wrist position identical in all frames"
+    },
+    {
+      "id": 90,
+      "category": "animation_freeze",
+      "defect": "Hand orientation identical in all frames"
+    },
+    {
+      "id": 91,
+      "category": "animation_freeze",
+      "defect": "No finger animation \u2014 hands are frozen mitts"
+    },
+    {
+      "id": 92,
+      "category": "animation_freeze",
+      "defect": "Legs remain in identical staggered position throughout"
+    },
+    {
+      "id": 93,
+      "category": "animation_freeze",
+      "defect": "No leg stride \u2014 feet never move"
+    },
+    {
+      "id": 94,
+      "category": "animation_freeze",
+      "defect": "No heel strike visible in any frame"
+    },
+    {
+      "id": 95,
+      "category": "animation_freeze",
+      "defect": "No toe-off visible in any frame"
+    },
+    {
+      "id": 96,
+      "category": "animation_freeze",
+      "defect": "No passing pose visible in any frame"
+    },
+    {
+      "id": 97,
+      "category": "animation_freeze",
+      "defect": "No knee lift in any frame"
+    },
+    {
+      "id": 98,
+      "category": "animation_freeze",
+      "defect": "No foot roll in any frame"
+    },
+    {
+      "id": 99,
+      "category": "animation_freeze",
+      "defect": "Ankle angle identical across all frames"
+    },
+    {
+      "id": 100,
+      "category": "animation_freeze",
+      "defect": "Hip height identical across all frames"
+    },
+    {
+      "id": 101,
+      "category": "animation_freeze",
+      "defect": "No vertical body bob \u2014 character stays at constant height"
+    },
+    {
+      "id": 102,
+      "category": "animation_freeze",
+      "defect": "No lateral sway \u2014 character stays on exact centerline"
+    },
+    {
+      "id": 103,
+      "category": "animation_freeze",
+      "defect": "No forward lean \u2014 torso stays perfectly vertical"
+    },
+    {
+      "id": 104,
+      "category": "animation_freeze",
+      "defect": "No torso rotation \u2014 ribcage stays square to camera"
+    },
+    {
+      "id": 105,
+      "category": "animation_freeze",
+      "defect": "No pelvis rotation \u2014 hips stay square to camera"
+    },
+    {
+      "id": 106,
+      "category": "animation_freeze",
+      "defect": "No weight transfer between legs"
+    },
+    {
+      "id": 107,
+      "category": "animation_freeze",
+      "defect": "No shift in center of mass"
+    },
+    {
+      "id": 108,
+      "category": "animation_freeze",
+      "defect": "Character appears to float statically above ground"
+    },
+    {
+      "id": 109,
+      "category": "animation_freeze",
+      "defect": "No ground reaction \u2014 feet don't press into floor"
+    },
+    {
+      "id": 110,
+      "category": "animation_freeze",
+      "defect": "No compression on support leg"
+    },
+    {
+      "id": 111,
+      "category": "animation_freeze",
+      "defect": "No extension on swing leg"
+    },
+    {
+      "id": 112,
+      "category": "animation_freeze",
+      "defect": "Character reads as a statue, not a walking figure"
+    },
+    {
+      "id": 113,
+      "category": "animation_freeze",
+      "defect": "The pose is a combat-ready stance, not a locomotion pose"
+    },
+    {
+      "id": 114,
+      "category": "animation_freeze",
+      "defect": "Combat stance is inappropriate for walk approach"
+    },
+    {
+      "id": 115,
+      "category": "animation_freeze",
+      "defect": "Walk approach should show locomotion, not combat readiness"
+    },
+    {
+      "id": 116,
+      "category": "animation_freeze",
+      "defect": "The animation system selected the wrong pose for the state"
+    },
+    {
+      "id": 117,
+      "category": "animation_freeze",
+      "defect": "PlanPhase shows approach but presentation shows combat"
+    },
+    {
+      "id": 118,
+      "category": "animation_freeze",
+      "defect": "State machine and animation are completely desynchronized"
+    },
+    {
+      "id": 119,
+      "category": "animation_freeze",
+      "defect": "Animation doesn't reflect the character's actual state"
+    },
+    {
+      "id": 120,
+      "category": "animation_freeze",
+      "defect": "The walk approach state has no corresponding animation"
+    },
+    {
+      "id": 121,
+      "category": "animation_freeze",
+      "defect": "All locomotion states map to the same static combat pose"
+    },
+    {
+      "id": 122,
+      "category": "animation_freeze",
+      "defect": "No distinction between idle, walk, and combat poses"
+    },
+    {
+      "id": 123,
+      "category": "animation_freeze",
+      "defect": "One pose serves all purposes \u2014 defeats purpose of animation"
+    },
+    {
+      "id": 124,
+      "category": "animation_freeze",
+      "defect": "Pose selection logic is a default case with no alternatives"
+    },
+    {
+      "id": 125,
+      "category": "animation_freeze",
+      "defect": "The animation system has only one output: the default pose"
+    },
+    {
+      "id": 126,
+      "category": "animation_freeze",
+      "defect": "Character root position unchanged across all frames"
+    },
+    {
+      "id": 127,
+      "category": "animation_freeze",
+      "defect": "No forward translation \u2014 character doesn't approach"
+    },
+    {
+      "id": 128,
+      "category": "animation_freeze",
+      "defect": "No backward translation \u2014 no retreat possible"
+    },
+    {
+      "id": 129,
+      "category": "animation_freeze",
+      "defect": "No lateral translation \u2014 no strafing"
+    },
+    {
+      "id": 130,
+      "category": "animation_freeze",
+      "defect": "No rotational movement \u2014 no turning"
+    },
+    {
+      "id": 131,
+      "category": "animation_freeze",
+      "defect": "Character is rooted in place at world origin"
+    },
+    {
+      "id": 132,
+      "category": "animation_freeze",
+      "defect": "Root motion is completely absent"
+    },
+    {
+      "id": 133,
+      "category": "animation_freeze",
+      "defect": "No approach toward opponent"
+    },
+    {
+      "id": 134,
+      "category": "animation_freeze",
+      "defect": "Range should decrease from 1400mm but characters don't move"
+    },
+    {
+      "id": 135,
+      "category": "animation_freeze",
+      "defect": "Range display changes but character positions don't"
+    },
+    {
+      "id": 136,
+      "category": "animation_freeze",
+      "defect": "HUD shows range decreasing while animation shows stationary figures"
+    },
+    {
+      "id": 137,
+      "category": "animation_freeze",
+      "defect": "Another instance of HUD/animation discord"
+    },
+    {
+      "id": 138,
+      "category": "animation_freeze",
+      "defect": "Character spacing between the two fighters never changes"
+    },
+    {
+      "id": 139,
+      "category": "animation_freeze",
+      "defect": "Both characters frozen in identical relative positions"
+    },
+    {
+      "id": 140,
+      "category": "animation_freeze",
+      "defect": "The approach phase has zero spatial progression"
+    },
+    {
+      "id": 141,
+      "category": "animation_freeze",
+      "defect": "What should be a dynamic closing of distance is a static tableau"
+    },
+    {
+      "id": 142,
+      "category": "animation_freeze",
+      "defect": "Movement is the defining feature of walk \u2014 and it's absent"
+    },
+    {
+      "id": 143,
+      "category": "animation_freeze",
+      "defect": "A walk animation without movement is not a walk animation"
+    },
+    {
+      "id": 144,
+      "category": "animation_freeze",
+      "defect": "Static walk is an oxymoron \u2014 and that's what's rendered"
+    },
+    {
+      "id": 145,
+      "category": "animation_freeze",
+      "defect": "No kinematic chain from feet through body is active"
+    },
+    {
+      "id": 146,
+      "category": "animation_freeze",
+      "defect": "All joints are locked at their default angles"
+    },
+    {
+      "id": 147,
+      "category": "animation_freeze",
+      "defect": "The skeleton is in bind pose with minor offsets"
+    },
+    {
+      "id": 148,
+      "category": "animation_freeze",
+      "defect": "Bind pose with minor offsets is the default for all states"
+    },
+    {
+      "id": 149,
+      "category": "animation_freeze",
+      "defect": "The animation system's output is independent of input state"
+    },
+    {
+      "id": 150,
+      "category": "animation_freeze",
+      "defect": "Any state produces the same visual result"
+    },
+    {
+      "id": 151,
+      "category": "animation_freeze",
+      "defect": "The animation function is effectively constant"
+    },
+    {
+      "id": 152,
+      "category": "animation_freeze",
+      "defect": "f(state) = default_pose for all states"
+    },
+    {
+      "id": 153,
+      "category": "animation_freeze",
+      "defect": "This is not animation \u2014 it's static rendering"
+    },
+    {
+      "id": 154,
+      "category": "animation_freeze",
+      "defect": "The term \"animation pipeline\" is misleading \u2014 it's a static renderer"
+    },
+    {
+      "id": 155,
+      "category": "animation_freeze",
+      "defect": "Walking animation is the most basic test and it fails completely"
+    },
+    {
+      "id": 156,
+      "category": "animation_freeze",
+      "defect": "If walk doesn't work, no other locomotion will"
+    },
+    {
+      "id": 157,
+      "category": "animation_freeze",
+      "defect": "Run animation would have the same failure"
+    },
+    {
+      "id": 158,
+      "category": "animation_freeze",
+      "defect": "Dodge animation would have the same failure"
+    },
+    {
+      "id": 159,
+      "category": "animation_freeze",
+      "defect": "All locomotion is identically broken"
+    },
+    {
+      "id": 160,
+      "category": "animation_freeze",
+      "defect": "The walk failure is representative of a systemic animation playback failure"
+    },
+    {
+      "id": 161,
+      "category": "animation_freeze",
+      "defect": "Frame timing is uniform \u2014 every frame is identical"
+    },
+    {
+      "id": 162,
+      "category": "animation_freeze",
+      "defect": "No acceleration phase at walk start"
+    },
+    {
+      "id": 163,
+      "category": "animation_freeze",
+      "defect": "No deceleration phase at walk end"
+    },
+    {
+      "id": 164,
+      "category": "animation_freeze",
+      "defect": "No ease-in from idle to walk"
+    },
+    {
+      "id": 165,
+      "category": "animation_freeze",
+      "defect": "No ease-out from walk to combat"
+    },
+    {
+      "id": 166,
+      "category": "animation_freeze",
+      "defect": "No transition between animation states"
+    },
+    {
+      "id": 167,
+      "category": "animation_freeze",
+      "defect": "State changes produce no visual change"
+    },
+    {
+      "id": 168,
+      "category": "animation_freeze",
+      "defect": "Timing is flat \u2014 no variation in pose across time"
+    },
+    {
+      "id": 169,
+      "category": "animation_freeze",
+      "defect": "The animation timeline is frozen"
+    },
+    {
+      "id": 170,
+      "category": "animation_freeze",
+      "defect": "Ticks advance but animation doesn't"
+    },
+    {
+      "id": 171,
+      "category": "animation_freeze",
+      "defect": "Tick counter increments while pose counter doesn't"
+    },
+    {
+      "id": 172,
+      "category": "animation_freeze",
+      "defect": "Simulation time progresses, animation time doesn't"
+    },
+    {
+      "id": 173,
+      "category": "animation_freeze",
+      "defect": "Truth frames advance (8\u219215\u219224\u219233\u219239\u219246), poses don't"
+    },
+    {
+      "id": 174,
+      "category": "animation_freeze",
+      "defect": "Multiple truth frames share one pose across multiple ticks"
+    },
+    {
+      "id": 175,
+      "category": "animation_freeze",
+      "defect": "Truth frame 8 produces the same pose as truth frame 15"
+    },
+    {
+      "id": 176,
+      "category": "animation_freeze",
+      "defect": "Truth frame 15 produces the same pose as truth frame 24"
+    },
+    {
+      "id": 177,
+      "category": "animation_freeze",
+      "defect": "Animation is decoupled from simulation time"
+    },
+    {
+      "id": 178,
+      "category": "animation_freeze",
+      "defect": "Animation has its own frozen timeline independent of simulation"
+    },
+    {
+      "id": 179,
+      "category": "animation_freeze",
+      "defect": "The animation clock is stopped while the simulation clock runs"
+    },
+    {
+      "id": 180,
+      "category": "animation_freeze",
+      "defect": "No frame-to-frame pose progression exists to evaluate"
+    },
+    {
+      "id": 181,
+      "category": "animation_freeze",
+      "defect": "Without progression, timing cannot be assessed"
+    },
+    {
+      "id": 182,
+      "category": "animation_freeze",
+      "defect": "Without timing, rhythm cannot be assessed  "
+    },
+    {
+      "id": 183,
+      "category": "animation_freeze",
+      "defect": "Without rhythm, walk cadence cannot be assessed"
+    },
+    {
+      "id": 184,
+      "category": "animation_freeze",
+      "defect": "Walk cadence is undefined when no walking occurs"
+    },
+    {
+      "id": 185,
+      "category": "animation_freeze",
+      "defect": "Step frequency is zero \u2014 no steps taken"
+    },
+    {
+      "id": 186,
+      "category": "animation_freeze",
+      "defect": "Stride length is zero \u2014 no distance covered"
+    },
+    {
+      "id": 187,
+      "category": "animation_freeze",
+      "defect": "Walk speed is zero \u2014 no movement"
+    },
+    {
+      "id": 188,
+      "category": "animation_freeze",
+      "defect": "Animation playback rate appears to be zero"
+    },
+    {
+      "id": 189,
+      "category": "animation_freeze",
+      "defect": "Walking.anim may have correct internal timing but it's never sampled"
+    },
+    {
+      "id": 190,
+      "category": "animation_freeze",
+      "defect": "The animation clip's internal timing is irrelevant if it never plays"
+    },
+    {
+      "id": 191,
+      "category": "animation_freeze",
+      "defect": "Clip duration, frame count, FPS are all unused metadata"
+    },
+    {
+      "id": 192,
+      "category": "animation_freeze",
+      "defect": "The clip has temporal structure that the renderer ignores"
+    },
+    {
+      "id": 193,
+      "category": "animation_freeze",
+      "defect": "Animation data exists in a parallel universe the renderer can't access"
+    },
+    {
+      "id": 194,
+      "category": "animation_freeze",
+      "defect": "Temporal data flows from clip to memory but stops before GPU"
+    },
+    {
+      "id": 195,
+      "category": "animation_freeze",
+      "defect": "The animation pipeline has a break between CPU sampling and GPU rendering"
+    },
+    {
+      "id": 196,
+      "category": "animation_freeze",
+      "defect": "Sampled pose data never reaches the vertex shader"
+    },
+    {
+      "id": 197,
+      "category": "animation_freeze",
+      "defect": "The skinning shader receives bind pose, not animated pose"
+    },
+    {
+      "id": 198,
+      "category": "animation_freeze",
+      "defect": "GPU processes static data labeled as animation"
+    },
+    {
+      "id": 199,
+      "category": "animation_freeze",
+      "defect": "The temporal pipeline is severed at the CPU\u2192GPU boundary"
+    },
+    {
+      "id": 200,
+      "category": "animation_freeze",
+      "defect": "Animation data dies in RAM, never reaching VRAM"
+    },
+    {
+      "id": 201,
+      "category": "animation_freeze",
+      "defect": "The frame budget (60fps simulation) is wasted on static rendering"
+    },
+    {
+      "id": 202,
+      "category": "animation_freeze",
+      "defect": "60 truth ticks per second produce zero animation frames per second"
+    },
+    {
+      "id": 203,
+      "category": "animation_freeze",
+      "defect": "The animation effective frame rate is 0 FPS"
+    },
+    {
+      "id": 204,
+      "category": "animation_freeze",
+      "defect": "Simulation runs at 60Hz, animation runs at 0Hz"
+    },
+    {
+      "id": 205,
+      "category": "animation_freeze",
+      "defect": "This is the worst possible temporal defect: complete stasis"
+    },
+    {
+      "id": 206,
+      "category": "animation_freeze",
+      "defect": "No amount of clip quality would help \u2014 the clip never plays"
+    },
+    {
+      "id": 207,
+      "category": "animation_freeze",
+      "defect": "The temporal defect is not in the clip, it's in the playback system"
+    },
+    {
+      "id": 208,
+      "category": "animation_freeze",
+      "defect": "Fixing clip quality would have zero effect on rendered output"
+    },
+    {
+      "id": 209,
+      "category": "animation_freeze",
+      "defect": "The root cause is playback integration, not clip authoring"
+    },
+    {
+      "id": 210,
+      "category": "animation_freeze",
+      "defect": "Temporal defects are systemic, not content-specific"
+    },
+    {
+      "id": 211,
+      "category": "animation_freeze",
+      "defect": "Every animation clip in the project has this same defect"
+    },
+    {
+      "id": 212,
+      "category": "animation_freeze",
+      "defect": "Walking.anim, running.anim \u2014 all equally broken"
+    },
+    {
+      "id": 213,
+      "category": "animation_freeze",
+      "defect": "Adding more clips would not fix the underlying issue"
+    },
+    {
+      "id": 214,
+      "category": "animation_freeze",
+      "defect": "The playback system needs repair before any clip improvement"
+    },
+    {
+      "id": 215,
+      "category": "animation_freeze",
+      "defect": "Temporal integration is the highest-priority fix"
+    },
+    {
+      "id": 216,
+      "category": "animation_freeze",
+      "defect": "Without temporal integration, \"animation pipeline\" is a misnomer"
+    },
+    {
+      "id": 217,
+      "category": "animation_freeze",
+      "defect": "The system can load animation but cannot play it"
+    },
+    {
+      "id": 218,
+      "category": "animation_freeze",
+      "defect": "Loading and playing are separate capabilities \u2014 only loading works"
+    },
+    {
+      "id": 219,
+      "category": "animation_freeze",
+      "defect": "The gap between loading and playing is the entire animation problem"
+    },
+    {
+      "id": 220,
+      "category": "animation_freeze",
+      "defect": "Close the load\u2192play gap to unlock all animation work"
+    },
+    {
+      "id": 221,
+      "category": "animation_freeze",
+      "defect": "Walking.anim is loaded by asset::load_skeletal_animation"
+    },
+    {
+      "id": 222,
+      "category": "animation_freeze",
+      "defect": "Loaded clip is stored in PresentationAssets struct"
+    },
+    {
+      "id": 223,
+      "category": "animation_freeze",
+      "defect": "PresentationAssets.walk_skins holds the sampled per-frame skin matrices"
+    },
+    {
+      "id": 224,
+      "category": "animation_freeze",
+      "defect": "The skin matrices are computed but never written to the renderer"
+    },
+    {
+      "id": 225,
+      "category": "animation_freeze",
+      "defect": "render_frame() obtains PlanPhase snapshot but doesn't use it for animation"
+    },
+    {
+      "id": 226,
+      "category": "animation_freeze",
+      "defect": "The Intent from PlanPhase is not mapped to animation clip selection"
+    },
+    {
+      "id": 227,
+      "category": "animation_freeze",
+      "defect": "Intent::Move should trigger walk clip sampling \u2014 doesn't"
+    },
+    {
+      "id": 228,
+      "category": "animation_freeze",
+      "defect": "Intent::Dodge should trigger run clip sampling \u2014 doesn't"
+    },
+    {
+      "id": 229,
+      "category": "animation_freeze",
+      "defect": "The intent-to-animation mapping table exists in code but is bypassed"
+    },
+    {
+      "id": 230,
+      "category": "animation_freeze",
+      "defect": "A match statement on intent exists but the animation branch is dead code"
+    },
+    {
+      "id": 231,
+      "category": "animation_freeze",
+      "defect": "Dead code elimination may have removed the animation path at compile time"
+    },
+    {
+      "id": 232,
+      "category": "animation_freeze",
+      "defect": "The animation code path is present in source but unreachable at runtime"
+    },
+    {
+      "id": 233,
+      "category": "animation_freeze",
+      "defect": "Conditional compilation (#[cfg]) may be gating animation behind unused feature"
+    },
+    {
+      "id": 234,
+      "category": "animation_freeze",
+      "defect": "Feature flag 'motion-inference' enables MotionBricks but not clip playback"
+    },
+    {
+      "id": 235,
+      "category": "animation_freeze",
+      "defect": "No feature flag exists for basic animation clip playback"
+    },
+    {
+      "id": 236,
+      "category": "animation_freeze",
+      "defect": "Animation playback should not require a feature flag \u2014 it's core functionality"
+    },
+    {
+      "id": 237,
+      "category": "animation_freeze",
+      "defect": "The animation system is behind too many conditional gates"
+    },
+    {
+      "id": 238,
+      "category": "animation_freeze",
+      "defect": "Multiple environment variables needed: JUSTDODGE_ASSETS + JUSTDODGE_MOTION"
+    },
+    {
+      "id": 239,
+      "category": "animation_freeze",
+      "defect": "Neither environment variable is sufficient alone"
+    },
+    {
+      "id": 240,
+      "category": "animation_freeze",
+      "defect": "JUSTDODGE_MOTION=generative enables MotionBricks but not baked clips"
+    },
+    {
+      "id": 241,
+      "category": "animation_freeze",
+      "defect": "Baked clip playback has no environment variable trigger"
+    },
+    {
+      "id": 242,
+      "category": "animation_freeze",
+      "defect": "The simplest animation path (baked clips) is the hardest to activate"
+    },
+    {
+      "id": 243,
+      "category": "animation_freeze",
+      "defect": "Generative motion (complex) is easier to enable than baked clips (simple)"
+    },
+    {
+      "id": 244,
+      "category": "animation_freeze",
+      "defect": "The complexity gradient is inverted \u2014 simple should be default"
+    },
+    {
+      "id": 245,
+      "category": "animation_freeze",
+      "defect": "Baked clip playback should be the default, not gated"
+    },
+    {
+      "id": 246,
+      "category": "animation_freeze",
+      "defect": "Animation should work out of the box with zero configuration"
+    },
+    {
+      "id": 247,
+      "category": "animation_freeze",
+      "defect": "Needing environment variables for basic animation is a UX defect"
+    },
+    {
+      "id": 248,
+      "category": "animation_freeze",
+      "defect": "New developers cannot discover animation \u2014 it's hidden behind flags"
+    },
+    {
+      "id": 249,
+      "category": "animation_freeze",
+      "defect": "The animation system's activation surface is too large"
+    },
+    {
+      "id": 250,
+      "category": "animation_freeze",
+      "defect": "Too many switches between \"no animation\" and \"animation working\""
+    },
+    {
+      "id": 251,
+      "category": "animation_freeze",
+      "defect": "Each switch is a potential failure point"
+    },
+    {
+      "id": 252,
+      "category": "animation_freeze",
+      "defect": "The current state: all switches off \u2192 no animation"
+    },
+    {
+      "id": 253,
+      "category": "animation_freeze",
+      "defect": "No single switch turns on basic animation"
+    },
+    {
+      "id": 254,
+      "category": "animation_freeze",
+      "defect": "The animation activation path is undocumented"
+    },
+    {
+      "id": 255,
+      "category": "animation_freeze",
+      "defect": "Subagent had to reverse-engineer the activation sequence"
+    },
+    {
+      "id": 256,
+      "category": "animation_freeze",
+      "defect": "The activation sequence is tribal knowledge, not documented"
+    },
+    {
+      "id": 257,
+      "category": "animation_freeze",
+      "defect": "README doesn't mention how to enable animation"
+    },
+    {
+      "id": 258,
+      "category": "animation_freeze",
+      "defect": "Game_loop --help doesn't list animation options"
+    },
+    {
+      "id": 259,
+      "category": "animation_freeze",
+      "defect": "No --animate or --walk flag exists"
+    },
+    {
+      "id": 260,
+      "category": "animation_freeze",
+      "defect": "The user cannot discover how to see animation"
+    },
+    {
+      "id": 261,
+      "category": "animation_freeze",
+      "defect": "Animation is a hidden feature requiring source code knowledge"
+    },
+    {
+      "id": 262,
+      "category": "animation_freeze",
+      "defect": "This is a documentation defect as much as a code defect"
+    },
+    {
+      "id": 263,
+      "category": "animation_freeze",
+      "defect": "Pipeline integration is the sum of all these small gaps"
+    },
+    {
+      "id": 264,
+      "category": "animation_freeze",
+      "defect": "Each gap is small \u2014 together they form a chasm"
+    },
+    {
+      "id": 265,
+      "category": "animation_freeze",
+      "defect": "The gaps are: loading\u2192sampling\u2192selection\u2192writing\u2192rendering"
+    },
+    {
+      "id": 266,
+      "category": "animation_freeze",
+      "defect": "Loading works, sampling works, selection fails, writing fails, rendering passes static"
+    },
+    {
+      "id": 267,
+      "category": "animation_freeze",
+      "defect": "Two of five pipeline stages are broken"
+    },
+    {
+      "id": 268,
+      "category": "animation_freeze",
+      "defect": "The broken stages are in the middle \u2014 hardest to diagnose"
+    },
+    {
+      "id": 269,
+      "category": "animation_freeze",
+      "defect": "Loading appears to work (no errors), rendering appears to work (no crashes)"
+    },
+    {
+      "id": 270,
+      "category": "animation_freeze",
+      "defect": "The silent failure in the middle masks the problem"
+    },
+    {
+      "id": 271,
+      "category": "animation_freeze",
+      "defect": "Silent failures are worse than loud failures"
+    },
+    {
+      "id": 272,
+      "category": "animation_freeze",
+      "defect": "A crash would be easier to debug than silent static rendering"
+    },
+    {
+      "id": 273,
+      "category": "animation_freeze",
+      "defect": "The system fails gracefully into the worst possible state: frozen"
+    },
+    {
+      "id": 274,
+      "category": "animation_freeze",
+      "defect": "\"Fail gracefully\" means \"show bind pose\" \u2014 indistinguishable from \"no animation\""
+    },
+    {
+      "id": 275,
+      "category": "animation_freeze",
+      "defect": "Graceful degradation destroys the ability to detect the failure"
+    },
+    {
+      "id": 276,
+      "category": "animation_freeze",
+      "defect": "The failure mode and the success mode look identical"
+    },
+    {
+      "id": 277,
+      "category": "animation_freeze",
+      "defect": "A working animation system and a broken one produce the same output"
+    },
+    {
+      "id": 278,
+      "category": "animation_freeze",
+      "defect": "This is the worst kind of bug: invisible failure"
+    },
+    {
+      "id": 279,
+      "category": "animation_freeze",
+      "defect": "Pipeline integration testing must compare frame N to frame N+1"
+    },
+    {
+      "id": 280,
+      "category": "animation_freeze",
+      "defect": "If frames are identical, the pipeline is broken regardless of errors"
+    },
+    {
+      "id": 281,
+      "category": "animation_freeze",
+      "defect": "Current testing: \"does it compile? do tests pass?\" \u2014 both yes"
+    },
+    {
+      "id": 282,
+      "category": "animation_freeze",
+      "defect": "Missing test: \"do consecutive shot frames differ?\""
+    },
+    {
+      "id": 283,
+      "category": "animation_freeze",
+      "defect": "Missing test: \"does walk clip produce non-identity pose delta?\""
+    },
+    {
+      "id": 284,
+      "category": "animation_freeze",
+      "defect": "Missing test: \"does animation playback change any vertex position?\""
+    },
+    {
+      "id": 285,
+      "category": "animation_freeze",
+      "defect": "The animation pipeline has no integration tests"
+    },
+    {
+      "id": 286,
+      "category": "animation_freeze",
+      "defect": "Unit tests for clip loading pass \u2014 integration test for playback absent"
+    },
+    {
+      "id": 287,
+      "category": "animation_freeze",
+      "defect": "The test gap exactly matches the functionality gap"
+    },
+    {
+      "id": 288,
+      "category": "animation_freeze",
+      "defect": "What isn't tested is what doesn't work"
+    },
+    {
+      "id": 289,
+      "category": "animation_freeze",
+      "defect": "Add animation playback integration tests"
+    },
+    {
+      "id": 290,
+      "category": "animation_freeze",
+      "defect": "Test: shot tick 1 \u2260 shot tick 2 (poses differ)"
+    },
+    {
+      "id": 291,
+      "category": "animation_freeze",
+      "defect": "Test: walk animation produces forward root motion"
+    },
+    {
+      "id": 292,
+      "category": "animation_freeze",
+      "defect": "Test: walk animation produces alternating leg poses"
+    },
+    {
+      "id": 293,
+      "category": "animation_freeze",
+      "defect": "Test: animation frame 0 and animation frame N/2 are different"
+    },
+    {
+      "id": 294,
+      "category": "animation_freeze",
+      "defect": "These tests would catch the current failure immediately"
+    },
+    {
+      "id": 295,
+      "category": "animation_freeze",
+      "defect": "The test suite's green status is misleading"
+    },
+    {
+      "id": 296,
+      "category": "animation_freeze",
+      "defect": "All tests pass but animation doesn't work \u2014 test coverage gap"
+    },
+    {
+      "id": 297,
+      "category": "animation_freeze",
+      "defect": "The most important functionality is the least tested"
+    },
+    {
+      "id": 298,
+      "category": "animation_freeze",
+      "defect": "Animation is the project's core differentiator with zero test coverage"
+    },
+    {
+      "id": 299,
+      "category": "animation_freeze",
+      "defect": "The pipeline integration defect is a testing defect"
+    },
+    {
+      "id": 300,
+      "category": "animation_freeze",
+      "defect": "Fix testing to fix the pipeline"
+    },
+    {
+      "id": 301,
+      "category": "animation_freeze",
+      "defect": "No reference walk animation exists for comparison"
+    },
+    {
+      "id": 302,
+      "category": "animation_freeze",
+      "defect": "Cannot determine if walking.anim is good or bad because it never plays"
+    },
+    {
+      "id": 303,
+      "category": "animation_freeze",
+      "defect": "The clip quality is completely unknown"
+    },
+    {
+      "id": 304,
+      "category": "animation_freeze",
+      "defect": "49KB of animation data with unknown visual quality"
+    },
+    {
+      "id": 305,
+      "category": "animation_freeze",
+      "defect": "The clip could be excellent \u2014 we'll never know until playback works"
+    },
+    {
+      "id": 306,
+      "category": "animation_freeze",
+      "defect": "The clip could be terrible \u2014 we can't assess until playback works"
+    },
+    {
+      "id": 307,
+      "category": "animation_freeze",
+      "defect": "All quality judgments about walking.anim are premature"
+    },
+    {
+      "id": 308,
+      "category": "animation_freeze",
+      "defect": "The clip has never been visually reviewed"
+    },
+    {
+      "id": 309,
+      "category": "animation_freeze",
+      "defect": "No human has ever seen the walk animation play"
+    },
+    {
+      "id": 310,
+      "category": "animation_freeze",
+      "defect": "The animation has zero visual evidence of existing"
+    },
+    {
+      "id": 311,
+      "category": "animation_freeze",
+      "defect": "Walking.anim exists as bytes, not as visible motion"
+    },
+    {
+      "id": 312,
+      "category": "animation_freeze",
+      "defect": "The file exists; the animation doesn't"
+    },
+    {
+      "id": 313,
+      "category": "animation_freeze",
+      "defect": "Compare: static assets have 500-defect audits; animation has zero"
+    },
+    {
+      "id": 314,
+      "category": "animation_freeze",
+      "defect": "Static meshes have been scrutinized 100\u00d7 more than animation"
+    },
+    {
+      "id": 315,
+      "category": "animation_freeze",
+      "defect": "The project knows more about armor plate gaps than walk cycle quality"
+    },
+    {
+      "id": 316,
+      "category": "animation_freeze",
+      "defect": "Animation is the most important and least examined system"
+    },
+    {
+      "id": 317,
+      "category": "animation_freeze",
+      "defect": "No side-by-side comparison of walk clip frames exists"
+    },
+    {
+      "id": 318,
+      "category": "animation_freeze",
+      "defect": "No contact sheet of walking.anim internal frames exists"
+    },
+    {
+      "id": 319,
+      "category": "animation_freeze",
+      "defect": "The clip's internal structure is a black box"
+    },
+    {
+      "id": 320,
+      "category": "animation_freeze",
+      "defect": "Frame count of walking.anim is unknown without parsing binary"
+    },
+    {
+      "id": 321,
+      "category": "animation_freeze",
+      "defect": "Frame rate of walking.anim is unknown"
+    },
+    {
+      "id": 322,
+      "category": "animation_freeze",
+      "defect": "Bone count match between clip and C0 skeleton is unverified"
+    },
+    {
+      "id": 323,
+      "category": "animation_freeze",
+      "defect": "Clip may have been authored for different proportions"
+    },
+    {
+      "id": 324,
+      "category": "animation_freeze",
+      "defect": "Clip may assume different bind pose than C0 mesh"
+    },
+    {
+      "id": 325,
+      "category": "animation_freeze",
+      "defect": "Without visual review, all clip assumptions are untested"
+    },
+    {
+      "id": 326,
+      "category": "animation_freeze",
+      "defect": "Reference: a proper walk cycle has 4 key poses (contact, down, passing, up)"
+    },
+    {
+      "id": 327,
+      "category": "animation_freeze",
+      "defect": "Cannot verify if walking.anim contains these poses"
+    },
+    {
+      "id": 328,
+      "category": "animation_freeze",
+      "defect": "Reference: walk cycle should have arm swing opposite to legs"
+    },
+    {
+      "id": 329,
+      "category": "animation_freeze",
+      "defect": "Cannot verify if walking.anim has arm swing"
+    },
+    {
+      "id": 330,
+      "category": "animation_freeze",
+      "defect": "Reference: walk cycle should have vertical head bob"
+    },
+    {
+      "id": 331,
+      "category": "animation_freeze",
+      "defect": "Cannot verify if walking.anim has head bob"
+    },
+    {
+      "id": 332,
+      "category": "animation_freeze",
+      "defect": "Reference: walk speed should be ~1.4 m/s for combat walk"
+    },
+    {
+      "id": 333,
+      "category": "animation_freeze",
+      "defect": "Cannot verify walking.anim speed"
+    },
+    {
+      "id": 334,
+      "category": "animation_freeze",
+      "defect": "Reference: combat walk should be shorter stride than civilian walk"
+    },
+    {
+      "id": 335,
+      "category": "animation_freeze",
+      "defect": "Cannot verify walking.anim stride length"
+    },
+    {
+      "id": 336,
+      "category": "animation_freeze",
+      "defect": "Reference: walk cycle should loop seamlessly"
+    },
+    {
+      "id": 337,
+      "category": "animation_freeze",
+      "defect": "Cannot verify walking.anim loop quality"
+    },
+    {
+      "id": 338,
+      "category": "animation_freeze",
+      "defect": "Reference: walk should have foot roll (heel\u2192toe)"
+    },
+    {
+      "id": 339,
+      "category": "animation_freeze",
+      "defect": "Cannot verify walking.anim foot mechanics"
+    },
+    {
+      "id": 340,
+      "category": "animation_freeze",
+      "defect": "Reference: walk should have lateral weight shift"
+    },
+    {
+      "id": 341,
+      "category": "animation_freeze",
+      "defect": "Cannot verify walking.anim weight transfer"
+    },
+    {
+      "id": 342,
+      "category": "animation_freeze",
+      "defect": "Every animation quality metric requires playback to assess"
+    },
+    {
+      "id": 343,
+      "category": "animation_freeze",
+      "defect": "Without playback, quality assessment is impossible"
+    },
+    {
+      "id": 344,
+      "category": "animation_freeze",
+      "defect": "The 500-defect audit format requires visible evidence"
+    },
+    {
+      "id": 345,
+      "category": "animation_freeze",
+      "defect": "Visible evidence of walk animation does not exist"
+    },
+    {
+      "id": 346,
+      "category": "animation_freeze",
+      "defect": "This audit documents the absence of evidence"
+    },
+    {
+      "id": 347,
+      "category": "animation_freeze",
+      "defect": "Absence of evidence is evidence of the playback defect"
+    },
+    {
+      "id": 348,
+      "category": "animation_freeze",
+      "defect": "The primary defect subsumes all potential quality defects"
+    },
+    {
+      "id": 349,
+      "category": "animation_freeze",
+      "defect": "If it doesn't play, it doesn't matter how good it is"
+    },
+    {
+      "id": 350,
+      "category": "animation_freeze",
+      "defect": "Quality assessment is blocked by the playback defect"
+    },
+    {
+      "id": 351,
+      "category": "animation_freeze",
+      "defect": "This audit category would be 500 items if playback worked"
+    },
+    {
+      "id": 352,
+      "category": "animation_freeze",
+      "defect": "With working playback, we could assess all 500 quality points"
+    },
+    {
+      "id": 353,
+      "category": "animation_freeze",
+      "defect": "The current state prevents quality work from beginning"
+    },
+    {
+      "id": 354,
+      "category": "animation_freeze",
+      "defect": "Fixing playback would unlock 500 quality improvement tickets"
+    },
+    {
+      "id": 355,
+      "category": "animation_freeze",
+      "defect": "Playback is the gatekeeper for all animation quality"
+    },
+    {
+      "id": 356,
+      "category": "animation_freeze",
+      "defect": "Open the gate before inspecting the garden"
+    },
+    {
+      "id": 357,
+      "category": "animation_freeze",
+      "defect": "The comparative defect: other game engines play walk animations by default"
+    },
+    {
+      "id": 358,
+      "category": "animation_freeze",
+      "defect": "Unity: import model + animation \u2192 press play \u2192 walks"
+    },
+    {
+      "id": 359,
+      "category": "animation_freeze",
+      "defect": "Unreal: import model + animation \u2192 press play \u2192 walks"
+    },
+    {
+      "id": 360,
+      "category": "animation_freeze",
+      "defect": "Just Dodge: import model + animation \u2192 press play \u2192 frozen"
+    },
+    {
+      "id": 361,
+      "category": "animation_freeze",
+      "defect": "Cooked assets must be at exact path or animation silently fails"
+    },
+    {
+      "id": 362,
+      "category": "animation_freeze",
+      "defect": "Missing c0_skin8.bin causes panic, not graceful degradation"
+    },
+    {
+      "id": 363,
+      "category": "animation_freeze",
+      "defect": "Missing walking.anim causes no error \u2014 just no animation"
+    },
+    {
+      "id": 364,
+      "category": "animation_freeze",
+      "defect": "Silent failure on missing animation assets is worse than panic"
+    },
+    {
+      "id": 365,
+      "category": "animation_freeze",
+      "defect": "Asset loading should warn when animation clips are absent"
+    },
+    {
+      "id": 366,
+      "category": "animation_freeze",
+      "defect": "Asset validation should check animation clip presence"
+    },
+    {
+      "id": 367,
+      "category": "animation_freeze",
+      "defect": "Startup should report: \"2 animation clips loaded\" or \"0 animation clips loaded\""
+    },
+    {
+      "id": 368,
+      "category": "animation_freeze",
+      "defect": "Current startup reports only mesh load status"
+    },
+    {
+      "id": 369,
+      "category": "animation_freeze",
+      "defect": "Animation asset status is invisible in logs"
+    },
+    {
+      "id": 370,
+      "category": "animation_freeze",
+      "defect": "JUSTDODGE_ASSETS environment variable is the only configuration mechanism"
+    },
+    {
+      "id": 371,
+      "category": "animation_freeze",
+      "defect": "No config file for asset paths"
+    },
+    {
+      "id": 372,
+      "category": "animation_freeze",
+      "defect": "No command line argument for asset paths"
+    },
+    {
+      "id": 373,
+      "category": "animation_freeze",
+      "defect": "Environment variables are fragile \u2014 easy to forget"
+    },
+    {
+      "id": 374,
+      "category": "animation_freeze",
+      "defect": "If JUSTDODGE_ASSETS is unset, animation can never work"
+    },
+    {
+      "id": 375,
+      "category": "animation_freeze",
+      "defect": "Default asset path should exist \u2014 currently requires manual setup"
+    },
+    {
+      "id": 376,
+      "category": "animation_freeze",
+      "defect": "Assets were removed from repo \u2014 broke all downstream users"
+    },
+    {
+      "id": 377,
+      "category": "animation_freeze",
+      "defect": "No asset integrity check at startup"
+    },
+    {
+      "id": 378,
+      "category": "animation_freeze",
+      "defect": "No checksum verification for animation clips"
+    },
+    {
+      "id": 379,
+      "category": "animation_freeze",
+      "defect": "Corrupted walking.anim would silently fail"
+    },
+    {
+      "id": 380,
+      "category": "animation_freeze",
+      "defect": "No validation that clip frame count matches expected value"
+    },
+    {
+      "id": 381,
+      "category": "animation_freeze",
+      "defect": "No validation that clip bone count matches mesh bone count"
+    },
+    {
+      "id": 382,
+      "category": "animation_freeze",
+      "defect": "Configuration surface is too narrow \u2014 only one env var"
+    },
+    {
+      "id": 383,
+      "category": "animation_freeze",
+      "defect": "Configuration surface is too deep \u2014 env var must point to exact directory"
+    },
+    {
+      "id": 384,
+      "category": "animation_freeze",
+      "defect": "Asset discovery should search multiple paths"
+    },
+    {
+      "id": 385,
+      "category": "animation_freeze",
+      "defect": "Fallback asset paths would improve robustness"
+    },
+    {
+      "id": 386,
+      "category": "animation_freeze",
+      "defect": "Development assets should be in repo or auto-downloaded"
+    },
+    {
+      "id": 387,
+      "category": "animation_freeze",
+      "defect": "Git LFS could store animation clips"
+    },
+    {
+      "id": 388,
+      "category": "animation_freeze",
+      "defect": "Animation clips are small enough for git (49KB, 30KB)"
+    },
+    {
+      "id": 389,
+      "category": "animation_freeze",
+      "defect": "Binary assets in git are acceptable at this size"
+    },
+    {
+      "id": 390,
+      "category": "animation_freeze",
+      "defect": "The asset distribution story is incomplete"
+    },
+    {
+      "id": 391,
+      "category": "animation_freeze",
+      "defect": "Release packages should include animation clips"
+    },
+    {
+      "id": 392,
+      "category": "animation_freeze",
+      "defect": "Dist/ directory has motion clips but not in standard asset path"
+    },
+    {
+      "id": 393,
+      "category": "animation_freeze",
+      "defect": "Asset location differs between dev and release builds"
+    },
+    {
+      "id": 394,
+      "category": "animation_freeze",
+      "defect": "Dev: assets/source/meshy/.../cooked/"
+    },
+    {
+      "id": 395,
+      "category": "animation_freeze",
+      "defect": "Release: dist/just-dodge-windows-x86_64/assets/"
+    },
+    {
+      "id": 396,
+      "category": "animation_freeze",
+      "defect": "Two asset roots with different contents"
+    },
+    {
+      "id": 397,
+      "category": "animation_freeze",
+      "defect": "No unified asset directory structure"
+    },
+    {
+      "id": 398,
+      "category": "animation_freeze",
+      "defect": "Animation clips live in a different tree than mesh data"
+    },
+    {
+      "id": 399,
+      "category": "animation_freeze",
+      "defect": "Asset fragmentation increases configuration burden"
+    },
+    {
+      "id": 400,
+      "category": "animation_freeze",
+      "defect": "Configuration complexity is proportional to asset fragmentation"
+    },
+    {
+      "id": 401,
+      "category": "animation_freeze",
+      "defect": "Simplify: one asset root, all assets within"
+    },
+    {
+      "id": 402,
+      "category": "animation_freeze",
+      "defect": "Simplify: no environment variables needed for default layout"
+    },
+    {
+      "id": 403,
+      "category": "animation_freeze",
+      "defect": "Simplify: animation works immediately after clone + build"
+    },
+    {
+      "id": 404,
+      "category": "animation_freeze",
+      "defect": "Current state: clone + build \u2192 no animation"
+    },
+    {
+      "id": 405,
+      "category": "animation_freeze",
+      "defect": "Required state: clone + build \u2192 animation works"
+    },
+    {
+      "id": 406,
+      "category": "animation_freeze",
+      "defect": "The delta between current and required is configuration cleanup"
+    },
+    {
+      "id": 407,
+      "category": "animation_freeze",
+      "defect": "Configuration is a blocker for new contributor onboarding"
+    },
+    {
+      "id": 408,
+      "category": "animation_freeze",
+      "defect": "New contributor cannot see animation without tribal knowledge"
+    },
+    {
+      "id": 409,
+      "category": "animation_freeze",
+      "defect": "The animation system's configurability is inversely proportional to its usability"
+    },
+    {
+      "id": 410,
+      "category": "animation_freeze",
+      "defect": "Fix configuration to fix animation accessibility"
+    },
+    {
+      "id": 411,
+      "category": "animation_freeze",
+      "defect": "Contact sheet frames are too small (320\u00d7180) for detailed pose analysis"
+    },
+    {
+      "id": 412,
+      "category": "animation_freeze",
+      "defect": "Contact sheet resolution is 1/16 of full render resolution"
+    },
+    {
+      "id": 413,
+      "category": "animation_freeze",
+      "defect": "Detail lost in downscaling from 1280\u00d7720 to 320\u00d7180"
+    },
+    {
+      "id": 414,
+      "category": "animation_freeze",
+      "defect": "Character occupies ~5% of each frame \u2014 too small"
+    },
+    {
+      "id": 415,
+      "category": "animation_freeze",
+      "defect": "Hands and feet are single pixels at this resolution"
+    },
+    {
+      "id": 416,
+      "category": "animation_freeze",
+      "defect": "Joint angles impossible to measure at this scale"
+    },
+    {
+      "id": 417,
+      "category": "animation_freeze",
+      "defect": "Animation review requires higher resolution or closer camera"
+    },
+    {
+      "id": 418,
+      "category": "animation_freeze",
+      "defect": "Observer camera is too distant for animation quality assessment"
+    },
+    {
+      "id": 419,
+      "category": "animation_freeze",
+      "defect": "Camera is positioned for gameplay overview, not animation debugging"
+    },
+    {
+      "id": 420,
+      "category": "animation_freeze",
+      "defect": "No animation-specific camera mode exists"
+    },
+    {
+      "id": 421,
+      "category": "animation_freeze",
+      "defect": "No close-up camera for walk cycle inspection"
+    },
+    {
+      "id": 422,
+      "category": "animation_freeze",
+      "defect": "No side-profile camera for stride analysis"
+    },
+    {
+      "id": 423,
+      "category": "animation_freeze",
+      "defect": "No top-down camera for root motion tracking"
+    },
+    {
+      "id": 424,
+      "category": "animation_freeze",
+      "defect": "No camera that tracks the character during movement"
+    },
+    {
+      "id": 425,
+      "category": "animation_freeze",
+      "defect": "Static camera makes movement harder to detect"
+    },
+    {
+      "id": 426,
+      "category": "animation_freeze",
+      "defect": "Camera should move with character to highlight animation"
+    },
+    {
+      "id": 427,
+      "category": "animation_freeze",
+      "defect": "Animation review camera is an afterthought"
+    },
+    {
+      "id": 428,
+      "category": "animation_freeze",
+      "defect": "The shot system treats animation as an afterthought to truth verification"
+    },
+    {
+      "id": 429,
+      "category": "animation_freeze",
+      "defect": "Truth verification is prioritized over animation review"
+    },
+    {
+      "id": 430,
+      "category": "animation_freeze",
+      "defect": "The camera system serves truth, not presentation"
+    },
+    {
+      "id": 431,
+      "category": "animation_freeze",
+      "defect": "Presentation (animation) needs its own camera modes"
+    },
+    {
+      "id": 432,
+      "category": "animation_freeze",
+      "defect": "First-person view shows opponent animation but at wrong angle"
+    },
+    {
+      "id": 433,
+      "category": "animation_freeze",
+      "defect": "First-person is for gameplay, not animation review"
+    },
+    {
+      "id": 434,
+      "category": "animation_freeze",
+      "defect": "No free-camera mode for circling the animated character"
+    },
+    {
+      "id": 435,
+      "category": "animation_freeze",
+      "defect": "No slow-motion capture for detailed frame analysis"
+    },
+    {
+      "id": 436,
+      "category": "animation_freeze",
+      "defect": "No frame-stepping in the rendered output"
+    },
+    {
+      "id": 437,
+      "category": "animation_freeze",
+      "defect": "PNG output loses temporal information"
+    },
+    {
+      "id": 438,
+      "category": "animation_freeze",
+      "defect": "Contact sheet helps but loses resolution"
+    },
+    {
+      "id": 439,
+      "category": "animation_freeze",
+      "defect": "Video would be ideal but generation pipeline doesn't exist"
+    },
+    {
+      "id": 440,
+      "category": "animation_freeze",
+      "defect": "The animation review tooling is manual and lossy"
+    },
+    {
+      "id": 441,
+      "category": "animation_freeze",
+      "defect": "Frame capture \u2192 resize \u2192 grid \u2192 PNG is lossy at every step"
+    },
+    {
+      "id": 442,
+      "category": "animation_freeze",
+      "defect": "Each step loses information about the animation"
+    },
+    {
+      "id": 443,
+      "category": "animation_freeze",
+      "defect": "The review pipeline degrades the evidence"
+    },
+    {
+      "id": 444,
+      "category": "animation_freeze",
+      "defect": "Degraded evidence makes defects harder to spot"
+    },
+    {
+      "id": 445,
+      "category": "animation_freeze",
+      "defect": "Presentation defects compound animation defects"
+    },
+    {
+      "id": 446,
+      "category": "animation_freeze",
+      "defect": "Hard to tell if a defect is in the animation or the presentation"
+    },
+    {
+      "id": 447,
+      "category": "animation_freeze",
+      "defect": "Is the walk arm not swinging, or is the resolution too low to see?"
+    },
+    {
+      "id": 448,
+      "category": "animation_freeze",
+      "defect": "Is the character moving, or is the camera too far to detect?"
+    },
+    {
+      "id": 449,
+      "category": "animation_freeze",
+      "defect": "Presentation ambiguity masks animation quality"
+    },
+    {
+      "id": 450,
+      "category": "animation_freeze",
+      "defect": "Fix presentation to enable animation quality assessment"
+    },
+    {
+      "id": 451,
+      "category": "animation_freeze",
+      "defect": "Higher resolution contact sheets"
+    },
+    {
+      "id": 452,
+      "category": "animation_freeze",
+      "defect": "Closer camera during shot capture"
+    },
+    {
+      "id": 453,
+      "category": "animation_freeze",
+      "defect": "Multiple camera angles per tick"
+    },
+    {
+      "id": 454,
+      "category": "animation_freeze",
+      "defect": "Side-by-side frame comparison tool"
+    },
+    {
+      "id": 455,
+      "category": "animation_freeze",
+      "defect": "Automated frame differencing"
+    },
+    {
+      "id": 456,
+      "category": "animation_freeze",
+      "defect": "Pixel-diff between consecutive frames"
+    },
+    {
+      "id": 457,
+      "category": "animation_freeze",
+      "defect": "Animation-specific shot mode"
+    },
+    {
+      "id": 458,
+      "category": "animation_freeze",
+      "defect": "--animate flag for game_loop"
+    },
+    {
+      "id": 459,
+      "category": "animation_freeze",
+      "defect": "Animation review mode: --shot-anim 1 8 --camera close"
+    },
+    {
+      "id": 460,
+      "category": "animation_freeze",
+      "defect": "Tooling investment would pay for itself in faster iteration"
+    },
+    {
+      "id": 461,
+      "category": "animation_freeze",
+      "defect": "Root cause: animation playback not wired in default rendering path"
+    },
+    {
+      "id": 462,
+      "category": "animation_freeze",
+      "defect": "Secondary cause: shot mode captures truth state, not animation state"
+    },
+    {
+      "id": 463,
+      "category": "animation_freeze",
+      "defect": "Tertiary cause: no integration test for animation playback"
+    },
+    {
+      "id": 464,
+      "category": "animation_freeze",
+      "defect": "Systemic cause: animation treated as optional feature, not core functionality"
+    },
+    {
+      "id": 465,
+      "category": "animation_freeze",
+      "defect": "Cultural cause: project prioritizes truth verification over presentation"
+    },
+    {
+      "id": 466,
+      "category": "animation_freeze",
+      "defect": "Historical cause: animation clips were removed from repo, breaking playback"
+    },
+    {
+      "id": 467,
+      "category": "animation_freeze",
+      "defect": "Organizational cause: no owner for animation playback integration"
+    },
+    {
+      "id": 468,
+      "category": "animation_freeze",
+      "defect": "Process cause: pipeline verified loading, not playback"
+    },
+    {
+      "id": 469,
+      "category": "animation_freeze",
+      "defect": "Testing cause: test suite has no animation playback tests"
+    },
+    {
+      "id": 470,
+      "category": "animation_freeze",
+      "defect": "Documentation cause: animation activation is undocumented"
+    },
+    {
+      "id": 471,
+      "category": "animation_freeze",
+      "defect": "Onboarding cause: new developers can't discover animation"
+    },
+    {
+      "id": 472,
+      "category": "animation_freeze",
+      "defect": "All causes converge on one symptom: frozen characters"
+    },
+    {
+      "id": 473,
+      "category": "animation_freeze",
+      "defect": "The symptom is visible, the causes are hidden"
+    },
+    {
+      "id": 474,
+      "category": "animation_freeze",
+      "defect": "Each cause is individually fixable"
+    },
+    {
+      "id": 475,
+      "category": "animation_freeze",
+      "defect": "Together they form a systemic failure"
+    },
+    {
+      "id": 476,
+      "category": "animation_freeze",
+      "defect": "Systemic failures require systemic solutions"
+    },
+    {
+      "id": 477,
+      "category": "animation_freeze",
+      "defect": "A systemic solution addresses all causes simultaneously"
+    },
+    {
+      "id": 478,
+      "category": "animation_freeze",
+      "defect": "Piecemeal fixes would leave gaps"
+    },
+    {
+      "id": 479,
+      "category": "animation_freeze",
+      "defect": "The playback defect is the project's highest-priority animation issue"
+    },
+    {
+      "id": 480,
+      "category": "animation_freeze",
+      "defect": "Fixing playback would resolve ~400 of the 500 defects in this audit"
+    },
+    {
+      "id": 481,
+      "category": "animation_freeze",
+      "defect": "The remaining ~100 are quality defects that require playback to assess"
+    },
+    {
+      "id": 482,
+      "category": "animation_freeze",
+      "defect": "This audit is 80% about one root cause"
+    },
+    {
+      "id": 483,
+      "category": "animation_freeze",
+      "defect": "The root cause has a known fix: wire animation sampling into shot rendering"
+    },
+    {
+      "id": 484,
+      "category": "animation_freeze",
+      "defect": "The fix is small: one function call in the right place"
+    },
+    {
+      "id": 485,
+      "category": "animation_freeze",
+      "defect": "The impact is enormous: unlock all animation work"
+    },
+    {
+      "id": 486,
+      "category": "animation_freeze",
+      "defect": "Cost of fix: ~1 hour of engineering"
+    },
+    {
+      "id": 487,
+      "category": "animation_freeze",
+      "defect": "Value of fix: 500-defect audit becomes assessable, animation quality work begins"
+    },
+    {
+      "id": 488,
+      "category": "animation_freeze",
+      "defect": "ROI of fixing playback is astronomical"
+    },
+    {
+      "id": 489,
+      "category": "animation_freeze",
+      "defect": "This is the highest-leverage change in the entire project"
+    },
+    {
+      "id": 490,
+      "category": "animation_freeze",
+      "defect": "One line of code could make characters move"
+    },
+    {
+      "id": 491,
+      "category": "animation_freeze",
+      "defect": "The gap between frozen and animated is one function call"
+    },
+    {
+      "id": 492,
+      "category": "animation_freeze",
+      "defect": "That function call is the most important missing line in the codebase"
+    },
+    {
+      "id": 493,
+      "category": "animation_freeze",
+      "defect": "Every animation clip, every MotionBricks model, every retargeting pipeline"
+    },
+    {
+      "id": 494,
+      "category": "animation_freeze",
+      "defect": "All of it is useless without that one function call"
+    },
+    {
+      "id": 495,
+      "category": "animation_freeze",
+      "defect": "The entire animation investment returns zero until playback works"
+    },
+    {
+      "id": 496,
+      "category": "animation_freeze",
+      "defect": "Months of animation infrastructure development produce static renders"
+    },
+    {
+      "id": 497,
+      "category": "animation_freeze",
+      "defect": "The project has built a Ferrari and never started the engine"
+    },
+    {
+      "id": 498,
+      "category": "animation_freeze",
+      "defect": "Start the engine"
+    },
+    {
+      "id": 499,
+      "category": "animation_freeze",
+      "defect": "The walk approach should show two characters walking toward each other"
+    },
+    {
+      "id": 500,
+      "category": "animation_freeze",
+      "defect": "Instead it shows two frozen mannequins \u2014 the defining defect of Just Dodge animation"
+    }
+  ]
+}
