@@ -145,14 +145,23 @@ impl HeroStrikePresentation {
         let mut foot_targets = None;
         for (index, frame) in source_frames.iter().enumerate() {
             validate_source_frame(frame, index)?;
-            let skin = if let Some(targets) = foot_targets {
+            let skin_result = if let Some(targets) = foot_targets {
+                // The canonical armored carrier can close every planted-foot
+                // target. Other 24-bone presentation carriers may differ by a
+                // few millimetres in leg length; keep the finite retargeted
+                // pose rather than rejecting the whole presentation clip.
+                // This fallback never feeds cleanbox or combat truth.
                 motion_retarget::retarget_g1_frame_to_armored_skin_with_foot_targets(
                     mesh, reference, frame, targets,
                 )
+                .or_else(|_| {
+                    motion_retarget::retarget_g1_frame_to_armored_skin(mesh, reference, frame)
+                })
             } else {
                 motion_retarget::retarget_g1_frame_to_armored_skin(mesh, reference, frame)
-            }
-            .with_context(|| format!("retarget R6 hero Strike frame {index}"))?;
+            };
+            let skin =
+                skin_result.with_context(|| format!("retarget R6 hero Strike frame {index}"))?;
             let world: [Mat4; 24] =
                 std::array::from_fn(|joint| skin[joint] * mesh.bones[joint].inverse_bind.inverse());
             foot_targets.get_or_insert([

@@ -36,18 +36,16 @@
 
 ## Active Unit
 
-**Unit ID:** PH1-FIGHTER-001
-**Mode:** Meshy web → Blender validation → engine cook → visual gate
-**Goal:** One properly proportioned fighter with clean topology, no fused fingers, no clipping, anatomically correct T-pose, rendered in-engine.
-**Pipeline:**
-1. Generate multi-view reference images (GPT Image) — front, side, back, 3/4 — deep-sim readability pillars
-2. Generate fighter in Meshy web (multi-view image-to-3D, custom T-pose, Smart Topology for separated parts)
-3. Download candidate GLB, inspect in Blender headless (geometry, rig, materials)
-4. Cook for engine (SKM1 + ANM1 format)
-5. Load in game_loop, capture native screenshot + GIF
-6. Show owner: visual checklist → Accept/Reject/Needs Changes
-**Baseline:** One completed but uninspected Meshy task (`019f85a5-b944-7d64-8e54-6dcbdf5619d7`) exists. Inspect it first; if acceptable, use it; if not, generate fresh.
-**Current Status:** PH1-FIGHTER-001: 3 Meshy API attempts REJECTED (019f85a5, 019f85f0, 019f862a — 90 credits, zero usable output). Meshy API retired. Canonical workflow: Agent generates + validates reference images → Owner submits via Meshy web UI (Smart Topology + T-Pose + Multi-view) → Owner reviews preview → Agent validates downloaded GLB. ph1_fighter_002 references validated (21/21 PASS). Waiting for owner web submission. Hard numeric gates: ≤25K verts, ≤50K tris, watertight, ≥24 bones. game-asset-pipeline skill: API replaced by web workflow.
+**Unit ID:** PH1-STRIKE-002
+**Mode:** Implementation
+**Goal:** Wire the admitted `hero_strike` MotionBricks clip into `game_loop` as presentation-only Strike animation.
+**Expected Behavior:** `Intent::Strike` samples retargeted 24-bone hero-strike poses over the action timeline; idle and non-Strike presentation remain unchanged, and truth/combat resolution is untouched.
+**Expected Files Changed:** `src/bin/game_loop.rs`, `.hermes/atomic_ledger.md` (only if needed for evidence)
+**Exact Validation Command:** `cargo check --locked --bin game_loop` followed by `cargo run --locked --bin game_loop -- --shot <ticks> <out_dir>` with artifact inspection.
+**Baseline Result:** Pending fresh baseline check.
+**Strike Count:** 0
+**Rollback Plan:** Revert only the `game_loop.rs` integration hunk; keep the existing clip and retargeting modules unchanged.
+**Current Status:** In Progress
 
 ## Pending Units
 

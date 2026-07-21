@@ -125,3 +125,10 @@ The evidence review tool must follow these rules (derived from `ayghri/i-have-ad
 ## Next Canon Amendment
 
 This canon is amended only by explicit user decision, never by drift. Any amendment must update this file and the affected PRDs.
+
+## Technique Forge (Future Feature — Design Complete)
+
+**Status:** Post-first-playable. Depends on interaction-conditioned MotionBricks,
+active ragdoll, shared articulated physics, pose-derived collision.
+
+Full design: docs/design/TECHNIQUE_FORGE_DESIGN.md (to be written from 2026-07-21 session)

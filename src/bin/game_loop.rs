@@ -6,6 +6,7 @@
 //! `--smoke N` for a deterministic, headless truth-only receipt.
 
 use std::{
+    path::Path,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -13,6 +14,7 @@ use std::{
 use glam::{Mat4, Quat, Vec3, Vec3Swizzles, vec3};
 use just_dodge::{
     asset::{self, SkeletalAnimation, SkinnedMeshData},
+    hero_strike::{CONTACT_FRAME, FRAME_COUNT, HeroStrikePresentation},
     hud,
     intent::{
         ForecastOutcome, Intent, MoveDirection, PlanPhase, PlanSnapshot, PlanStatus, StrikeVariant,
@@ -34,6 +36,23 @@ const TRUTH_STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MANNEQUIN_SKIN: &str = "source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin";
 const WALK_ANIMATION: &str = "source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim";
 const RUN_ANIMATION: &str = "source/meshy/c0_base_fighter/rigged_001/cooked/running.anim";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AnimationClip {
+    Reference,
+    Walk,
+    Run,
+    HeroStrike,
+}
+
+fn animation_for_intent(intent: Option<Intent>) -> AnimationClip {
+    match intent {
+        Some(Intent::Move { .. }) => AnimationClip::Walk,
+        Some(Intent::Dodge { .. }) => AnimationClip::Run,
+        Some(Intent::Strike { .. }) => AnimationClip::HeroStrike,
+        _ => AnimationClip::Reference,
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum CameraMode {
@@ -62,6 +81,7 @@ struct PresentationAssets {
     reference_skin: Vec<Mat4>,
     walk_skins: Vec<Vec<Mat4>>,
     run_skins: Vec<Vec<Mat4>>,
+    hero_strike: HeroStrikePresentation,
 }
 
 impl PresentationAssets {
@@ -80,22 +100,184 @@ impl PresentationAssets {
             .expect("M2 requires c0 base-fighter walking.anim");
         let run = asset::load_skeletal_animation(&format!("{assets_root}/{RUN_ANIMATION}"))
             .expect("M2 requires c0 base-fighter running.anim");
+        let hero_strike = HeroStrikePresentation::load(Path::new(assets_root), &mesh)
+            .expect("M2 requires the admitted PVP005-R6 hero Strike clip");
         Self {
             walk_skins: animation_skins(&mesh, &walk),
             run_skins: animation_skins(&mesh, &run),
             mesh,
             reference_skin,
+            hero_strike,
         }
     }
 
-    fn skin_for(&self, intent: Option<Intent>, truth_frame: u64) -> Vec<Mat4> {
-        match intent {
-            Some(Intent::Move { .. }) => sample_skin(&self.walk_skins, truth_frame)
+    fn skin_for(&self, intent: Option<Intent>, animation_tick: u64, action_tick: u16) -> Vec<Mat4> {
+        match animation_for_intent(intent) {
+            AnimationClip::Walk => sample_skin(&self.walk_skins, animation_tick)
                 .unwrap_or_else(|| self.reference_skin.clone()),
-            Some(Intent::Dodge { .. }) => sample_skin(&self.run_skins, truth_frame)
+            AnimationClip::Run => sample_skin(&self.run_skins, animation_tick)
                 .unwrap_or_else(|| self.reference_skin.clone()),
-            Some(intent) => placeholder_skin(&self.mesh, intent),
-            None => self.reference_skin.clone(),
+            AnimationClip::HeroStrike => {
+                let intent = intent.expect("HeroStrike clip requires a Strike intent");
+                let frame = hero_strike_frame_for_tick(intent, action_tick);
+                self.hero_strike.sample(frame, Mat4::IDENTITY).skin.to_vec()
+            }
+            AnimationClip::Reference => intent
+                .map(|intent| placeholder_skin(&self.mesh, intent))
+                .unwrap_or_else(|| self.reference_skin.clone()),
+        }
+    }
+}
+
+const MATCH_SETUP_TICKS: u64 = 60;
+const MATCH_COUNTDOWN_TICKS: u64 = 30;
+const MATCH_EXCHANGES: u8 = 3;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MatchStage {
+    Boot,
+    MatchSetup,
+    Countdown,
+    Fight,
+    Result,
+}
+
+impl MatchStage {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Boot => "Boot",
+            Self::MatchSetup => "MatchSetup",
+            Self::Countdown => "Countdown",
+            Self::Fight => "Fight",
+            Self::Result => "Result",
+        }
+    }
+}
+
+/// Presentation-only automated match driver. It submits ordinary `PlanPhase`
+/// intents and advances its existing truth tick; it owns no combat state and
+/// does not alter the resolution rules.
+#[derive(Debug)]
+struct MatchLoop {
+    stage: MatchStage,
+    stage_tick: u64,
+    exchanges_started: u8,
+    finish_after_boundary: bool,
+}
+
+impl MatchLoop {
+    const fn new() -> Self {
+        Self {
+            stage: MatchStage::Boot,
+            stage_tick: 0,
+            exchanges_started: 0,
+            finish_after_boundary: false,
+        }
+    }
+
+    fn stage(&self) -> MatchStage {
+        self.stage
+    }
+
+    fn presentation_intents(&self, snapshot: &PlanSnapshot) -> [Option<Intent>; 2] {
+        match self.stage {
+            // Setup is a presentation runway: the PlanPhase mapping is reused
+            // with a Move intent, while authoritative roots remain untouched.
+            MatchStage::MatchSetup => [
+                Some(Intent::move_standard(MoveDirection::Approach)),
+                Some(Intent::move_standard(MoveDirection::Approach)),
+            ],
+            MatchStage::Fight => snapshot.locked,
+            MatchStage::Boot | MatchStage::Countdown | MatchStage::Result => [None, None],
+        }
+    }
+
+    fn animation_ticks(&self, snapshot: &PlanSnapshot) -> [u64; 2] {
+        match self.stage {
+            MatchStage::MatchSetup => [self.stage_tick; 2],
+            _ => [
+                u64::from(snapshot.action_ticks[0]),
+                u64::from(snapshot.action_ticks[1]),
+            ],
+        }
+    }
+
+    fn step(&mut self, phase: &mut PlanPhase) {
+        match self.stage {
+            MatchStage::Boot => {
+                self.stage = MatchStage::MatchSetup;
+                self.stage_tick = 0;
+            }
+            MatchStage::MatchSetup => {
+                self.stage_tick = self.stage_tick.saturating_add(1);
+                if self.stage_tick >= MATCH_SETUP_TICKS {
+                    self.stage = MatchStage::Countdown;
+                    self.stage_tick = 0;
+                }
+            }
+            MatchStage::Countdown => {
+                self.stage_tick = self.stage_tick.saturating_add(1);
+                if self.stage_tick >= MATCH_COUNTDOWN_TICKS {
+                    self.stage = MatchStage::Fight;
+                    self.stage_tick = 0;
+                }
+            }
+            MatchStage::Fight => self.step_fight(phase),
+            MatchStage::Result => {
+                self.stage_tick = self.stage_tick.saturating_add(1);
+            }
+        }
+    }
+
+    fn step_fight(&mut self, phase: &mut PlanPhase) {
+        if phase.status() == PlanStatus::Planning {
+            if self.finish_after_boundary {
+                self.stage = MatchStage::Result;
+                self.stage_tick = 0;
+                return;
+            }
+            let (player, opponent) = match self.exchanges_started {
+                0 => (
+                    Intent::move_standard(MoveDirection::Approach),
+                    Intent::move_standard(MoveDirection::Approach),
+                ),
+                1 => (
+                    Intent::Dodge {
+                        dir: MoveDirection::LateralLeft,
+                    },
+                    Intent::Strike {
+                        variant: StrikeVariant::Slash,
+                    },
+                ),
+                _ => (
+                    Intent::Strike {
+                        variant: StrikeVariant::Slash,
+                    },
+                    Intent::Dodge {
+                        dir: MoveDirection::LateralRight,
+                    },
+                ),
+            };
+            for (side, intent) in [(Side::Player, player), (Side::Opponent, opponent)] {
+                if phase.can_submit_intent(side) {
+                    phase
+                        .submit_intent(side, intent)
+                        .expect("automated match intents must be admissible");
+                }
+            }
+            assert_eq!(
+                phase.status(),
+                PlanStatus::Executing {
+                    frames_remaining: u16::MAX
+                },
+                "automated match must lock both PlanPhase sides"
+            );
+            self.exchanges_started = self.exchanges_started.saturating_add(1);
+            self.finish_after_boundary = self.exchanges_started >= MATCH_EXCHANGES;
+        } else {
+            phase
+                .step_truth_tick()
+                .expect("automated match must advance a locked PlanPhase tick");
         }
     }
 }
@@ -122,6 +304,122 @@ fn animation_skins(mesh: &SkinnedMeshData, animation: &SkeletalAnimation) -> Vec
 
 fn sample_skin(frames: &[Vec<Mat4>], truth_frame: u64) -> Option<Vec<Mat4>> {
     (!frames.is_empty()).then(|| frames[truth_frame as usize % frames.len()].clone())
+}
+
+/// Map a 60 Hz authoritative Strike action onto the 64-frame source clip.
+///
+/// The source clip has no trusted FPS metadata, so timing is driven by the
+/// intent-owned startup/active/IASA windows rather than wall-clock seconds:
+/// wind-up ends at the first hitbox tick, contact occupies the hitbox window,
+/// follow-through ends at IASA, and the remaining source frames are recovery.
+fn hero_strike_frame_for_tick(intent: Intent, action_tick: u16) -> usize {
+    let Intent::Strike { .. } = intent else {
+        return 0;
+    };
+    let state = intent.state();
+    let last_tick = state.anim_length.saturating_sub(1);
+    let hitbox = intent
+        .hitboxes()
+        .first()
+        .copied()
+        .expect("Strike presentation requires a hitbox timing row");
+    let contact_tick = hitbox.start_tick.min(last_tick);
+    let active_end_tick = contact_tick
+        .saturating_add(hitbox.active_ticks.saturating_sub(1))
+        .min(last_tick);
+    let recovery_start_tick = state.iasa_at.min(last_tick).max(active_end_tick);
+    let tick = action_tick.min(last_tick);
+    let active_end_frame = (CONTACT_FRAME + 8).min(FRAME_COUNT - 1);
+    let follow_through_end_frame = FRAME_COUNT - 9;
+
+    if tick <= contact_tick {
+        scale_clip_frame(tick, 0, contact_tick, 0, CONTACT_FRAME)
+    } else if tick <= active_end_tick {
+        scale_clip_frame(
+            tick,
+            contact_tick,
+            active_end_tick,
+            CONTACT_FRAME,
+            active_end_frame,
+        )
+    } else if tick <= recovery_start_tick {
+        scale_clip_frame(
+            tick,
+            active_end_tick,
+            recovery_start_tick,
+            active_end_frame,
+            follow_through_end_frame,
+        )
+    } else {
+        scale_clip_frame(
+            tick,
+            recovery_start_tick,
+            last_tick,
+            follow_through_end_frame,
+            FRAME_COUNT - 1,
+        )
+    }
+}
+
+fn scale_clip_frame(
+    tick: u16,
+    first_tick: u16,
+    last_tick: u16,
+    first_frame: usize,
+    last_frame: usize,
+) -> usize {
+    if tick <= first_tick || first_tick >= last_tick {
+        return first_frame;
+    }
+    if tick >= last_tick {
+        return last_frame;
+    }
+    let tick_span = usize::from(last_tick - first_tick);
+    first_frame
+        + (usize::from(tick - first_tick) * (last_frame - first_frame) + tick_span / 2) / tick_span
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hero_strike_timeline_follows_authoritative_slash_windows() {
+        let intent = Intent::Strike {
+            variant: StrikeVariant::Slash,
+        };
+        let frames: Vec<usize> = (0..=intent.state().anim_length)
+            .map(|tick| hero_strike_frame_for_tick(intent, tick))
+            .collect();
+        assert_eq!(frames[0], 0);
+        assert_eq!(frames[4], CONTACT_FRAME, "slash contact starts at tick 4");
+        assert!(
+            frames[4] < frames[9],
+            "active contact advances the source clip"
+        );
+        assert!(
+            frames[9] < frames[17],
+            "follow-through advances before IASA"
+        );
+        assert_eq!(
+            frames[21],
+            FRAME_COUNT - 1,
+            "recovery reaches the clip tail"
+        );
+        assert!(frames.windows(2).all(|pair| pair[0] <= pair[1]));
+    }
+
+    #[test]
+    fn hero_strike_timeline_uses_thrust_hitbox_start() {
+        let intent = Intent::Strike {
+            variant: StrikeVariant::Thrust,
+        };
+        assert_eq!(hero_strike_frame_for_tick(intent, 3), CONTACT_FRAME);
+        assert_eq!(
+            hero_strike_frame_for_tick(intent, intent.state().anim_length - 1),
+            FRAME_COUNT - 1
+        );
+    }
 }
 
 fn placeholder_skin(mesh: &SkinnedMeshData, intent: Intent) -> Vec<Mat4> {
@@ -742,7 +1040,11 @@ impl GameLoopApp {
             )
             .to_vec()
         } else {
-            presentation.skin_for(snapshot.locked[0], snapshot.truth_frame)
+            presentation.skin_for(
+                snapshot.locked[0],
+                snapshot.truth_frame,
+                snapshot.action_ticks[0],
+            )
         };
         let opponent_skin = if let Some((_, adapter)) = self.motion.as_ref() {
             asset::compute_skin_matrices(
@@ -751,7 +1053,11 @@ impl GameLoopApp {
             )
             .to_vec()
         } else {
-            presentation.skin_for(snapshot.locked[1], snapshot.truth_frame)
+            presentation.skin_for(
+                snapshot.locked[1],
+                snapshot.truth_frame,
+                snapshot.action_ticks[1],
+            )
         };
         renderer.update_camera(queue, &proj_view);
         renderer.upload_debug_mvp(queue, &proj_view);
@@ -1029,8 +1335,11 @@ fn ghost_segments(
         let roots = [root_pos_vec(player_end), root_pos_vec(opponent_end)];
         for side in 0..2 {
             let model = fighter_model(roots[side], roots[1 - side]);
-            let skin =
-                presentation.skin_for(outcome.locked[side], outcome.end_snapshot.truth_frame);
+            let skin = presentation.skin_for(
+                outcome.locked[side],
+                outcome.end_snapshot.truth_frame,
+                outcome.end_snapshot.action_ticks[side],
+            );
             segments.extend(skeleton_segments(mesh, &skin, model, GHOST_COLORS[side]));
         }
     }
@@ -1144,16 +1453,107 @@ fn shot_args() -> Option<(u64, String)> {
     Some((ticks, out_dir))
 }
 
+fn match_requested() -> bool {
+    std::env::args().any(|arg| arg == "--match")
+}
+
+fn pose_fingerprint(skin: &[Mat4]) -> u64 {
+    let mut hash = 0xcbf2_9ce4_8422_2325_u64;
+    for matrix in skin {
+        for value in matrix.to_cols_array() {
+            hash ^= u64::from(value.to_bits());
+            hash = hash.wrapping_mul(0x1000_0000_01b3);
+        }
+    }
+    hash
+}
+
+fn run_match() {
+    let assets_root = std::env::var("JUSTDODGE_ASSETS").unwrap_or_else(|_| "assets".to_owned());
+    let mannequin_path = format!("{assets_root}/{MANNEQUIN_SKIN}");
+    unsafe {
+        std::env::set_var("JUSTDODGE_C0_SKIN", mannequin_path);
+        std::env::set_var("JUSTDODGE_C0_FLAT_COLOR", "1");
+    }
+    let presentation = PresentationAssets::load(&assets_root);
+    let mut phase = PlanPhase::new();
+    let mut match_loop = MatchLoop::new();
+    let mut stage_seen = [false; 5];
+    let mut clip_seen = [[false; 4]; 2];
+    let mut pose_changes = [0_u32; 2];
+    let mut last_pose = [None; 2];
+
+    for _ in 0..4096 {
+        let stage = match_loop.stage();
+        stage_seen[match stage {
+            MatchStage::Boot => 0,
+            MatchStage::MatchSetup => 1,
+            MatchStage::Countdown => 2,
+            MatchStage::Fight => 3,
+            MatchStage::Result => 4,
+        }] = true;
+        let snapshot = phase.snapshot();
+        let intents = match_loop.presentation_intents(&snapshot);
+        let animation_ticks = match_loop.animation_ticks(&snapshot);
+        for side in 0..2 {
+            let skin = presentation.skin_for(
+                intents[side],
+                animation_ticks[side],
+                snapshot.action_ticks[side],
+            );
+            let pose = pose_fingerprint(&skin);
+            if last_pose[side].is_some_and(|previous| previous != pose) {
+                pose_changes[side] = pose_changes[side].saturating_add(1);
+            }
+            last_pose[side] = Some(pose);
+            let clip_index = match animation_for_intent(intents[side]) {
+                AnimationClip::Reference => 0,
+                AnimationClip::Walk => 1,
+                AnimationClip::Run => 2,
+                AnimationClip::HeroStrike => 3,
+            };
+            clip_seen[side][clip_index] = true;
+        }
+        match_loop.step(&mut phase);
+        if match_loop.stage() == MatchStage::Result && match_loop.stage_tick >= 2 {
+            break;
+        }
+    }
+
+    assert!(
+        stage_seen.into_iter().all(|seen| seen),
+        "match must visit every stage"
+    );
+    assert!(
+        clip_seen
+            .iter()
+            .all(|clips| clips[1] && clips[2] && clips[3]),
+        "both fighters must select walk, run, and hero_strike clips"
+    );
+    assert!(
+        pose_changes.into_iter().all(|changes| changes > 0),
+        "both fighters must change rendered poses across match ticks"
+    );
+    assert_eq!(match_loop.stage(), MatchStage::Result);
+    println!(
+        "GAME_LOOP_MATCH stages=Boot>MatchSetup>Countdown>Fight>Result truth_frame={} exchanges={} p1_pose_changes={} p2_pose_changes={} clips=walk,run,hero_strike",
+        phase.snapshot().truth_frame,
+        match_loop.exchanges_started,
+        pose_changes[0],
+        pose_changes[1],
+    );
+}
+
 fn run_shot(ticks: u64, out_dir: &str) {
     // Drive the truth loop forward so the shot captures a mid-exchange pose.
+    // Shot mode defaults to a Move intent so the walk clip is exercised by the
+    // presentation path instead of only rendering a static action placeholder.
     let mut phase = PlanPhase::new();
     let mut player_phase = 0_u64;
     for _ in 0..ticks {
         lock_next_phase(
             &mut phase,
-            Intent::Strike {
-                variant: StrikeVariant::Slash,
-            },
+            Intent::move_standard(MoveDirection::Approach),
             player_phase,
             true,
             &[],
@@ -1238,8 +1638,12 @@ fn run_shot(ticks: u64, out_dir: &str) {
     let opponent_root = root_vec(&snapshot, Side::Opponent);
     let player_model = fighter_model(player_root, opponent_root);
     let opponent_model = fighter_model(opponent_root, player_root);
-    let player_skin = presentation.skin_for(snapshot.locked[0], snapshot.truth_frame);
-    let opponent_skin = presentation.skin_for(snapshot.locked[1], snapshot.truth_frame);
+    // The truth loop is advanced to the planning boundary for the forecast, so
+    // its final truth frame is the same for short and long shot requests. Keep
+    // the requested tick as the presentation clock so --shot 1 and --shot 5
+    // sample different walk/run frames.
+    let player_skin = presentation.skin_for(snapshot.locked[0], ticks, snapshot.action_ticks[0]);
+    let opponent_skin = presentation.skin_for(snapshot.locked[1], ticks, snapshot.action_ticks[1]);
     let aspect = w as f32 / h as f32;
 
     // F-111/F-112: forecast + HUD for the frozen boundary capture.
@@ -1398,6 +1802,10 @@ fn run_shot(ticks: u64, out_dir: &str) {
 }
 
 fn main() {
+    if match_requested() {
+        run_match();
+        return;
+    }
     if let Some(ticks) = smoke_ticks_from_args() {
         run_smoke(ticks);
         return;
