@@ -1,71 +1,66 @@
 # Atomic Task Ledger
 
+**Amended:** 2026-07-21 — post-exhaustive-interview reset
+
 ## Global Context
-**Global Goal:** Complete JD-NORTHSTAR-FULL-GAME-001 in strict SG order. SG01 passed against exact subject `f821c98245bfe9442256d3e3032c2f5d684349c4`; SG02 machine lifecycle passed at `c982c88482886388791b1057a9212e65b4c91351`, but the active wave remains SG02 because named human visual review rejected the carrier/readability. SG03+ implementation remains blocked.
-**Assumptions:**
-- The Linux golden replay suite at `b2266e5` is the current deterministic baseline.
-- Windows parity can be evaluated with a GitHub-hosted Windows runner after the branch is pushed.
-- Steam Deck parity requires a real Deck or an explicitly configured self-hosted Deck runner; cross-compilation is not a platform-execution substitute.
-**Unresolved Risks:**
-- No authorized Steam Deck execution surface has yet been evidenced. GitHub's runner query returned `total_count=0` for this repository.
 
-**Status Reconciliation (required by tools/verify_pvp005_revision_baseline.py):**
-- Published feature baseline: `4e481ccd59602c1cb4eda97183c32dec48f9a801`
-- Published branch: `pvp-005-readable-live-motion`
-- This ledger tracks work on `grab07-650mm-closure`, which descends from that published baseline history.
+**Global Goal:** Ship Just Dodge as a playable, deterministic, condition-driven intent-combat game with generative MotionBricks motion and deterministic physics. The old SG01→SG10 sequential infrastructure gating is retired; replaced by visual-first pipeline where every gate is a screenshot/GIF + owner decision.
 
----
+**Key amendment:** SG01-SG10 sequential gating consumed 95% of development on evidence infrastructure with 5% on gameplay across three projects (OATHYARD, Hustle & Honor, Just Dodge). The new pipeline delivers visual evidence at every step and gates on owner acceptance, not infrastructure completeness.
+
+**Active Phase:** PHASE-1 — Asset & Motion Proof
+
+## Visual-First Pipeline
+
+### PHASE-1: Asset & Motion Proof (active)
+
+**Unit ID:** PH1-FIGHTER-001
+**Goal:** Generate a properly proportioned, anatomically correct fighter in Meshy web → validate in Blender → cook for engine → show owner screenshot + GIF of T-pose in-engine.
+**Acceptance:** Owner sees screenshot/GIF, picks Accept/Reject/Needs Changes. 30-second decision.
+
+**Unit ID:** PH1-STRIKE-001 (blocked by PH1-FIGHTER-001)
+**Goal:** Generate one clean strike motion via MotionBricks → retarget to fighter skeleton → skinned render → show owner GIF of the strike.
+**Acceptance:** Owner sees GIF, picks Accept/Reject/Needs Changes.
+
+**Unit ID:** PH1-BLOCK-GRAB-001 (blocked by PH1-STRIKE-001)
+**Goal:** Generate clean block and grab motions → show owner GIFs → iterate until accepted.
+
+### PHASE-2: Playable Vertical Slice (blocked by PHASE-1)
+
+**Goal:** Wire accepted fighter + motion into game_loop. Implement full match flow: Boot → Observe → Plan Intent → Commit → Reveal → Resolve → Consequence → Result → Rematch. Add AI opponent, injury, camera, basic UI.
+**Acceptance:** Owner sees video of complete match → Accept/Reject.
+
+### PHASE-3: Full Game (blocked by PHASE-2)
+
+**Goal:** Expand to 13 actions, multiple fighters/weapons/arenas. Add replay theater, fight film, audio, tutorial. Steam packaging.
 
 ## Active Unit
-**Unit ID:** SG02-VISUAL-CARRIER-REPLACEMENT-003
-**Mode:** Source-first DCC replacement and native renderer integration; no incremental repair of the rejected carrier
-**Goal:** Replace the fragmented floating-block lifecycle carrier with one coherent, validly skinned fighter; redo weapon and armor presentation; bind the weapon through calibrated grip metadata; remove player-facing diagnostic geometry; and keep both fighters readable through Countdown, Consequence and Fight Film without changing combat truth. All source channels are permissible; completion to the expected scope and visual standard is the priority.
-**Expected Behavior:** The runtime consumes a coherent mesh with real JOINTS/WEIGHTS or an equivalent audited skin sidecar. Armor remains visibly associated with the fighter. The weapon follows a named grip/socket calibration rather than arbitrary transforms. No disconnected body fragments, black proxy feet, floating weapons, orange diagnostic overlays or single-fighter empty compositions appear in capture mode. Presentation remains read-only with respect to truth and the machine lifecycle receipts stay byte-for-byte deterministic.
-**Expected Files Changed:** `.hermes/atomic_ledger.md`; one quarantined source/manifest tree under `assets/foundation/v2/qa/sg02_visual_carrier_replacement/`; only the required `src/asset.rs`, `src/renderer.rs`, `src/main.rs`, focused tests, and `docs/reports/SG02_MATCH_LIFECYCLE_AUDIT_20260721.json`. No later-wave AI, motion-policy, audio or world-content promotion.
-**Exact Validation Command:** Hash-bind source identity and inspect skin data without treating source permission as a gate; GLB/scene reimport; finite/manifold/UV/material/JOINTS/WEIGHTS checks; <=4 normalized influences unless the existing eight-influence contract is explicitly preserved; named grip/socket and calibration checks; native lifecycle run with truth-isolation receipt; actual Countdown/Consequence/Fight Film captures; agent visual inspection; named human review; then fmt, warning-denying Clippy, all tests, no-default checks, 100 replay reconstruction, clean checkout and same-commit CI.
-**Baseline Result:** Seven authorized native captures at `c982c88482886388791b1057a9212e65b4c91351` proved the window provenance but showed disconnected metallic body points, black disc feet, independently floating weapon bars, frequent missing rival composition, and exposed orange diagnostic geometry. The owner rejected lifecycle readability as "barely identifiable and far from AAA standards" and retained all geometry/grip/camera/overlay findings as release blockers.
-**Strike Count:** 1 — the existing Ruby source candidate had coherent geometry and full finger bones, but the owner explicitly rejected Ruby before integration; all downloaded textures, candidate outputs and build tooling from that attempt were deleted. Do not reuse Ruby. Hard inherited guard: SG02-FIGHTER-BINDING-004 and the subsequent articulated-hand/grasp canaries already exhausted two methods; do not retry preserve-world parenting, single-bone shell attachment, or the failed MPFB/Rigify deformation approach.
-**Rollback Plan:** Revert only the new quarantined replacement tree and its explicit renderer integration; preserve the machine lifecycle implementation, SG01 receipts, unrelated user work and all rejected evidence hashes.
-**Current Status:** IN PROGRESS — human rejection and seven screenshot hashes are recorded in `docs/reports/SG02_MATCH_LIFECYCLE_AUDIT_20260721.json`. The first replacement source was rejected and fully rolled back. Asset development is paused behind `docs/research/FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md`, which defines the image-conditioned multi-view prompt and Blender-repair protocol. Frontier candidate creation now routes through Meshy's web workflow for visual comparison, custom pose, multi-view, healing and eligible Auto Split; API/MCP is reserved for locked repeatable batches, and Blender remains the mechanical admission path. One original deep-sim fighter generation (`Meshy task 019f85a5-b944-7d64-8e54-6dcbdf5619d7`) completed but remains undownloaded and unpromoted pending research closure and direct inspection. SG02 and SG03 promotion remain blocked.
 
----
+**Unit ID:** PH1-FIGHTER-001
+**Mode:** Meshy web → Blender validation → engine cook → visual gate
+**Goal:** One properly proportioned fighter with clean topology, no fused fingers, no clipping, anatomically correct T-pose, rendered in-engine.
+**Pipeline:**
+1. Generate multi-view reference images (GPT Image) — front, side, back, 3/4 — deep-sim readability pillars
+2. Generate fighter in Meshy web (multi-view image-to-3D, custom T-pose, Smart Topology for separated parts)
+3. Download candidate GLB, inspect in Blender headless (geometry, rig, materials)
+4. Cook for engine (SKM1 + ANM1 format)
+5. Load in game_loop, capture native screenshot + GIF
+6. Show owner: visual checklist → Accept/Reject/Needs Changes
+**Baseline:** One completed but uninspected Meshy task (`019f85a5-b944-7d64-8e54-6dcbdf5619d7`) exists. Inspect it first; if acceptable, use it; if not, generate fresh.
+**Current Status:** IN PROGRESS — GAME_CANON.md amended. Asset pipeline research complete at `docs/research/FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md`. Meshy web workflow preferred over API/MCP for visual iteration.
 
 ## Pending Units
 
+- PH1-STRIKE-001: MotionBricks strike generation (blocked by PH1-FIGHTER-001)
+- PH1-BLOCK-GRAB-001: Block and grab motions (blocked by PH1-STRIKE-001)
+- PH2-VERTICAL-SLICE-001: Full playable match loop (blocked by PHASE-1)
 
-- SG02-AGENTIC-ASSET-RECOVERY-RESEARCH-005: Research complete and retained as a parked SG02 input. The failed harness remains stopped; no canary resumes before SG01 PASS.
-- SG02-TYPED-RIGIFY-GRIP-CANARY-006: New quarantined canary justified by the completed research and typed-DCC proof. Use only searched/described typed calls with a saved checkpoint and readback after every mutation; create one `Grip_R` frame and analytical handle; bind/rotate one selected finger with hold/revert semantics before four fingers/thumb; validate neutral/30°/60° bends, thumb opposition, metacarpal load, finite geometry, <=4 normalized influences, relative finger-length error <=`1e-4`, contact gap <=15 mm, prohibited penetration <=0.5 mm, one bounded deform skeleton and clean GLB reimport. Any graft uses deterministic unequal-loop correspondence with count/displacement/manifold receipt and no automatic merge before visual/deformation QA. Render palm/edge/blade-axis/first-person views; stop before human promotion.
-- SG02-BLENDER-QA-KIT-REDO-004: Parked after two articulated hand/grasp failures. Preserve `path_b_mixamo_canary_manifest.json` and the successful armor-weight canaries; resume only through SG02-TYPED-RIGIFY-GRIP-CANARY-006.
-- SG02-CROSS-PLATFORM-PARITY-001: Preserve existing receipt infrastructure for later supported-platform replay verification; it is not the current SG02 lifecycle completion contract.
-- SG03-REACTIVE-AI-001: Do not implement until SG02 lifecycle headless and human gates pass.
+## Retired Infrastructure Gates
 
----
+The following SG01-SG10 units are retired/archived. Their evidence and receipts are preserved for provenance but no longer gate gameplay progress:
 
-## Blocked / Failed Units
-- SG02-FIGHTER-BINDING-004 STRIKE 2: Attempt 1 used preserve-world bone parenting and sword grip alignment; visual evidence showed torso/shoulder separation and no real grasp. Attempt 2 added foot masking, boot scaling, a milder pose and explicit finger curling; finger deformation exploded into multi-meter stretched triangles. Both share an unvalidated MPFB rig/control/bind-space root cause, while single-bone parenting is structurally insufficient for the one-piece torso/shoulder/hip shell. Rolled back to `080_full_fighter_assembly_unbound.blend`; rejected candidate blends were deleted. Evidence manifest: `assets/foundation/v2/qa/sg02_lifecycle_kit_redo/evidence/binding_failure_manifest.json`. Owner selected Path B. Body/armor retarget canaries passed, but two later articulated-hand/grasp methods failed; that narrower subunit remains parked pending a materially different research-backed falsifier.
-- VAMBRACE-BAKE-003 STRIKE 2: isolated Blender transform-bake probe failed twice on its acceptance assertions. Attempt 1 incorrectly used `obj.dimensions`, which is rotation-insensitive. Attempt 2 used transformed bound-box corners and proved rotation occurred (`0.27510485 × 0.09396478 × 0.32722867 m`) but rejected it with an unjustified `z < 0.31` threshold. No output GLBs were exported or promoted. Next falsifier: compute the quaternion that maps the source long axis to the measured MPFB wrist→elbow vector and assert normalized axis dot-product plus center/endpoints, not AABB shape.
-- VAMBRACE-FIT-002 STRIKE 2: `rotate_object` recorded ±36.5° Y rotations on both imported vambraces, but front render and world bounds remained vertical; `freeze_transforms(rotation=true)` also produced no visual or bound change. Rolled back by reopening `050_research_routed_assembly_v1.blend`. Evidence: `/tmp/hermes-sg02-redo-assembly-front-004-vambraces.png` and `/tmp/hermes-sg02-redo-assembly-front-005-vambraces-frozen.png`. Next falsifier: bake the known forearm-frame transforms into separate right/left GLBs in an isolated Blender process, re-import, and prove changed bounds before composition.
-- UNIT-2 v7 PASS: INVALID_EVIDENCE. The augmented training data was synthetic (scaled to 650mm), not real 650mm reach data. The model learned from augmented data, not real 650mm reach data. The gate was passed by manufacturing data, not by genuine learned interaction conditioning.
-
----
-
-## Recently Completed (Max 10)
-- SG01-EVIDENCE-CANON-RESET-002: Reconciled PR #2 and every active status/evidence boundary, quarantined invalid and retired evidence without deleting lineage, made prediction/runtime-contact/human-promotion states non-conflatable, repaired Windows/Linux receipt digest portability, and bound SG01 PASS to exact subject `f821c98245bfe9442256d3e3032c2f5d684349c4` while preserving G4/G5 blocks.
-  - *Validation Executed:* LOCAL CLEAN-CHECKOUT PASS. Detached clean checkout tree `944adad9e64afcbad5e1f3f6ae6bde9b4001533e` passed the complete canonical gate list with 419 tests passed / 3 environment-bound ignored / 0 failed; log SHA-256 `f7a0a0f1cb7869c8b8dd57b40ca1d9a5f1f8fab9d0bdbd6433160dcc6c5d8cbf`. Subject runs `29839120974` and `29839263563` and closure runs `29841723825` and `29841823773` all passed receipt reduction, Linux parity, Windows parity, and `verify`. Evidence Review `jd-sg01-progress-f821c98` recorded five accepted decisions and zero release blockers. Receipt: `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
-- DOC-PXPIPE-CANON-001: Rendered the adversarial visual audit before exact-text ingestion, rendered the complete bounded canonical game-design corpus, and propagated the resulting truth-authority, equipment attachment, genuine grip, camera and multi-stage evidence corrections across the governing canon/PRDs/QA/asset-pipeline docs. Added `docs/design/CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md`; marked the universal nine-action PRD historical; preserved all source code and SG02 asset candidates unchanged.
-  - *Validation Executed:* PXPipe integration 0.2.7/revision `6d0626874407d0ebf9e88924c597d82ed8e52abe` rendered the 319,478-character audit to 54 pages and 54 canonical design documents (427,041 characters) to 93 pages. Focused verifier checked 746,519 source characters, 147 PNG hashes/dimensions, 60 contact sheets, current source hashes/offsets, exact non-ASCII surrogates and zero dropped characters. Six audit sheets and four amended canonical-doc sheets received actual vision inspection with no clipping/corruption blocker. `git diff --check` passed for every touched tracked doc/ledger path; new-doc trailing-whitespace check passed; all temporary PXPipe/verifier scripts were absent after cleanup.
-- ASSET-PIPELINE-RESEARCH-AND-TOOLING-001: Added Smart Topology `meshy-t2` and Vinyl Figure support to a maintained Meshy MCP checkout, routed the wrapper to it, updated three governing skills, produced two dated research ledgers, and measured t2 against Meshy 6 standard on the same armor direction.
-  - *Validation Executed:* MCP TypeScript build passed; payload verifier passed; fresh MCP schema exposed `smart-topology`, `meshy-t2`, and `vinyl-figure`; `hermes mcp test meshy` connected with 24 tools; Meshy dummy Smart Topology create returned 202; live t2 task succeeded at 15 credits; Blender geometry/render comparison completed. FAL Trellis2 remained blocked by external `unsupported_pricing_meter`; direct FAL/Blender service keys are unset.
-- SG02-MATCH-LIFECYCLE-TEN-JOURNEYS-001: Added an integrated deterministic ten-match driver through the existing runtime flow, session, cleanbox, seeded AI, replay reconstruction and canonical rematch-authority reset seams; every journey terminates, reconstructs, and restarts from the exact next-seed initial hash.
-  - *Validation Executed:* Final fresh regression passed 10/10 journeys. The preceding tempfile canonical verifier passed fmt, clippy all targets `-D warnings`, all targets (250 library pass / 1 ignored; 165 main pass; integrations pass with two environment-bound ignores), no-default-features checks for `just-dodge` and `m3_match`, seven golden scenarios × 100 deterministic runs, Python manifest verification, and fail-closed tamper detection.
-- SG02-HERO-STRIKE-TEST-FIXTURE-001: Replaced eight retired-file dependencies with a deterministic in-memory 64-frame G1 interaction/24-bone carrier fixture while preserving target-following, segment-length, foot-plant, two-hand socket, head-facing, body-proxy, motion-lab metric, ghost, and residual assertions. Production `HeroStrikePresentation::load` still hash-verifies and fails closed; fixture construction is test-only evidence and cannot promote motion.
-  - *Validation Executed:* Fresh tempfile verifier passed all 8 hero-strike tests, fmt, clippy all targets `-D warnings`, all targets (250 library pass / 1 ignored; 165 main pass; integrations pass with two environment-bound ignores), ten deterministic journeys, no-default-features checks for `just-dodge` and `m3_match`, seven golden scenarios × 100 runs, Python manifest verification, fail-closed tamper detection, and legacy baked-source scan. Temp verifier cleanup passed.
-- SG02-MOTION-RETARGET-TEST-FIXTURE-001: Replaced the retired armored-duelist file dependency with a deterministic in-memory 24-bone hierarchy while preserving exact-pose reproducibility, finite/positive skin matrices, stable receipts, and source-driven overhead-hand assertions; production loading remains fail-closed.
-  - *Validation Executed:* Fresh tempfile verifier passed fmt, clippy all targets `-D warnings`, both motion-retarget tests, seven golden scenarios × 100 deterministic runs, Python manifest verification, and fail-closed tamper detection. Full suite advanced from 240 passed / 10 failed / 1 ignored to 242 passed / 8 failed / 1 ignored; all remaining failures are the hero-strike legacy-file family. Temp verifier cleanup passed.
-Older completed entries were archived to `.hermes/atomic_ledger_archive.md` on auto-compaction (oldest GRAB07-SEQ-CONCAT-001).
-- SG02-ASSET-TEST-FIXTURE-001: Replaced six retired-file dependencies in `asset.rs` tests with deterministic in-memory hierarchies while preserving dynamic-skin, world-retarget, chain-distribution, identity, rotation, and no-shear assertions; production loaders were unchanged and remain fail-closed.
-  - *Validation Executed:* Fresh tempfile verifier passed fmt, clippy all targets `-D warnings`, all 8 asset tests, seven golden scenarios × 100 deterministic runs, Python manifest verification, and fail-closed tamper detection. Full suite advanced from 234 passed / 16 failed / 1 ignored to 240 passed / 10 failed / 1 ignored; the exact remaining failures are eight hero-strike and two motion-retarget legacy-file dependencies. Temp verifier cleanup passed.
-- SG02-MATCH-LIFECYCLE-TRANSITION-COVERAGE-001: Added explicit one-shot Quit state and routed Q through `RuntimeFlow`; made menu return fail closed from Boot/Menu/Quit; exhaustively tested finish-boot/start/pause/replay/rematch/menu/quit across 7 outer screens × 7 truth phases plus Paused.
-  - *Validation Executed:* RED proved Quit was only a window-loop side effect and no transition matrix existed. Fresh ad-hoc verifier passed fmt, clippy all targets `-D warnings`, 418 tests / 3 ignored / 0 failed, no-default-features checks, truth-isolated quit from every reachable outer state, and seven golden scenarios × 100 runs with Python verification and fail-closed tamper test.
-- SG02-MATCH-LIFECYCLE-BOOT-SETUP-COUNTDOWN-001: Replaced the conflated Establishing screen with explicit Boot, MatchSetup, and Countdown states while preserving the existing 90-tick pre-duel duration as 30 setup + 60 countdown ticks; truth remains frozen and start/rematch/pause fail closed in all pre-duel states.
-  - *Validation Executed:* RED compile regression proved Boot/MatchSetup/Countdown were unrepresentable. Fresh ad-hoc verifier passed fmt, clippy all targets `-D warnings`, 416 tests / 3 ignored / 0 failed, no-default-features checks, exact pre-duel truth-hash preservation, and seven golden scenarios × 100 runs with Python verification and fail-closed tamper test.
+- SG01-EVIDENCE-CANON-RESET-002 (PASS, commit `f821c98`)
+- SG02-MATCH-LIFECYCLE (machine PASS, visual REJECTED at `c982c88`)
+- SG02-CROSS-PLATFORM-PARITY-001 (Linux only; Windows/Deck blocked)
+- SG02-VISUAL-CARRIER-REPLACEMENT-003 (IN PROGRESS — superseded by PH1-FIGHTER-001)
+- SG03-SG10 (not started; replaced by PHASE-2/PHASE-3)
