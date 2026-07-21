@@ -61,8 +61,13 @@ as the canonical test body. Meshy API provides all essential features (polycount
 control via `should_remesh`, rigging via `meshy_rig`) but character generation
 is not the active blocker — motion readability is.
 
-**Body + armor separation:** Body is the deforming substrate (use existing
-duelist). Armor is an attachment/fitting problem (Blender Shrinkwrap, Surface
+**Recommended stable carrier: MPFB2** (CC0 license, 163-bone rig, Blender-native).
+MPFB provides a repeatable humanoid base with known rig, symmetry, naming, and
+deformation behavior. Proven in earlier canary work. Body is the deforming
+substrate; armor is separate fitted pieces attached via Shrinkwrap/Surface Deform.
+
+**Body + armor separation:** Body is the deforming substrate (use MPFB2 carrier or
+existing duelist). Armor is an attachment/fitting problem (Blender Shrinkwrap, Surface
 Deform, bone attachments). Do not co-generate body+armor in one Meshy pass.
 
 **Sequence (from repo's own roadmap):**
