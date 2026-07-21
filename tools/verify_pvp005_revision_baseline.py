@@ -107,19 +107,19 @@ def main() -> None:
         raise SystemExit("current SG01 promotion/human boundary drift")
 
     if args.remote:
-        output = run(
-            "git",
-            "ls-remote",
-            "--heads",
-            "origin",
-            report["published_branch"],
-        )
+        if report.get("historical_branch_remote_present") is not False:
+            raise SystemExit("historical PVP-005 branch presence was relabeled")
+        current_branch = report["current_remote_branch"]
+        output = run("git", "ls-remote", "--heads", "origin", current_branch)
         if not output:
-            raise SystemExit("published PVP-005 branch is absent on origin")
+            raise SystemExit("current reconciliation branch is absent on origin")
         remote_tip = output.split()[0]
-        if remote_tip != baseline:
-            run("git", "cat-file", "-e", f"{remote_tip}^{{commit}}")
-            require_ancestor(baseline, remote_tip, "baseline is not reachable from remote tip")
+        run("git", "cat-file", "-e", f"{remote_tip}^{{commit}}")
+        require_ancestor(
+            baseline,
+            remote_tip,
+            "historical baseline is not reachable from current remote tip",
+        )
 
     print(f"PVP005_REACHABLE_BASELINE={baseline}")
     print(

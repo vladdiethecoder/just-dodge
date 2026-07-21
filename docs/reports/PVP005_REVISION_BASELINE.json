@@ -35,6 +35,8 @@
   "observed_utc_date": "2026-07-14",
   "public_main": "2677b4a7dd050e7f4c5ee03881aa16035e413a8b",
   "published_branch": "pvp-005-readable-live-motion",
+  "historical_branch_remote_present": false,
+  "current_remote_branch": "grab07-650mm-closure",
   "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
   "reconciliation_commit": "99de72c87a64fdc994c7b044b5fb17cb4295e36c",
   "authority": "historical_reachability_only",
