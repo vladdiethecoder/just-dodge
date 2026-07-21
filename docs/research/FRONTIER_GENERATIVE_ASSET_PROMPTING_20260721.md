@@ -25,6 +25,12 @@ The strongest repeated result across official model guidance, research systems, 
 - **Meshy Text to 3D:** successful official/user examples are compact—object first, then roughly 3-5 defining construction/material/style details and technical constraints. Word order matters; adjective accumulation hurts.
 - **Meshy Image to 3D:** the image and pose controls dominate shape. Current API text chiefly guides texture, so copying the full GPT Image prompt into Meshy does not create a second reliable geometry-control channel.
 
+### Workflow routing decision
+
+Use the **Meshy web workflow for frontier candidate creation**. It currently exposes the highest-value human-in-the-loop controls together: 3D Agent concept batches, visual candidate comparison, generated/enhanced multi-view references, manual custom-pose editing, texture healing/editing, full 360-degree review, and Auto Split for eligible drafts. Those interactive controls are more valuable during art-direction search than an opaque one-call API run.
+
+Use the **Meshy API/MCP only after the reference set and settings are locked**, when task IDs, hashes, repeatable batches and controlled model comparisons matter. Use **Blender/DCC automation after download** for measured inspection, topology/UV/material/rig repair and export. The web UI does not replace Blender admission; Blender does not replace visual art direction.
+
 ## 2. Evidence hierarchy
 
 ### Primary / official mechanisms
