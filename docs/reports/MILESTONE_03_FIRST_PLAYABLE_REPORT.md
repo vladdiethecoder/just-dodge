@@ -2,8 +2,8 @@
 
 > Superseded as current authority on 2026-07-21. The revision-scoped evidence
 > below remains historical. Current authority is
-> `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
-> SG01 and PLAYABLE-PROOF are not passed.
+> `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
+> Local clean-checkout gates pass at `3caa1ec680d181b244affb25ff1826a74ea6cc3b`; SG01 remains blocked on same-commit remote CI and PLAYABLE-PROOF is not passed.
 
 - PLAYABLE-PROOF gate: **NOT PASSED**
 - Current audit baseline: published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`; historical evidence remains bound to its recorded ancestor revisions

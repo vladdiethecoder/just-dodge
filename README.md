@@ -7,9 +7,9 @@ This project takes the lessons learned from OATHYARD — simultaneous-reveal int
 ## Project Status
 
 - Active gate: `SG01-EVIDENCE-CANON-RESET-002` on `grab07-650mm-closure`. SG01 is **not passed**; SG02 and later implementation are parked.
-- Exact committed local head at the SG01 baseline audit: `d4732544781ab5a4131114f59aa2b337f74d7c5a`. PR #2 still points to `b2266e578889061bef703bfe6ec997423aa69b74`, is draft, and its two current verify checks failed.
-- Dirty-worktree observation only: fmt and warning-denying clippy passed; `cargo test --locked --all-targets` observed 419 passed / 3 ignored / 0 failed. These results are not a clean-checkout or commit-bound SG01 receipt.
-- Blocking contradictions are recorded in `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`: stale revision/ForgeLens contracts, revoked Grab evidence still labeled as a machine pass, deleted runtime assets, fixed presentation clips on the normal play path, and 2.29 GB of untracked candidates/evidence.
+- Local clean-checkout candidate: `3caa1ec680d181b244affb25ff1826a74ea6cc3b`; fmt, warning-denying clippy/check, 419 tests / 3 ignored / 0 failed, no-default build, replay, evidence-boundary and CI-equivalent gates passed. Receipt: `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
+- SG01 remains blocked because that subject has not been pushed and has no same-commit GitHub checks. PR #2 still points to `b2266e578889061bef703bfe6ec997423aa69b74`, is draft, and its two existing verify checks failed.
+- The initial contradictions remain preserved in `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`; current validators retire the invalid evidence and prevent model prediction, runtime contact and human promotion from collapsing into one status.
 - `PLAYABLE-PROOF`, G4, G5, human promotion, asset promotion, camera approval, and release promotion are all blocked. Historical PVP-001–PVP-005 reports retain only their explicitly recorded revision-scoped observations.
 - Distribution boundary: complete redistribution-rights records are absent; no redistribution or release claim is authorized.
 

@@ -19,24 +19,22 @@ A = agentic playtest evidence; X = human playtest evidence; S = Steam/platform c
 ## Part A — Current state audit (2026-07-21)
 
 Active gate: `SG01-EVIDENCE-CANON-RESET-002`. SG01 is not passed; SG02 and all
-later implementation waves are parked. The exact current baseline and seven
-blocking contradictions are recorded in
-`docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
-
-Dirty-worktree observations only: fmt and warning-denying clippy pass;
-`cargo test --locked --all-targets` reports 419 passed / 3 ignored / 0 failed.
-These are not commit-bound clean-checkout evidence. PR #2 remains draft at
-`b2266e578889061bef703bfe6ec997423aa69b74`; both current verify checks fail.
+later implementation waves are parked. Subject
+`3caa1ec680d181b244affb25ff1826a74ea6cc3b` passed local clean-checkout fmt,
+warning-denying clippy/check, 419 tests / 3 ignored / 0 failed, no-default,
+replay and CI-equivalent evidence gates. The exact local receipt is
+`docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
+Remote CI is still absent for that subject. PR #2 remains draft at
+`b2266e578889061bef703bfe6ec997423aa69b74`; both existing verify checks fail.
 
 UNIT-2 v11/v13 remain revoked INVALID_EVIDENCE. No interaction-conditioned Grab
 model is machine-admitted. G4=BLOCKED_INVALID_EVIDENCE; G5=BLOCKED_MACHINE;
 HUMAN_DECISION=PENDING; PROMOTION=BLOCKED. Model predictions, measured runtime
 contact and named human promotion are separate mandatory stages.
 
-Current worktree blockers include deleted runtime asset dependencies, fixed
-HeroStrike/walk presentation on the normal play path, 457 tracked deletions,
-32 tracked modifications and 2.29 GB of untracked candidates/evidence. None may
-be relabeled as a current clean-checkout game receipt.
+Deleted runtime asset dependencies, fixed HeroStrike/walk presentation, and all
+retired candidates are now explicit blocked/non-release states. None may be
+relabeled as current gameplay, model-prediction, contact or human evidence.
 
 Critical path: reconcile and quarantine → exact atomic candidate commit → clean
 checkout fmt/clippy/tests/verifiers/tamper gates → CI on the same commit → SG01

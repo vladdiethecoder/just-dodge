@@ -3,8 +3,8 @@
 > Superseded as current task authority on 2026-07-21. The detailed PVP-005 plan
 > below is retained as historical design/task evidence. Current active unit is
 > `SG01-EVIDENCE-CANON-RESET-002` in `.hermes/atomic_ledger.md`; current measured
-> status is `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json`.
-> SG01 is not passed and SG02+ implementation is parked.
+> status is `docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json`.
+> Local clean-checkout gates pass at `3caa1ec680d181b244affb25ff1826a74ea6cc3b`; SG01 remains blocked on same-commit remote CI and SG02+ implementation is parked.
 
 Branch: `pvp-005-readable-live-motion`, published PVP-005 feature baseline `4e481ccd59602c1cb4eda97183c32dec48f9a801`, and published complete diagnostic-harness implementation `d84950f34d4a9e8fe9b08d4c47670bb4d88fea43`; one worktree. Public `main` remains at historical ancestor `2677b4a7dd050e7f4c5ee03881aa16035e413a8b`.
 Last updated: 2026-07-14

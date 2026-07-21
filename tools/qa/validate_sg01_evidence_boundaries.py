@@ -11,6 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CURRENT_AUDIT = Path("docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json")
+CLEAN_RECEIPT = Path("docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json")
 HISTORICAL_AUDIT = Path(
     "docs/evidence_quarantine/PVP005-GRAB07-TRUTH-AND-EVIDENCE-RESET-004/sg01_audit.json"
 )
@@ -122,19 +123,26 @@ def validate(root: Path = ROOT) -> None:
     require(audit.get("sg02_implementation_blocked") is True, "SG02 implementation block drift")
     require(audit.get("promotion") == "BLOCKED", "promotion boundary drift")
     require(audit.get("human_decision") == "PENDING", "human decision was fabricated")
+    expected_stages = {
+        "model_prediction": "BLOCKED_INVALID_EVIDENCE",
+        "runtime_contact": "BLOCKED_MACHINE",
+        "human_promotion": "PENDING",
+    }
     require(
-        audit.get("evidence_stages")
-        == {
-            "model_prediction": "BLOCKED_INVALID_EVIDENCE",
-            "runtime_contact": "BLOCKED_MACHINE",
-            "human_promotion": "PENDING",
-        },
+        audit.get("evidence_stages") == expected_stages,
         "model/runtime/human evidence stages were conflated",
     )
     runtime = audit.get("runtime_path", {})
     require(runtime.get("playable_runtime_admitted") is False, "blocked runtime path was admitted")
     require(runtime.get("forbidden_fixed_presentation_present") is True, "fixed presentation blocker was hidden")
     require(runtime.get("deleted_dependencies_present") is True, "deleted runtime dependencies were hidden")
+
+    clean_receipt = json.loads((root / CLEAN_RECEIPT).read_text(encoding="utf-8"))
+    require(clean_receipt.get("verdict") == "LOCAL_PASS_REMOTE_CI_PENDING", "local receipt verdict drift")
+    require(clean_receipt.get("sg01_can_proceed_to_sg02") is False, "local receipt improperly permits SG02")
+    require(clean_receipt.get("promotion") == "BLOCKED_REMOTE_CI", "local receipt promotion boundary drift")
+    require(clean_receipt.get("remote_ci", {}).get("same_commit_checks_observed") is False, "local receipt forged remote CI")
+    require(clean_receipt.get("evidence_stages") == expected_stages, "local receipt collapsed evidence stages")
 
     historical = json.loads((root / HISTORICAL_AUDIT).read_text(encoding="utf-8"))
     require(historical.get("verdict") == "SUPERSEDED_NOT_CURRENT_AUTHORITY", "historical SG01 receipt still claims current authority")
@@ -144,7 +152,7 @@ def validate(root: Path = ROOT) -> None:
     baseline = json.loads((root / PVP005_BASELINE).read_text(encoding="utf-8"))
     candidate = baseline.get("candidate_packet", {})
     require(baseline.get("authority") == "historical_reachability_only", "historical PVP-005 baseline claims current authority")
-    require(baseline.get("current_status_authority") == CURRENT_AUDIT.as_posix(), "PVP-005 current authority drift")
+    require(baseline.get("current_status_authority") == CLEAN_RECEIPT.as_posix(), "PVP-005 current authority drift")
     require(candidate.get("retired") is True and candidate.get("runtime_promoted") is False, "retired candidate promotion drift")
     require(not (root / candidate["manifest"]).exists(), "retired candidate manifest reappeared")
 
@@ -155,7 +163,7 @@ def validate(root: Path = ROOT) -> None:
     claims = forbidden_claims(documents)
     require(not claims, "forbidden current claims: " + "; ".join(claims))
     for relative, text in documents.items():
-        require(CURRENT_AUDIT.as_posix() in text, f"current SG01 authority missing from {relative}")
+        require(CLEAN_RECEIPT.as_posix() in text, f"current SG01 authority missing from {relative}")
 
     quarantine = json.loads((root / UNIT2_QUARANTINE).read_text(encoding="utf-8"))
     require(quarantine.get("verdict") == "INVALID_EVIDENCE", "UNIT-2 quarantine verdict drift")

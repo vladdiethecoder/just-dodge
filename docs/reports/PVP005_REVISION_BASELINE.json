@@ -40,6 +40,6 @@
   "published_feature_baseline": "4e481ccd59602c1cb4eda97183c32dec48f9a801",
   "reconciliation_commit": "99de72c87a64fdc994c7b044b5fb17cb4295e36c",
   "authority": "historical_reachability_only",
-  "current_status_authority": "docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/baseline_audit.json",
+  "current_status_authority": "docs/evidence_quarantine/SG01-EVIDENCE-CANON-RESET-002/clean_checkout_receipt.json",
   "schema": "just-dodge-pvp005-revision-baseline-v2"
 }

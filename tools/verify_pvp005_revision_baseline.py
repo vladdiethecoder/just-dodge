@@ -85,12 +85,12 @@ def main() -> None:
 
     current_authority = report["current_status_authority"]
     required_status = {
-        "README.md": ("SG01-EVIDENCE-CANON-RESET-002", current_authority, "SG01 is **not passed**"),
-        ".hermes/atomic_ledger.md": ("SG01-EVIDENCE-CANON-RESET-002", "SG01 is not PASS"),
-        "docs/reports/CURRENT_STATE_AUDIT.md": ("Historical State Audit", current_authority),
-        "docs/reports/DEVELOPMENT_TASKLIST.md": ("Historical PVP-005", current_authority),
-        "docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md": ("Historical Milestone 3", current_authority),
-        "docs/design/IMPLEMENTATION_PLAN_3ACTION.md": ("Historical Implementation Plan", current_authority),
+        "README.md": ("SG01-EVIDENCE-CANON-RESET-002", "Local clean-checkout candidate"),
+        ".hermes/atomic_ledger.md": ("SG01-EVIDENCE-CANON-RESET-002", "LOCAL CLEAN-CHECKOUT PASS"),
+        "docs/reports/CURRENT_STATE_AUDIT.md": ("Historical State Audit", "clean_checkout_receipt.json"),
+        "docs/reports/DEVELOPMENT_TASKLIST.md": ("Historical PVP-005", "clean_checkout_receipt.json"),
+        "docs/reports/MILESTONE_03_FIRST_PLAYABLE_REPORT.md": ("Historical Milestone 3", "clean_checkout_receipt.json"),
+        "docs/design/IMPLEMENTATION_PLAN_3ACTION.md": ("Historical Implementation Plan", "clean_checkout_receipt.json"),
     }
     for relative, tokens in required_status.items():
         text = (ROOT / relative).read_text()
@@ -99,11 +99,11 @@ def main() -> None:
             raise SystemExit(f"status reconciliation missing from {relative}: {missing}")
 
     current = json.loads(current_status.read_text())
-    if current.get("verdict") != "FAIL_BLOCKED_RECONCILIATION_REQUIRED":
-        raise SystemExit("current SG01 baseline must remain fail-closed until clean-checkout closure")
+    if current.get("verdict") != "LOCAL_PASS_REMOTE_CI_PENDING":
+        raise SystemExit("current SG01 status is not the local clean-checkout receipt")
     if current.get("sg01_can_proceed_to_sg02") is not False:
         raise SystemExit("current SG01 baseline improperly permits SG02")
-    if current.get("promotion") != "BLOCKED" or current.get("human_decision") != "PENDING":
+    if current.get("promotion") != "BLOCKED_REMOTE_CI" or current.get("human_decision") != "PENDING":
         raise SystemExit("current SG01 promotion/human boundary drift")
 
     if args.remote:
