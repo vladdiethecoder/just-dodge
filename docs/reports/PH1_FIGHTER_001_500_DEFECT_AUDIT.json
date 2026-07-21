@@ -1,6 +1,6 @@
 {
   "title": "PH1-FIGHTER-001: 500-Defect Audit of Meshy API-Generated Fighter Models",
-  "date": "2026-07-21T19:07:59.129109Z",
+  "date": "2026-07-21T19:12:42.759839Z",
   "models_audited": [
     {
       "task_id": "019f85a5",
@@ -355,2172 +355,2172 @@
       "defect": "Chest depth and back curvature cannot be inferred from front view"
     },
     {
-      "id": 66,
+      "id": 67,
       "category": "armor_construction",
       "defect": "Breastplate side and rear closure method not visible"
     },
     {
-      "id": 67,
+      "id": 68,
       "category": "armor_construction",
       "defect": "Center line ambiguous \u2014 seam, ridge, or two joined plates?"
     },
     {
-      "id": 68,
+      "id": 69,
       "category": "armor_construction",
       "defect": "No evidence of hinge or opening mechanism on breastplate"
     },
     {
-      "id": 69,
+      "id": 70,
       "category": "armor_construction",
       "defect": "Breastplate-to-backplate relationship indeterminable"
     },
     {
-      "id": 70,
+      "id": 71,
       "category": "armor_construction",
       "defect": "Lower breastplate sits too close to belt \u2014 restricts torso flexion"
     },
     {
-      "id": 71,
+      "id": 72,
       "category": "armor_construction",
       "defect": "Pointed lower edge may collide with abdomen during bending"
     },
     {
-      "id": 72,
+      "id": 73,
       "category": "armor_construction",
       "defect": "Side straps connect to hidden structures \u2014 anchor points obscured"
     },
     {
-      "id": 73,
+      "id": 74,
       "category": "armor_construction",
       "defect": "Some straps terminate visually beneath plate edges without full fastening logic"
     },
     {
-      "id": 74,
+      "id": 75,
       "category": "armor_construction",
       "defect": "Plate thickness inconsistent or unreadable"
     },
     {
-      "id": 75,
+      "id": 76,
       "category": "armor_construction",
       "defect": "Edge treatment not uniform \u2014 rolled/beveled vs thin sheet edges"
     },
     {
-      "id": 76,
+      "id": 77,
       "category": "armor_construction",
       "defect": "Scratched center highlight obscures precise plate curvature"
     },
     {
-      "id": 77,
+      "id": 78,
       "category": "armor_construction",
       "defect": "Chest plate unusually broad and flat for articulating form"
     },
     {
-      "id": 78,
+      "id": 79,
       "category": "armor_construction",
       "defect": "High collar fits tightly \u2014 little clearance for head rotation"
     },
     {
-      "id": 79,
+      "id": 80,
       "category": "armor_construction",
       "defect": "Collar-breastplate-shoulder assembly crowded and interpenetrating"
     },
     {
-      "id": 80,
+      "id": 81,
       "category": "armor_construction",
       "defect": "No rear collar closure or fastening visible"
     },
     {
-      "id": 81,
+      "id": 82,
       "category": "armor_construction",
       "defect": "Pauldrons have large caps but mechanical arrangement unclear"
     },
     {
-      "id": 82,
+      "id": 83,
       "category": "armor_construction",
       "defect": "Smaller plates beneath pauldrons show ambiguous layering"
     },
     {
-      "id": 83,
+      "id": 84,
       "category": "armor_construction",
       "defect": "Overlapping shoulder plates lack consistent visible gaps"
     },
     {
-      "id": 84,
+      "id": 85,
       "category": "armor_construction",
       "defect": "Several plate boundaries defined by shading alone, not clear separation"
     },
     {
-      "id": 85,
+      "id": 86,
       "category": "armor_construction",
       "defect": "Pauldrons may intersect breastplate or collar when arms lower"
     },
     {
-      "id": 86,
+      "id": 87,
       "category": "armor_construction",
       "defect": "Front pauldron edges sit close to cuirass \u2014 no articulation clearance"
     },
     {
-      "id": 87,
+      "id": 88,
       "category": "armor_construction",
       "defect": "No visible underarm suspension harness"
     },
     {
-      "id": 88,
+      "id": 89,
       "category": "armor_construction",
       "defect": "Upper-arm straps visible but may not actually support pauldrons"
     },
     {
-      "id": 89,
+      "id": 90,
       "category": "armor_construction",
       "defect": "Rivets do not clearly indicate pivot points"
     },
     {
-      "id": 90,
+      "id": 91,
       "category": "armor_construction",
       "defect": "Left vs right pauldron layering not perfectly matched"
     },
     {
-      "id": 91,
+      "id": 92,
       "category": "armor_construction",
       "defect": "Pauldron outer silhouettes differ in height, tilt, apparent width"
     },
     {
-      "id": 92,
+      "id": 93,
       "category": "armor_construction",
       "defect": "Current raised-arm pose may conceal collision in relaxed pose"
     },
     {
-      "id": 93,
+      "id": 94,
       "category": "armor_construction",
       "defect": "Upper arms padded but strap/plate layering around them crowded"
     },
     {
-      "id": 94,
+      "id": 95,
       "category": "armor_construction",
       "defect": "Some straps disappear beneath adjacent pieces without continuation"
     },
     {
-      "id": 95,
+      "id": 96,
       "category": "armor_construction",
       "defect": "Elbow articulation poorly documented \u2014 no obvious elbow cops"
     },
     {
-      "id": 96,
+      "id": 97,
       "category": "armor_construction",
       "defect": "Dark elbow regions show only cloth folds and strap silhouettes"
     },
     {
-      "id": 97,
+      "id": 98,
       "category": "armor_construction",
       "defect": "Upper-arm-to-bracer transition lacks clearly defined elbow gap"
     },
     {
-      "id": 98,
+      "id": 99,
       "category": "armor_construction",
       "defect": "Arms may lack enough exposed flexible material for full elbow flexion"
     },
     {
-      "id": 99,
+      "id": 100,
       "category": "armor_construction",
       "defect": "Dark-on-dark values make seams and overlap boundaries indistinct"
     },
     {
-      "id": 100,
+      "id": 101,
       "category": "armor_construction",
       "defect": "Bracers have clear tapered silhouettes but opening mechanism unknown"
     },
     {
-      "id": 101,
+      "id": 102,
       "category": "armor_construction",
       "defect": "No consistently visible hinges, laces, or complete rear straps on bracers"
     },
     {
-      "id": 102,
+      "id": 103,
       "category": "armor_construction",
       "defect": "Small bands near wrists \u2014 decorative or structural attachment ambiguous"
     },
     {
-      "id": 103,
+      "id": 104,
       "category": "armor_construction",
       "defect": "Bracer and glove cuffs nearly merge \u2014 unclear boundary"
     },
     {
-      "id": 104,
+      "id": 105,
       "category": "armor_construction",
       "defect": "Bracer ends may interfere with wrist extension"
     },
     {
-      "id": 105,
+      "id": 106,
       "category": "armor_construction",
       "defect": "Left vs right bracer lengths/taper appear slightly different"
     },
     {
-      "id": 106,
+      "id": 107,
       "category": "armor_construction",
       "defect": "Rivet placement not perfectly mirrored left vs right"
     },
     {
-      "id": 107,
+      "id": 108,
       "category": "armor_construction",
       "defect": "Multiple overlapping belts create ambiguous layering at waist"
     },
     {
-      "id": 108,
+      "id": 109,
       "category": "armor_construction",
       "defect": "Central belt readable but excess strap end routing unclear"
     },
     {
-      "id": 109,
+      "id": 110,
       "category": "armor_construction",
       "defect": "Diagonal belt creates ambiguous layering with central belt"
     },
     {
-      "id": 110,
+      "id": 111,
       "category": "armor_construction",
       "defect": "Belt portions disappear beneath tassets without visible continuation"
     },
     {
-      "id": 111,
+      "id": 112,
       "category": "armor_construction",
       "defect": "Buckle tongues, holes, keepers too small for exact reconstruction"
     },
     {
-      "id": 112,
+      "id": 113,
       "category": "armor_construction",
       "defect": "Several loops appear to support plates but load paths not obvious"
     },
     {
-      "id": 113,
+      "id": 114,
       "category": "armor_construction",
       "defect": "Stacked belts occupy large vertical area \u2014 restrict waist flexion"
     },
     {
-      "id": 114,
+      "id": 115,
       "category": "armor_construction",
       "defect": "Breastplate lower point nearly contacts belt \u2014 limited articulation clearance"
     },
     {
-      "id": 115,
+      "id": 116,
       "category": "armor_construction",
       "defect": "Left-right belt and tasset suspensions not perfectly symmetrical"
     },
     {
-      "id": 116,
+      "id": 117,
       "category": "armor_construction",
       "defect": "Hip plate segment boundaries inconsistent \u2014 some clear, some fused"
     },
     {
-      "id": 117,
+      "id": 118,
       "category": "armor_construction",
       "defect": "Tassets ambiguous: separate hanging plates, riveted lames, or decorative panels?"
     },
     {
-      "id": 118,
+      "id": 119,
       "category": "armor_construction",
       "defect": "Rear and side tasset suspension not shown"
     },
     {
-      "id": 119,
+      "id": 120,
       "category": "armor_construction",
       "defect": "Tasset plates could collide with thighs during hip flexion"
     },
     {
-      "id": 120,
+      "id": 121,
       "category": "armor_construction",
       "defect": "Tasset lower edges sit close to legs \u2014 little stand-off"
     },
     {
-      "id": 121,
+      "id": 122,
       "category": "armor_construction",
       "defect": "Central quilted skirt readable but thickness and rear extent unknown"
     },
     {
-      "id": 122,
+      "id": 123,
       "category": "armor_construction",
       "defect": "Diagonal belt intersects tasset area \u2014 structural logic obscured"
     },
     {
-      "id": 123,
+      "id": 124,
       "category": "armor_construction",
       "defect": "Thigh straps appear tight \u2014 could compress padded trousers"
     },
     {
-      "id": 124,
+      "id": 125,
       "category": "armor_construction",
       "defect": "Knee cops clear but lack complete articulation system"
     },
     {
-      "id": 125,
+      "id": 126,
       "category": "armor_construction",
       "defect": "No obvious side-wing or poleyn articulation"
     },
     {
-      "id": 126,
+      "id": 127,
       "category": "armor_construction",
       "defect": "Knee-to-trouser-to-greave relationship crowded"
     },
     {
-      "id": 127,
+      "id": 128,
       "category": "armor_construction",
       "defect": "Knee caps nearly touch adjacent armor \u2014 collision risk during flexion"
     },
     {
-      "id": 128,
+      "id": 129,
       "category": "armor_construction",
       "defect": "Left vs right knee caps differ in highlight, contour, alignment"
     },
     {
-      "id": 129,
+      "id": 130,
       "category": "armor_construction",
       "defect": "Anatomical knee positions could be misread from armor centers"
     },
     {
-      "id": 130,
+      "id": 131,
       "category": "armor_construction",
       "defect": "Greaves have clear frontal silhouette but rear closure unavailable"
     },
     {
-      "id": 131,
+      "id": 132,
       "category": "armor_construction",
       "defect": "Some greave side buckles visible but not enough for full mechanism"
     },
     {
-      "id": 131,
+      "id": 133,
       "category": "mesh_topology",
       "defect": "239,914 vertices \u2014 5\u201310\u00d7 too dense for a game-ready character (max ~25K)"
     },
     {
-      "id": 132,
+      "id": 134,
       "category": "mesh_topology",
       "defect": "463,328 triangles \u2014 exceeds real-time budget by ~18\u00d7"
     },
     {
-      "id": 133,
+      "id": 135,
       "category": "mesh_topology",
       "defect": "703,150 edges for single mesh \u2014 extreme over-tessellation"
     },
     {
-      "id": 134,
+      "id": 136,
       "category": "mesh_topology",
       "defect": "Mean face area 0.000006 m\u00b2 \u2014 faces invisible at gameplay distance"
     },
     {
-      "id": 135,
+      "id": 137,
       "category": "mesh_topology",
       "defect": "16,316 boundary edges \u2014 mesh is NOT watertight"
     },
     {
-      "id": 136,
+      "id": 138,
       "category": "mesh_topology",
       "defect": "Mesh cannot be 3D printed without repair \u2014 fails watertightness"
     },
     {
-      "id": 137,
+      "id": 139,
       "category": "mesh_topology",
       "defect": "No skeleton/armature \u2014 zero bones, cannot be posed or animated"
     },
     {
-      "id": 138,
+      "id": 140,
       "category": "mesh_topology",
       "defect": "Single material for entire character \u2014 no armor/body/skin separation"
     },
     {
-      "id": 139,
+      "id": 141,
       "category": "mesh_topology",
       "defect": "Single UV layer only \u2014 no lightmap or secondary UV channel"
     },
     {
-      "id": 140,
+      "id": 142,
       "category": "mesh_topology",
       "defect": "No LOD levels \u2014 single 463K-tri mesh for all distances"
     },
     {
-      "id": 141,
+      "id": 143,
       "category": "mesh_topology",
       "defect": "No collision proxy or physics mesh"
     },
     {
-      "id": 142,
+      "id": 144,
       "category": "mesh_topology",
       "defect": "Face density wildly inconsistent \u2014 some areas 10\u00d7 denser than others"
     },
     {
-      "id": 143,
+      "id": 145,
       "category": "mesh_topology",
       "defect": "Min edge length 0.015mm \u2014 sub-pixel edges at any resolution"
     },
     {
-      "id": 144,
+      "id": 146,
       "category": "mesh_topology",
       "defect": "Max edge length 30.8mm \u2014 2000\u00d7 range indicates uneven tessellation"
     },
     {
-      "id": 145,
+      "id": 147,
       "category": "mesh_topology",
       "defect": "0.358m depth \u2014 character is nearly flat, lacks 3D volume"
     },
     {
-      "id": 146,
+      "id": 148,
       "category": "mesh_topology",
       "defect": "Arm span 1.704m vs height 1.898m \u2014 span/height ratio 0.898 (should be \u22650.95)"
     },
     {
-      "id": 147,
+      "id": 149,
       "category": "mesh_topology",
       "defect": "No vertex colors for baked AO or detail masking"
     },
     {
-      "id": 148,
+      "id": 150,
       "category": "mesh_topology",
       "defect": "No morph targets / blend shapes for facial animation"
     },
     {
-      "id": 149,
+      "id": 151,
       "category": "mesh_topology",
       "defect": "No separate mesh parts \u2014 body+armor fused into single object"
     },
     {
-      "id": 150,
+      "id": 152,
       "category": "mesh_topology",
       "defect": "No named mesh regions for equipment attachment points"
     },
     {
-      "id": 151,
+      "id": 153,
       "category": "mesh_topology",
       "defect": "No grip socket metadata or weapon attachment calibration"
     },
     {
-      "id": 152,
+      "id": 154,
       "category": "mesh_topology",
       "defect": "Mesh origin at geometric center, not at feet/ground plane"
     },
     {
-      "id": 153,
+      "id": 155,
       "category": "mesh_topology",
       "defect": "Z-up convention ambiguous \u2014 Blender shows -0.95 to +0.95 Z"
     },
     {
-      "id": 154,
+      "id": 156,
       "category": "mesh_topology",
       "defect": "No consistent edge flow for deformation at joints"
     },
     {
-      "id": 155,
+      "id": 157,
       "category": "mesh_topology",
       "defect": "Triangle density around fingers likely insufficient for clean deformation"
     },
     {
-      "id": 156,
+      "id": 158,
       "category": "mesh_topology",
       "defect": "Boundary edges concentrated at armor gaps \u2014 not intentional seams"
     },
     {
-      "id": 157,
+      "id": 159,
       "category": "mesh_topology",
       "defect": "No edge loops around articulation zones (elbows, knees, shoulders)"
     },
     {
-      "id": 158,
+      "id": 160,
       "category": "mesh_topology",
       "defect": "All quads triangulated \u2014 no quad-dominant topology for subdivision"
     },
     {
-      "id": 159,
+      "id": 161,
       "category": "mesh_topology",
       "defect": "Mesh imported as single object \u2014 cannot isolate armor from body"
     },
     {
-      "id": 160,
+      "id": 162,
       "category": "mesh_topology",
       "defect": "No normal map applied despite having normal texture file"
     },
     {
-      "id": 161,
+      "id": 163,
       "category": "mesh_topology",
       "defect": "No tangents generated for normal mapping at runtime"
     },
     {
-      "id": 162,
+      "id": 164,
       "category": "mesh_topology",
       "defect": "UV islands likely overlapping or inefficient \u2014 single UV layer for 463K tris"
     },
     {
-      "id": 163,
+      "id": 165,
       "category": "mesh_topology",
       "defect": "Texture resolution unknown relative to mesh density (likely overkill)"
     },
     {
-      "id": 164,
+      "id": 166,
       "category": "mesh_topology",
       "defect": "Mesh not optimized for GPU vertex cache \u2014 random triangle ordering"
     },
     {
-      "id": 165,
+      "id": 167,
       "category": "mesh_topology",
       "defect": "No instancing support \u2014 single mesh cannot share with other fighters"
     },
     {
-      "id": 166,
+      "id": 168,
       "category": "mesh_topology",
       "defect": "File size 41 MB for GLB \u2014 too large for game distribution"
     },
     {
-      "id": 167,
+      "id": 169,
       "category": "mesh_topology",
       "defect": "GLB contains embedded textures \u2014 not separable for texture streaming"
     },
     {
-      "id": 168,
+      "id": 170,
       "category": "mesh_topology",
       "defect": "No Draco or mesh compression applied"
     },
     {
-      "id": 169,
+      "id": 171,
       "category": "mesh_topology",
       "defect": "No quantized vertex positions \u2014 full float32 precision unnecessary"
     },
     {
-      "id": 170,
+      "id": 172,
       "category": "mesh_topology",
       "defect": "No skinning data (JOINTS_0 / WEIGHTS_0) \u2014 cannot deform"
     },
     {
-      "id": 171,
+      "id": 173,
       "category": "mesh_topology",
       "defect": "Vertex count differs from Meshy task 019f85a5 by 3.4% \u2014 non-deterministic generation"
     },
     {
-      "id": 172,
+      "id": 174,
       "category": "mesh_topology",
       "defect": "Triangle count differs by 2.4% between similar tasks \u2014 inconsistent output"
     },
     {
-      "id": 173,
+      "id": 175,
       "category": "mesh_topology",
       "defect": "Both Meshy tasks produce >16K boundary edges \u2014 systemic non-watertight output"
     },
     {
-      "id": 174,
+      "id": 176,
       "category": "mesh_topology",
       "defect": "Both tasks produce >230K vertices \u2014 systemic over-tessellation"
     },
     {
-      "id": 175,
+      "id": 177,
       "category": "mesh_topology",
       "defect": "No mesh-name convention \u2014 default 'Mesh_0' for all generations"
     },
     {
-      "id": 176,
+      "id": 178,
       "category": "mesh_topology",
       "defect": "PBR texture set present but metallic/roughness likely baked from reference lighting"
     },
     {
-      "id": 177,
+      "id": 179,
       "category": "mesh_topology",
       "defect": "Base color texture likely contains baked lighting \u2014 not true albedo"
     },
     {
-      "id": 178,
+      "id": 180,
       "category": "mesh_topology",
       "defect": "Normal map may contain baked cavity/AO \u2014 double-lighting in engine"
     },
     {
-      "id": 179,
+      "id": 181,
       "category": "mesh_topology",
       "defect": "Emission texture present but character should not emit light"
     },
     {
-      "id": 180,
+      "id": 182,
       "category": "mesh_topology",
       "defect": "5 texture files totaling ~30+ MB \u2014 excessive for single character"
     },
     {
-      "id": 181,
+      "id": 183,
       "category": "mesh_topology",
       "defect": "HD (4K) textures on 463K-tri mesh \u2014 texture:geometry ratio unbalanced"
     },
     {
-      "id": 182,
+      "id": 184,
       "category": "mesh_topology",
       "defect": "Face count per mm\u00b2 varies wildly \u2014 some regions have 50\u00d7 more detail than needed"
     },
     {
-      "id": 183,
+      "id": 185,
       "category": "mesh_topology",
       "defect": "Edge length coefficient of variation likely >200% \u2014 extremely non-uniform"
     },
     {
-      "id": 184,
+      "id": 186,
       "category": "mesh_topology",
       "defect": "No vertex welding after import \u2014 duplicate vertices at UV seams"
     },
     {
-      "id": 185,
+      "id": 187,
       "category": "mesh_topology",
       "defect": "GLB re-import vertex count may differ from source \u2014 non-watertight seams cause duplication"
     },
     {
-      "id": 186,
+      "id": 188,
       "category": "mesh_topology",
       "defect": "Face normals all non-zero but 16K boundary edges mean many unshared edges"
     },
     {
-      "id": 187,
+      "id": 189,
       "category": "mesh_topology",
       "defect": "Only 3.6% of faces face upward (>0.9 z-normal) \u2014 suggests flattened back"
     },
     {
-      "id": 188,
+      "id": 190,
       "category": "mesh_topology",
       "defect": "No face culling optimization \u2014 all triangles double-sided by default"
     },
     {
-      "id": 189,
+      "id": 191,
       "category": "mesh_topology",
       "defect": "Mesh density at fingertips could be 10\u00d7 what's visible at gameplay distance"
     },
     {
-      "id": 190,
+      "id": 192,
       "category": "mesh_topology",
       "defect": "Depth dimension (0.358m) suspiciously similar across both tasks \u2014 generator bias"
     },
     {
-      "id": 191,
+      "id": 193,
       "category": "mesh_topology",
       "defect": "Arm span improved 12.5% from old task but still 10% below target"
     },
     {
-      "id": 192,
+      "id": 194,
       "category": "mesh_topology",
       "defect": "No metadata about generator version, seed, or settings in GLB extras"
     },
     {
-      "id": 193,
+      "id": 195,
       "category": "mesh_topology",
       "defect": "No provenance hash in GLB \u2014 cannot verify model integrity"
     },
     {
-      "id": 194,
+      "id": 196,
       "category": "mesh_topology",
       "defect": "FBX version also available but larger (more wasted data)"
     },
     {
-      "id": 195,
+      "id": 197,
       "category": "mesh_topology",
       "defect": "OBJ version available but loses PBR materials"
     },
     {
-      "id": 196,
+      "id": 198,
       "category": "mesh_topology",
       "defect": "STL version available but loses UVs, materials, skeleton data"
     },
     {
-      "id": 197,
+      "id": 199,
       "category": "mesh_topology",
       "defect": "USDZ version available but iOS-only relevance for Steam target"
     },
     {
-      "id": 198,
+      "id": 200,
       "category": "mesh_topology",
       "defect": "Face area distribution likely bimodal \u2014 dense clusters with sparse gaps"
     },
     {
-      "id": 199,
+      "id": 201,
       "category": "mesh_topology",
       "defect": "Edge-length distribution has 2000:1 max:min ratio \u2014 extreme non-uniformity"
     },
     {
-      "id": 200,
+      "id": 202,
       "category": "mesh_topology",
       "defect": "Zero degenerate faces but 16K boundary edges worse \u2014 holes in mesh"
     },
     {
-      "id": 201,
+      "id": 203,
       "category": "mesh_topology",
       "defect": "Non-manifold verts: 0 \u2014 only positive topology metric"
     },
     {
-      "id": 202,
+      "id": 204,
       "category": "mesh_topology",
       "defect": "No wire edges \u2014 only positive topology metric alongside non-manifold count"
     },
     {
-      "id": 203,
+      "id": 205,
       "category": "mesh_topology",
       "defect": "Mesh vertex count > Blender's default undo memory for complex operations"
     },
     {
-      "id": 204,
+      "id": 206,
       "category": "mesh_topology",
       "defect": "463K faces exceeds Meshy's rigging service limit of 300K \u2014 cannot auto-rig"
     },
     {
-      "id": 205,
+      "id": 207,
       "category": "mesh_topology",
       "defect": "Mesh cannot be rigged without retopology \u2014 blocks entire animation pipeline"
     },
     {
-      "id": 206,
+      "id": 208,
       "category": "mesh_topology",
       "defect": "Both Meshy tasks fail the \u2264300K face rigging gate \u2014 systemic issue"
     },
     {
-      "id": 207,
+      "id": 209,
       "category": "mesh_topology",
       "defect": "Average of 1.93 faces per edge \u2014 very high valence, poor for subdivision"
     },
     {
-      "id": 208,
+      "id": 210,
       "category": "mesh_topology",
       "defect": "703K edges for 463K faces \u2014 Euler characteristic implies non-manifold geometry"
     },
     {
-      "id": 209,
+      "id": 211,
       "category": "mesh_topology",
       "defect": "V \u2212 E + F = 239914 \u2212 703150 + 463328 = 92 \u2014 genus 46 (!) implies complex topology"
     },
     {
-      "id": 210,
+      "id": 212,
       "category": "mesh_topology",
       "defect": "Euler characteristic of +92 indicates ~46 handles/holes \u2014 extremely non-manifold"
     },
     {
-      "id": 211,
+      "id": 213,
       "category": "mesh_topology",
       "defect": "High genus means mesh cannot be simplified by standard decimation without collapse"
     },
     {
-      "id": 212,
+      "id": 214,
       "category": "mesh_topology",
       "defect": "Mesh self-intersection almost certain with 46 topological handles"
     },
     {
-      "id": 213,
+      "id": 215,
       "category": "mesh_topology",
       "defect": "Face area at P1 likely <1e-8 m\u00b2 \u2014 micro-triangles invisible at any LOD"
     },
     {
-      "id": 214,
+      "id": 216,
       "category": "mesh_topology",
       "defect": "Vertex density at armor edges likely 5\u201310\u00d7 body interior \u2014 wasted detail"
     },
     {
-      "id": 215,
+      "id": 217,
       "category": "mesh_topology",
       "defect": "Finger webbing area unclear \u2014 boundary edges may indicate fused digits"
     },
     {
-      "id": 216,
+      "id": 218,
       "category": "mesh_topology",
       "defect": "Toe box geometry likely merged into single blob \u2014 no individual toes"
     },
     {
-      "id": 217,
+      "id": 219,
       "category": "mesh_topology",
       "defect": "Face topology around eyes/mouth non-existent \u2014 no facial features in mesh"
     },
     {
-      "id": 218,
+      "id": 220,
       "category": "mesh_topology",
       "defect": "Hair geometry probably a single blob \u2014 no strands or cards"
     },
     {
-      "id": 219,
+      "id": 221,
       "category": "mesh_topology",
       "defect": "Armor plate thickness not modeled \u2014 single-surface shells, not volumetric"
     },
     {
-      "id": 220,
+      "id": 222,
       "category": "mesh_topology",
       "defect": "Straps not modeled as separate geometry \u2014 texture-only illusion"
     },
     {
-      "id": 221,
+      "id": 223,
       "category": "mesh_topology",
       "defect": "Buckles and rivets are texture details, not geometry \u2014 no mechanical function"
     },
     {
-      "id": 222,
+      "id": 224,
       "category": "mesh_topology",
       "defect": "Greave inner surface absent \u2014 only outer shell, no thickness"
     },
     {
-      "id": 223,
+      "id": 225,
       "category": "mesh_topology",
       "defect": "Pauldron underside absent \u2014 hollow shells visible from below"
     },
     {
-      "id": 224,
+      "id": 226,
       "category": "mesh_topology",
       "defect": "Boot soles absent \u2014 feet geometry flat on bottom"
     },
     {
-      "id": 225,
+      "id": 227,
       "category": "mesh_topology",
       "defect": "Glove interiors absent \u2014 hollow hand geometry"
     },
     {
-      "id": 221,
+      "id": 228,
       "category": "pipeline_readiness",
       "defect": "No SKM1 binary \u2014 model cannot be loaded by engine"
     },
     {
-      "id": 222,
+      "id": 229,
       "category": "pipeline_readiness",
       "defect": "No ANM1 animation \u2014 no walk/run/idle clips available"
     },
     {
-      "id": 223,
+      "id": 230,
       "category": "pipeline_readiness",
       "defect": "No extraction script output \u2014 Blender\u2192SKM1 step not performed"
     },
     {
-      "id": 224,
+      "id": 231,
       "category": "pipeline_readiness",
       "defect": "FBX not converted to engine format \u2014 only raw Meshy GLB"
     },
     {
-      "id": 225,
+      "id": 232,
       "category": "pipeline_readiness",
       "defect": "GLB uses glTF 2.0 with PBR \u2014 engine expects custom SKM1 binary"
     },
     {
-      "id": 226,
+      "id": 233,
       "category": "pipeline_readiness",
       "defect": "No bone hierarchy \u2014 engine skeleton contract requires 24 named bones"
     },
     {
-      "id": 227,
+      "id": 234,
       "category": "pipeline_readiness",
       "defect": "Engine requires 8-influence skinning \u2014 model has zero influences"
     },
     {
-      "id": 228,
+      "id": 235,
       "category": "pipeline_readiness",
       "defect": "SkinnedVertex format expects 96-byte vertex \u2014 model has no skin data"
     },
     {
-      "id": 229,
+      "id": 236,
       "category": "pipeline_readiness",
       "defect": "Renderer expects separate mesh+animation files \u2014 model is single static GLB"
     },
     {
-      "id": 230,
+      "id": 237,
       "category": "pipeline_readiness",
       "defect": "Asset path convention not followed \u2014 should be under assets/source/meshy/<task>/cooked/"
     },
     {
-      "id": 231,
+      "id": 238,
       "category": "pipeline_readiness",
       "defect": "No manifest file tracking provenance, SHA-256, bounds, bone count"
     },
     {
-      "id": 232,
+      "id": 239,
       "category": "pipeline_readiness",
       "defect": "No validation receipt from tools/verify_skinned_bin.py"
     },
     {
-      "id": 233,
+      "id": 240,
       "category": "pipeline_readiness",
       "defect": "Missing cooked directory entirely \u2014 assets/source/meshy/*/cooked/ does not exist"
     },
     {
-      "id": 234,
+      "id": 241,
       "category": "pipeline_readiness",
       "defect": "Engine game_loop hardcodes c0_base_fighter path \u2014 new fighter needs code change"
     },
     {
-      "id": 235,
+      "id": 242,
       "category": "pipeline_readiness",
       "defect": "Renderer shader expects 24 joints \u2014 model has 0 bones, would display as static mesh"
     },
     {
-      "id": 236,
+      "id": 243,
       "category": "pipeline_readiness",
       "defect": "No texture binding code path for external PBR textures in current renderer"
     },
     {
-      "id": 237,
+      "id": 244,
       "category": "pipeline_readiness",
       "defect": "Renderer uses single albedo \u2014 PBR metallic/roughness/normal maps unused"
     },
     {
-      "id": 238,
+      "id": 245,
       "category": "pipeline_readiness",
       "defect": "PBR textures would need new shader pipeline \u2014 currently unsupported"
     },
     {
-      "id": 239,
+      "id": 246,
       "category": "pipeline_readiness",
       "defect": "HD textures (4K) waste VRAM \u2014 4096\u00d74096 for base color on a single character"
     },
     {
-      "id": 240,
+      "id": 247,
       "category": "pipeline_readiness",
       "defect": "No mipmap generation \u2014 full-resolution textures at all distances"
     },
     {
-      "id": 241,
+      "id": 248,
       "category": "pipeline_readiness",
       "defect": "Model file (41MB GLB) would need to be cooked down to <5MB binary"
     },
     {
-      "id": 242,
+      "id": 249,
       "category": "pipeline_readiness",
       "defect": "No compression pass \u2014 Draco, meshopt, or quantization not applied"
     },
     {
-      "id": 243,
+      "id": 250,
       "category": "pipeline_readiness",
       "defect": "No LOD generation pipeline \u2014 single 463K-tri mesh for all distances"
     },
     {
-      "id": 244,
+      "id": 251,
       "category": "pipeline_readiness",
       "defect": "Mesh at 463K tris would consume ~3.7MB VRAM for vertex data alone"
     },
     {
-      "id": 245,
+      "id": 252,
       "category": "pipeline_readiness",
       "defect": "Textures at 4K would consume ~64MB VRAM uncompressed \u2014 16\u00d7 typical budget"
     },
     {
-      "id": 246,
+      "id": 253,
       "category": "pipeline_readiness",
       "defect": "Combined VRAM estimate >70MB for single character \u2014 exceeds Steam Deck budget"
     },
     {
-      "id": 247,
+      "id": 254,
       "category": "pipeline_readiness",
       "defect": "No collider mesh \u2014 physics engine has nothing to collide against"
     },
     {
-      "id": 248,
+      "id": 255,
       "category": "pipeline_readiness",
       "defect": "No ragdoll bone mapping \u2014 injury system cannot map damage to body parts"
     },
     {
-      "id": 249,
+      "id": 256,
       "category": "pipeline_readiness",
       "defect": "No material ID separation \u2014 armor/body/skin all one material, no damage mapping"
     },
     {
-      "id": 250,
+      "id": 257,
       "category": "pipeline_readiness",
       "defect": "Engine expects metric scale (1 unit = 1 meter) \u2014 model is 1.90m, plausible but unverified"
     },
     {
-      "id": 251,
+      "id": 258,
       "category": "pipeline_readiness",
       "defect": "Coordinate space unverified \u2014 GLB Y-up vs engine Y-up may differ"
     },
     {
-      "id": 252,
+      "id": 259,
       "category": "pipeline_readiness",
       "defect": "No axis conversion validated \u2014 model may import sideways or inverted"
     },
     {
-      "id": 253,
+      "id": 260,
       "category": "pipeline_readiness",
       "defect": "No scale factor applied \u2014 1.90m height is plausible but no explicit scale manifest"
     },
     {
-      "id": 254,
+      "id": 261,
       "category": "pipeline_readiness",
       "defect": "No root motion bone \u2014 character cannot be moved by engine"
     },
     {
-      "id": 255,
+      "id": 262,
       "category": "pipeline_readiness",
       "defect": "No weapon socket definition \u2014 engine cannot attach weapon to hand"
     },
     {
-      "id": 256,
+      "id": 263,
       "category": "pipeline_readiness",
       "defect": "No grip calibration data \u2014 weapon attachment would be guesswork"
     },
     {
-      "id": 257,
+      "id": 264,
       "category": "pipeline_readiness",
       "defect": "No foot placement data \u2014 engine cannot align feet to ground plane"
     },
     {
-      "id": 258,
+      "id": 265,
       "category": "pipeline_readiness",
       "defect": "No head/eye position \u2014 camera placement would be guesswork"
     },
     {
-      "id": 259,
+      "id": 266,
       "category": "pipeline_readiness",
       "defect": "Pipeline research (FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md) ignored \u2014 API used instead of web"
     },
     {
-      "id": 260,
+      "id": 267,
       "category": "pipeline_readiness",
       "defect": "Meshy web interface not used \u2014 task invisible to user for visual review"
     },
     {
-      "id": 261,
+      "id": 268,
       "category": "pipeline_readiness",
       "defect": "API task 019f85f0 created without owner visual checkpoint \u2014 violates new ADHD evidence spec"
     },
     {
-      "id": 262,
+      "id": 269,
       "category": "pipeline_readiness",
       "defect": "Reference images generated but not reviewed by owner before spending credits"
     },
     {
-      "id": 263,
+      "id": 270,
       "category": "pipeline_readiness",
       "defect": "30 Meshy credits spent on model that's immediately rejected \u2014 wasted budget"
     },
     {
-      "id": 264,
+      "id": 271,
       "category": "pipeline_readiness",
       "defect": "Previous task 019f85a5 also 30 credits, also rejected \u2014 60 credits with zero usable output"
     },
     {
-      "id": 265,
+      "id": 272,
       "category": "pipeline_readiness",
       "defect": "Both rejected tasks share same root cause \u2014 API path hides visual defects until download"
     },
     {
-      "id": 266,
+      "id": 273,
       "category": "pipeline_readiness",
       "defect": "No visual evidence portal used \u2014 owner cannot see model until downloaded GLB"
     },
     {
-      "id": 267,
+      "id": 274,
       "category": "pipeline_readiness",
       "defect": "GLB cannot be rendered headless \u2014 xvfb/EEVEE failure blocks automated visual QA"
     },
     {
-      "id": 268,
+      "id": 275,
       "category": "pipeline_readiness",
       "defect": "No automated mesh validation ran before presenting to owner \u2014 wasted human review time"
     },
     {
-      "id": 269,
+      "id": 276,
       "category": "pipeline_readiness",
       "defect": "No rigging attempt \u2014 model would fail even if accepted because no bones"
     },
     {
-      "id": 270,
+      "id": 277,
       "category": "pipeline_readiness",
       "defect": "Rigging service unavailable \u2014 463K faces exceeds 300K limit"
     },
     {
-      "id": 271,
+      "id": 278,
       "category": "pipeline_readiness",
       "defect": "Smart Topology (meshy-t2) not used \u2014 could have produced separated parts"
     },
     {
-      "id": 272,
+      "id": 279,
       "category": "pipeline_readiness",
       "defect": "Auto Split not used \u2014 could have isolated armor components"
     },
     {
-      "id": 273,
+      "id": 280,
       "category": "pipeline_readiness",
       "defect": "Multi-view image-to-3D used but reference quality insufficient for clean T-pose"
     },
     {
-      "id": 274,
+      "id": 281,
       "category": "pipeline_readiness",
       "defect": "Pose Control set to t-pose but output arms still below horizontal"
     },
     {
-      "id": 275,
+      "id": 282,
       "category": "pipeline_readiness",
       "defect": "HD texture enabled on rejected model \u2014 wasted processing time"
     },
     {
-      "id": 276,
+      "id": 283,
       "category": "pipeline_readiness",
       "defect": "remove_lighting enabled but base color likely still has baked lighting"
     },
     {
-      "id": 277,
+      "id": 284,
       "category": "pipeline_readiness",
       "defect": "image_enhancement enabled but reference images had perspective distortion"
     },
     {
-      "id": 278,
+      "id": 285,
       "category": "pipeline_readiness",
       "defect": "PBR enabled but engine cannot use PBR \u2014 wasted generation complexity"
     },
     {
-      "id": 279,
+      "id": 286,
       "category": "pipeline_readiness",
       "defect": "should_remesh not used \u2014 model is raw dense output, no game optimization"
     },
     {
-      "id": 280,
+      "id": 287,
       "category": "pipeline_readiness",
       "defect": "topology not set to quad \u2014 triangle mesh harder to edit in Blender"
     },
     {
-      "id": 281,
+      "id": 288,
       "category": "pipeline_readiness",
       "defect": "target_polycount not set \u2014 generator used maximum detail instead of game budget"
     },
     {
-      "id": 281,
+      "id": 289,
       "category": "visual_rendering",
       "defect": "Reference image background not perfectly uniform \u2014 gradient + mottling"
     },
     {
-      "id": 282,
+      "id": 290,
       "category": "visual_rendering",
       "defect": "Background corners darker than center \u2014 non-uniform for segmentation"
     },
     {
-      "id": 283,
+      "id": 291,
       "category": "visual_rendering",
       "defect": "No chroma-key background \u2014 gray blends with dark metal highlights"
     },
     {
-      "id": 284,
+      "id": 292,
       "category": "visual_rendering",
       "defect": "Faint ground shadow complicates exact foot segmentation"
     },
     {
-      "id": 285,
+      "id": 293,
       "category": "visual_rendering",
       "defect": "No horizon line or ground plane reference"
     },
     {
-      "id": 286,
+      "id": 294,
       "category": "visual_rendering",
       "defect": "No alignment guides through anatomical landmarks"
     },
     {
-      "id": 287,
+      "id": 295,
       "category": "visual_rendering",
       "defect": "Soft frontal lighting uneven \u2014 lower body darker than chest/face"
     },
     {
-      "id": 288,
+      "id": 296,
       "category": "visual_rendering",
       "defect": "Breastplate has strong central highlight \u2014 may exaggerate curvature"
     },
     {
-      "id": 289,
+      "id": 297,
       "category": "visual_rendering",
       "defect": "Shoulder highlights differ left vs right \u2014 asymmetric lighting"
     },
     {
-      "id": 290,
+      "id": 298,
       "category": "visual_rendering",
       "defect": "Inner arms, waist, groin, inner legs lose detail in shadow"
     },
     {
-      "id": 291,
+      "id": 299,
       "category": "visual_rendering",
       "defect": "Specular reflections on metal obscure edge transitions"
     },
     {
-      "id": 292,
+      "id": 300,
       "category": "visual_rendering",
       "defect": "Face lighting more flattering than diagnostic \u2014 not construction-grade"
     },
     {
-      "id": 293,
+      "id": 301,
       "category": "visual_rendering",
       "defect": "Hair shadows obscure ears and neck"
     },
     {
-      "id": 294,
+      "id": 302,
       "category": "visual_rendering",
       "defect": "Contact shadows around feet interfere with sole outlines"
     },
     {
-      "id": 295,
+      "id": 303,
       "category": "visual_rendering",
       "defect": "No dedicated rim or profile illumination for construction clarity"
     },
     {
-      "id": 296,
+      "id": 304,
       "category": "visual_rendering",
       "defect": "Heavy scratches and patina on armor \u2014 hard to separate seams from texture marks"
     },
     {
-      "id": 297,
+      "id": 305,
       "category": "visual_rendering",
       "defect": "Edge wear can create false impressions of bevels or thickness"
     },
     {
-      "id": 298,
+      "id": 306,
       "category": "visual_rendering",
       "defect": "Specular highlights can be mistaken for ridges"
     },
     {
-      "id": 299,
+      "id": 307,
       "category": "visual_rendering",
       "defect": "Dark leather, padded cloth, oxidized metal occupy similar value ranges"
     },
     {
-      "id": 300,
+      "id": 308,
       "category": "visual_rendering",
       "defect": "Material boundaries unclear \u2014 no flat-color material ID version"
     },
     {
-      "id": 301,
+      "id": 309,
       "category": "visual_rendering",
       "defect": "No untextured clay render for topology inspection"
     },
     {
-      "id": 302,
+      "id": 310,
       "category": "visual_rendering",
       "defect": "No wireframe reference"
     },
     {
-      "id": 303,
+      "id": 311,
       "category": "visual_rendering",
       "defect": "No normal/roughness/metallic breakdown images"
     },
     {
-      "id": 304,
+      "id": 312,
       "category": "visual_rendering",
       "defect": "Fine hardware insufficiently resolved \u2014 stitches, slots, pin joints indistinct"
     },
     {
-      "id": 305,
+      "id": 313,
       "category": "visual_rendering",
       "defect": "Slight soft-focus/antialiased edge treatment reduces tracing precision"
     },
     {
-      "id": 306,
+      "id": 314,
       "category": "visual_rendering",
       "defect": "Armpit regions muddy \u2014 lack clean negative space"
     },
     {
-      "id": 307,
+      "id": 315,
       "category": "visual_rendering",
       "defect": "Breastplate sides, straps, upper-arm layers overlap in dense dark clusters"
     },
     {
-      "id": 308,
+      "id": 316,
       "category": "visual_rendering",
       "defect": "Waist belts, skirt, tassets, trousers form visually congested dark region"
     },
     {
-      "id": 309,
+      "id": 317,
       "category": "visual_rendering",
       "defect": "Inner-thigh separation narrow and dark"
     },
     {
-      "id": 310,
+      "id": 318,
       "category": "visual_rendering",
       "defect": "Knee and greave overlaps low-contrast"
     },
     {
-      "id": 311,
+      "id": 319,
       "category": "visual_rendering",
       "defect": "Boot shafts and lower greave edges partially merge"
     },
     {
-      "id": 312,
+      "id": 320,
       "category": "visual_rendering",
       "defect": "Hair blends into dark collar at sides and rear of neck"
     },
     {
-      "id": 313,
+      "id": 321,
       "category": "visual_rendering",
       "defect": "Small leather straps readable only by highlight, not silhouette"
     },
     {
-      "id": 314,
+      "id": 322,
       "category": "visual_rendering",
       "defect": "Weathered texture adds high-frequency noise competing with construction lines"
     },
     {
-      "id": 315,
+      "id": 323,
       "category": "visual_rendering",
       "defect": "Top margin excessive, bottom margin adequate, side margins nearly zero"
     },
     {
-      "id": 316,
+      "id": 324,
       "category": "visual_rendering",
       "defect": "Fingertips dangerously close to left/right image borders"
     },
     {
-      "id": 317,
+      "id": 325,
       "category": "visual_rendering",
       "defect": "Image aspect ratio not 1:1 \u2014 harder to use as square texture input"
     },
     {
-      "id": 318,
+      "id": 326,
       "category": "visual_rendering",
       "defect": "No turntable animation \u2014 single static view with unknown depth"
     },
     {
-      "id": 319,
+      "id": 327,
       "category": "visual_rendering",
       "defect": "Side and rear reference images also have perspective distortion"
     },
     {
-      "id": 320,
+      "id": 328,
       "category": "visual_rendering",
       "defect": "Front_three_quarter image has different apparent lighting than front"
     },
     {
-      "id": 321,
+      "id": 329,
       "category": "visual_rendering",
       "defect": "Right view armor details differ from front \u2014 inconsistent across views"
     },
     {
-      "id": 322,
+      "id": 330,
       "category": "visual_rendering",
       "defect": "Back view may have different armor construction than front implies"
     },
     {
-      "id": 323,
+      "id": 331,
       "category": "visual_rendering",
       "defect": "Four reference images not perfectly consistent in scale/framing"
     },
     {
-      "id": 324,
+      "id": 332,
       "category": "visual_rendering",
       "defect": "Image resolution 1024\u00d71024 adequate but not production reference quality (2K+)"
     },
     {
-      "id": 325,
+      "id": 333,
       "category": "visual_rendering",
       "defect": "No EXIF metadata \u2014 no camera/lens info for photogrammetry calibration"
     },
     {
-      "id": 326,
+      "id": 334,
       "category": "visual_rendering",
       "defect": "No color calibration chart in frame"
     },
     {
-      "id": 327,
+      "id": 335,
       "category": "visual_rendering",
       "defect": "No scale reference object of known dimensions"
     },
     {
-      "id": 328,
+      "id": 336,
       "category": "visual_rendering",
       "defect": "No separate diffuse/specular/normal photo set \u2014 single beauty render only"
     },
     {
-      "id": 329,
+      "id": 337,
       "category": "visual_rendering",
       "defect": "PNG format OK but no RAW or 16-bit source \u2014 8-bit banding in gradients"
     },
     {
-      "id": 330,
+      "id": 338,
       "category": "visual_rendering",
       "defect": "Image compression artifacts visible in dark gradient areas"
     },
     {
-      "id": 331,
+      "id": 339,
       "category": "visual_rendering",
       "defect": "Character centered but slight horizontal offset visible in right view"
     },
     {
-      "id": 332,
+      "id": 340,
       "category": "visual_rendering",
       "defect": "Front_three_quarter shows different shadow direction than front \u2014 lighting inconsistency"
     },
     {
-      "id": 333,
+      "id": 341,
       "category": "visual_rendering",
       "defect": "Back view has less visible detail than front \u2014 backplate poorly lit"
     },
     {
-      "id": 334,
+      "id": 342,
       "category": "visual_rendering",
       "defect": "Side view depth appears flat \u2014 character silhouette nearly same as front"
     },
     {
-      "id": 335,
+      "id": 343,
       "category": "visual_rendering",
       "defect": "No close-up renders of hands, feet, face, armor joints"
     },
     {
-      "id": 336,
+      "id": 344,
       "category": "visual_rendering",
       "defect": "Overall image set: 4 views but not true multi-view rig \u2014 uncalibrated cameras"
     },
     {
-      "id": 337,
+      "id": 345,
       "category": "visual_rendering",
       "defect": "No turntable sequence with known rotation angles"
     },
     {
-      "id": 338,
+      "id": 346,
       "category": "visual_rendering",
       "defect": "Image set cannot be used for photogrammetry \u2014 uncalibrated, inconsistent lighting"
     },
     {
-      "id": 339,
+      "id": 347,
       "category": "visual_rendering",
       "defect": "Texture colors differ between reference images and GLB textures \u2014 generation color shift"
     },
     {
-      "id": 340,
+      "id": 348,
       "category": "visual_rendering",
       "defect": "GLB base color texture darker than reference image \u2014 lost brightness in generation"
     },
     {
-      "id": 341,
+      "id": 349,
       "category": "visual_rendering",
       "defect": "GLB metallic map likely incorrect \u2014 generator guesses from single lighting condition"
     },
     {
-      "id": 342,
+      "id": 350,
       "category": "visual_rendering",
       "defect": "GLB roughness map likely uniform \u2014 no material-specific roughness variation"
     },
     {
-      "id": 343,
+      "id": 351,
       "category": "visual_rendering",
       "defect": "GLB normal map shows baked-in cavity from reference lighting \u2014 double occlusion"
     },
     {
-      "id": 344,
+      "id": 352,
       "category": "visual_rendering",
       "defect": "GLB emission map present but meaningless \u2014 no self-illuminating materials on character"
     },
     {
-      "id": 345,
+      "id": 353,
       "category": "visual_rendering",
       "defect": "Headless Blender render completely black \u2014 EEVEE/Cycles incompatibility with Meshy PBR"
     },
     {
-      "id": 346,
+      "id": 354,
       "category": "visual_rendering",
       "defect": "Model invisible in xvfb EEVEE \u2014 blocks automated visual QA pipeline"
     },
     {
-      "id": 347,
+      "id": 355,
       "category": "visual_rendering",
       "defect": "Model renders as dark silhouette against black background \u2014 invisible for review"
     },
     {
-      "id": 348,
+      "id": 356,
       "category": "visual_rendering",
       "defect": "No way to visually inspect model without Blender GUI \u2014 blocks CI/CD visual gates"
     },
     {
-      "id": 349,
+      "id": 357,
       "category": "visual_rendering",
       "defect": "Reference image 'front.png' SHA-256: 6d6d8c1a... \u2014 not pinned in manifest"
     },
     {
-      "id": 350,
+      "id": 358,
       "category": "visual_rendering",
       "defect": "No visual difference comparison between task 019f85a5 and 019f85f0"
     },
     {
-      "id": 351,
+      "id": 359,
       "category": "visual_rendering",
       "defect": "No pixel-diff between front render and reference \u2014 cannot measure fidelity"
     },
     {
-      "id": 352,
+      "id": 360,
       "category": "visual_rendering",
       "defect": "No wireframe overlay render available for density inspection"
     },
     {
-      "id": 353,
+      "id": 361,
       "category": "visual_rendering",
       "defect": "No UV checker pattern render available for UV quality inspection"
     },
     {
-      "id": 354,
+      "id": 362,
       "category": "visual_rendering",
       "defect": "No matcap/normal-map-only render available for surface quality"
     },
     {
-      "id": 355,
+      "id": 363,
       "category": "visual_rendering",
       "defect": "No ambient-occlusion-only render for cavity inspection"
     },
     {
-      "id": 356,
+      "id": 364,
       "category": "visual_rendering",
       "defect": "No thickness/curvature map render for mesh quality"
     },
     {
-      "id": 357,
+      "id": 365,
       "category": "visual_rendering",
       "defect": "No LOD comparison \u2014 single resolution render only"
     },
     {
-      "id": 358,
+      "id": 366,
       "category": "visual_rendering",
       "defect": "No screenshot from Meshy web preview \u2014 API task has no web thumbnail"
     },
     {
-      "id": 361,
+      "id": 367,
       "category": "production_process",
       "defect": "No asset brief filled before generation \u2014 no target specs documented"
     },
     {
-      "id": 362,
+      "id": 368,
       "category": "production_process",
       "defect": "No component manifest \u2014 body/armor/weapon not planned as separate parts"
     },
     {
-      "id": 363,
+      "id": 369,
       "category": "production_process",
       "defect": "No G0 art brief gate passed before spending credits"
     },
     {
-      "id": 364,
+      "id": 370,
       "category": "production_process",
       "defect": "No G1 human concept approval before 3D generation"
     },
     {
-      "id": 365,
+      "id": 371,
       "category": "production_process",
       "defect": "Reference images generated without owner review \u2014 approval skipped"
     },
     {
-      "id": 366,
+      "id": 372,
       "category": "production_process",
       "defect": "4 reference views generated but no style consistency validation"
     },
     {
-      "id": 367,
+      "id": 373,
       "category": "production_process",
       "defect": "Armor design not finalized \u2014 generated whatever GPT Image produced"
     },
     {
-      "id": 368,
+      "id": 374,
       "category": "production_process",
       "defect": "No weapon concept generated alongside fighter \u2014 missing equipment"
     },
     {
-      "id": 369,
+      "id": 375,
       "category": "production_process",
       "defect": "No target polycount specified before generation (should be \u226425K)"
     },
     {
-      "id": 370,
+      "id": 376,
       "category": "production_process",
       "defect": "No target skeleton specified \u2014 24-bone requirement not communicated to generator"
     },
     {
-      "id": 371,
+      "id": 377,
       "category": "production_process",
       "defect": "Meshy API default settings used \u2014 no optimization for game character"
     },
     {
-      "id": 372,
+      "id": 378,
       "category": "production_process",
       "defect": "Multi-image-to-3D chosen over single-image \u2014 more expensive, same result quality"
     },
     {
-      "id": 373,
+      "id": 379,
       "category": "production_process",
       "defect": "30 credits spent without checking if web interface would be cheaper/better"
     },
     {
-      "id": 374,
+      "id": 380,
       "category": "production_process",
       "defect": "No cost analysis \u2014 could have tested text-to-3d first (cheaper)"
     },
     {
-      "id": 375,
+      "id": 381,
       "category": "production_process",
       "defect": "No comparison with other providers (Tripo, Rodin, Hunyuan3D)"
     },
     {
-      "id": 376,
+      "id": 382,
       "category": "production_process",
       "defect": "Meshy account credits used without tracking remaining balance"
     },
     {
-      "id": 377,
+      "id": 383,
       "category": "production_process",
       "defect": "No credit budget allocated per fighter attempt"
     },
     {
-      "id": 378,
+      "id": 384,
       "category": "production_process",
       "defect": "Two attempts consumed 60 credits \u2014 if budget is 200, 30% spent with zero usable output"
     },
     {
-      "id": 379,
+      "id": 385,
       "category": "production_process",
       "defect": "No credit spending limit enforced \u2014 could exhaust budget on bad generations"
     },
     {
-      "id": 380,
+      "id": 386,
       "category": "production_process",
       "defect": "Generation parameters not documented in a runbook \u2014 not reproducible"
     },
     {
-      "id": 381,
+      "id": 387,
       "category": "production_process",
       "defect": "No seed recorded \u2014 cannot reproduce exact same model even with same inputs"
     },
     {
-      "id": 382,
+      "id": 388,
       "category": "production_process",
       "defect": "Prompt engineering research (FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md) exists but not followed"
     },
     {
-      "id": 383,
+      "id": 389,
       "category": "production_process",
       "defect": "Research recommends controlled multi-view + web inspection \u2014 API path ignored this"
     },
     {
-      "id": 384,
+      "id": 390,
       "category": "production_process",
       "defect": "Research recommends generating candidates and rejecting \u2014 only 1 per task generated"
     },
     {
-      "id": 385,
+      "id": 391,
       "category": "production_process",
       "defect": "Research recommends Smart Topology for separated parts \u2014 standard output used instead"
     },
     {
-      "id": 386,
+      "id": 392,
       "category": "production_process",
       "defect": "Research recommends \u2264300K face budget \u2014 both outputs exceed this"
     },
     {
-      "id": 387,
+      "id": 393,
       "category": "production_process",
       "defect": "No Blender inspection before accepting download \u2014 whole GLB downloaded then inspected"
     },
     {
-      "id": 388,
+      "id": 394,
       "category": "production_process",
       "defect": "Download 41MB GLB before checking if it's usable \u2014 wasted bandwidth and disk"
     },
     {
-      "id": 389,
+      "id": 395,
       "category": "production_process",
       "defect": "No component-first approach \u2014 whole character generated at once, cannot isolate failures"
     },
     {
-      "id": 390,
+      "id": 396,
       "category": "production_process",
       "defect": "Body and armor should have been generated separately for independent QA"
     },
     {
-      "id": 391,
+      "id": 397,
       "category": "production_process",
       "defect": "Hands should have been generated/tested independently before full character"
     },
     {
-      "id": 392,
+      "id": 398,
       "category": "production_process",
       "defect": "No iteration on reference images \u2014 used first GPT Image output as-is"
     },
     {
-      "id": 393,
+      "id": 399,
       "category": "production_process",
       "defect": "GPT Image prompt not iterated \u2014 arms not horizontal in first output but used anyway"
     },
     {
-      "id": 394,
+      "id": 400,
       "category": "production_process",
       "defect": "No side-by-side comparison of reference images before submission to Meshy"
     },
     {
-      "id": 395,
+      "id": 401,
       "category": "production_process",
       "defect": "Owner rejection received after 60 credits and 2 full generations \u2014 late failure"
     },
     {
-      "id": 396,
+      "id": 402,
       "category": "production_process",
       "defect": "Rejection reason (hands/armor/arms) was visible in reference images \u2014 should have been caught"
     },
     {
-      "id": 397,
+      "id": 403,
       "category": "production_process",
       "defect": "Hand defects visible in front.png \u2014 splayed fingers, not T-pose \u2014 yet submitted to Meshy"
     },
     {
-      "id": 398,
+      "id": 404,
       "category": "production_process",
       "defect": "Arm span defect visible in front.png \u2014 arms don't extend to full span \u2014 yet submitted"
     },
     {
-      "id": 399,
+      "id": 405,
       "category": "production_process",
       "defect": "Armor coherence issues visible in reference \u2014 pauldron asymmetry \u2014 yet submitted"
     },
     {
-      "id": 400,
+      "id": 406,
       "category": "production_process",
       "defect": "No ADHD-style evidence gate used \u2014 owner couldn't review until after download"
     },
     {
-      "id": 401,
+      "id": 407,
       "category": "production_process",
       "defect": "Evidence portal spec created but not implemented before spending credits"
     },
     {
-      "id": 402,
+      "id": 408,
       "category": "production_process",
       "defect": "New EVIDENCE_PORTAL_SPEC.md dated same day \u2014 should gate future generations"
     },
     {
-      "id": 403,
+      "id": 409,
       "category": "production_process",
       "defect": "No skill update after first rejection \u2014 repeated same API approach for second task"
     },
     {
-      "id": 404,
+      "id": 410,
       "category": "production_process",
       "defect": "game-asset-pipeline skill has extensive failure docs \u2014 none consulted before generation"
     },
     {
-      "id": 405,
+      "id": 411,
       "category": "production_process",
       "defect": "motionbricks-runtime-parity-audit skill warns about navigation vs combat checkpoints \u2014 irrelevant here but pattern of ignoring skills"
     },
     {
-      "id": 406,
+      "id": 412,
       "category": "production_process",
       "defect": "mesh-geometry-qa skill has repair procedures \u2014 model would need all of them"
     },
     {
-      "id": 407,
+      "id": 413,
       "category": "production_process",
       "defect": "No agentic-blender-production specialist dispatched for DCC cleanup"
     },
     {
-      "id": 408,
+      "id": 414,
       "category": "production_process",
       "defect": "No pre-generation checklist followed \u2014 ad-hoc API calls"
     },
     {
-      "id": 409,
+      "id": 415,
       "category": "production_process",
       "defect": "Model downloaded to meshy_output/ not assets/source/meshy/<task>/ \u2014 wrong convention"
     },
     {
-      "id": 410,
+      "id": 416,
       "category": "production_process",
       "defect": "No SHA-256 recorded for downloaded GLB until after inspection"
     },
     {
-      "id": 411,
+      "id": 417,
       "category": "production_process",
       "defect": "No manifest.json created alongside model download"
     },
     {
-      "id": 412,
+      "id": 418,
       "category": "production_process",
       "defect": "Downloaded textures not validated \u2014 could be corrupt or wrong resolution"
     },
     {
-      "id": 413,
+      "id": 419,
       "category": "production_process",
       "defect": "No automated texture resolution check \u2014 4K textures assumed, not measured"
     },
     {
-      "id": 414,
+      "id": 420,
       "category": "production_process",
       "defect": "No automated triangle count check against budget \u2014 463K accepted without rejection gate"
     },
     {
-      "id": 415,
+      "id": 421,
       "category": "production_process",
       "defect": "No automated boundary edge check \u2014 16K holes accepted without flag"
     },
     {
-      "id": 416,
+      "id": 422,
       "category": "production_process",
       "defect": "No automated bone count check \u2014 0 bones should have triggered immediate rejection"
     },
     {
-      "id": 417,
+      "id": 423,
       "category": "production_process",
       "defect": "No automated arm-span ratio check \u2014 0.898 should have triggered warning"
     },
     {
-      "id": 418,
+      "id": 424,
       "category": "production_process",
       "defect": "No automated face density check \u2014 0.000006 m\u00b2 mean area is clearly over-tessellated"
     },
     {
-      "id": 419,
+      "id": 425,
       "category": "production_process",
       "defect": "No automated watertightness check \u2014 16K boundary edges should be auto-rejected"
     },
     {
-      "id": 420,
+      "id": 426,
       "category": "production_process",
       "defect": "No gate that blocks promotion if mesh has no skeleton"
     },
     {
-      "id": 421,
+      "id": 427,
       "category": "production_process",
       "defect": "No gate that blocks promotion if mesh exceeds face budget"
     },
     {
-      "id": 422,
+      "id": 428,
       "category": "production_process",
       "defect": "No gate that blocks promotion if mesh is not watertight"
     },
     {
-      "id": 423,
+      "id": 429,
       "category": "production_process",
       "defect": "No continuous integration check for asset quality \u2014 all manual"
     },
     {
-      "id": 424,
+      "id": 430,
       "category": "production_process",
       "defect": "Time from concept to rejection: ~30 minutes for 2 full cycles \u2014 too slow for iteration"
     },
     {
-      "id": 425,
+      "id": 431,
       "category": "production_process",
       "defect": "30-minute cycle means ~2 iterations per hour \u2014 visual-first pipeline target is 5-minute cycles"
     },
     {
-      "id": 426,
+      "id": 432,
       "category": "production_process",
       "defect": "API generation + download + Blender inspection is inherently slow \u2014 should use web preview"
     },
     {
-      "id": 427,
+      "id": 433,
       "category": "production_process",
       "defect": "No parallel generation \u2014 two tasks run sequentially, not simultaneously"
     },
     {
-      "id": 428,
+      "id": 434,
       "category": "production_process",
       "defect": "No A/B testing \u2014 only one set of reference images tried"
     },
     {
-      "id": 429,
+      "id": 435,
       "category": "production_process",
       "defect": "No negative prompt used \u2014 could exclude fused fingers, short arms, bad proportions"
     },
     {
-      "id": 430,
+      "id": 436,
       "category": "production_process",
       "defect": "texture_prompt not used \u2014 could guide PBR material quality"
     },
     {
-      "id": 431,
+      "id": 437,
       "category": "production_process",
       "defect": "alpha_thumbnail not requested \u2014 could have gotten preview before full download"
     },
     {
-      "id": 432,
+      "id": 438,
       "category": "production_process",
       "defect": "multi_view_thumbnails not requested \u2014 could have seen result without download"
     },
     {
-      "id": 433,
+      "id": 439,
       "category": "production_process",
       "defect": "response_format not set to json for first call \u2014 wasted parsing time"
     },
     {
-      "id": 434,
+      "id": 440,
       "category": "production_process",
       "defect": "No error handling for Meshy API failures \u2014 single path, no retry logic"
     },
     {
-      "id": 435,
+      "id": 441,
       "category": "production_process",
       "defect": "No timeout handling \u2014 task could hang indefinitely in PENDING state"
     },
     {
-      "id": 436,
+      "id": 442,
       "category": "production_process",
       "defect": "Model downloaded via expiring S3 URL \u2014 link invalid after 24 hours, no permanent mirror"
     },
     {
-      "id": 441,
+      "id": 443,
       "category": "anatomical_gameplay",
       "defect": "No visible face \u2014 cannot read character expression or identity in-game"
     },
     {
-      "id": 442,
+      "id": 444,
       "category": "anatomical_gameplay",
       "defect": "No visible eyes \u2014 essential for first-person opponent readability"
     },
     {
-      "id": 443,
+      "id": 445,
       "category": "anatomical_gameplay",
       "defect": "Hair covers ears \u2014 no ear geometry for audio spatialization cues"
     },
     {
-      "id": 444,
+      "id": 446,
       "category": "anatomical_gameplay",
       "defect": "No mouth/jaw articulation \u2014 character cannot speak, grunt, or express pain"
     },
     {
-      "id": 445,
+      "id": 447,
       "category": "anatomical_gameplay",
       "defect": "Fingers fused or webbed at base \u2014 cannot independently articulate for grip animations"
     },
     {
-      "id": 446,
+      "id": 448,
       "category": "anatomical_gameplay",
       "defect": "Thumb webbing to palm \u2014 no opposable thumb geometry for weapon grip"
     },
     {
-      "id": 447,
+      "id": 449,
       "category": "anatomical_gameplay",
       "defect": "No finger bones \u2014 hands are static geometry, cannot grip weapons"
     },
     {
-      "id": 448,
+      "id": 450,
       "category": "anatomical_gameplay",
       "defect": "No individual toe geometry \u2014 feet are armor blobs, no foot articulation"
     },
     {
-      "id": 449,
+      "id": 451,
       "category": "anatomical_gameplay",
       "defect": "No ankle joint visible \u2014 foot cannot flex for terrain adaptation"
     },
     {
-      "id": 450,
+      "id": 452,
       "category": "anatomical_gameplay",
       "defect": "No neck articulation \u2014 head locked to torso, cannot look around"
     },
     {
-      "id": 451,
+      "id": 453,
       "category": "anatomical_gameplay",
       "defect": "No spine segmentation \u2014 torso is single rigid piece, no bend/twist"
     },
     {
-      "id": 452,
+      "id": 454,
       "category": "anatomical_gameplay",
       "defect": "No waist articulation \u2014 upper and lower body rigidly connected"
     },
     {
-      "id": 453,
+      "id": 455,
       "category": "anatomical_gameplay",
       "defect": "No shoulder blade geometry \u2014 scapular movement impossible"
     },
     {
-      "id": 454,
+      "id": 456,
       "category": "anatomical_gameplay",
       "defect": "No deltoid definition \u2014 shoulder rotation hidden by pauldrons"
     },
     {
-      "id": 455,
+      "id": 457,
       "category": "anatomical_gameplay",
       "defect": "No elbow crease \u2014 arm flex would tear geometry"
     },
     {
-      "id": 456,
+      "id": 458,
       "category": "anatomical_gameplay",
       "defect": "No wrist crease \u2014 hand rotation would tear geometry"
     },
     {
-      "id": 457,
+      "id": 459,
       "category": "anatomical_gameplay",
       "defect": "No hip crease \u2014 leg raise would tear geometry"
     },
     {
-      "id": 458,
+      "id": 460,
       "category": "anatomical_gameplay",
       "defect": "No knee crease \u2014 leg flex would tear geometry"
     },
     {
-      "id": 459,
+      "id": 461,
       "category": "anatomical_gameplay",
       "defect": "Armor plates bridge every joint \u2014 zero deformation zones"
     },
     {
-      "id": 460,
+      "id": 462,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at shoulders \u2014 arm raise blocked"
     },
     {
-      "id": 461,
+      "id": 463,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at elbows \u2014 arm bend blocked"
     },
     {
-      "id": 462,
+      "id": 464,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at wrists \u2014 hand rotation blocked"
     },
     {
-      "id": 463,
+      "id": 465,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at hips \u2014 leg raise blocked"
     },
     {
-      "id": 464,
+      "id": 466,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at knees \u2014 leg bend blocked"
     },
     {
-      "id": 465,
+      "id": 467,
       "category": "anatomical_gameplay",
       "defect": "No exposed flexible material at ankles \u2014 foot flex blocked"
     },
     {
-      "id": 466,
+      "id": 468,
       "category": "anatomical_gameplay",
       "defect": "Character cannot crouch \u2014 knee and hip armor collision"
     },
     {
-      "id": 467,
+      "id": 469,
       "category": "anatomical_gameplay",
       "defect": "Character cannot raise arms above head \u2014 pauldron/cuirass collision"
     },
     {
-      "id": 468,
+      "id": 470,
       "category": "anatomical_gameplay",
       "defect": "Character cannot look down \u2014 chin hits breastplate"
     },
     {
-      "id": 469,
+      "id": 471,
       "category": "anatomical_gameplay",
       "defect": "Character cannot run \u2014 thigh/tasset collision, no knee flex"
     },
     {
-      "id": 470,
+      "id": 472,
       "category": "anatomical_gameplay",
       "defect": "Character cannot jump \u2014 no ankle flex, rigid sole, no hip articulation"
     },
     {
-      "id": 471,
+      "id": 473,
       "category": "anatomical_gameplay",
       "defect": "Character cannot roll \u2014 armor plates would intersect at every joint"
     },
     {
-      "id": 472,
+      "id": 474,
       "category": "anatomical_gameplay",
       "defect": "Character cannot grip weapon \u2014 no finger bones, no palm crease"
     },
     {
-      "id": 473,
+      "id": 475,
       "category": "anatomical_gameplay",
       "defect": "Character cannot hold shield \u2014 no arm articulation for shield position"
     },
     {
-      "id": 474,
+      "id": 476,
       "category": "anatomical_gameplay",
       "defect": "Character cannot point or gesture \u2014 fingers fused, no independent digit control"
     },
     {
-      "id": 475,
+      "id": 477,
       "category": "anatomical_gameplay",
       "defect": "First-person view would show inside of hollow glove geometry"
     },
     {
-      "id": 476,
+      "id": 478,
       "category": "anatomical_gameplay",
       "defect": "Third-person view would show missing back-of-head geometry"
     },
     {
-      "id": 477,
+      "id": 479,
       "category": "anatomical_gameplay",
       "defect": "No hitbox mapping possible \u2014 no bone hierarchy to attach collision volumes"
     },
     {
-      "id": 478,
+      "id": 480,
       "category": "anatomical_gameplay",
       "defect": "No injury zone mapping possible \u2014 single material, no body part segmentation"
     },
     {
-      "id": 479,
+      "id": 481,
       "category": "anatomical_gameplay",
       "defect": "No armor penetration modeling \u2014 plates have zero thickness, no backface"
     },
     {
-      "id": 480,
+      "id": 482,
       "category": "anatomical_gameplay",
       "defect": "No cloth simulation attachment points \u2014 no skirt physics, no strap physics"
     },
     {
-      "id": 481,
+      "id": 483,
       "category": "anatomical_gameplay",
       "defect": "No hair physics \u2014 hair geometry static, would clip through collar"
     },
     {
-      "id": 482,
+      "id": 484,
       "category": "anatomical_gameplay",
       "defect": "No equipment swap possible \u2014 armor fused to body mesh, cannot change loadout"
     },
     {
-      "id": 483,
+      "id": 485,
       "category": "anatomical_gameplay",
       "defect": "No modular armor system \u2014 character locked to single appearance"
     },
     {
-      "id": 484,
+      "id": 486,
       "category": "anatomical_gameplay",
       "defect": "No gender variation \u2014 single male-presenting body type"
     },
     {
-      "id": 485,
+      "id": 487,
       "category": "anatomical_gameplay",
       "defect": "No body type variation \u2014 fixed proportions, no height/mass sliders"
     },
     {
-      "id": 486,
+      "id": 488,
       "category": "anatomical_gameplay",
       "defect": "No skin tone variation \u2014 single texture set, no recolorable materials"
     },
     {
-      "id": 487,
+      "id": 489,
       "category": "anatomical_gameplay",
       "defect": "No damage states \u2014 no destroyed armor geometry, no wound decals"
     },
     {
-      "id": 488,
+      "id": 490,
       "category": "anatomical_gameplay",
       "defect": "No LOD0 suitable for close-up combat \u2014 too many triangles, but also too flat depth"
     },
     {
-      "id": 489,
+      "id": 491,
       "category": "anatomical_gameplay",
       "defect": "Depth 0.358m means character is barely thicker than a cardboard cutout \u2014 immersion-breaking"
     },
     {
-      "id": 490,
+      "id": 492,
       "category": "anatomical_gameplay",
       "defect": "Arm span 1.70m on 1.90m character \u2014 looks like a T-rex in first-person view"
     },
     {
-      "id": 491,
+      "id": 493,
       "category": "anatomical_gameplay",
       "defect": "Proportions would make close-combat reach calculations inaccurate"
     },
     {
-      "id": 492,
+      "id": 494,
       "category": "anatomical_gameplay",
       "defect": "Grappling distance estimation would be wrong \u2014 arms too short for realistic clinch"
     },
     {
-      "id": 493,
+      "id": 495,
       "category": "anatomical_gameplay",
       "defect": "Weapon reach would be reduced \u2014 shorter arms = shorter effective weapon range"
     },
     {
-      "id": 494,
+      "id": 496,
       "category": "anatomical_gameplay",
       "defect": "First-person weapon view would show too-close hands \u2014 claustrophobic FOV"
     },
     {
-      "id": 495,
+      "id": 497,
       "category": "anatomical_gameplay",
       "defect": "Character silhouette in side view would be nearly invisible at 0.36m depth"
     },
     {
-      "id": 496,
+      "id": 498,
       "category": "anatomical_gameplay",
       "defect": "Silhouette readability at gameplay distance (3-5m) would be poor due to dark-on-dark armor"
     },
     {
-      "id": 497,
+      "id": 499,
       "category": "anatomical_gameplay",
       "defect": "Dark armor against dark arena foreground \u2014 would blend into background"
     },
     {
-      "id": 498,
+      "id": 500,
       "category": "anatomical_gameplay",
       "defect": "No team color or identification marking \u2014 two identical fighters indistinguishable"
     }
