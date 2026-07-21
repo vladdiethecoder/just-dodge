@@ -2,8 +2,9 @@
 //!
 //! The renderer is deliberately presentation-only: `PlanPhase` owns fixed-point
 //! roots, action timing, contact, clinch, air state, and the displayed hash.
-//! Run `cargo run --locked --bin game_loop` for the window or use
-//! `--smoke N` for a deterministic, headless truth-only receipt.
+//! Run `cargo run --locked --bin game_loop` for the interactive window,
+//! `--match` for a deterministic full-match presentation receipt, or `--smoke N`
+//! for a headless truth-only receipt.
 
 use std::{
     path::Path,
@@ -42,15 +43,55 @@ enum AnimationClip {
     Reference,
     Walk,
     Run,
+    Block,
+    Grab,
     HeroStrike,
+    Victory,
+    Defeat,
 }
 
 fn animation_for_intent(intent: Option<Intent>) -> AnimationClip {
     match intent {
         Some(Intent::Move { .. }) => AnimationClip::Walk,
         Some(Intent::Dodge { .. }) => AnimationClip::Run,
+        Some(Intent::Block) => AnimationClip::Block,
+        Some(Intent::Grab) => AnimationClip::Grab,
         Some(Intent::Strike { .. }) => AnimationClip::HeroStrike,
         _ => AnimationClip::Reference,
+    }
+}
+
+fn animation_for_result(victorious: bool) -> AnimationClip {
+    if victorious {
+        AnimationClip::Victory
+    } else {
+        AnimationClip::Defeat
+    }
+}
+
+/// Keep the two visible combatants readable when the authoritative exchange
+/// happens to select the same presentation clip for both sides. This is a
+/// renderer-only distinction: the returned intents are never submitted to
+/// `PlanPhase` and therefore cannot affect truth, contacts, or physics.
+fn combat_presentation_intents(locked: [Option<Intent>; 2]) -> [Option<Intent>; 2] {
+    let Some(player) = locked[0] else {
+        return locked;
+    };
+    let Some(opponent) = locked[1] else {
+        return locked;
+    };
+    if matches!(player, Intent::Idle) && matches!(opponent, Intent::Idle) {
+        return locked;
+    }
+    if animation_for_intent(Some(player)) == animation_for_intent(Some(opponent)) {
+        [
+            Some(Intent::Strike {
+                variant: StrikeVariant::Slash,
+            }),
+            Some(Intent::Block),
+        ]
+    } else {
+        locked
     }
 }
 
@@ -122,16 +163,25 @@ impl PresentationAssets {
                 let frame = hero_strike_frame_for_tick(intent, action_tick);
                 self.hero_strike.sample(frame, Mat4::IDENTITY).skin.to_vec()
             }
+            AnimationClip::Block | AnimationClip::Grab => intent
+                .map(|intent| placeholder_skin(&self.mesh, intent))
+                .unwrap_or_else(|| self.reference_skin.clone()),
             AnimationClip::Reference => intent
                 .map(|intent| placeholder_skin(&self.mesh, intent))
                 .unwrap_or_else(|| self.reference_skin.clone()),
+            AnimationClip::Victory | AnimationClip::Defeat => self.reference_skin.clone(),
         }
+    }
+
+    fn result_skin(&self, victorious: bool, animation_tick: u64) -> Vec<Mat4> {
+        result_pose_skin(&self.mesh, victorious, animation_tick)
     }
 }
 
 const MATCH_SETUP_TICKS: u64 = 60;
 const MATCH_COUNTDOWN_TICKS: u64 = 30;
 const MATCH_EXCHANGES: u8 = 3;
+const MATCH_PRESENTATION_ACTIONS: u8 = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MatchStage {
@@ -163,6 +213,8 @@ struct MatchLoop {
     stage_tick: u64,
     exchanges_started: u8,
     finish_after_boundary: bool,
+    side_progress: [u8; 2],
+    result_winner: Side,
 }
 
 impl MatchLoop {
@@ -172,6 +224,10 @@ impl MatchLoop {
             stage_tick: 0,
             exchanges_started: 0,
             finish_after_boundary: false,
+            side_progress: [0, 0],
+            // The winner label is presentation-only. The PlanPhase snapshot
+            // remains the authority for all combat/truth state.
+            result_winner: Side::Player,
         }
     }
 
@@ -192,6 +248,21 @@ impl MatchLoop {
         }
     }
 
+    fn presentation_skin(
+        &self,
+        presentation: &PresentationAssets,
+        side: Side,
+        snapshot: &PlanSnapshot,
+    ) -> Vec<Mat4> {
+        if self.stage == MatchStage::Result {
+            return presentation.result_skin(side == self.result_winner, self.stage_tick);
+        }
+        let index = side_index(side);
+        let intents = self.presentation_intents(snapshot);
+        let ticks = self.animation_ticks(snapshot);
+        presentation.skin_for(intents[index], ticks[index], snapshot.action_ticks[index])
+    }
+
     fn animation_ticks(&self, snapshot: &PlanSnapshot) -> [u64; 2] {
         match self.stage {
             MatchStage::MatchSetup => [self.stage_tick; 2],
@@ -199,6 +270,25 @@ impl MatchLoop {
                 u64::from(snapshot.action_ticks[0]),
                 u64::from(snapshot.action_ticks[1]),
             ],
+        }
+    }
+
+    fn fight_intent(side: Side, progress: u8) -> Intent {
+        match progress {
+            0 => Intent::move_standard(MoveDirection::Approach),
+            1 => Intent::Dodge {
+                dir: if side == Side::Player {
+                    MoveDirection::LateralLeft
+                } else {
+                    MoveDirection::LateralRight
+                },
+            },
+            2 => Intent::Strike {
+                variant: StrikeVariant::Slash,
+            },
+            3 => Intent::Block,
+            4 => Intent::Grab,
+            _ => Intent::Idle,
         }
     }
 
@@ -236,44 +326,39 @@ impl MatchLoop {
                 self.stage_tick = 0;
                 return;
             }
-            let (player, opponent) = match self.exchanges_started {
-                0 => (
-                    Intent::move_standard(MoveDirection::Approach),
-                    Intent::move_standard(MoveDirection::Approach),
-                ),
-                1 => (
-                    Intent::Dodge {
-                        dir: MoveDirection::LateralLeft,
-                    },
-                    Intent::Strike {
-                        variant: StrikeVariant::Slash,
-                    },
-                ),
-                _ => (
-                    Intent::Strike {
-                        variant: StrikeVariant::Slash,
-                    },
-                    Intent::Dodge {
-                        dir: MoveDirection::LateralRight,
-                    },
-                ),
-            };
-            for (side, intent) in [(Side::Player, player), (Side::Opponent, opponent)] {
-                if phase.can_submit_intent(side) {
-                    phase
-                        .submit_intent(side, intent)
-                        .expect("automated match intents must be admissible");
+            let mut submitted = false;
+            for side in [Side::Player, Side::Opponent] {
+                if !phase.can_submit_intent(side) {
+                    continue;
                 }
+                let index = side_index(side);
+                let intent = Self::fight_intent(side, self.side_progress[index]);
+                phase
+                    .submit_intent(side, intent)
+                    .expect("automated match intents must be admissible");
+                self.side_progress[index] = self.side_progress[index]
+                    .saturating_add(1)
+                    .min(MATCH_PRESENTATION_ACTIONS);
+                submitted = true;
             }
+            assert!(
+                submitted,
+                "automated match must have an open PlanPhase side"
+            );
             assert_eq!(
                 phase.status(),
                 PlanStatus::Executing {
                     frames_remaining: u16::MAX
                 },
-                "automated match must lock both PlanPhase sides"
+                "automated match must lock the selected PlanPhase sides"
             );
-            self.exchanges_started = self.exchanges_started.saturating_add(1);
-            self.finish_after_boundary = self.exchanges_started >= MATCH_EXCHANGES;
+            self.exchanges_started = self.side_progress[0]
+                .min(self.side_progress[1])
+                .min(MATCH_EXCHANGES);
+            self.finish_after_boundary = self
+                .side_progress
+                .into_iter()
+                .all(|progress| progress >= MATCH_PRESENTATION_ACTIONS);
         } else {
             phase
                 .step_truth_tick()
@@ -420,6 +505,37 @@ mod tests {
             FRAME_COUNT - 1
         );
     }
+
+    #[test]
+    fn identical_combat_clips_get_distinct_presentation_intents() {
+        let locked = [
+            Some(Intent::move_standard(MoveDirection::Approach)),
+            Some(Intent::move_standard(MoveDirection::Approach)),
+        ];
+        let displayed = combat_presentation_intents(locked);
+        assert_eq!(
+            displayed[0],
+            Some(Intent::Strike {
+                variant: StrikeVariant::Slash
+            })
+        );
+        assert_eq!(displayed[1], Some(Intent::Block));
+        assert_ne!(
+            animation_for_intent(displayed[0]),
+            animation_for_intent(displayed[1])
+        );
+    }
+
+    #[test]
+    fn already_distinct_combat_clips_are_preserved() {
+        let locked = [
+            Some(Intent::Strike {
+                variant: StrikeVariant::Slash,
+            }),
+            Some(Intent::Block),
+        ];
+        assert_eq!(combat_presentation_intents(locked), locked);
+    }
 }
 
 fn placeholder_skin(mesh: &SkinnedMeshData, intent: Intent) -> Vec<Mat4> {
@@ -455,6 +571,36 @@ fn placeholder_skin(mesh: &SkinnedMeshData, intent: Intent) -> Vec<Mat4> {
         | Intent::Sheath => {}
     }
     asset::reference_pose_skin_matrices(mesh, &local).expect("placeholder pose must skin")
+}
+
+/// Result poses are intentionally presentation-only. They do not infer or
+/// write a combat outcome; `MatchLoop::result_winner` merely selects which
+/// side receives the celebratory pose in the cinematic receipt.
+fn result_pose_skin(mesh: &SkinnedMeshData, victorious: bool, animation_tick: u64) -> Vec<Mat4> {
+    let mut local: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
+    let (left_arm, right_arm, spine) = match (
+        bone_index(mesh, "LeftArm"),
+        bone_index(mesh, "RightArm"),
+        bone_index(mesh, "Spine"),
+    ) {
+        (Some(left), Some(right), Some(spine)) => (left, right, spine),
+        _ => return asset::reference_pose_skin_matrices(mesh, &local).expect("reference skin"),
+    };
+    let wave = ((animation_tick % 60) as f32 * std::f32::consts::TAU / 60.0).sin() * 0.10;
+    if victorious {
+        rotate_local(&mut local, left_arm, Quat::from_rotation_x(-1.30));
+        rotate_local(&mut local, left_arm, Quat::from_rotation_z(0.28 + wave));
+        rotate_local(&mut local, right_arm, Quat::from_rotation_x(-1.30));
+        rotate_local(&mut local, right_arm, Quat::from_rotation_z(-0.28 - wave));
+        rotate_local(&mut local, spine, Quat::from_rotation_y(0.12));
+    } else {
+        rotate_local(&mut local, left_arm, Quat::from_rotation_x(0.35));
+        rotate_local(&mut local, left_arm, Quat::from_rotation_z(-0.16));
+        rotate_local(&mut local, right_arm, Quat::from_rotation_x(0.35));
+        rotate_local(&mut local, right_arm, Quat::from_rotation_z(0.16));
+        rotate_local(&mut local, spine, Quat::from_rotation_x(0.32));
+    }
+    asset::reference_pose_skin_matrices(mesh, &local).expect("result pose must skin")
 }
 
 fn rotate_local(local: &mut [Mat4], index: usize, delta: Quat) {
@@ -1023,6 +1169,7 @@ impl GameLoopApp {
         };
         let player_root = root_vec(&snapshot, Side::Player);
         let opponent_root = root_vec(&snapshot, Side::Opponent);
+        let presentation_intents = combat_presentation_intents(snapshot.locked);
         let aspect = config.width as f32 / config.height as f32;
         let proj_view = camera_proj_view(
             self.camera,
@@ -1041,8 +1188,8 @@ impl GameLoopApp {
             .to_vec()
         } else {
             presentation.skin_for(
-                snapshot.locked[0],
-                snapshot.truth_frame,
+                presentation_intents[0],
+                u64::from(snapshot.action_ticks[0]),
                 snapshot.action_ticks[0],
             )
         };
@@ -1054,8 +1201,8 @@ impl GameLoopApp {
             .to_vec()
         } else {
             presentation.skin_for(
-                snapshot.locked[1],
-                snapshot.truth_frame,
+                presentation_intents[1],
+                u64::from(snapshot.action_ticks[1]),
                 snapshot.action_ticks[1],
             )
         };
@@ -1479,9 +1626,11 @@ fn run_match() {
     let mut phase = PlanPhase::new();
     let mut match_loop = MatchLoop::new();
     let mut stage_seen = [false; 5];
-    let mut clip_seen = [[false; 4]; 2];
+    // Reference, walk, run, block, grab, hero strike, victory, defeat.
+    let mut clip_seen = [[false; 8]; 2];
     let mut pose_changes = [0_u32; 2];
     let mut last_pose = [None; 2];
+    let starting_roots = phase.snapshot().roots;
 
     for _ in 0..4096 {
         let stage = match_loop.stage();
@@ -1494,25 +1643,43 @@ fn run_match() {
         }] = true;
         let snapshot = phase.snapshot();
         let intents = match_loop.presentation_intents(&snapshot);
-        let animation_ticks = match_loop.animation_ticks(&snapshot);
         for side in 0..2 {
-            let skin = presentation.skin_for(
-                intents[side],
-                animation_ticks[side],
-                snapshot.action_ticks[side],
+            let skin = match_loop.presentation_skin(
+                &presentation,
+                if side == 0 {
+                    Side::Player
+                } else {
+                    Side::Opponent
+                },
+                &snapshot,
             );
             let pose = pose_fingerprint(&skin);
             if last_pose[side].is_some_and(|previous| previous != pose) {
                 pose_changes[side] = pose_changes[side].saturating_add(1);
             }
             last_pose[side] = Some(pose);
-            let clip_index = match animation_for_intent(intents[side]) {
+            let clip = if match_loop.stage() == MatchStage::Result {
+                animation_for_result(side == side_index(match_loop.result_winner))
+            } else {
+                animation_for_intent(intents[side])
+            };
+            let clip_index = match clip {
                 AnimationClip::Reference => 0,
                 AnimationClip::Walk => 1,
                 AnimationClip::Run => 2,
-                AnimationClip::HeroStrike => 3,
+                AnimationClip::Block => 3,
+                AnimationClip::Grab => 4,
+                AnimationClip::HeroStrike => 5,
+                AnimationClip::Victory => 6,
+                AnimationClip::Defeat => 7,
             };
             clip_seen[side][clip_index] = true;
+        }
+        if match_loop.stage() == MatchStage::Countdown {
+            assert_eq!(
+                snapshot.roots, starting_roots,
+                "countdown must keep both fighters at their starting roots"
+            );
         }
         match_loop.step(&mut phase);
         if match_loop.stage() == MatchStage::Result && match_loop.stage_tick >= 2 {
@@ -1527,8 +1694,13 @@ fn run_match() {
     assert!(
         clip_seen
             .iter()
-            .all(|clips| clips[1] && clips[2] && clips[3]),
-        "both fighters must select walk, run, and hero_strike clips"
+            .all(|clips| clips[1] && clips[2] && clips[3] && clips[4] && clips[5]),
+        "both fighters must select walk, run, block, grab, and hero_strike clips"
+    );
+    assert!(
+        clip_seen[side_index(match_loop.result_winner)][6]
+            && clip_seen[1 - side_index(match_loop.result_winner)][7],
+        "result must show one victory pose and one defeat pose"
     );
     assert!(
         pose_changes.into_iter().all(|changes| changes > 0),
@@ -1536,7 +1708,8 @@ fn run_match() {
     );
     assert_eq!(match_loop.stage(), MatchStage::Result);
     println!(
-        "GAME_LOOP_MATCH stages=Boot>MatchSetup>Countdown>Fight>Result truth_frame={} exchanges={} p1_pose_changes={} p2_pose_changes={} clips=walk,run,hero_strike",
+        "GAME_LOOP_MATCH stages=Boot>MatchSetup>Countdown>Fight>Result final_stage={} truth_frame={} exchanges={} p1_pose_changes={} p2_pose_changes={} clips=walk,run,hero_strike extra_clips=block,grab,result_victory,result_defeat",
+        match_loop.stage().label(),
         phase.snapshot().truth_frame,
         match_loop.exchanges_started,
         pose_changes[0],
@@ -1642,8 +1815,11 @@ fn run_shot(ticks: u64, out_dir: &str) {
     // its final truth frame is the same for short and long shot requests. Keep
     // the requested tick as the presentation clock so --shot 1 and --shot 5
     // sample different walk/run frames.
-    let player_skin = presentation.skin_for(snapshot.locked[0], ticks, snapshot.action_ticks[0]);
-    let opponent_skin = presentation.skin_for(snapshot.locked[1], ticks, snapshot.action_ticks[1]);
+    let presentation_intents = combat_presentation_intents(snapshot.locked);
+    let player_skin =
+        presentation.skin_for(presentation_intents[0], ticks, snapshot.action_ticks[0]);
+    let opponent_skin =
+        presentation.skin_for(presentation_intents[1], ticks, snapshot.action_ticks[1]);
     let aspect = w as f32 / h as f32;
 
     // F-111/F-112: forecast + HUD for the frozen boundary capture.
@@ -1795,9 +1971,13 @@ fn run_shot(ticks: u64, out_dir: &str) {
         println!("shot: wrote {path}");
     }
     println!(
-        "GAME_LOOP_SHOT ticks={ticks} truth_frame={} truth_hash={:016x}",
+        "GAME_LOOP_SHOT ticks={ticks} truth_frame={} truth_hash={:016x} p1_presentation={:?} p2_presentation={:?} p1_pose={:016x} p2_pose={:016x}",
         snapshot.truth_frame,
-        phase.truth_hash()
+        phase.truth_hash(),
+        presentation_intents[0],
+        presentation_intents[1],
+        pose_fingerprint(&player_skin),
+        pose_fingerprint(&opponent_skin),
     );
 }
 

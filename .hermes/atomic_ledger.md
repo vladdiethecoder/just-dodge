@@ -50,7 +50,7 @@
 ## Pending Units
 
 - PH1-STRIKE-001: MotionBricks strike generation (blocked by PH1-FIGHTER-001)
-- PH1-BLOCK-GRAB-001: Block and grab motions (blocked by PH1-STRIKE-001)
+- PH1-BLOCK-GRAB-001: Block and grab motion generation (blocked by PH1-STRIKE-001)
 - PH2-VERTICAL-SLICE-001: Full playable match loop (blocked by PHASE-1)
 
 ## Retired Infrastructure Gates
