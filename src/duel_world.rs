@@ -153,17 +153,35 @@ impl DuelWorld {
         step.contacts
             .iter()
             .enumerate()
-            .map(|(manifold_idx, contact)| SubstepTruthPacket {
-                substep_id: step.physics_tick,
-                manifold_id: manifold_idx as u32,
-                body_region: classify_body_region(&contact.defender_role),
-                surface_distance_mm: contact.geometry.depth.abs() * 1000.0,
-                proxy_overlap_mm3: contact.geometry.depth.max(0.0).powi(3) * 1000.0,
-                prohibited_penetration_mm: contact.geometry.depth.max(0.0) * 1000.0,
-                visible_contact: contact.geometry.depth.abs() > 0.0,
-                causal_response: false,
+            .map(|(manifold_idx, contact)| {
+                let surface_distance_um = metres_to_micrometres(contact.geometry.depth.abs());
+                let prohibited_penetration_um =
+                    metres_to_micrometres(contact.geometry.depth.max(0.0));
+                let overlap = u128::from(prohibited_penetration_um).pow(3);
+                SubstepTruthPacket {
+                    substep_id: step.physics_tick,
+                    manifold_id: manifold_idx as u32,
+                    body_region: classify_body_region(&contact.defender_role),
+                    surface_distance_um,
+                    proxy_overlap_um3: overlap.min(u128::from(u64::MAX)) as u64,
+                    prohibited_penetration_um,
+                    visible_contact: surface_distance_um > 0,
+                    causal_response: false,
+                }
             })
             .collect()
+    }
+}
+
+fn metres_to_micrometres(value: f32) -> u32 {
+    if !value.is_finite() || value <= 0.0 {
+        return 0;
+    }
+    let scaled = f64::from(value) * 1_000_000.0;
+    if scaled >= f64::from(u32::MAX) {
+        u32::MAX
+    } else {
+        scaled.round() as u32
     }
 }
 
@@ -376,13 +394,10 @@ mod tests {
         // If there are contacts, each packet must have all required fields
         for packet in packets_first.iter().chain(packets_second.iter()) {
             assert!(packet.substep_id < 2, "substep_id must be 0 or 1");
+            assert!(packet.surface_distance_um > 0, "distance must be measured");
             assert!(
-                packet.surface_distance_mm >= 0.0,
-                "distance must be non-negative"
-            );
-            assert!(
-                packet.prohibited_penetration_mm >= 0.0,
-                "penetration must be non-negative"
+                packet.prohibited_penetration_um > 0,
+                "penetration must be measured"
             );
             // body_region must be a real classification, not a default
             assert!(
@@ -393,5 +408,45 @@ mod tests {
                 "body_region must be classified"
             );
         }
+    }
+
+    #[test]
+    fn substep_truth_packet_uses_canonical_integer_micrometre_units() {
+        fn assert_eq_packet<T: Eq>() {}
+        assert_eq_packet::<SubstepTruthPacket>();
+
+        let step = SharedPhysicsStep {
+            physics_tick: 7,
+            action_tick: 3,
+            contacts: vec![crate::duel_physics::BilateralContact {
+                attacker: Fighter::Player,
+                defender: Fighter::Opponent,
+                attacker_role: ProxyRole::WeaponEdge,
+                defender_role: ProxyRole::Body,
+                geometry: crate::hitbox::ContactGeometry {
+                    point: Vec3::ZERO,
+                    normal: Vec3::X,
+                    depth: 0.001_234_6,
+                    time_of_impact: 0.0,
+                    attacker_proxy: 0,
+                    defender_proxy: 0,
+                },
+            }],
+        };
+
+        let packet = DuelWorld::emit_substep_truth(&step)[0];
+        assert_eq!(packet.surface_distance_um, 1_235);
+        assert_eq!(packet.prohibited_penetration_um, 1_235);
+        assert_eq!(packet.proxy_overlap_um3, 1_883_652_875);
+
+        let json = serde_json::to_value(packet).unwrap();
+        assert_eq!(json["surface_distance_um"], 1_235);
+        assert_eq!(json["prohibited_penetration_um"], 1_235);
+        assert!(json.get("surface_distance_mm").is_none());
+        assert!(json.get("prohibited_penetration_mm").is_none());
+
+        assert_eq!(metres_to_micrometres(f32::NAN), 0);
+        assert_eq!(metres_to_micrometres(-1.0), 0);
+        assert_eq!(metres_to_micrometres(5_000.0), u32::MAX);
     }
 }

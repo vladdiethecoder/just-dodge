@@ -12,6 +12,7 @@
 //! injury, momentum, speed, or velocity conditions. Those need new learned
 //! condition packets and training; decoded-joint replacement is forbidden.
 
+#[cfg(any(test, feature = "motion-inference"))]
 use std::collections::HashMap;
 #[cfg(feature = "motion-inference")]
 use std::collections::HashSet;
@@ -36,7 +37,7 @@ pub type FullPose = [Mat4; G1_NB];
 /// Stable local identifier for one plan-lock presentation request.
 pub type MotionRequestId = u64;
 
-/// Legacy embedded clip families retained only for deterministic provider tests.
+/// Stable coarse action families used by the asynchronous motion-provider boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CoreMotionIntent {
     Strike,
@@ -48,9 +49,8 @@ pub enum CoreMotionIntent {
 }
 
 impl CoreMotionIntent {
-    /// Map non-core visual transitions to Idle rather than inventing a runtime
-    /// model condition. This mapping is test-only legacy-provider coverage, not
-    /// a production motion-admission policy.
+    /// Map non-core visual transitions to Idle rather than inventing an
+    /// unsupported runtime model condition.
     pub const fn from_intent(intent: Intent) -> Self {
         match intent {
             Intent::Strike { .. } => Self::Strike,
@@ -133,9 +133,11 @@ pub struct MotionGenerationReceipt {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MotionProviderKind {
-    Baked,
-    /// Dev/training-only provider using released root/full-pose keyframe
-    /// in-betweening. Never compiled into a no-default-features shipped build.
+    #[cfg(test)]
+    DeterministicTestFixture,
+    /// Live generated provider using released root/full-pose keyframe
+    /// in-betweening. The deterministic no-default-features verifier omits
+    /// inference dependencies, but that verifier is not a shipping motion path.
     GenerativeKeyframeInbetweening,
 }
 
@@ -156,6 +158,7 @@ pub enum MotionPoll {
 pub struct MotionServiceError(String);
 
 impl MotionServiceError {
+    #[cfg(any(test, feature = "motion-inference"))]
     fn new(message: impl Into<String>) -> Self {
         Self(message.into())
     }
@@ -195,13 +198,11 @@ impl MotionPlanService {
         }
     }
 
-    /// TEST-ONLY: embedded baked clips for deterministic provider tests.
-    /// Canon (2026-07-19 ruling): baked clips are forbidden in every runtime
-    /// mode — ship is live generative MotionBricks — so no runtime
-    /// constructor exists; this survives only to exercise the provider
-    /// contract in tests.
-    pub fn baked() -> Result<Self, MotionServiceError> {
-        Ok(Self::new(BakedClipProvider::embedded()?))
+    /// In-memory poses for deterministic provider-contract unit tests. This
+    /// constructor and its provider do not exist in production builds.
+    #[cfg(test)]
+    pub fn test_fixture() -> Self {
+        Self::new(DeterministicTestProvider::default())
     }
 
     pub fn submit(
@@ -222,63 +223,48 @@ impl MotionPlanService {
     }
 }
 
-/// TEST-ONLY provider: embedded `assets/motion/m4_baked/` clips. Baked clips
-/// are canon-forbidden at runtime (2026-07-19 ruling); this type exists only
-/// to test the provider contract deterministically.
-pub struct BakedClipProvider {
+/// TEST-ONLY provider-contract fixture. It constructs finite identity poses
+/// in memory and has no asset, animation, inference, or runtime authority.
+#[cfg(test)]
+pub struct DeterministicTestProvider {
     clips: HashMap<CoreMotionIntent, Arc<[FullPose]>>,
     pending: HashMap<MotionRequestId, CoreMotionIntent>,
 }
 
-impl BakedClipProvider {
-    pub fn embedded() -> Result<Self, MotionServiceError> {
+#[cfg(test)]
+impl Default for DeterministicTestProvider {
+    fn default() -> Self {
+        let frames: Arc<[FullPose]> = Arc::from([[Mat4::IDENTITY; G1_NB], [Mat4::IDENTITY; G1_NB]]);
         let clips = [
-            (
-                CoreMotionIntent::Strike,
-                include_bytes!("../assets/motion/m4_baked/strike.g1").as_slice(),
-            ),
-            (
-                CoreMotionIntent::Block,
-                include_bytes!("../assets/motion/m4_baked/block.g1").as_slice(),
-            ),
-            (
-                CoreMotionIntent::Grab,
-                include_bytes!("../assets/motion/m4_baked/grab.g1").as_slice(),
-            ),
-            (
-                CoreMotionIntent::Move,
-                include_bytes!("../assets/motion/m4_baked/move.g1").as_slice(),
-            ),
-            (
-                CoreMotionIntent::Dodge,
-                include_bytes!("../assets/motion/m4_baked/dodge.g1").as_slice(),
-            ),
-            (
-                CoreMotionIntent::Idle,
-                include_bytes!("../assets/motion/m4_baked/idle.g1").as_slice(),
-            ),
+            CoreMotionIntent::Strike,
+            CoreMotionIntent::Block,
+            CoreMotionIntent::Grab,
+            CoreMotionIntent::Move,
+            CoreMotionIntent::Dodge,
+            CoreMotionIntent::Idle,
         ]
         .into_iter()
-        .map(|(intent, bytes)| load_validated_baked_clip(intent, bytes).map(|clip| (intent, clip)))
-        .collect::<Result<HashMap<_, _>, _>>()?;
-        Ok(Self {
+        .map(|intent| (intent, Arc::clone(&frames)))
+        .collect();
+        Self {
             clips,
             pending: HashMap::new(),
-        })
+        }
     }
 }
 
-impl AsyncMotionPlanProvider for BakedClipProvider {
+#[cfg(test)]
+impl AsyncMotionPlanProvider for DeterministicTestProvider {
     fn submit(
         &mut self,
         request: MotionPlanRequest,
     ) -> Result<MotionSubmitReceipt, MotionServiceError> {
         if self.pending.insert(request.id, request.intent).is_some() {
-            return Err(MotionServiceError::new("duplicate baked motion request id"));
+            return Err(MotionServiceError::new("duplicate test motion request id"));
         }
         Ok(MotionSubmitReceipt {
             request_id: request.id,
-            provider: MotionProviderKind::Baked,
+            provider: MotionProviderKind::DeterministicTestFixture,
         })
     }
 
@@ -291,7 +277,9 @@ impl AsyncMotionPlanProvider for BakedClipProvider {
             return MotionPoll::Pending;
         };
         let Some(frames) = self.clips.get(&intent) else {
-            return MotionPoll::Rejected(MotionServiceError::new("missing baked core-intent clip"));
+            return MotionPoll::Rejected(MotionServiceError::new(
+                "missing test core-intent fixture",
+            ));
         };
         MotionPoll::Ready(MotionClip {
             request_id,
@@ -299,7 +287,7 @@ impl AsyncMotionPlanProvider for BakedClipProvider {
             frames: Arc::clone(frames),
             receipt: MotionGenerationReceipt {
                 request_id,
-                provider: MotionProviderKind::Baked,
+                provider: MotionProviderKind::DeterministicTestFixture,
                 generation_latency: Duration::ZERO,
                 frame_count: frames.len(),
             },
@@ -307,19 +295,7 @@ impl AsyncMotionPlanProvider for BakedClipProvider {
     }
 }
 
-fn load_validated_baked_clip(
-    intent: CoreMotionIntent,
-    bytes: &[u8],
-) -> Result<Arc<[FullPose]>, MotionServiceError> {
-    let frames = crate::motion::load_g1_frames_from_bytes(bytes).map_err(|error| {
-        MotionServiceError::new(format!("invalid {intent:?} baked motion clip: {error}"))
-    })?;
-    validate_full_pose_clip(&frames).map_err(|error| {
-        MotionServiceError::new(format!("invalid {intent:?} baked motion clip: {error}"))
-    })?;
-    Ok(Arc::from(frames))
-}
-
+#[cfg(any(test, feature = "motion-inference"))]
 fn validate_full_pose_clip(frames: &[FullPose]) -> Result<(), &'static str> {
     if frames.len() < 2 {
         return Err("requires at least two frames");
@@ -855,8 +831,8 @@ mod tests {
     }
 
     #[test]
-    fn baked_provider_returns_a_deterministic_validated_clip_for_each_core_intent() {
-        let mut provider = BakedClipProvider::embedded().unwrap();
+    fn test_provider_returns_a_deterministic_finite_fixture_for_each_core_intent() {
+        let mut provider = DeterministicTestProvider::default();
         for (index, intent) in [
             CoreMotionIntent::Strike,
             CoreMotionIntent::Block,
@@ -885,7 +861,7 @@ mod tests {
             );
             provider.submit(request).unwrap();
             let MotionPoll::Ready(first) = provider.poll(index as u64 + 1) else {
-                panic!("{intent:?} baked clip was not ready");
+                panic!("{intent:?} test fixture was not ready");
             };
             assert_eq!(first.intent, intent);
             assert!(first.frames.len() >= 2);

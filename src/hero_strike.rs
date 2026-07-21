@@ -74,6 +74,13 @@ pub struct MotionLabMetrics {
 }
 
 impl HeroStrikePresentation {
+    /// Explicit SG02 lifecycle-QA presentation. It is deterministic,
+    /// procedural, and carries no motion/content admission authority.
+    #[allow(dead_code)] // The library crate cannot see the binary crate's explicit --journeys call site.
+    pub(crate) fn lifecycle_qa(mesh: &SkinnedMeshData) -> Result<Self> {
+        Self::from_interaction_targets(lifecycle_qa_targets(), mesh)
+    }
+
     pub fn load(assets: &Path, mesh: &SkinnedMeshData) -> Result<Self> {
         let path = assets.join("motion/pvp005_r6k/hero_strike.motionbricks.interaction.413.f32");
         let bytes = fs::read(&path)
@@ -90,6 +97,13 @@ impl HeroStrikePresentation {
                 interaction_targets.len()
             );
         }
+        Self::from_interaction_targets(interaction_targets, mesh)
+    }
+
+    fn from_interaction_targets(
+        interaction_targets: Vec<[Mat4; 34]>,
+        mesh: &SkinnedMeshData,
+    ) -> Result<Self> {
         let source_frames = track_with_coupled_articulation(&interaction_targets);
         let reference = &source_frames[0];
         let left_c0_hand = mesh
@@ -291,6 +305,39 @@ impl HeroStrikePresentation {
     }
 }
 
+fn lifecycle_qa_targets() -> Vec<[Mat4; 34]> {
+    let mut rest = [Vec3::ZERO; 34];
+    rest[0] = Vec3::new(0.0, 1.0, 0.0);
+    for joint in 1..34 {
+        let parent = motion::G1_PARENTS[joint] as usize;
+        rest[joint] = rest[parent] + Vec3::new(0.0, 0.08, 0.02);
+    }
+    for (joint, position) in [
+        (20, Vec3::new(-0.25, 1.35, 0.0)),
+        (21, Vec3::new(-0.55, 1.35, 0.0)),
+        (25, Vec3::new(-0.85, 1.35, 0.0)),
+        (28, Vec3::new(0.25, 1.35, 0.0)),
+        (29, Vec3::new(0.55, 1.35, 0.0)),
+        (33, Vec3::new(0.85, 1.35, 0.0)),
+    ] {
+        rest[joint] = position;
+    }
+    (0..FRAME_COUNT)
+        .map(|frame| {
+            let phase = frame as f32 / (FRAME_COUNT - 1) as f32;
+            let lift = (phase * std::f32::consts::PI).sin() * 0.18;
+            std::array::from_fn(|joint| {
+                let mut position = rest[joint] + Vec3::new(phase * 0.12, 0.0, 0.0);
+                if matches!(joint, 21 | 25 | 29 | 33) {
+                    position.y += lift;
+                    position.z += phase * 0.10;
+                }
+                Mat4::from_translation(position)
+            })
+        })
+        .collect()
+}
+
 fn track_with_coupled_articulation(targets: &[[Mat4; 34]]) -> Vec<[Mat4; 34]> {
     let parents = motion::G1_PARENTS;
     let mut positions: [Vec3; 34] =
@@ -426,15 +473,65 @@ mod tests {
     use crate::asset;
     use crate::motion_retarget::armored_pose_receipt;
 
+    fn fixture_mesh() -> SkinnedMeshData {
+        let specs = [
+            ("Hips", -1, Vec3::ZERO),
+            ("LeftUpLeg", 0, Vec3::new(-0.1, -0.4, 0.0)),
+            ("LeftLeg", 1, Vec3::new(0.0, -0.4, 0.0)),
+            ("LeftFoot", 2, Vec3::new(0.0, -0.35, 0.0)),
+            ("LeftToeBase", 3, Vec3::new(0.0, -0.1, 0.1)),
+            ("RightUpLeg", 0, Vec3::new(0.1, -0.4, 0.0)),
+            ("RightLeg", 5, Vec3::new(0.0, -0.4, 0.0)),
+            ("RightFoot", 6, Vec3::new(0.0, -0.35, 0.0)),
+            ("RightToeBase", 7, Vec3::new(0.0, -0.1, 0.1)),
+            ("Spine", 0, Vec3::new(0.0, 0.2, 0.0)),
+            ("Spine01", 9, Vec3::new(0.0, 0.2, 0.0)),
+            ("Spine02", 10, Vec3::new(0.0, 0.2, 0.0)),
+            ("LeftShoulder", 11, Vec3::new(-0.15, 0.15, 0.0)),
+            ("LeftArm", 12, Vec3::new(-0.25, 0.0, 0.0)),
+            ("LeftForeArm", 13, Vec3::new(-0.3, 0.0, 0.0)),
+            ("LeftHand", 14, Vec3::new(-0.25, 0.0, 0.0)),
+            ("RightShoulder", 11, Vec3::new(0.15, 0.15, 0.0)),
+            ("RightArm", 16, Vec3::new(0.25, 0.0, 0.0)),
+            ("RightForeArm", 17, Vec3::new(0.3, 0.0, 0.0)),
+            ("RightHand", 18, Vec3::new(0.25, 0.0, 0.0)),
+            ("neck", 11, Vec3::new(0.0, 0.2, 0.0)),
+            ("Head", 20, Vec3::new(0.0, 0.2, 0.0)),
+            ("head_end", 21, Vec3::new(0.0, 0.2, 0.0)),
+            ("headfront", 21, Vec3::new(0.0, 0.0, 0.1)),
+        ];
+        let mut rest_world = [Mat4::IDENTITY; 24];
+        let mut bones = Vec::with_capacity(specs.len());
+        for (index, (name, parent, translation)) in specs.into_iter().enumerate() {
+            let rest_local = Mat4::from_translation(translation);
+            rest_world[index] = if parent < 0 {
+                rest_local
+            } else {
+                rest_world[parent as usize] * rest_local
+            };
+            bones.push(asset::Bone {
+                name: name.to_string(),
+                parent,
+                rest_local,
+                inverse_bind: rest_world[index].inverse(),
+            });
+        }
+        SkinnedMeshData {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            bones,
+            feet_y: -1.25,
+        }
+    }
+
+    fn fixture_targets() -> Vec<[Mat4; 34]> {
+        lifecycle_qa_targets()
+    }
+
     fn load() -> (HeroStrikePresentation, SkinnedMeshData) {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let mesh = asset::load_skinned(
-            &root
-                .join("assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
-                .to_string_lossy(),
-        )
-        .unwrap();
-        let presentation = HeroStrikePresentation::load(&root.join("assets"), &mesh).unwrap();
+        let mesh = fixture_mesh();
+        let presentation =
+            HeroStrikePresentation::from_interaction_targets(fixture_targets(), &mesh).unwrap();
         (presentation, mesh)
     }
 
@@ -564,13 +661,7 @@ mod tests {
 
     #[test]
     fn motionbricks_interaction_targets_are_followed_by_length_constrained_articulation() {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("assets");
-        let targets = motion::load_g1_frames(
-            &root
-                .join("motion/pvp005_r6k/hero_strike.motionbricks.interaction.413.f32")
-                .to_string_lossy(),
-        )
-        .unwrap();
+        let targets = fixture_targets();
         assert_eq!(targets.len(), FRAME_COUNT);
         let physical = track_with_coupled_articulation(&targets);
         let parents = motion::G1_PARENTS;

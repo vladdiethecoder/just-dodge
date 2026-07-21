@@ -1403,9 +1403,11 @@ fn main() {
         .iter()
         .map(|p| {
             format!(
-                "{{\"substep_id\":{},\"manifold_id\":{},\"body_region\":\"{:?}\",\"surface_distance_mm\":{:.6},\"proxy_overlap_mm3\":{:.6},\"prohibited_penetration_mm\":{:.6},\"visible_contact\":{},\"causal_response\":{}}}",
-                p.substep_id, p.manifold_id, p.body_region, p.surface_distance_mm,
-                p.proxy_overlap_mm3, p.prohibited_penetration_mm, p.visible_contact, p.causal_response
+                "{{\"substep_id\":{},\"manifold_id\":{},\"body_region\":\"{:?}\",\"surface_distance_um\":{},\"proxy_overlap_um3\":{},\"prohibited_penetration_um\":{},\"surface_distance_mm\":{:.6},\"proxy_overlap_mm3\":{:.6},\"prohibited_penetration_mm\":{:.6},\"visible_contact\":{},\"causal_response\":{}}}",
+                p.substep_id, p.manifold_id, p.body_region, p.surface_distance_um,
+                p.proxy_overlap_um3, p.prohibited_penetration_um, p.surface_distance_mm(),
+                p.proxy_overlap_mm3(), p.prohibited_penetration_mm(), p.visible_contact,
+                p.causal_response
             )
         })
         .collect();

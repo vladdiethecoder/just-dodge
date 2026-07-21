@@ -376,6 +376,9 @@ pub struct PlanSnapshot {
     pub feint_charges: [u8; 2],
     /// The side's last completed attack whiffed (whiff-cancel window open).
     pub whiffed: [bool; 2],
+    /// A completed whiff cancel restricts the side's next selection to Strike.
+    /// This affects future truth and must remain inside the canonical hash.
+    pub whiff_cancel_followup: [bool; 2],
     /// F-017 ground/pinned flags (getup-restricted window).
     pub downed: [bool; 2],
     /// F-018 disarm flags (parry deflect; no Strike until next selection).
@@ -598,6 +601,7 @@ impl PlanPhase {
             burst: self.burst,
             feint_charges: self.feint_charges,
             whiffed: self.whiffed,
+            whiff_cancel_followup: self.whiff_cancel_followup,
             downed: self.downed,
             disarmed: self.disarmed,
             sheathed: self.sheathed,
@@ -1139,7 +1143,7 @@ impl PlanPhase {
     /// (which made SecureGrab unreachable in the live loop):
     /// - substep_id: the real consecutive 120 Hz physics tick (integer clock).
     /// - manifold_id: the measured proxy pair identity.
-    /// - surface_distance_mm / proxy_overlap_mm: from the measured penetration
+    /// - surface_distance_um / proxy_overlap_um: quantized from the measured penetration
     ///   depth of the grabber↔defender proxy pair.
     /// - visible_contact_active: at the debug-mannequin tier the rendered
     ///   geometry IS the truth proxy geometry (canon hitbox parity), so a
@@ -1147,7 +1151,7 @@ impl PlanPhase {
     ///   replaces this with posed-mesh measurement (Mesh Doctor domain).
     /// - opponent_response_causal: measured truth-state disruption of the
     ///   defender caused by this manifold (negative_on_hit applied below).
-    /// - prohibited_penetration_mm: 0 — mesh-level penetration is not
+    /// - prohibited_penetration_um: 0 — mesh-level penetration is not
     ///   measurable at the proxy tier and is never fabricated.
     fn apply_grab_contact_samples(&mut self, measured: &DuelWorldTruthTick) {
         let in_progress = self.grab.as_ref().is_some_and(GrabAttempt::is_in_progress);
@@ -1626,15 +1630,15 @@ fn grab_substep_sample(
         });
     match best {
         Some(contact) => {
-            let overlap_mm = contact.geometry.depth * 1000.0;
+            let overlap_um = millimetres_to_micrometres(contact.geometry.depth * 1000.0);
             super::grab_contact::ContactManifoldSample {
                 substep_id: step.physics_tick,
                 manifold_id: ((contact.geometry.attacker_proxy as u64) << 16)
                     | ((contact.geometry.defender_proxy as u64) << 1)
                     | u64::from(contact.attacker == grabber),
-                surface_distance_mm: (-overlap_mm).max(0.0),
-                proxy_overlap_mm: overlap_mm,
-                prohibited_penetration_mm: 0.0,
+                surface_distance_um: 0,
+                proxy_overlap_um: overlap_um,
+                prohibited_penetration_um: 0,
                 physics_contact_active: true,
                 // Debug-mannequin tier: the rendered geometry IS the truth
                 // proxy geometry (canon hitbox parity), so a measured proxy
@@ -1648,14 +1652,28 @@ fn grab_substep_sample(
         None => super::grab_contact::ContactManifoldSample {
             substep_id: step.physics_tick,
             manifold_id: 0,
-            surface_distance_mm: f32::MAX,
-            proxy_overlap_mm: 0.0,
-            prohibited_penetration_mm: 0.0,
+            surface_distance_um: u32::MAX,
+            proxy_overlap_um: 0,
+            prohibited_penetration_um: 0,
             physics_contact_active: false,
             visible_contact_active: false,
             opponent_response_causal: false,
             presentation_override: false,
         },
+    }
+}
+
+fn millimetres_to_micrometres(value: f32) -> i32 {
+    if !value.is_finite() {
+        return 0;
+    }
+    let scaled = f64::from(value) * 1_000.0;
+    if scaled >= f64::from(i32::MAX) {
+        i32::MAX
+    } else if scaled <= f64::from(i32::MIN) {
+        i32::MIN
+    } else {
+        scaled.round() as i32
     }
 }
 
@@ -3163,11 +3181,11 @@ mod tests {
         // Simulate 15mm clearance but no physical contact
         let admission = SecureGrabAdmission {
             proxy_contact: false, // No physical contact
-            surface_clearance_mm: 15.0,
+            surface_clearance_um: 15_000,
             contact_duration_ticks: 12,
             temporal_overlap: true,
             causal_response: true,
-            prohibited_penetration_mm: 0.0,
+            prohibited_penetration_um: 0,
             no_presentation_override: true,
         };
         grab.admit_secure(admission);
@@ -3186,11 +3204,11 @@ mod tests {
         );
         let admission = SecureGrabAdmission {
             proxy_contact: true,
-            surface_clearance_mm: 5.0,
+            surface_clearance_um: 5_000,
             contact_duration_ticks: 5, // < 12 ticks (100ms)
             temporal_overlap: true,
             causal_response: true,
-            prohibited_penetration_mm: 0.0,
+            prohibited_penetration_um: 0,
             no_presentation_override: true,
         };
         grab.admit_secure(admission);
@@ -3209,11 +3227,11 @@ mod tests {
         );
         let admission = SecureGrabAdmission {
             proxy_contact: true,
-            surface_clearance_mm: 5.0,
+            surface_clearance_um: 5_000,
             contact_duration_ticks: 12, // >= 12 ticks (100ms)
             temporal_overlap: true,
             causal_response: true,
-            prohibited_penetration_mm: 0.0,
+            prohibited_penetration_um: 0,
             no_presentation_override: true,
         };
         grab.admit_secure(admission);
@@ -3268,15 +3286,24 @@ mod tests {
         );
         let admission = SecureGrabAdmission {
             proxy_contact: true,
-            surface_clearance_mm: 5.0,
+            surface_clearance_um: 5_000,
             contact_duration_ticks: 12,
             temporal_overlap: true,
             causal_response: true,
-            prohibited_penetration_mm: 0.0,
+            prohibited_penetration_um: 0,
             no_presentation_override: false, // Presentation override used
         };
         grab.admit_secure(admission);
         assert!(!grab.is_secure()); // Never secure with presentation override
+    }
+
+    #[test]
+    fn grab_contact_quantizer_rounds_rejects_nonfinite_and_saturates() {
+        assert_eq!(millimetres_to_micrometres(1.234_6), 1_235);
+        assert_eq!(millimetres_to_micrometres(-1.234_6), -1_235);
+        assert_eq!(millimetres_to_micrometres(f32::NAN), 0);
+        assert_eq!(millimetres_to_micrometres(f32::INFINITY), 0);
+        assert_eq!(millimetres_to_micrometres(3_000_000.0), i32::MAX);
     }
 
     #[test]
@@ -3309,6 +3336,7 @@ mod tests {
                 attacker: Side::Player,
                 surface: crate::truth::ContactSurface::Body,
             }),
+            opposing_contact: None,
         });
         assert_eq!(
             phase.combo_state(Side::Opponent).air,
@@ -3341,6 +3369,24 @@ mod tests {
         assert_eq!(restored.status, snapshot.status);
         assert_eq!(restored.tempo, snapshot.tempo);
         assert_eq!(restored.burst, snapshot.burst);
+    }
+
+    #[test]
+    fn sg02_truth_hash_covers_hidden_whiff_followup_state() {
+        let baseline = PlanPhase::new();
+        let mut altered = baseline.clone();
+        altered.whiff_cancel_followup[0] = true;
+
+        assert_ne!(
+            baseline.intent_available(Side::Player, Intent::Block),
+            altered.intent_available(Side::Player, Intent::Block),
+            "hidden follow-up state must affect future truth behavior"
+        );
+        assert_ne!(
+            baseline.truth_hash(),
+            altered.truth_hash(),
+            "truth hash must cover authority that changes future truth"
+        );
     }
 
     #[test]

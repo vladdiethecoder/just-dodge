@@ -127,9 +127,11 @@ fn phase_banner_text(
     let phase_duration = phase_duration_frames(snapshot.phase);
     let remaining = (phase_duration.saturating_sub(u32::from(snapshot.phase_frame))) as f32 / 60.0;
     match flow_stage {
+        FlowStage::Boot => "Boot".to_string(),
         FlowStage::Menu => "Menu".to_string(),
-        FlowStage::Establishing => {
-            format!("Establishing  {:.1}s", establishing_remaining as f32 / 60.0)
+        FlowStage::MatchSetup => "Match Setup".to_string(),
+        FlowStage::Countdown => {
+            format!("Countdown  {:.1}s", establishing_remaining as f32 / 60.0)
         }
         FlowStage::Plan => "Plan  Choose your action".to_string(),
         FlowStage::Replan => format!("Replan  {remaining:.1}s"),
@@ -1082,13 +1084,14 @@ impl UiRenderer {
         // --- Match over overlay ---
         if flow_stage == FlowStage::Result {
             self.rect(Vec2::new(0.0, 0.0), Vec2::new(w, h), [0.0, 0.0, 0.0, 0.84]);
-            let winner = snapshot
-                .winner
-                .map(|s| match s {
+            let winner = if snapshot.draw {
+                "Draw"
+            } else {
+                snapshot.winner.map_or("Match Result", |s| match s {
                     Side::Player => "You Win!",
                     Side::Opponent => "Opponent Wins",
                 })
-                .unwrap_or("Match Result");
+            };
             let mw = winner.len() as f32 * GLYPH_ADV * 4.0;
             self.text(
                 Vec2::new((w - mw) / 2.0, h / 2.0 - 118.0),
@@ -1319,9 +1322,13 @@ impl UiRenderer {
                     [0.35, 0.33, 0.41, 1.0],
                 );
             }
-            FlowStage::Establishing => {
+            FlowStage::MatchSetup | FlowStage::Countdown => {
                 self.rect(Vec2::ZERO, Vec2::new(w, h), [0.02, 0.025, 0.04, 0.82]);
-                let title = "ESTABLISHING";
+                let title = if flow_stage == FlowStage::MatchSetup {
+                    "MATCH SETUP"
+                } else {
+                    "COUNTDOWN"
+                };
                 let title_w = title.len() as f32 * GLYPH_ADV * 3.2;
                 self.text(
                     Vec2::new((w - title_w) / 2.0, h * 0.43),
@@ -1390,9 +1397,12 @@ mod tests {
             opponent: Fighter::fresh(),
             revealed: None,
             last_contact: None,
+            last_opposing_contact: None,
             last_outcome: None,
             last_injury: None,
+            last_opposing_injury: None,
             winner: None,
+            draw: false,
         }
     }
 

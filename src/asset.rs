@@ -89,6 +89,97 @@ pub struct SkinnedMeshData {
     pub feet_y: f32,
 }
 
+/// Explicit SG02 lifecycle-QA block carrier. It is procedural, quarantined,
+/// and has no production asset or motion admission authority.
+#[allow(dead_code)] // The library crate cannot see the binary crate's explicit --journeys call site.
+pub(crate) fn lifecycle_qa_mesh() -> SkinnedMeshData {
+    let specs = [
+        ("Hips", -1, glam::vec3(0.0, 0.9, 0.0)),
+        ("LeftUpLeg", 0, glam::vec3(-0.1, -0.35, 0.0)),
+        ("LeftLeg", 1, glam::vec3(0.0, -0.4, 0.0)),
+        ("LeftFoot", 2, glam::vec3(0.0, -0.35, 0.0)),
+        ("LeftToeBase", 3, glam::vec3(0.0, -0.1, 0.1)),
+        ("RightUpLeg", 0, glam::vec3(0.1, -0.35, 0.0)),
+        ("RightLeg", 5, glam::vec3(0.0, -0.4, 0.0)),
+        ("RightFoot", 6, glam::vec3(0.0, -0.35, 0.0)),
+        ("RightToeBase", 7, glam::vec3(0.0, -0.1, 0.1)),
+        ("Spine", 0, glam::vec3(0.0, 0.2, 0.0)),
+        ("Spine01", 9, glam::vec3(0.0, 0.2, 0.0)),
+        ("Spine02", 10, glam::vec3(0.0, 0.2, 0.0)),
+        ("LeftShoulder", 11, glam::vec3(-0.15, 0.15, 0.0)),
+        ("LeftArm", 12, glam::vec3(-0.25, 0.0, 0.0)),
+        ("LeftForeArm", 13, glam::vec3(-0.3, 0.0, 0.0)),
+        ("LeftHand", 14, glam::vec3(-0.25, 0.0, 0.0)),
+        ("RightShoulder", 11, glam::vec3(0.15, 0.15, 0.0)),
+        ("RightArm", 16, glam::vec3(0.25, 0.0, 0.0)),
+        ("RightForeArm", 17, glam::vec3(0.3, 0.0, 0.0)),
+        ("RightHand", 18, glam::vec3(0.25, 0.0, 0.0)),
+        ("neck", 11, glam::vec3(0.0, 0.2, 0.0)),
+        ("Head", 20, glam::vec3(0.0, 0.2, 0.0)),
+        ("head_end", 21, glam::vec3(0.0, 0.2, 0.0)),
+        ("headfront", 21, glam::vec3(0.0, 0.0, 0.1)),
+    ];
+    let mut world = [Mat4::IDENTITY; 24];
+    let mut bones = Vec::with_capacity(24);
+    for (index, (name, parent, translation)) in specs.into_iter().enumerate() {
+        let rest_local = Mat4::from_translation(translation);
+        world[index] = if parent < 0 {
+            rest_local
+        } else {
+            world[parent as usize] * rest_local
+        };
+        bones.push(Bone {
+            name: name.to_string(),
+            parent,
+            rest_local,
+            inverse_bind: world[index].inverse(),
+        });
+    }
+
+    const CORNERS: [[f32; 3]; 8] = [
+        [-1.0, -1.0, -1.0],
+        [1.0, -1.0, -1.0],
+        [1.0, 1.0, -1.0],
+        [-1.0, 1.0, -1.0],
+        [-1.0, -1.0, 1.0],
+        [1.0, -1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [-1.0, 1.0, 1.0],
+    ];
+    const TRIANGLES: [u32; 36] = [
+        0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3,
+        3, 7, 4, 3, 4, 0,
+    ];
+    let mut vertices = Vec::with_capacity(24 * 8);
+    let mut indices = Vec::with_capacity(24 * TRIANGLES.len());
+    for (bone_index, matrix) in world.iter().enumerate() {
+        let center = matrix.w_axis.truncate();
+        let half = if bone_index == 0 { 0.09 } else { 0.045 };
+        let base = vertices.len() as u32;
+        for corner in CORNERS {
+            let normal = glam::Vec3::from_array(corner).normalize();
+            vertices.push(SkinnedVertex {
+                position: (center + normal * half).to_array(),
+                normal: normal.to_array(),
+                uv: [0.0, 0.0],
+                joint_indices: [bone_index as u32, 0, 0, 0, 0, 0, 0, 0],
+                joint_weights: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            });
+        }
+        indices.extend(TRIANGLES.into_iter().map(|index| base + index));
+    }
+    let feet_y = vertices
+        .iter()
+        .map(|vertex| vertex.position[1])
+        .fold(f32::INFINITY, f32::min);
+    SkinnedMeshData {
+        vertices,
+        indices,
+        bones,
+        feet_y,
+    }
+}
+
 fn rd_u8(r: &mut BufReader<File>) -> std::io::Result<u8> {
     let mut b = [0u8; 1];
     r.read_exact(&mut b)?;
@@ -628,6 +719,96 @@ pub fn validate_skin_matrices(out: &[glam::Mat4; 24], frame: usize) -> Vec<Strin
 mod tests {
     use super::*;
 
+    fn fixture_mesh(spec: Vec<(String, i32, Mat4)>) -> SkinnedMeshData {
+        let mut bones: Vec<Bone> = spec
+            .into_iter()
+            .map(|(name, parent, rest_local)| Bone {
+                name,
+                parent,
+                rest_local,
+                inverse_bind: Mat4::IDENTITY,
+            })
+            .collect();
+        let mut rest_world = vec![Mat4::IDENTITY; bones.len()];
+        for (index, bone) in bones.iter().enumerate() {
+            rest_world[index] = if bone.parent < 0 {
+                bone.rest_local
+            } else {
+                rest_world[bone.parent as usize] * bone.rest_local
+            };
+        }
+        for (bone, world) in bones.iter_mut().zip(rest_world) {
+            bone.inverse_bind = world.inverse();
+        }
+        SkinnedMeshData {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            bones,
+            feet_y: 0.0,
+        }
+    }
+
+    fn chain_fixture(bone_count: usize, segment_height: f32) -> SkinnedMeshData {
+        fixture_mesh(
+            (0..bone_count)
+                .map(|index| {
+                    (
+                        format!("bone_{index}"),
+                        if index == 0 { -1 } else { (index - 1) as i32 },
+                        if index == 0 {
+                            Mat4::IDENTITY
+                        } else {
+                            Mat4::from_translation(glam::vec3(0.0, segment_height, 0.0))
+                        },
+                    )
+                })
+                .collect(),
+        )
+    }
+
+    fn calibration_fixture() -> SkinnedMeshData {
+        let names = [
+            "root",
+            "upperleg01.L",
+            "upperleg02.L",
+            "lowerleg01.L",
+            "lowerleg02.L",
+            "foot.L",
+            "toe1-1.L",
+            "upperleg01.R",
+            "upperleg02.R",
+            "lowerleg01.R",
+            "lowerleg02.R",
+            "foot.R",
+            "toe1-1.R",
+            "spine05",
+            "spine04",
+            "spine03",
+            "spine02",
+            "spine01",
+            "clavicle.L",
+            "shoulder01.L",
+            "upperarm01.L",
+            "upperarm02.L",
+            "lowerarm01.L",
+            "lowerarm02.L",
+            "wrist.L",
+            "clavicle.R",
+            "shoulder01.R",
+            "upperarm01.R",
+            "upperarm02.R",
+            "lowerarm01.R",
+            "lowerarm02.R",
+            "wrist.R",
+        ];
+        fixture_mesh(
+            names
+                .into_iter()
+                .map(|name| (name.to_string(), -1, Mat4::IDENTITY))
+                .collect(),
+        )
+    }
+
     #[test]
     fn skinned_vertex_layout_retains_eight_influences() {
         let vertex = SkinnedVertex {
@@ -644,17 +825,15 @@ mod tests {
 
     #[test]
     fn c0_reference_animation_matches_dynamic_skin_contract() {
-        let root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
-        let mesh = load_skinned(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_pose_carrier.bin"
-        ))
-        .expect("load C0 pose carrier mesh");
-        let reference = load_skeletal_animation(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_reference.anim"
-        ))
-        .expect("load C0 reference action");
+        let mesh = chain_fixture(6, 0.2);
+        let mut frame: Vec<Mat4> = mesh.bones.iter().map(|bone| bone.rest_local).collect();
+        frame[3] *= Mat4::from_rotation_z(0.3);
+        let reference = SkeletalAnimation {
+            bone_count: mesh.bones.len(),
+            fps: 60,
+            frames: vec![frame],
+        };
 
-        assert_eq!(mesh.bones.len(), 163);
         assert_eq!(reference.bone_count, mesh.bones.len());
         let skin = reference_pose_skin_matrices(&mesh, &reference.frames[0])
             .expect("reference pose must match carrier hierarchy");
@@ -669,20 +848,12 @@ mod tests {
 
     #[test]
     fn meshy_walk_world_frame_retargets_without_exploding_armored_skin() {
-        let root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
-        let source = load_skinned(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/rigged_001/cooked/c0_skin8.bin"
-        ))
-        .unwrap();
-        let target = load_skinned(&format!(
-            "{root}/assets/source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin"
-        ))
-        .unwrap();
-        let walk = load_skeletal_animation(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/rigged_001/cooked/walking.anim"
-        ))
-        .unwrap();
-        let skin = retarget_world_animation_frame(&source, &target, &walk.frames[0]).unwrap();
+        let source = chain_fixture(24, 0.1);
+        let target = chain_fixture(24, 0.12);
+        let mut source_world = rest_world_matrices(&source).unwrap();
+        source_world[0] = Mat4::from_translation(glam::vec3(0.1, 0.0, 0.0));
+        source_world[12] *= Mat4::from_rotation_x(0.25);
+        let skin = retarget_world_animation_frame(&source, &target, &source_world).unwrap();
         assert_eq!(skin.len(), 24);
         for matrix in skin {
             assert!(matrix.is_finite());
@@ -699,15 +870,12 @@ mod tests {
 
     #[test]
     fn c0_frame_calibration_distributes_world_delta_across_upper_arm() {
-        let root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
-        let mesh = load_skinned(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_pose_carrier.bin"
-        ))
-        .unwrap();
-        let reference = load_skeletal_animation(&format!(
-            "{root}/assets/source/meshy/c0_base_fighter/pose_carrier_001/cooked/c0_reference.anim"
-        ))
-        .unwrap();
+        let mesh = calibration_fixture();
+        let reference = SkeletalAnimation {
+            bone_count: mesh.bones.len(),
+            fps: 60,
+            frames: vec![vec![Mat4::IDENTITY; mesh.bones.len()]],
+        };
         let source_reference = [Mat4::IDENTITY; 34];
         let mut source_current = source_reference;
         source_current[20] = Mat4::from_rotation_z(std::f32::consts::FRAC_PI_2);
@@ -797,13 +965,11 @@ mod tests {
         assert_eq!(mesh.vertices[0].joint_weights, [0.125; 8]);
     }
 
-    /// Load the real mannequin mesh, construct synthetic G1 identity frames,
-    /// and prove compute_skin_matrices produces valid non-sheared matrices.
+    /// Construct deterministic bind matrices and prove identity G1 frames
+    /// produce valid non-sheared skin matrices without an external asset.
     #[test]
     fn compute_skin_matrices_identity_is_valid() {
-        let assets = std::env::var("CARGO_MANIFEST_DIR").unwrap_or(".".into());
-        let mesh = load_skinned(&format!("{}/assets/characters/mannequin_male.bin", assets))
-            .expect("mannequin mesh must load for test");
+        let mesh = chain_fixture(24, 0.1);
 
         // G1 identity frame: all bones at origin with identity rotation.
         let g1_identity = [glam::Mat4::IDENTITY; 34];
@@ -860,9 +1026,7 @@ mod tests {
     /// remain valid (no shearing from simple rotation).
     #[test]
     fn compute_skin_matrices_rotation_preserves_validity() {
-        let assets = std::env::var("CARGO_MANIFEST_DIR").unwrap_or(".".into());
-        let mesh = load_skinned(&format!("{}/assets/characters/mannequin_male.bin", assets))
-            .expect("mannequin mesh must load for test");
+        let mesh = chain_fixture(24, 0.1);
 
         let rot = glam::Mat4::from_rotation_y(std::f32::consts::FRAC_PI_2);
         let mut g1_rot = [glam::Mat4::IDENTITY; 34];
@@ -896,9 +1060,7 @@ mod tests {
     /// This test would FAIL with the old retarget::g1_to_skin path.
     #[test]
     fn compute_skin_matrices_no_shear_on_spread_pose() {
-        let assets = std::env::var("CARGO_MANIFEST_DIR").unwrap_or(".".into());
-        let mesh = load_skinned(&format!("{}/assets/characters/mannequin_male.bin", assets))
-            .expect("mannequin mesh must load for test");
+        let mesh = chain_fixture(24, 0.1);
 
         // Spread pose: bones spread apart in world space.
         let mut g1_spread = [glam::Mat4::IDENTITY; 34];

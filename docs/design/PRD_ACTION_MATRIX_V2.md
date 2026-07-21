@@ -1,4 +1,6 @@
-# PRD: 9-Action Universal Combat Matrix (MotionBricks-Only Expansion)
+# Historical PRD: 9-Action Universal Combat Matrix (Superseded)
+
+> **Superseded:** retained as historical design evidence only. `PRD_ACTION_MATRIX.md`, `GAME_CANON.md`, `GAME_FIRST_INTENT_COMBAT_SPEC.md` and the current 13-action/archetype contracts control implementation. The universal nine-action roster, loadout-only identity, authored primitive lookup and presentation-derived hitbox language below are not current authority.
 
 ## 1. Purpose
 

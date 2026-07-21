@@ -1,25 +1,32 @@
 //! Truth-isolated outer player flow and deterministic replay playback.
 //!
-//! Menu, establishing, result, and replay are presentation states. They may
+//! Boot, menu, match setup, countdown, result, and replay are presentation states. They may
 //! decide when the existing Milestone 3 session advances, but they never write
 //! combat state or fabricate replay events.
 
 use crate::milestone3 as m3;
 
-pub const ESTABLISHING_TICKS: u16 = 90;
+pub const MATCH_SETUP_TICKS: u16 = 30;
+pub const COUNTDOWN_TICKS: u16 = 60;
+pub const ESTABLISHING_TICKS: u16 = MATCH_SETUP_TICKS + COUNTDOWN_TICKS;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Screen {
+    Boot,
     Menu,
-    Establishing,
+    MatchSetup,
+    Countdown,
     Duel,
     Replay,
+    Quit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlowStage {
+    Boot,
     Menu,
-    Establishing,
+    MatchSetup,
+    Countdown,
     Observe,
     Replan,
     Plan,
@@ -29,6 +36,8 @@ pub enum FlowStage {
     Consequence,
     Result,
     Replay,
+    Paused,
+    Quit,
 }
 
 impl FlowStage {
@@ -162,14 +171,25 @@ pub struct RuntimeFlow {
     screen: Screen,
     establishing_elapsed: u16,
     replay: Option<ReplayCursor>,
+    paused: bool,
 }
 
 impl RuntimeFlow {
+    pub const fn boot() -> Self {
+        Self {
+            screen: Screen::Boot,
+            establishing_elapsed: 0,
+            replay: None,
+            paused: false,
+        }
+    }
+
     pub const fn menu() -> Self {
         Self {
             screen: Screen::Menu,
             establishing_elapsed: 0,
             replay: None,
+            paused: false,
         }
     }
 
@@ -178,14 +198,21 @@ impl RuntimeFlow {
             screen: Screen::Duel,
             establishing_elapsed: ESTABLISHING_TICKS,
             replay: None,
+            paused: false,
         }
     }
 
     pub fn stage(&self, snapshot: &m3::Snapshot) -> FlowStage {
+        if self.paused {
+            return FlowStage::Paused;
+        }
         match self.screen {
+            Screen::Boot => FlowStage::Boot,
             Screen::Menu => FlowStage::Menu,
-            Screen::Establishing => FlowStage::Establishing,
+            Screen::MatchSetup => FlowStage::MatchSetup,
+            Screen::Countdown => FlowStage::Countdown,
             Screen::Replay => FlowStage::Replay,
+            Screen::Quit => FlowStage::Quit,
             Screen::Duel => match snapshot.phase {
                 m3::Phase::Observe if snapshot.exchange > 0 => FlowStage::Replan,
                 m3::Phase::Observe => FlowStage::Observe,
@@ -207,8 +234,16 @@ impl RuntimeFlow {
         true
     }
 
-    pub fn begin_rematch(&mut self) -> bool {
-        if !matches!(self.screen, Screen::Duel | Screen::Replay) {
+    pub fn finish_boot(&mut self) -> bool {
+        if self.screen != Screen::Boot {
+            return false;
+        }
+        self.screen = Screen::Menu;
+        true
+    }
+
+    pub fn begin_rematch(&mut self, snapshot: &m3::Snapshot) -> bool {
+        if self.screen != Screen::Replay && self.stage(snapshot) != FlowStage::Result {
             return false;
         }
         self.begin_establishing();
@@ -216,27 +251,53 @@ impl RuntimeFlow {
     }
 
     fn begin_establishing(&mut self) {
-        self.screen = Screen::Establishing;
+        self.screen = Screen::MatchSetup;
         self.establishing_elapsed = 0;
         self.replay = None;
+        self.paused = false;
     }
 
-    pub fn back_to_menu(&mut self) {
+    pub fn back_to_menu(&mut self) -> bool {
+        if matches!(self.screen, Screen::Boot | Screen::Menu | Screen::Quit) {
+            return false;
+        }
         self.screen = Screen::Menu;
         self.establishing_elapsed = 0;
         self.replay = None;
+        self.paused = false;
+        true
+    }
+
+    pub fn request_quit(&mut self) -> bool {
+        if self.screen == Screen::Quit {
+            return false;
+        }
+        self.screen = Screen::Quit;
+        self.establishing_elapsed = 0;
+        self.replay = None;
+        self.paused = false;
+        true
     }
 
     pub fn tick_establishing(&mut self) -> bool {
-        if self.screen != Screen::Establishing {
-            return false;
+        match self.screen {
+            Screen::MatchSetup => {
+                self.establishing_elapsed = self.establishing_elapsed.saturating_add(1);
+                if self.establishing_elapsed >= MATCH_SETUP_TICKS {
+                    self.screen = Screen::Countdown;
+                }
+                false
+            }
+            Screen::Countdown => {
+                self.establishing_elapsed = self.establishing_elapsed.saturating_add(1);
+                if self.establishing_elapsed >= ESTABLISHING_TICKS {
+                    self.screen = Screen::Duel;
+                    return true;
+                }
+                false
+            }
+            _ => false,
         }
-        self.establishing_elapsed = self.establishing_elapsed.saturating_add(1);
-        if self.establishing_elapsed >= ESTABLISHING_TICKS {
-            self.screen = Screen::Duel;
-            return true;
-        }
-        false
     }
 
     pub const fn establishing_remaining(&self) -> u16 {
@@ -253,7 +314,19 @@ impl RuntimeFlow {
         }
         self.replay = Some(ReplayCursor::new(replay)?);
         self.screen = Screen::Replay;
+        self.paused = false;
         Ok(())
+    }
+
+    /// Toggle pause without mutating combat truth. Pause is legal only during
+    /// an active, non-terminal duel.
+    pub fn toggle_pause(&mut self, snapshot: &m3::Snapshot) -> bool {
+        if self.screen != Screen::Duel || (!self.paused && snapshot.phase == m3::Phase::MatchResult)
+        {
+            return false;
+        }
+        self.paused = !self.paused;
+        true
     }
 
     pub fn advance_replay(&mut self) -> Result<bool, String> {
@@ -277,7 +350,7 @@ impl RuntimeFlow {
     }
 
     pub fn truth_ticks_allowed(&self, snapshot: &m3::Snapshot) -> bool {
-        self.screen == Screen::Duel && snapshot.phase != m3::Phase::MatchResult
+        self.screen == Screen::Duel && !self.paused && snapshot.phase != m3::Phase::MatchResult
     }
 }
 
@@ -313,6 +386,7 @@ mod tests {
                     region: m3::BodyRegion::Head,
                     severity: 2,
                 }),
+                opposing_contact: None,
             })
             .unwrap();
         while session.game.snapshot().phase != m3::Phase::MatchResult {
@@ -367,6 +441,7 @@ mod tests {
                 .submit_physical_contact(m3::PhysicalContactBatch {
                     truth_frame: session.game.expected_contact_frame().unwrap(),
                     contact,
+                    opposing_contact: None,
                 })
                 .unwrap();
             session.tick();
@@ -385,7 +460,7 @@ mod tests {
         assert_eq!(flow.stage(&snapshot), FlowStage::Menu);
         assert!(!flow.stage(&snapshot).captures_cursor());
         assert!(flow.start_match());
-        assert_eq!(flow.stage(&snapshot), FlowStage::Establishing);
+        assert_eq!(flow.stage(&snapshot), FlowStage::MatchSetup);
         for _ in 0..ESTABLISHING_TICKS {
             flow.tick_establishing();
         }
@@ -399,6 +474,40 @@ mod tests {
         flow.enter_replay(terminal.snapshot(), replay).unwrap();
         assert_eq!(flow.stage(terminal.snapshot()), FlowStage::Replay);
         assert!(!flow.stage(terminal.snapshot()).captures_cursor());
+    }
+
+    #[test]
+    fn boot_setup_and_countdown_are_explicit_truth_frozen_states() {
+        let live = m3::Match::new(0x4d33_0200);
+        let live_hash = live.truth_hash();
+        let mut flow = RuntimeFlow::boot();
+
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::Boot);
+        assert!(!flow.start_match());
+        assert!(!flow.begin_rematch(live.snapshot()));
+        assert!(!flow.toggle_pause(live.snapshot()));
+        assert!(!flow.truth_ticks_allowed(live.snapshot()));
+        assert!(flow.finish_boot());
+        assert!(!flow.finish_boot());
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::Menu);
+        assert!(flow.start_match());
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::MatchSetup);
+        assert!(!flow.start_match());
+        assert!(!flow.begin_rematch(live.snapshot()));
+        assert!(!flow.toggle_pause(live.snapshot()));
+        for _ in 0..MATCH_SETUP_TICKS {
+            flow.tick_establishing();
+        }
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::Countdown);
+        assert!(!flow.start_match());
+        assert!(!flow.begin_rematch(live.snapshot()));
+        assert!(!flow.toggle_pause(live.snapshot()));
+        assert!(!flow.truth_ticks_allowed(live.snapshot()));
+        for _ in 0..COUNTDOWN_TICKS {
+            flow.tick_establishing();
+        }
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::Observe);
+        assert_eq!(live.truth_hash(), live_hash);
     }
 
     #[test]
@@ -447,5 +556,195 @@ mod tests {
             assert!(!flow.truth_ticks_allowed(game.snapshot()));
         }
         assert_eq!(game.truth_hash(), initial_hash);
+    }
+
+    #[test]
+    fn pause_is_duel_only_and_freezes_truth_until_exact_resume() {
+        let mut game = m3::Match::new(107);
+        let mut flow = RuntimeFlow::menu();
+        let initial_hash = game.truth_hash();
+
+        assert!(!flow.toggle_pause(game.snapshot()));
+        assert!(flow.start_match());
+        assert!(!flow.toggle_pause(game.snapshot()));
+        for _ in 0..ESTABLISHING_TICKS {
+            flow.tick_establishing();
+        }
+
+        assert!(flow.toggle_pause(game.snapshot()));
+        assert_eq!(flow.stage(game.snapshot()), FlowStage::Paused);
+        assert!(!flow.stage(game.snapshot()).captures_cursor());
+        assert!(!flow.truth_ticks_allowed(game.snapshot()));
+        for _ in 0..120 {
+            if flow.truth_ticks_allowed(game.snapshot()) {
+                game.tick();
+            }
+        }
+        assert_eq!(game.truth_hash(), initial_hash);
+
+        assert!(flow.toggle_pause(game.snapshot()));
+        assert_eq!(flow.stage(game.snapshot()), FlowStage::Observe);
+        assert!(flow.truth_ticks_allowed(game.snapshot()));
+        assert_eq!(game.truth_hash(), initial_hash);
+
+        let replay = complete_replay(107);
+        let terminal = m3::replay(&replay).unwrap();
+        assert_eq!(flow.stage(terminal.snapshot()), FlowStage::Result);
+        assert!(!flow.toggle_pause(terminal.snapshot()));
+        flow.enter_replay(terminal.snapshot(), replay).unwrap();
+        assert!(!flow.toggle_pause(terminal.snapshot()));
+        assert_eq!(flow.stage(terminal.snapshot()), FlowStage::Replay);
+    }
+
+    #[test]
+    fn rematch_is_rejected_until_result_or_replay() {
+        let seed = 109;
+        let live = m3::Match::new(seed);
+        let mut flow = RuntimeFlow::menu();
+        assert!(!flow.begin_rematch(live.snapshot()));
+        assert!(flow.start_match());
+        assert!(!flow.begin_rematch(live.snapshot()));
+        for _ in 0..ESTABLISHING_TICKS {
+            flow.tick_establishing();
+        }
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::Observe);
+        assert!(!flow.begin_rematch(live.snapshot()));
+
+        let replay = complete_replay(seed);
+        let terminal = m3::replay(&replay).unwrap();
+        assert_eq!(flow.stage(terminal.snapshot()), FlowStage::Result);
+        assert!(flow.begin_rematch(terminal.snapshot()));
+        assert_eq!(flow.stage(live.snapshot()), FlowStage::MatchSetup);
+        assert_eq!(flow.establishing_remaining(), ESTABLISHING_TICKS);
+        assert!(flow.replay.is_none());
+
+        let next_seed = seed + 1;
+        let rematch = m3::Session::new(next_seed);
+        let canonical = m3::Match::new(next_seed);
+        assert_eq!(rematch.game.snapshot(), canonical.snapshot());
+        assert_eq!(rematch.game.truth_hash(), canonical.truth_hash());
+        assert_eq!(rematch.replay.hash_trace, vec![canonical.truth_hash()]);
+
+        let mut replay_flow = RuntimeFlow::autoplay();
+        replay_flow
+            .enter_replay(terminal.snapshot(), replay)
+            .unwrap();
+        assert!(replay_flow.begin_rematch(terminal.snapshot()));
+        assert_eq!(replay_flow.stage(live.snapshot()), FlowStage::MatchSetup);
+        assert!(replay_flow.replay.is_none());
+    }
+
+    #[test]
+    fn quit_is_explicit_one_shot_and_truth_isolated_from_every_outer_state() {
+        fn assert_quit(mut flow: RuntimeFlow, snapshot: &m3::Snapshot) {
+            let truth_before = snapshot.clone();
+            assert!(flow.request_quit());
+            assert_eq!(flow.stage(snapshot), FlowStage::Quit);
+            assert!(!flow.truth_ticks_allowed(snapshot));
+            assert!(!flow.request_quit());
+            assert!(!flow.start_match());
+            assert!(!flow.finish_boot());
+            assert!(!flow.begin_rematch(snapshot));
+            assert!(!flow.toggle_pause(snapshot));
+            assert!(!flow.back_to_menu());
+            assert_eq!(snapshot, &truth_before);
+        }
+
+        let live = m3::Match::new(0x4d33_0201);
+        assert_quit(RuntimeFlow::boot(), live.snapshot());
+        assert_quit(RuntimeFlow::menu(), live.snapshot());
+
+        let mut setup = RuntimeFlow::menu();
+        assert!(setup.start_match());
+        assert_quit(setup, live.snapshot());
+        let mut countdown = RuntimeFlow::menu();
+        assert!(countdown.start_match());
+        for _ in 0..MATCH_SETUP_TICKS {
+            countdown.tick_establishing();
+        }
+        assert_quit(countdown, live.snapshot());
+        assert_quit(RuntimeFlow::autoplay(), live.snapshot());
+
+        let replay = complete_replay(0x4d33_0201);
+        let terminal = m3::replay(&replay).unwrap();
+        assert_quit(RuntimeFlow::autoplay(), terminal.snapshot());
+        let mut replay_flow = RuntimeFlow::autoplay();
+        replay_flow
+            .enter_replay(terminal.snapshot(), replay)
+            .unwrap();
+        assert_quit(replay_flow, terminal.snapshot());
+    }
+
+    #[test]
+    fn every_outer_command_has_a_fail_closed_state_transition_matrix() {
+        const SCREENS: [Screen; 7] = [
+            Screen::Boot,
+            Screen::Menu,
+            Screen::MatchSetup,
+            Screen::Countdown,
+            Screen::Duel,
+            Screen::Replay,
+            Screen::Quit,
+        ];
+        const PHASES: [m3::Phase; 7] = [
+            m3::Phase::Observe,
+            m3::Phase::Plan,
+            m3::Phase::Commit,
+            m3::Phase::Reveal,
+            m3::Phase::Resolve,
+            m3::Phase::Consequence,
+            m3::Phase::MatchResult,
+        ];
+        let recorded = complete_replay(0x4d33_0202);
+        let base = m3::Match::new(0x4d33_0202).snapshot().clone();
+
+        for screen in SCREENS {
+            for phase in PHASES {
+                let mut snapshot = base.clone();
+                snapshot.phase = phase;
+                let fresh = || RuntimeFlow {
+                    screen,
+                    establishing_elapsed: 0,
+                    replay: None,
+                    paused: false,
+                };
+
+                let mut flow = fresh();
+                assert_eq!(flow.finish_boot(), screen == Screen::Boot);
+                let mut flow = fresh();
+                assert_eq!(flow.start_match(), screen == Screen::Menu);
+                let mut flow = fresh();
+                assert_eq!(
+                    flow.toggle_pause(&snapshot),
+                    screen == Screen::Duel && phase != m3::Phase::MatchResult
+                );
+                let mut flow = fresh();
+                assert_eq!(
+                    flow.begin_rematch(&snapshot),
+                    screen == Screen::Replay
+                        || (screen == Screen::Duel && phase == m3::Phase::MatchResult)
+                );
+                let mut flow = fresh();
+                assert_eq!(
+                    flow.back_to_menu(),
+                    !matches!(screen, Screen::Boot | Screen::Menu | Screen::Quit)
+                );
+                let mut flow = fresh();
+                assert_eq!(flow.request_quit(), screen != Screen::Quit);
+                let mut flow = fresh();
+                assert_eq!(
+                    flow.enter_replay(&snapshot, recorded.clone()).is_ok(),
+                    screen == Screen::Duel && phase == m3::Phase::MatchResult
+                );
+            }
+        }
+
+        let mut paused = RuntimeFlow::autoplay();
+        paused.paused = true;
+        assert_eq!(paused.stage(&base), FlowStage::Paused);
+        assert!(!paused.start_match());
+        assert!(!paused.finish_boot());
+        assert!(!paused.begin_rematch(&base));
+        assert!(paused.toggle_pause(&base));
     }
 }

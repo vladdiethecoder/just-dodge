@@ -29,14 +29,15 @@ Generate authentic, readable martial-arts motion at For Honor-level fidelity usi
 |---|---|---|---|
 | skin_matrices | Mat4[] | PRD_RENDERER.md | Per-bone transform matrices |
 | weapon_transform | Mat4 | PRD_RENDERER.md | Weapon socket transform |
-| hitbox_proxies | HitboxProxy[] | PRD_COMBAT_TRUTH.md | Geometry-accurate collision proxies |
+| plan_proposal | NeuralPlanPacketCandidate | Packet validator | Versioned, quantized proposal; not truth until admitted and hash-bound |
+| presentation_proxies | ProxyAov[] | PRD_RENDERER.md, PRD_QA_AGENTIC.md | Visualization of truth-owned proxies from the same admitted packet sample |
 | audio_cue_request | AudioCue | PRD_AUDIO.md | Wind-up/contact event requests |
 | contact_keypoints | Keypoint[] | PRD_CAMERA.md | Hands, feet, weapon tip for framing |
 
 ### Events / Signals
 | Event | Payload | When Fired |
 |---|---|---|
-| pose_transition_started | { action_id, from_pose, to_pose, duration_frames } | On reveal |
+| pose_transition_started | { action_id, plan_packet_id, duration_ticks } | When an admitted live plan begins |
 | contact_pose_held | { action_id, frame_index } | On active/contact frame |
 | martial_arts_quality_fail | { reason } | When motion fails authenticity audit |
 
@@ -45,17 +46,17 @@ Generate authentic, readable martial-arts motion at For Honor-level fidelity usi
 1. Combat truth emits a motion request at reveal.
 2. Motion subsystem queries MotionBricks for the action/stance pose and transition, conditioned on weapon, stance, injury, and armor.
 3. 29-joint MotionBricks output is retargeted to the ~120-bone mannequin skeleton.
-4. Spine, finger, and toe gaps are filled by procedural interpolation/IK driven by martial-arts biomechanics.
+4. Spine, fingers and toes are solved from live biomechanical/contact constraints on the admitted rig; local-axis heuristics, authored grip poses and pose-bank lookups are forbidden.
 5. Weapon arc and hip rotation are validated against weapon profile.
 6. Injury and armor ROM clamps are applied as presentation modifiers.
-7. Hitbox proxies are generated from current pose geometry for combat truth contact detection.
-8. Final skin matrices, weapon transform, and contact keypoints are sent to renderer and camera.
+7. Combat truth evaluates its canonical body/weapon/armor contact proxies from the admitted quantized packet and truth-owned geometry. Renderer output is never read back.
+8. Final skin matrices, weapon transform, contact keypoints and proxy AOVs are sent to renderer, camera and QA from that same sample.
 
 ## 5. Control Flow
 
-- **Who calls it:** PRD_COMBAT_TRUTH.md via the presentation-truth bridge for pose generation; hitbox proxies are read back by combat truth for contact.
-- **Tick rate:** Per render frame with interpolation between simulation steps.
-- **Threading model:** Main thread; MotionBricks inference may run async with pose hold if not ready.
+- **Who calls it:** the asynchronous plan service produces candidates; the packet validator admits canonical quantized packets; combat truth consumes admitted/recorded packets without reading presentation state.
+- **Tick rate:** Asynchronous plan horizons feeding quantized samples at the deterministic 120 Hz contact cadence; rendering interpolates admitted samples without changing truth bytes.
+- **Threading model:** Neural inference runs outside the truth tick and publishes complete validated packets through the versioned buffer. Stale, missing or mismatched packets fail closed; the truth tick never synchronously waits for inference.
 
 ## 6. Error Handling
 
@@ -82,10 +83,14 @@ Generate authentic, readable martial-arts motion at For Honor-level fidelity usi
 ## 9. Open Questions
 
 - Runtime MotionBricks latency and artifact quality at martial-arts fidelity.
-- Hitbox proxy extraction from skinned meshes every frame versus cached per-pose.
-- Authored hold loops and idle drift to avoid mannequin-like freezing.
+- Cost and quantization of truth-owned proxy evaluation from each admitted packet sample.
+- Live recurrent/sequence conditioning for hold, idle and recovery without authored loops, discrete pose banks or baked clips.
 
-## 10. Agent Notes
+## 10. Character, grip, and equipment dependency
+
+Every body/armor/weapon pose follows `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md`. The sword socket and finger/hand solution must prove measured handle contact, anatomical volume, causal response to grip geometry and parity across the declared stress/action suite. Proximity to the wrist is not grip evidence.
+
+## 11. Agent Notes
 
 ### 2026-07-09 — @kimi
 - **Decision:** MotionBricks is the sole motion engine; prebaked clips and motion fallbacks are disallowed.

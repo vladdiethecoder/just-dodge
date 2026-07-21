@@ -40,6 +40,7 @@ pub struct FlowInput {
     pub replay: bool,
     pub rematch: bool,
     pub back_to_menu: bool,
+    pub pause: bool,
     pub quit: bool,
 }
 
@@ -91,6 +92,7 @@ impl InputState {
                     ("f1", true) => self.toggle_debug = true,
                     ("p", true) => self.flow.replay = true,
                     ("r", true) => self.flow.rematch = true,
+                    ("o", true) => self.flow.pause = true,
                     ("q", true) => self.flow.quit = true,
                     _ => {}
                 }
@@ -353,12 +355,14 @@ mod tests {
                 replay: true,
                 rematch: true,
                 back_to_menu: true,
+                pause: true,
                 quit: true,
             },
             ..Default::default()
         };
         input.reset_flow();
         assert_eq!(input.flow_input(), FlowInput::default());
+        assert!(!input.flow_input().pause);
         assert_eq!(input.plan_input().selected_action, Some(Action::Block));
     }
 }

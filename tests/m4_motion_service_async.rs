@@ -2,65 +2,14 @@ use glam::Mat4;
 use just_dodge::intent::{Intent, MoveDirection, PlanPhase, PlanStatus, StrikeVariant};
 use just_dodge::motion::G1_NB;
 use just_dodge::motion_service_async::{
-    AsyncMotionPlanProvider, BakedClipProvider, CoreMotionIntent, FullPose, MotionPlanRequest,
-    MotionPlanService, MotionPoll, MotionProviderKind, MotionServiceError, MotionSubmitReceipt,
-    PlanPhaseMotionAdapter, SupportedKeyframes,
+    AsyncMotionPlanProvider, CoreMotionIntent, FullPose, MotionPlanRequest, MotionPlanService,
+    MotionPoll, MotionProviderKind, MotionServiceError, MotionSubmitReceipt,
+    PlanPhaseMotionAdapter,
 };
 use just_dodge::truth::Side;
 
 fn identity_pose() -> FullPose {
     [Mat4::IDENTITY; G1_NB]
-}
-
-fn request(id: u64, intent: CoreMotionIntent) -> MotionPlanRequest {
-    MotionPlanRequest {
-        id,
-        side: Side::Player,
-        intent,
-        displacement_mm: [0, 0, 0],
-        keyframes: SupportedKeyframes {
-            start_root: Mat4::IDENTITY,
-            end_root: Mat4::IDENTITY,
-            start_pose: identity_pose(),
-            end_pose: identity_pose(),
-        },
-    }
-}
-
-#[test]
-fn baked_provider_serves_each_core_intent_deterministically() {
-    let intents = [
-        CoreMotionIntent::Strike,
-        CoreMotionIntent::Block,
-        CoreMotionIntent::Grab,
-        CoreMotionIntent::Move,
-        CoreMotionIntent::Dodge,
-        CoreMotionIntent::Idle,
-    ];
-    let mut first_provider = BakedClipProvider::embedded().unwrap();
-    let mut second_provider = BakedClipProvider::embedded().unwrap();
-
-    for (index, intent) in intents.into_iter().enumerate() {
-        let id = index as u64 + 1;
-        first_provider.submit(request(id, intent)).unwrap();
-        second_provider.submit(request(id, intent)).unwrap();
-        let MotionPoll::Ready(first) = first_provider.poll(id) else {
-            panic!("first {intent:?} baked clip was not ready")
-        };
-        let MotionPoll::Ready(second) = second_provider.poll(id) else {
-            panic!("second {intent:?} baked clip was not ready")
-        };
-        assert_eq!(first.intent, intent);
-        assert_eq!(first.frames.as_ref(), second.frames.as_ref());
-        assert!(first.frames.len() >= 2);
-        assert!(
-            first
-                .frames
-                .iter()
-                .flat_map(|frame| frame.iter())
-                .all(Mat4::is_finite)
-        );
-    }
 }
 
 struct PendingProvider;
@@ -122,7 +71,7 @@ fn pending_generation_never_gates_m1_truth_tick_or_truth_hash() {
 }
 
 #[test]
-fn movement_request_is_core_baked_family() {
+fn movement_request_maps_to_move_motion_intent() {
     assert_eq!(
         CoreMotionIntent::from_intent(Intent::move_standard(MoveDirection::Approach)),
         CoreMotionIntent::Move

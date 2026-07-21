@@ -10,6 +10,8 @@ Frame the duel so opponent intent, action tells, and consequences are readable, 
 - Player mode uses a gameplay-approved camera; developer camera is forbidden in Player mode.
 - Camera framing must account for MotionBricks-driven poses, weapon arcs, and contact keypoints.
 - If first-person camera hides MotionBricks tells, the design must switch to a readable alternative before content is added.
+- Player camera may never intersect or sit behind the player body, hair, armor or weapon, and may never obscure an essential opponent tell.
+- First-person uses an approved eye/camera rig plus truth-isolated near-body culling or dedicated first-person presentation geometry derived from the same admitted pose packet.
 - Replay and Fight Film cameras are deterministic and derived from truth events and MotionBricks contact keypoints.
 
 ## 3. Interface Contract
@@ -38,7 +40,7 @@ Frame the duel so opponent intent, action tells, and consequences are readable, 
 
 1. Platform shell selects camera mode.
 2. Camera subsystem reads truth snapshot.
-3. Player camera tracks opponent relative to player position and phase.
+3. Player camera uses the approved eye frame, tracks the opponent relative to player position and phase, and applies the versioned near-body visibility policy.
 4. Contact events trigger procedural shake.
 5. Replay camera supports manual orbit and frame stepping.
 6. Fight Film camera chooses cinematic cuts based on replay events.
@@ -52,7 +54,7 @@ Frame the duel so opponent intent, action tells, and consequences are readable, 
 
 ## 6. Error Handling
 
-- **Fail-open:** if a camera target is missing, camera falls back to a neutral duel framing.
+- **Fail-closed in Player mode:** a missing target, invalid eye frame or body/weapon intersection blocks the camera candidate; it cannot silently use Developer camera.
 - **Fail-closed:** Player mode cannot activate Developer camera.
 - **Degradation:** if first-person fails readability test, switch to DuelReadableCamera.
 
@@ -75,7 +77,11 @@ Frame the duel so opponent intent, action tells, and consequences are readable, 
 - Field of view and peripheral-vision design for readability.
 - Fight Film cut grammar.
 
-## 10. Agent Notes
+## 10. Visual gate
+
+Camera promotion follows `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md` and `../quality/ADVERSARIAL_VISUAL_CONTRACT.md`. Require both approved FOV extremes, every declared stress pose, complete weapon arcs, zero body/weapon camera intersections, no hidden opponent tells and the blinded action-read gate from the actual player camera.
+
+## 11. Agent Notes
 
 ### 2026-07-09 — @kimi
 - **Decision:** Camera readability beats genre purity; first-person camera must pass an 80%+ blind action-read test or be replaced.

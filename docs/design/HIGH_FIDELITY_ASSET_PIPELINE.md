@@ -44,6 +44,8 @@ Verified Meshy API:
 
 ### 3) Exact character pipeline: one purpose-built part-separated armored duelist
 
+All stages inherit `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md` and `../quality/ADVERSARIAL_VISUAL_CONTRACT.md`. Where this plan is abbreviated, those fail-closed attachment, grip, camera, evidence and threshold requirements control.
+
 **Deliverable definition before a generation call**
 
 A `JD_Duelist_001` component manifest must enumerate, at minimum:
@@ -72,7 +74,7 @@ No body/armor/weapon mesh may be fused merely to obtain a prettier thumbnail.
 | 8 | If repair is suitable, invoke the headless non-destructive repair worker against an immutable copy, then rerun every geometry/stress test. | A repair candidate cannot clear the gate, alters seams/weights, or creates a new defect → return to component rebuild/retopo. | Explicit approval required before replacing a candidate. |
 | 9 | Only after geometry admission: Meshy `retexture` from approved UV geometry **or** Blender-local authored/baked PBR. Require `enable_original_uv:true` only after Blender has verified the UVs; use `enable_pbr:true`, `remove_lighting:true`, and archive all maps. | Missing PBR map, baked lighting, incorrect colorspace/ORM packing, weak texel density = texture redo; do not alter admitted geometry to fix texture. | **G6 — material/readability approval.** |
 | 10 | Blender Cycles selected-to-active bakes owned normal/AO/material corrections, then exports deterministic GLB. Use pinned exporter options and an extension allowlist. | Khronos GLB structural/material validation or re-import fails = return to DCC source. | None. |
-| 11 | Cook through existing Just Dodge path. The current `extract_fbx_skinned.py` preserves positions/normals/UVs, hierarchy, inverse binds, and top-8 normalized weights to SKM1/ANM1; `verify_skinned_bin.py` checks index bounds, hierarchy, weight sums, humanoid height, and animation integrity. | Cooker discards UVs/PBR/material data, loads legacy mannequin, or asset format fails = cooker contract failure, not an art promotion. | **G7 — runtime integration approval.** |
+| 11 | Cook through the current Just Dodge path. Preserve positions/normals/UVs, hierarchy, inverse binds, admitted influence limits, equipment manifests, sockets and proxy lineage. ANM1/runtime clip output is diagnostic legacy only and cannot enter Player mode; ship motion is the live neural packet stack. | Cooker discards UVs/PBR/material/equipment data, emits a clip/pose-bank dependency, loads a legacy mannequin, or changes attachment/proxy semantics = cooker contract failure, not art promotion. | **G7 — runtime integration approval.** |
 | 12 | Run the visual contract in raw / Blender / cooked / live stages: 16 fixed views, clay/wire/normals/UV/weights/socket/proxy AOVs, first-person frames, and metrics. | Any visual contract requirement missing or threshold breach: promotion blocked. | **G8 — final blinded first-person and evidence-packet sign-off.** |
 | 13 | Promote only content-addressed cooked bytes plus manifest/receipts. Runtime never calls FAL/Meshy. | Any source, script, model, terms, config, or byte hash change invalidates approval. | Release owner signs promotion. |
 
@@ -132,7 +134,7 @@ headless Blender:
   mesh_doctor_pair_detect.py
   mesh_doctor_repair.py  # candidate only
   rerun detection / stress poses / export / re-import
-Khronos GLB validation → cooker → SKM1/ANM1 verifier → runtime visual gate
+Khronos GLB validation → cooker → SKM1/equipment/model-bundle verification → runtime visual gate
 ```
 
 The local DCC bridge is live and reports its process/DCC/catalog/dispatcher healthy. The current executable is **Blender 5.1.2**, which matches the repo’s pinned DCC authority. Blender 5.2 LTS is current upstream, but **do not upgrade this pipeline ad hoc**: the visual contract pins the existing Blender build, and a version change must be an ADR/baseline migration.

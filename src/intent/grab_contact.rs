@@ -16,25 +16,25 @@ pub const PHYSICS_SUBSTEP_HZ: u32 = 120;
 /// Minimum contiguous contact for secure_grab: 100ms = 12 substeps at 120Hz.
 pub const SECURE_GRAB_MIN_SUBSTEPS: u32 = 12;
 /// Maximum allowed hand-surface clearance for secure_grab admission.
-pub const SECURE_GRAB_SURFACE_MAX_MM: f32 = 15.0;
+pub const SECURE_GRAB_SURFACE_MAX_UM: u32 = 15_000;
 /// Maximum prohibited mesh penetration.
-pub const PROHIBITED_PENETRATION_MAX_MM: f32 = 0.5;
+pub const PROHIBITED_PENETRATION_MAX_UM: u32 = 500;
 
 /// One authoritative bilateral contact manifold sample at one physics substep.
 /// This is the ONLY contact evidence admitted to GrabAttempt. All values are
 /// typed separately — no scalar is ever repurposed as another quantity.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContactManifoldSample {
     /// Physics substep ID at 120Hz (integer clock domain).
     pub substep_id: u64,
     /// Manifold identity (stable across substeps for one contact pair).
     pub manifold_id: u64,
-    /// Skinned hand/forearm surface to declared opponent surface distance (mm).
-    pub surface_distance_mm: f32,
-    /// Contact-proxy overlap depth (mm). Negative = separation.
-    pub proxy_overlap_mm: f32,
-    /// Prohibited mesh penetration depth (mm). Must stay <= 0.5.
-    pub prohibited_penetration_mm: f32,
+    /// Skinned hand/forearm surface to declared opponent surface distance (um).
+    pub surface_distance_um: u32,
+    /// Contact-proxy overlap depth (um). Negative = separation.
+    pub proxy_overlap_um: i32,
+    /// Prohibited mesh penetration depth (um). Must stay <= 500.
+    pub prohibited_penetration_um: u32,
     /// The authoritative physics event reports contact this substep.
     pub physics_contact_active: bool,
     /// The visible/rendered contact overlaps this substep in time.
@@ -46,13 +46,13 @@ pub struct ContactManifoldSample {
 }
 
 /// Evaluation of one contiguous contact interval against every gate.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IntervalVerdict {
     pub manifold_id: u64,
     pub start_substep: u64,
     pub end_substep: u64,
     pub duration_substeps: u32,
-    pub duration_ms: f32,
+    pub duration_us: u32,
     pub contiguous: bool,
     pub surface_ok: bool,
     pub penetration_ok: bool,
@@ -91,15 +91,15 @@ pub fn evaluate_intervals(samples: &[ContactManifoldSample]) -> Vec<IntervalVerd
             .windows(2)
             .all(|w| w[1].substep_id == w[0].substep_id + 1);
         let duration_substeps = run.len() as u32;
-        let duration_ms = duration_substeps as f32 * 1000.0 / PHYSICS_SUBSTEP_HZ as f32;
+        let duration_us = duration_substeps.saturating_mul(1_000_000) / PHYSICS_SUBSTEP_HZ;
 
         // Every gate value comes from THIS contiguous interval only.
         let surface_ok = run
             .iter()
-            .all(|s| s.surface_distance_mm <= SECURE_GRAB_SURFACE_MAX_MM);
+            .all(|s| s.surface_distance_um <= SECURE_GRAB_SURFACE_MAX_UM);
         let penetration_ok = run
             .iter()
-            .all(|s| s.prohibited_penetration_mm <= PROHIBITED_PENETRATION_MAX_MM);
+            .all(|s| s.prohibited_penetration_um <= PROHIBITED_PENETRATION_MAX_UM);
         let temporal_overlap_ok = run.iter().all(|s| s.visible_contact_active);
         let causal_response_ok = run.iter().any(|s| s.opponent_response_causal);
         let no_override_ok = run.iter().all(|s| !s.presentation_override);
@@ -118,7 +118,7 @@ pub fn evaluate_intervals(samples: &[ContactManifoldSample]) -> Vec<IntervalVerd
             start_substep: run[0].substep_id,
             end_substep: run[run.len() - 1].substep_id,
             duration_substeps,
-            duration_ms,
+            duration_us,
             contiguous,
             surface_ok,
             penetration_ok,
@@ -146,9 +146,9 @@ mod tests {
         ContactManifoldSample {
             substep_id,
             manifold_id,
-            surface_distance_mm: 5.0,
-            proxy_overlap_mm: 1.0,
-            prohibited_penetration_mm: 0.0,
+            surface_distance_um: 5_000,
+            proxy_overlap_um: 1_000,
+            prohibited_penetration_um: 0,
             physics_contact_active: true,
             visible_contact_active: true,
             opponent_response_causal: substep_id == 0,
@@ -158,16 +158,16 @@ mod tests {
 
     fn with(
         base: ContactManifoldSample,
-        surface_mm: f32,
-        pen_mm: f32,
+        surface_um: u32,
+        penetration_um: u32,
         physics: bool,
         visible: bool,
         causal: bool,
         override_: bool,
     ) -> ContactManifoldSample {
         ContactManifoldSample {
-            surface_distance_mm: surface_mm,
-            prohibited_penetration_mm: pen_mm,
+            surface_distance_um: surface_um,
+            prohibited_penetration_um: penetration_um,
             physics_contact_active: physics,
             visible_contact_active: visible,
             opponent_response_causal: causal,
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn fixture_a_valid_contiguous_100ms_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, i == 0, false))
             .collect();
         let v = any_secure_interval(&samples);
         assert!(v.is_some(), "valid contiguous 100ms contact must be secure");
@@ -191,10 +191,10 @@ mod tests {
     #[test]
     fn fixture_b_disjoint_contacts_not_secure() {
         let mut samples: Vec<_> = (0..7)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, i == 0, false))
             .collect();
         // Gap (interruption) at substep 7-8 (no samples), then 7 more.
-        samples.extend((9..16).map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, false, false)));
+        samples.extend((9..16).map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, false, false)));
         assert!(
             any_secure_interval(&samples).is_none(),
             "disjoint contacts must not combine into a secure interval"
@@ -205,7 +205,7 @@ mod tests {
     #[test]
     fn fixture_c_close_surface_no_manifold_not_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, false, true, false, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, false, true, false, false))
             .collect();
         assert!(any_secure_interval(&samples).is_none());
     }
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn fixture_d_proxy_without_visible_not_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, false, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, false, i == 0, false))
             .collect();
         assert!(any_secure_interval(&samples).is_none());
     }
@@ -223,7 +223,7 @@ mod tests {
     #[test]
     fn fixture_e_no_causal_response_not_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, false, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, false, false))
             .collect();
         assert!(any_secure_interval(&samples).is_none());
     }
@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn fixture_f_excessive_penetration_not_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.7, true, true, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 700, true, true, i == 0, false))
             .collect();
         assert!(any_secure_interval(&samples).is_none());
     }
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn fixture_g_presentation_override_not_secure() {
         let samples: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, i == 0, true))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, i == 0, true))
             .collect();
         assert!(any_secure_interval(&samples).is_none());
     }
@@ -250,12 +250,47 @@ mod tests {
     #[test]
     fn duration_boundary_100ms_exact() {
         let short: Vec<_> = (0..11)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, i == 0, false))
             .collect();
         assert!(any_secure_interval(&short).is_none());
         let exact: Vec<_> = (0..12)
-            .map(|i| with(ok_sample(i, 1), 5.0, 0.0, true, true, i == 0, false))
+            .map(|i| with(ok_sample(i, 1), 5_000, 0, true, true, i == 0, false))
             .collect();
         assert!(any_secure_interval(&exact).is_some());
+    }
+
+    #[test]
+    fn contact_sample_schema_is_integer_truth() {
+        fn assert_eq_sample<T: Eq>() {}
+        assert_eq_sample::<ContactManifoldSample>();
+        assert_eq_sample::<crate::intent::grab_state::SecureGrabAdmission>();
+        let sample = ContactManifoldSample {
+            substep_id: 1,
+            manifold_id: 2,
+            surface_distance_um: 15_000,
+            proxy_overlap_um: 1_000,
+            prohibited_penetration_um: 500,
+            physics_contact_active: true,
+            visible_contact_active: true,
+            opponent_response_causal: true,
+            presentation_override: false,
+        };
+        let json = serde_json::to_value(sample).unwrap();
+        assert_eq!(json["surface_distance_um"], 15_000);
+        assert!(json.get("surface_distance_mm").is_none());
+
+        let admission = crate::intent::grab_state::SecureGrabAdmission {
+            proxy_contact: true,
+            surface_clearance_um: 15_000,
+            contact_duration_ticks: 12,
+            temporal_overlap: true,
+            causal_response: true,
+            prohibited_penetration_um: 500,
+            no_presentation_override: true,
+        };
+        assert!(admission.admits());
+        let json = serde_json::to_value(admission).unwrap();
+        assert!(json.get("surface_clearance_mm").is_none());
+        assert!(json.get("prohibited_penetration_mm").is_none());
     }
 }

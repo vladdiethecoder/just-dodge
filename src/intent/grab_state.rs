@@ -20,10 +20,10 @@ pub const ROOT_SPEED_MM_PER_TICK: i32 = 50;
 pub const SECURE_GRAB_MIN_CONTACT_TICKS: u32 = 12;
 
 /// Maximum prohibited mesh penetration for any physical state.
-pub const PROHIBITED_PENETRATION_MAX_MM: f32 = 0.5;
+pub const PROHIBITED_PENETRATION_MAX_UM: u32 = 500;
 
 /// Maximum visible hand-surface clearance for secure_grab admission.
-pub const SECURE_GRAB_SURFACE_CLEARANCE_MAX_MM: f32 = 15.0;
+pub const SECURE_GRAB_SURFACE_CLEARANCE_MAX_UM: u32 = 15_000;
 
 /// The eight states of the grab state machine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -66,20 +66,20 @@ pub enum GrabFailure {
 }
 
 /// Secure grab admission criteria — all must be true.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SecureGrabAdmission {
     /// Hand/forearm proxy contacts the intended opponent region.
     pub proxy_contact: bool,
-    /// Final skinned hand surface distance <= 15mm.
-    pub surface_clearance_mm: f32,
+    /// Final skinned hand surface distance <= 15,000um.
+    pub surface_clearance_um: u32,
     /// Contact persists continuously >= 100ms (12 ticks at 120Hz).
     pub contact_duration_ticks: u32,
     /// Contact events and visible contact overlap in time.
     pub temporal_overlap: bool,
     /// Opponent response is caused by those same physical events.
     pub causal_response: bool,
-    /// Prohibited mesh penetration <= 0.5mm.
-    pub prohibited_penetration_mm: f32,
+    /// Prohibited mesh penetration <= 500um.
+    pub prohibited_penetration_um: u32,
     /// No arm stretching, pose snapping, or presentation-only truth override.
     pub no_presentation_override: bool,
 }
@@ -88,11 +88,11 @@ impl SecureGrabAdmission {
     /// Check if all secure grab admission criteria are met.
     pub fn admits(&self) -> bool {
         self.proxy_contact
-            && self.surface_clearance_mm <= SECURE_GRAB_SURFACE_CLEARANCE_MAX_MM
+            && self.surface_clearance_um <= SECURE_GRAB_SURFACE_CLEARANCE_MAX_UM
             && self.contact_duration_ticks >= SECURE_GRAB_MIN_CONTACT_TICKS
             && self.temporal_overlap
             && self.causal_response
-            && self.prohibited_penetration_mm <= PROHIBITED_PENETRATION_MAX_MM
+            && self.prohibited_penetration_um <= PROHIBITED_PENETRATION_MAX_UM
             && self.no_presentation_override
     }
 }
@@ -226,14 +226,14 @@ impl GrabAttempt {
         } else {
             // Determine which criterion failed
             if !admission.proxy_contact
-                || admission.surface_clearance_mm > SECURE_GRAB_SURFACE_CLEARANCE_MAX_MM
+                || admission.surface_clearance_um > SECURE_GRAB_SURFACE_CLEARANCE_MAX_UM
             {
                 self.failure = Some(GrabFailure::NoPhysicalContact);
             } else if admission.contact_duration_ticks < SECURE_GRAB_MIN_CONTACT_TICKS {
                 self.failure = Some(GrabFailure::ContactTooBrief);
             } else if !admission.temporal_overlap {
                 self.failure = Some(GrabFailure::TemporalMismatch);
-            } else if admission.prohibited_penetration_mm > PROHIBITED_PENETRATION_MAX_MM {
+            } else if admission.prohibited_penetration_um > PROHIBITED_PENETRATION_MAX_UM {
                 self.failure = Some(GrabFailure::ProhibitedPenetration);
             }
             self.state = GrabState::ReleaseOrRecovery;

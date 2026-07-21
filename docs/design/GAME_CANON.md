@@ -31,7 +31,7 @@ This document is the locked design canon for Just Dodge. Where existing docs con
 - **Windowing:** winit 0.30.
 - **Math:** glam 0.28.
 - **Audio:** rodio or kira (decided at implementation).
-- **Physics:** none for prototype; deterministic geometric collision only.
+- **Physics:** deterministic fixed-step contact, active-ragdoll, injury and bounded per-object material/SDF truth. Neural motion, rendering and asynchronous remeshing consume or propose against truth; they never rewrite it.
 - **Networking:** added only after local vertical slice is accepted fun.
 
 This overrides any older doc language describing a "minimal triangle prototype" or "Godot project." The current repository is a Rust/wgpu custom engine.
@@ -55,6 +55,7 @@ This overrides any older doc language describing a "minimal triangle prototype" 
 - Player mode must never show placeholder UI or debug overlays.
 - No production scope advance until the corresponding prototype report says CONTINUE and the evidence gate passes.
 - Hardship or resource constraints do not justify fallbacks, placeholders, or reduced fidelity.
+- Character, equipment, weapon grip and player-camera promotion must satisfy `CHARACTER_EQUIPMENT_PROMOTION_CONTRACT.md` and the permanent `../quality/ADVERSARIAL_VISUAL_CONTRACT.md`. A still, thumbnail, contact sheet, machine-only visual verdict or generated label is diagnostic only.
 
 ## Drift Resolutions
 

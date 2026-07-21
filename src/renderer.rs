@@ -251,7 +251,19 @@ fn build_solid_mesh_object(
 ) -> MeshObject {
     let mesh = asset::load_binary(mesh_path)
         .unwrap_or_else(|error| panic!("failed to load {label} mesh {mesh_path}: {error}"));
-    let (vertex_buffer, index_buffer, index_count) = build_mesh_buffers(device, &mesh, label);
+    build_solid_mesh_object_from_mesh(device, queue, uniform_bgl, texture_bgl, &mesh, label, rgba)
+}
+
+fn build_solid_mesh_object_from_mesh(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    uniform_bgl: &wgpu::BindGroupLayout,
+    texture_bgl: &wgpu::BindGroupLayout,
+    mesh: &asset::MeshData,
+    label: &str,
+    rgba: [u8; 4],
+) -> MeshObject {
+    let (vertex_buffer, index_buffer, index_count) = build_mesh_buffers(device, mesh, label);
     let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some(&format!("{label} UB")),
         size: std::mem::size_of::<ObjectUniform>() as u64,
@@ -289,6 +301,37 @@ fn build_solid_mesh_object(
         uniform_bind_group,
         texture_bind_group,
         model: Mat4::IDENTITY,
+    }
+}
+
+fn lifecycle_qa_weapon_mesh() -> asset::MeshData {
+    let corners = [
+        [-0.025, -0.025, 0.0],
+        [0.025, -0.025, 0.0],
+        [0.025, 0.025, 0.0],
+        [-0.025, 0.025, 0.0],
+        [-0.025, -0.025, 1.2],
+        [0.025, -0.025, 1.2],
+        [0.025, 0.025, 1.2],
+        [-0.025, 0.025, 1.2],
+    ];
+    let mut vertices = Vec::with_capacity(24);
+    let mut normals = Vec::with_capacity(24);
+    let mut uvs = Vec::with_capacity(16);
+    for corner in corners {
+        vertices.extend_from_slice(&corner);
+        let normal = Vec3::from_array(corner).normalize_or_zero();
+        normals.extend_from_slice(&normal.to_array());
+        uvs.extend_from_slice(&[0.0, 0.0]);
+    }
+    asset::MeshData {
+        vertices,
+        normals,
+        uvs,
+        indices: vec![
+            0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7,
+            3, 3, 7, 4, 3, 4, 0,
+        ],
     }
 }
 
@@ -509,6 +552,34 @@ impl Renderer {
         config: &wgpu::SurfaceConfiguration,
         scene: SceneProfile,
         assets: &Path,
+    ) -> Self {
+        Self::new_internal(device, queue, config, scene, assets, None)
+    }
+
+    pub fn new_lifecycle_qa(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        config: &wgpu::SurfaceConfiguration,
+        assets: &Path,
+        mesh: &asset::SkinnedMeshData,
+    ) -> Self {
+        Self::new_internal(
+            device,
+            queue,
+            config,
+            SceneProfile::FlatArena,
+            assets,
+            Some(mesh),
+        )
+    }
+
+    fn new_internal(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        config: &wgpu::SurfaceConfiguration,
+        scene: SceneProfile,
+        assets: &Path,
+        lifecycle_qa_mesh: Option<&asset::SkinnedMeshData>,
     ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
@@ -1020,15 +1091,21 @@ impl Renderer {
 
         // --- Skinned C0 armored-duelist carriers ---
         let mut skinned: Vec<SkinnedObject> = Vec::new();
-        let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
-            assets
-                .join("source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
-                .to_string_lossy()
-                .into_owned()
-        });
-        let mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
-            panic!("failed to load C0 armored duelist {skin_path}: {error}")
-        });
+        let loaded_mesh;
+        let mesh = if let Some(mesh) = lifecycle_qa_mesh {
+            mesh
+        } else {
+            let skin_path = std::env::var("JUST_DODGE_C0_SKIN").unwrap_or_else(|_| {
+                assets
+                    .join("source/meshy/c0_armored_duelist_001/cooked/c0_armored_duelist.bin")
+                    .to_string_lossy()
+                    .into_owned()
+            });
+            loaded_mesh = asset::load_skinned(&skin_path).unwrap_or_else(|error| {
+                panic!("failed to load C0 armored duelist {skin_path}: {error}")
+            });
+            &loaded_mesh
+        };
         assert_eq!(
             mesh.bones.len(),
             24,
@@ -1078,7 +1155,9 @@ impl Renderer {
             // The debug-mannequin loop deliberately uses an untextured neutral
             // carrier so joint/weight defects stay readable. Legacy paths keep
             // their explicit asset texture behavior.
-            let (stv, sts) = if std::env::var_os("JUST_DODGE_C0_FLAT_COLOR").is_some() {
+            let (stv, sts) = if lifecycle_qa_mesh.is_some()
+                || std::env::var_os("JUST_DODGE_C0_FLAT_COLOR").is_some()
+            {
                 build_solid_texture(device, queue, [184, 190, 198, 255])
             } else {
                 let texture_path = std::env::var_os("JUST_DODGE_C0_BASE_COLOR")
@@ -1138,28 +1217,34 @@ impl Renderer {
             mesh.bones.len()
         );
 
-        let first_person_weapon = build_solid_mesh_object(
-            device,
-            queue,
-            &uniform_bgl,
-            &texture_bgl,
-            &assets
-                .join("weapons/w0_sword_assembled.bin")
-                .to_string_lossy(),
-            "W0 first-person longsword",
-            [142, 151, 160, 255],
-        );
-        let opponent_weapon = build_solid_mesh_object(
-            device,
-            queue,
-            &uniform_bgl,
-            &texture_bgl,
-            &assets
-                .join("weapons/w0_sword_assembled.bin")
-                .to_string_lossy(),
-            "W0 opponent longsword",
-            [142, 151, 160, 255],
-        );
+        let lifecycle_qa_weapon = lifecycle_qa_mesh.is_some().then(lifecycle_qa_weapon_mesh);
+        let build_weapon = |label: &str| {
+            if let Some(mesh) = lifecycle_qa_weapon.as_ref() {
+                build_solid_mesh_object_from_mesh(
+                    device,
+                    queue,
+                    &uniform_bgl,
+                    &texture_bgl,
+                    mesh,
+                    label,
+                    [142, 151, 160, 255],
+                )
+            } else {
+                build_solid_mesh_object(
+                    device,
+                    queue,
+                    &uniform_bgl,
+                    &texture_bgl,
+                    &assets
+                        .join("weapons/w0_sword_assembled.bin")
+                        .to_string_lossy(),
+                    label,
+                    [142, 151, 160, 255],
+                )
+            }
+        };
+        let first_person_weapon = build_weapon("W0 first-person longsword");
+        let opponent_weapon = build_weapon("W0 opponent longsword");
 
         Self {
             pipeline,

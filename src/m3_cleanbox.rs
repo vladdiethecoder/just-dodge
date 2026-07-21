@@ -79,25 +79,25 @@ impl M3CleanboxWorld {
 
 fn submit_tick(session: &mut m3::Session, tick: DuelWorldTruthTick) -> Result<(), M3CleanboxError> {
     let truth_frame = tick.contact_batch.truth_frame;
-    let contact = tick
-        .contact_batch
-        .contact
-        .map(|contact| m3::PhysicalContact {
-            attacker: match contact.attacker {
-                truth::Side::Player => m3::Side::Player,
-                truth::Side::Opponent => m3::Side::Opponent,
-            },
-            surface: match contact.surface {
-                truth::ContactSurface::Body => m3::ContactSurface::Body,
-                truth::ContactSurface::Guard => m3::ContactSurface::Guard,
-            },
-            region: m3::BodyRegion::Torso,
-            severity: 1,
-        });
+    let to_m3_contact = |contact: truth::ContactGeometry| m3::PhysicalContact {
+        attacker: match contact.attacker {
+            truth::Side::Player => m3::Side::Player,
+            truth::Side::Opponent => m3::Side::Opponent,
+        },
+        surface: match contact.surface {
+            truth::ContactSurface::Body => m3::ContactSurface::Body,
+            truth::ContactSurface::Guard => m3::ContactSurface::Guard,
+        },
+        region: m3::BodyRegion::Torso,
+        severity: 1,
+    };
+    let contact = tick.contact_batch.contact.map(to_m3_contact);
+    let opposing_contact = tick.contact_batch.opposing_contact.map(to_m3_contact);
     session
         .submit_physical_contact(m3::PhysicalContactBatch {
             truth_frame,
             contact,
+            opposing_contact,
         })
         .map_err(M3CleanboxError::Submit)?;
     Ok(())
@@ -149,5 +149,74 @@ mod tests {
         assert_eq!(world.next_physics_tick(), 2);
         session.tick();
         assert_ne!(session.game.snapshot().phase, m3::Phase::Resolve);
+    }
+
+    #[test]
+    fn measured_strike_exchange_preserves_bilateral_contacts() {
+        let mut session = m3::Session::new(2);
+        while session.game.snapshot().phase != m3::Phase::Plan {
+            session.tick();
+        }
+        session
+            .apply(m3::Side::Player, m3::Input::Select(m3::Action::Strike))
+            .unwrap();
+        session
+            .apply(m3::Side::Opponent, m3::Input::Select(m3::Action::Strike))
+            .unwrap();
+        session.apply(m3::Side::Player, m3::Input::Commit).unwrap();
+        session
+            .apply(m3::Side::Opponent, m3::Input::Commit)
+            .unwrap();
+        while session.game.snapshot().phase != m3::Phase::Resolve {
+            session.tick();
+        }
+
+        let mut world = M3CleanboxWorld::new();
+        assert!(
+            world
+                .submit_resolve_packet(&mut session, vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0),)
+                .unwrap()
+        );
+        session.tick();
+        assert!(session.game.snapshot().last_contact.is_some());
+        assert!(session.game.snapshot().last_opposing_contact.is_some());
+    }
+
+    #[test]
+    fn repeated_measured_bilateral_strikes_end_in_replayable_draw() {
+        let mut session = m3::Session::new(3);
+        let mut world = M3CleanboxWorld::new();
+        for _ in 0..3 {
+            while session.game.snapshot().phase != m3::Phase::Plan {
+                session.tick();
+            }
+            session
+                .apply(m3::Side::Player, m3::Input::Select(m3::Action::Strike))
+                .unwrap();
+            session
+                .apply(m3::Side::Opponent, m3::Input::Select(m3::Action::Strike))
+                .unwrap();
+            session.apply(m3::Side::Player, m3::Input::Commit).unwrap();
+            session
+                .apply(m3::Side::Opponent, m3::Input::Commit)
+                .unwrap();
+            while session.game.snapshot().phase != m3::Phase::Resolve {
+                session.tick();
+            }
+            assert!(
+                world
+                    .submit_resolve_packet(&mut session, vec3(0.0, 0.0, 1.0), vec3(0.0, 0.0, -1.0),)
+                    .unwrap()
+            );
+            session.tick();
+        }
+
+        assert_eq!(session.game.snapshot().phase, m3::Phase::MatchResult);
+        assert!(session.game.snapshot().draw);
+        assert!(session.game.snapshot().player.incapacitated());
+        assert!(session.game.snapshot().opponent.incapacitated());
+        let replayed = m3::replay(&session.replay).unwrap();
+        assert_eq!(replayed.snapshot(), session.game.snapshot());
+        assert_eq!(replayed.truth_hash(), session.game.truth_hash());
     }
 }

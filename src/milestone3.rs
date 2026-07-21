@@ -80,6 +80,7 @@ pub enum Outcome {
     PlayerWins,
     OpponentWins,
     Clash,
+    MutualHit,
 }
 
 /// Measured defender surface selected from a canonical 120 Hz contact batch.
@@ -108,6 +109,10 @@ pub struct PhysicalContact {
 pub struct PhysicalContactBatch {
     pub truth_frame: u32,
     pub contact: Option<PhysicalContact>,
+    /// Optional opposing-direction contact measured in the same 60 Hz truth
+    /// interval. Its attacker must differ from `contact` when both are present.
+    #[serde(default)]
+    pub opposing_contact: Option<PhysicalContact>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,6 +120,7 @@ pub enum ContactSubmissionError {
     NotResolving,
     WrongTruthFrame { expected: u32, received: u32 },
     Duplicate,
+    NonCanonicalBilateralOrder,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -190,9 +196,12 @@ pub struct Snapshot {
     pub opponent: Fighter,
     pub revealed: Option<(Action, Action)>,
     pub last_contact: Option<PhysicalContact>,
+    pub last_opposing_contact: Option<PhysicalContact>,
     pub last_outcome: Option<Outcome>,
     pub last_injury: Option<(Side, Injury)>,
+    pub last_opposing_injury: Option<(Side, Injury)>,
     pub winner: Option<Side>,
+    pub draw: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -246,9 +255,12 @@ impl Match {
                 opponent: Fighter::fresh(),
                 revealed: None,
                 last_contact: None,
+                last_opposing_contact: None,
                 last_outcome: None,
                 last_injury: None,
+                last_opposing_injury: None,
                 winner: None,
+                draw: false,
             },
             pending_physical_contact: None,
         }
@@ -288,6 +300,14 @@ impl Match {
                 expected,
                 received: batch.truth_frame,
             });
+        }
+        if let Some(opposing) = batch.opposing_contact {
+            let Some(primary) = batch.contact else {
+                return Err(ContactSubmissionError::NonCanonicalBilateralOrder);
+            };
+            if primary.attacker != Side::Player || opposing.attacker != Side::Opponent {
+                return Err(ContactSubmissionError::NonCanonicalBilateralOrder);
+            }
         }
         self.pending_physical_contact = Some(batch);
         Ok(())
@@ -367,7 +387,7 @@ impl Match {
             Phase::Reveal => self.enter(Phase::Resolve),
             Phase::Resolve => {
                 self.resolve();
-                if self.snapshot.winner.is_some() {
+                if self.snapshot.winner.is_some() || self.snapshot.draw {
                     self.enter(Phase::MatchResult);
                 } else {
                     self.enter(Phase::Consequence);
@@ -379,7 +399,9 @@ impl Match {
                 self.snapshot.opponent.clear_exchange();
                 self.snapshot.revealed = None;
                 self.snapshot.last_contact = None;
+                self.snapshot.last_opposing_contact = None;
                 self.snapshot.last_injury = None;
+                self.snapshot.last_opposing_injury = None;
                 self.enter(Phase::Observe);
             }
             Phase::Plan | Phase::MatchResult => unreachable!(),
@@ -426,25 +448,31 @@ impl Match {
             .take()
             .expect("Resolve requires an admitted physical packet");
         self.snapshot.last_contact = batch.contact;
-        let outcome = match batch.contact {
-            None
-            | Some(PhysicalContact {
-                surface: ContactSurface::Guard,
-                ..
-            }) => Outcome::Clash,
-            Some(PhysicalContact {
-                attacker: Side::Player,
-                surface: ContactSurface::Body,
-                ..
-            }) => Outcome::PlayerWins,
-            Some(PhysicalContact {
-                attacker: Side::Opponent,
-                surface: ContactSurface::Body,
-                ..
-            }) => Outcome::OpponentWins,
+        self.snapshot.last_opposing_contact = batch.opposing_contact;
+        let outcome = if batch.opposing_contact.is_some() {
+            Outcome::MutualHit
+        } else {
+            match batch.contact {
+                None
+                | Some(PhysicalContact {
+                    surface: ContactSurface::Guard,
+                    ..
+                }) => Outcome::Clash,
+                Some(PhysicalContact {
+                    attacker: Side::Player,
+                    surface: ContactSurface::Body,
+                    ..
+                }) => Outcome::PlayerWins,
+                Some(PhysicalContact {
+                    attacker: Side::Opponent,
+                    surface: ContactSurface::Body,
+                    ..
+                }) => Outcome::OpponentWins,
+            }
         };
         self.snapshot.last_outcome = Some(outcome);
         self.snapshot.last_injury = None;
+        self.snapshot.last_opposing_injury = None;
 
         if let Some(PhysicalContact {
             attacker,
@@ -462,7 +490,27 @@ impl Match {
             fighter.apply(injury);
             self.snapshot.last_injury = Some((victim, injury));
         }
-        self.snapshot.winner = if self.snapshot.player.incapacitated() {
+        if let Some(PhysicalContact {
+            attacker,
+            surface: ContactSurface::Body,
+            region,
+            severity,
+        }) = batch.opposing_contact
+        {
+            let injury = Injury { region, severity };
+            let victim = attacker.other();
+            let fighter = match victim {
+                Side::Player => &mut self.snapshot.player,
+                Side::Opponent => &mut self.snapshot.opponent,
+            };
+            fighter.apply(injury);
+            self.snapshot.last_opposing_injury = Some((victim, injury));
+        }
+        self.snapshot.draw =
+            self.snapshot.player.incapacitated() && self.snapshot.opponent.incapacitated();
+        self.snapshot.winner = if self.snapshot.draw {
+            None
+        } else if self.snapshot.player.incapacitated() {
             Some(Side::Opponent)
         } else if self.snapshot.opponent.incapacitated() {
             Some(Side::Player)
@@ -676,6 +724,11 @@ impl Session {
 
     pub fn apply(&mut self, side: Side, input: Input) -> Result<(), InputError> {
         self.game.apply(side, input)?;
+        if let Input::Restart { seed } = input {
+            self.replay = Replay::new(seed);
+            self.replay.hash_trace.push(self.game.truth_hash());
+            return Ok(());
+        }
         self.replay.events.push(ReplayEvent {
             frame: self.game.snapshot().frame,
             side,
@@ -773,9 +826,12 @@ fn canonical_hash(snapshot: &Snapshot) -> u64 {
     write_fighter(&mut bytes, snapshot.opponent);
     write_opt_actions(&mut bytes, snapshot.revealed);
     write_opt_contact(&mut bytes, snapshot.last_contact);
+    write_opt_contact(&mut bytes, snapshot.last_opposing_contact);
     write_opt_outcome(&mut bytes, snapshot.last_outcome);
     write_opt_injury(&mut bytes, snapshot.last_injury);
+    write_opt_injury(&mut bytes, snapshot.last_opposing_injury);
     write_opt_side(&mut bytes, snapshot.winner);
+    bytes.push(u8::from(snapshot.draw));
     fnv1a(&bytes)
 }
 
@@ -863,6 +919,7 @@ mod tests {
                     region: BodyRegion::Torso,
                     severity: 1,
                 }),
+                opposing_contact: None,
             })
             .unwrap();
         while session.game.snapshot().phase != Phase::Consequence
@@ -894,6 +951,7 @@ mod tests {
             game.submit_physical_contact(PhysicalContactBatch {
                 truth_frame: 1,
                 contact: None,
+                opposing_contact: None,
             }),
             Err(ContactSubmissionError::NotResolving)
         );
@@ -908,6 +966,7 @@ mod tests {
                 region: BodyRegion::Torso,
                 severity: 1,
             }),
+            opposing_contact: None,
         };
         assert_eq!(
             game.submit_physical_contact(PhysicalContactBatch {
@@ -923,6 +982,28 @@ mod tests {
         assert_eq!(
             game.submit_physical_contact(body_hit),
             Err(ContactSubmissionError::Duplicate)
+        );
+
+        let mut noncanonical = Match::new(10);
+        to_resolve(&mut noncanonical);
+        let frame = noncanonical.expected_contact_frame().unwrap();
+        assert_eq!(
+            noncanonical.submit_physical_contact(PhysicalContactBatch {
+                truth_frame: frame,
+                contact: Some(PhysicalContact {
+                    attacker: Side::Opponent,
+                    surface: ContactSurface::Body,
+                    region: BodyRegion::Torso,
+                    severity: 1,
+                }),
+                opposing_contact: Some(PhysicalContact {
+                    attacker: Side::Player,
+                    surface: ContactSurface::Body,
+                    region: BodyRegion::Torso,
+                    severity: 1,
+                }),
+            }),
+            Err(ContactSubmissionError::NonCanonicalBilateralOrder)
         );
     }
 
@@ -950,6 +1031,7 @@ mod tests {
                     region: BodyRegion::Head,
                     severity: 2,
                 }),
+                opposing_contact: None,
             })
             .unwrap();
         body_game.tick();
@@ -968,6 +1050,7 @@ mod tests {
                     region: BodyRegion::Arms,
                     severity: 9,
                 }),
+                opposing_contact: None,
             })
             .unwrap();
         guard_game.tick();
@@ -1018,6 +1101,84 @@ mod tests {
         );
         assert_eq!(session.game.snapshot().phase, Phase::Observe);
         assert_eq!(session.game.snapshot().seed, 99);
+    }
+
+    #[test]
+    fn restart_resets_session_replay_to_canonical_initial_state() {
+        let mut session = Session::new(2);
+        while session.game.snapshot().phase != Phase::MatchResult {
+            resolve_exchange(&mut session, Action::Strike, Action::Grab);
+            if session.game.snapshot().phase != Phase::MatchResult {
+                while session.game.snapshot().phase != Phase::Observe {
+                    session.tick();
+                }
+            }
+        }
+
+        session
+            .apply(Side::Player, Input::Restart { seed: 99 })
+            .unwrap();
+        let canonical = Session::new(99);
+
+        assert_eq!(session.game.snapshot(), canonical.game.snapshot());
+        assert_eq!(session.game.truth_hash(), canonical.game.truth_hash());
+        assert_eq!(session.replay, canonical.replay);
+        assert_eq!(
+            replay(&session.replay).unwrap().snapshot(),
+            canonical.game.snapshot()
+        );
+    }
+
+    #[test]
+    fn bilateral_mutual_incapacitation_is_one_replayable_draw_terminal() {
+        let mut session = Session::new(0x4d33_d2a0);
+        while session.game.snapshot().phase != Phase::Plan {
+            session.tick();
+        }
+        session
+            .apply(Side::Player, Input::Select(Action::Strike))
+            .unwrap();
+        session
+            .apply(Side::Opponent, Input::Select(Action::Strike))
+            .unwrap();
+        session.apply(Side::Player, Input::Commit).unwrap();
+        session.apply(Side::Opponent, Input::Commit).unwrap();
+        while session.game.snapshot().phase != Phase::Resolve {
+            session.tick();
+        }
+        let frame = session.game.expected_contact_frame().unwrap();
+        session
+            .submit_physical_contact(PhysicalContactBatch {
+                truth_frame: frame,
+                contact: Some(PhysicalContact {
+                    attacker: Side::Player,
+                    surface: ContactSurface::Body,
+                    region: BodyRegion::Head,
+                    severity: 2,
+                }),
+                opposing_contact: Some(PhysicalContact {
+                    attacker: Side::Opponent,
+                    surface: ContactSurface::Body,
+                    region: BodyRegion::Head,
+                    severity: 2,
+                }),
+            })
+            .unwrap();
+        session.tick();
+
+        assert_eq!(session.game.snapshot().phase, Phase::MatchResult);
+        assert!(session.game.snapshot().draw);
+        assert_eq!(session.game.snapshot().winner, None);
+        let terminal_hash = session.game.truth_hash();
+        let terminal_trace_len = session.replay.hash_trace.len();
+        for _ in 0..8 {
+            session.tick();
+        }
+        assert_eq!(session.game.truth_hash(), terminal_hash);
+        assert_eq!(session.replay.hash_trace.len(), terminal_trace_len);
+        let replayed = replay(&session.replay).unwrap();
+        assert_eq!(replayed.snapshot(), session.game.snapshot());
+        assert_eq!(replayed.truth_hash(), terminal_hash);
     }
 
     #[test]
@@ -1149,6 +1310,7 @@ mod tests {
             .submit_physical_contact(PhysicalContactBatch {
                 truth_frame: session.game.expected_contact_frame().unwrap(),
                 contact: None,
+                opposing_contact: None,
             })
             .unwrap();
         session.tick();
