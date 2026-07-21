@@ -47,7 +47,7 @@
 5. Load in game_loop, capture native screenshot + GIF
 6. Show owner: visual checklist → Accept/Reject/Needs Changes
 **Baseline:** One completed but uninspected Meshy task (`019f85a5-b944-7d64-8e54-6dcbdf5619d7`) exists. Inspect it first; if acceptable, use it; if not, generate fresh.
-**Current Status:** IN PROGRESS — GAME_CANON.md amended. Asset pipeline research complete at `docs/research/FRONTIER_GENERATIVE_ASSET_PROMPTING_20260721.md`. Meshy web workflow preferred over API/MCP for visual iteration.
+**Current Status:** IN PROGRESS — Two API-generated Meshy candidates (019f85a5, 019f85f0) REJECTED after 500-defect audit. 60 credits spent, zero usable output. Hard numeric gates established (≤25K verts, ≤50K tris, watertight, ≥24 bones). Next: owner must review reference images BEFORE any Meshy credit spend. Meshy web interface mandatory for next attempt; API/MCP locked to repeatable batches only. Full audit: `docs/reports/PH1_FIGHTER_001_500_DEFECT_AUDIT.json` (SHA-256: `2e731dcb`). game-asset-pipeline skill hardened with API-vs-Web Gate and Reference Image Quality Gates.
 
 ## Pending Units
 
