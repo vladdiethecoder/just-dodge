@@ -247,6 +247,7 @@ struct App {
     verify: bool,
     journey_limit: Option<usize>,
     journeys_completed: usize,
+    journey_evidence: JourneyEvidence,
     // Telemetry + locomotion
     telemetry: telemetry::Telemetry,
     player_pos: Vec3,
@@ -272,6 +273,101 @@ fn fresh_match_authorities(seed: u64) -> (m3::Session, m3_cleanbox::M3CleanboxWo
         m3_cleanbox::M3CleanboxWorld::new(),
         m3::SeededAi::new(seed),
     )
+}
+
+const JOURNEY_QA_TICKS_PER_RENDER: u32 = 16;
+const JOURNEY_QA_MAX_TRUTH_TICKS: u32 = 20_000;
+const JOURNEY_STAGE_BOOT: u16 = 1 << 0;
+const JOURNEY_STAGE_MENU: u16 = 1 << 1;
+const JOURNEY_STAGE_SETUP: u16 = 1 << 2;
+const JOURNEY_STAGE_COUNTDOWN: u16 = 1 << 3;
+const JOURNEY_STAGE_DUEL: u16 = 1 << 4;
+const JOURNEY_STAGE_RESULT: u16 = 1 << 5;
+const JOURNEY_STAGE_REPLAY: u16 = 1 << 6;
+const JOURNEY_FIRST_REQUIRED: u16 = JOURNEY_STAGE_BOOT
+    | JOURNEY_STAGE_MENU
+    | JOURNEY_STAGE_SETUP
+    | JOURNEY_STAGE_COUNTDOWN
+    | JOURNEY_STAGE_DUEL
+    | JOURNEY_STAGE_RESULT
+    | JOURNEY_STAGE_REPLAY;
+const JOURNEY_REMATCH_REQUIRED: u16 = JOURNEY_STAGE_SETUP
+    | JOURNEY_STAGE_COUNTDOWN
+    | JOURNEY_STAGE_DUEL
+    | JOURNEY_STAGE_RESULT
+    | JOURNEY_STAGE_REPLAY;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct JourneyEvidence {
+    truth_ticks: u32,
+    stage_mask: u16,
+}
+
+impl JourneyEvidence {
+    fn observe(&mut self, stage: runtime_flow::FlowStage) {
+        self.stage_mask |= match stage {
+            runtime_flow::FlowStage::Boot => JOURNEY_STAGE_BOOT,
+            runtime_flow::FlowStage::Menu => JOURNEY_STAGE_MENU,
+            runtime_flow::FlowStage::MatchSetup => JOURNEY_STAGE_SETUP,
+            runtime_flow::FlowStage::Countdown => JOURNEY_STAGE_COUNTDOWN,
+            runtime_flow::FlowStage::Observe
+            | runtime_flow::FlowStage::Replan
+            | runtime_flow::FlowStage::Plan
+            | runtime_flow::FlowStage::Commit
+            | runtime_flow::FlowStage::Reveal
+            | runtime_flow::FlowStage::Resolve
+            | runtime_flow::FlowStage::Consequence => JOURNEY_STAGE_DUEL,
+            runtime_flow::FlowStage::Result => JOURNEY_STAGE_RESULT,
+            runtime_flow::FlowStage::Replay => JOURNEY_STAGE_REPLAY,
+            runtime_flow::FlowStage::Paused | runtime_flow::FlowStage::Quit => 0,
+        };
+    }
+
+    fn record_truth_tick(&mut self) -> Result<(), &'static str> {
+        if self.truth_ticks >= JOURNEY_QA_MAX_TRUTH_TICKS {
+            return Err("live journey exceeded deterministic truth-tick budget");
+        }
+        self.truth_ticks += 1;
+        Ok(())
+    }
+
+    fn has_required_stages(self, journey_index: usize) -> bool {
+        let required = if journey_index == 0 {
+            JOURNEY_FIRST_REQUIRED
+        } else {
+            JOURNEY_REMATCH_REQUIRED
+        };
+        self.stage_mask & required == required
+    }
+
+    fn reset_for_rematch(&mut self, initial_stage: runtime_flow::FlowStage) {
+        *self = Self::default();
+        self.observe(initial_stage);
+    }
+}
+
+fn initial_runtime_flow(journey_mode: bool, autoplay: bool) -> runtime_flow::RuntimeFlow {
+    if journey_mode {
+        runtime_flow::RuntimeFlow::boot()
+    } else if autoplay {
+        runtime_flow::RuntimeFlow::autoplay()
+    } else {
+        runtime_flow::RuntimeFlow::menu()
+    }
+}
+
+const fn qa_ticks_for_frame(journey_mode: bool, normal_ticks: u32) -> u32 {
+    if journey_mode {
+        JOURNEY_QA_TICKS_PER_RENDER
+    } else {
+        normal_ticks
+    }
+}
+
+fn runtime_replay_path(timestamp_seconds: u64, seed: u64) -> PathBuf {
+    PathBuf::from(format!(
+        "/tmp/just_dodge_m3_replay_{timestamp_seconds}_{seed:016x}.ron"
+    ))
 }
 
 impl ApplicationHandler for App {
@@ -372,6 +468,15 @@ impl ApplicationHandler for App {
                 self.last_frame_time = Instant::now();
                 self.fixed_step_clock = FixedStepClock::default();
                 eprintln!("main: renderer + UI init done");
+                if self.journey_limit.is_some() {
+                    let snapshot = self.session.game.snapshot();
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    assert!(self.flow.finish_boot(), "journey QA must start in Boot");
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    assert!(self.flow.start_match(), "journey QA must start from Menu");
+                    self.journey_evidence.observe(self.flow.stage(snapshot));
+                    eprintln!("SG02_LIVE_FLOW stage=Boot>Menu>MatchSetup");
+                }
             }
 
             if let Some(w) = self.window.as_ref() {
@@ -505,12 +610,35 @@ impl ApplicationHandler for App {
                         std::process::exit(1);
                     }
                     if let Some(limit) = self.journey_limit {
+                        let stage = self.flow.stage(self.session.game.snapshot());
+                        self.journey_evidence.observe(stage);
+                        if stage == runtime_flow::FlowStage::Result {
+                            let snapshot = self.session.game.snapshot().clone();
+                            self.flow
+                                .enter_replay(&snapshot, self.session.replay.clone())
+                                .expect("verified live journey replay must enter from Result");
+                            self.journey_evidence
+                                .observe(runtime_flow::FlowStage::Replay);
+                            eprintln!("SG02_LIVE_FLOW stage=Result>Replay");
+                            return;
+                        }
+                        if stage != runtime_flow::FlowStage::Replay || !self.flow.replay_finished()
+                        {
+                            return;
+                        }
+                        assert!(
+                            self.journey_evidence
+                                .has_required_stages(self.journeys_completed),
+                            "live journey omitted a required outer-flow stage"
+                        );
                         self.journeys_completed += 1;
                         eprintln!(
-                            "SG02_LIVE_JOURNEY index={} seed={} terminal_hash={:016x} replay_verified=true",
+                            "SG02_LIVE_JOURNEY index={} seed={} terminal_hash={:016x} truth_ticks={} stage_mask={:02x} replay_verified=true",
                             self.journeys_completed,
                             self.session.game.snapshot().seed,
-                            self.session.game.truth_hash()
+                            self.session.game.truth_hash(),
+                            self.journey_evidence.truth_ticks,
+                            self.journey_evidence.stage_mask,
                         );
                         if self.journeys_completed >= limit {
                             eprintln!(
@@ -522,6 +650,13 @@ impl ApplicationHandler for App {
                             let next_seed = self.session.game.snapshot().seed.wrapping_add(1);
                             assert!(self.flow.begin_rematch(self.session.game.snapshot()));
                             self.reset_match(next_seed);
+                            self.journey_evidence
+                                .reset_for_rematch(self.flow.stage(self.session.game.snapshot()));
+                            eprintln!(
+                                "SG02_LIVE_REMATCH seed={} canonical_initial_hash={:016x} stage=MatchSetup",
+                                next_seed,
+                                self.session.game.truth_hash()
+                            );
                         }
                         return;
                     }
@@ -767,9 +902,18 @@ impl App {
 
         // Advance and hash-record exactly once per authoritative 60 Hz tick.
         // A redraw can run zero or multiple ticks; fractional time is retained.
-        let ticks = self.fixed_step_clock.push_elapsed(real_dt);
+        let normal_ticks = self.fixed_step_clock.push_elapsed(real_dt);
+        let ticks = qa_ticks_for_frame(self.journey_limit.is_some(), normal_ticks);
         for _ in 0..ticks {
             let stage = self.flow.stage(self.session.game.snapshot());
+            if self.journey_limit.is_some() {
+                self.journey_evidence.observe(stage);
+                if stage.captures_cursor() {
+                    self.journey_evidence
+                        .record_truth_tick()
+                        .expect("live journey exceeded deterministic truth-tick budget");
+                }
+            }
             match stage {
                 runtime_flow::FlowStage::MatchSetup | runtime_flow::FlowStage::Countdown => {
                     self.flow.tick_establishing();
@@ -800,6 +944,17 @@ impl App {
                         };
                         let player_root = fighter_root(roots, m3::Side::Player);
                         let opponent_root = fighter_root(roots, m3::Side::Opponent);
+                        if self.journey_limit.is_some() {
+                            self.cleanbox_world
+                                .submit_resolve_packet(
+                                    &mut self.session,
+                                    player_root,
+                                    opponent_root,
+                                )
+                                .expect("journey QA canonical cleanbox packet must be valid");
+                            self.session.tick();
+                            continue;
+                        }
                         let player_strike_frame = hero_strike_frame(roots, m3::Side::Player)
                             .unwrap_or(hero_strike::CONTACT_FRAME);
                         let opponent_strike_frame = hero_strike_frame(roots, m3::Side::Opponent)
@@ -1242,7 +1397,7 @@ impl App {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let path = PathBuf::from(format!("/tmp/just_dodge_m3_replay_{ts}.ron"));
+        let path = runtime_replay_path(ts, self.session.game.snapshot().seed);
         match self.session.replay.save(&path) {
             Ok(()) => match m3::verify_replay_file(&path) {
                 Ok(verification)
@@ -1815,6 +1970,72 @@ mod fixed_step_tests {
         }
     }
 
+    #[test]
+    fn live_journey_mode_starts_at_boot_and_preserves_production_autoplay() {
+        let snapshot = m3::Match::new(0x4d33_0220).snapshot().clone();
+        assert_eq!(
+            initial_runtime_flow(true, true).stage(&snapshot),
+            runtime_flow::FlowStage::Boot
+        );
+        assert_eq!(
+            initial_runtime_flow(false, true).stage(&snapshot),
+            runtime_flow::FlowStage::Observe
+        );
+        assert_eq!(
+            initial_runtime_flow(false, false).stage(&snapshot),
+            runtime_flow::FlowStage::Menu
+        );
+    }
+
+    #[test]
+    fn live_journey_evidence_requires_full_first_flow_replay_and_bounded_ticks() {
+        let mut evidence = JourneyEvidence::default();
+        for stage in [
+            runtime_flow::FlowStage::Boot,
+            runtime_flow::FlowStage::Menu,
+            runtime_flow::FlowStage::MatchSetup,
+            runtime_flow::FlowStage::Countdown,
+            runtime_flow::FlowStage::Observe,
+            runtime_flow::FlowStage::Result,
+            runtime_flow::FlowStage::Replay,
+        ] {
+            evidence.observe(stage);
+        }
+        assert!(evidence.has_required_stages(0));
+        assert_eq!(evidence.stage_mask, JOURNEY_FIRST_REQUIRED);
+
+        evidence.reset_for_rematch(runtime_flow::FlowStage::MatchSetup);
+        for stage in [
+            runtime_flow::FlowStage::Countdown,
+            runtime_flow::FlowStage::Observe,
+            runtime_flow::FlowStage::Result,
+            runtime_flow::FlowStage::Replay,
+        ] {
+            evidence.observe(stage);
+        }
+        assert!(evidence.has_required_stages(1));
+        assert!(!evidence.has_required_stages(0));
+
+        for _ in 0..JOURNEY_QA_MAX_TRUTH_TICKS {
+            evidence.record_truth_tick().unwrap();
+        }
+        assert_eq!(
+            evidence.record_truth_tick(),
+            Err("live journey exceeded deterministic truth-tick budget")
+        );
+        assert_eq!(qa_ticks_for_frame(true, 0), JOURNEY_QA_TICKS_PER_RENDER);
+        assert_eq!(qa_ticks_for_frame(false, 3), 3);
+    }
+
+    #[test]
+    fn accelerated_journeys_cannot_overwrite_each_others_replay_files() {
+        let first = runtime_replay_path(42, 0x4d33_0001);
+        let second = runtime_replay_path(42, 0x4d33_0002);
+        assert_ne!(first, second);
+        assert!(first.to_string_lossy().contains("000000004d330001"));
+        assert!(second.to_string_lossy().contains("000000004d330002"));
+    }
+
     fn hashes_at_render_rate(render_hz: u32) -> (Vec<u64>, Vec<replay::MatchEvent>) {
         let mut clock = FixedStepClock::default();
         let mut truth = truth::CombatTruth::new();
@@ -2107,11 +2328,7 @@ fn main() {
         session,
         cleanbox_world,
         ai,
-        flow: if autoplay {
-            runtime_flow::RuntimeFlow::autoplay()
-        } else {
-            runtime_flow::RuntimeFlow::menu()
-        },
+        flow: initial_runtime_flow(journey_limit.is_some(), autoplay),
         cursor_captured: false,
         replay_saved: false,
         replay_verified: false,
@@ -2119,6 +2336,7 @@ fn main() {
         verify,
         journey_limit,
         journeys_completed: 0,
+        journey_evidence: JourneyEvidence::default(),
         telemetry: telemetry::Telemetry::new(telemetry_enabled),
         player_pos: vec3(0.0, 0.0, 1.0),
         show_debug: false,

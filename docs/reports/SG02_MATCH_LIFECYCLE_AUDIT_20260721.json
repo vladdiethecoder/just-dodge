@@ -1,0 +1,138 @@
+{
+  "schema": "just-dodge-sg02-match-lifecycle-audit-v1",
+  "unit": "SG02-MATCH-LIFECYCLE-AUDIT-001",
+  "observed_utc_date": "2026-07-21",
+  "subject_revision": "79fc37e4550fee9f6badfa5c771d8c38065c51f7",
+  "verdict": "MACHINE_PASS_VISUAL_CAPTURE_BLOCKED",
+  "sg02_can_proceed_to_sg03": false,
+  "headless_acceptance": [
+    {
+      "criterion": "boot_menu_setup_countdown_and_active_duel",
+      "status": "PASS",
+      "evidence": [
+        "src/runtime_flow.rs:455-511",
+        "src/runtime_flow.rs:679-749"
+      ]
+    },
+    {
+      "criterion": "illegal_transitions_fail_closed",
+      "status": "PASS",
+      "evidence": [
+        "src/runtime_flow.rs:679-749",
+        "9 runtime_flow tests passed"
+      ]
+    },
+    {
+      "criterion": "terminal_conditions_fire_once",
+      "status": "PASS",
+      "evidence": [
+        "milestone3::tests::terminal_session_does_not_append_post_result_replay_ticks passed",
+        "src/main.rs:864-869 replay_saved one-shot guard"
+      ]
+    },
+    {
+      "criterion": "rematch_restores_canonical_initial_hash_and_match_scoped_authorities",
+      "status": "PASS",
+      "evidence": [
+        "fixed_step_tests::fresh_match_authorities_reset_truth_physics_and_ai passed",
+        "milestone3::tests::restart_resets_session_replay_to_canonical_initial_state passed",
+        "src/main.rs:605-625"
+      ]
+    },
+    {
+      "criterion": "completed_match_replay_reconstructs_exact_truth",
+      "status": "PASS",
+      "evidence": [
+        "milestone3::tests::replay_reconstructs_every_hash_of_a_complete_match passed",
+        "runtime_flow::tests::replay_playback_reconstructs_hashes_without_mutating_live_truth passed"
+      ]
+    },
+    {
+      "criterion": "ten_consecutive_headless_journeys",
+      "status": "PASS",
+      "evidence": [
+        "fixed_step_tests::ten_consecutive_autoplay_journeys_replay_and_rematch_canonically passed"
+      ]
+    }
+  ],
+  "live_acceptance": {
+    "command": "target/release/just-dodge --journeys 10 --resolution 960x540",
+    "fresh_release_rebuild": true,
+    "window_created": true,
+    "first_frame_presented": true,
+    "renderer_initialized": true,
+    "elapsed_seconds_before_bounded_abort": 321,
+    "journeys_completed": 0,
+    "status": "FAIL",
+    "log_local_path": "/tmp/just-dodge-sg02-live-journeys.log",
+    "failures": [
+      {
+        "id": "initial_outer_flow_bypassed",
+        "observed": "--journeys implies autoplay and constructs RuntimeFlow::autoplay(), whose initial screen is Duel.",
+        "source": [
+          "src/main.rs:2004-2008",
+          "src/main.rs:2110-2114",
+          "src/runtime_flow.rs:196-203"
+        ],
+        "required": "The live journey must traverse Boot -> Menu -> MatchSetup -> Countdown -> Duel rather than starting inside Duel."
+      },
+      {
+        "id": "no_bounded_live_completion",
+        "observed": "The live harness emitted no SG02_LIVE_JOURNEY receipt before the 321-second bounded audit abort and has no per-journey truth-tick timeout.",
+        "required": "Fail closed within a deterministic truth-tick budget and complete ten accelerated but sequential 60 Hz truth journeys without developer input."
+      },
+      {
+        "id": "replay_stage_not_traversed_by_journey_driver",
+        "observed": "The journey completion path verifies a replay file at Result and immediately rematches; it does not enter and finish RuntimeFlow Replay before rematch.",
+        "source": [
+          "src/main.rs:497-526"
+        ],
+        "required": "Each audited lifecycle journey must exercise Result -> Replay -> Rematch."
+      },
+      {
+        "id": "visual_capture_surface_blocked",
+        "observed": "The native Wayland game window existed, but computer_use could not resolve it and direct KWin ScreenShot2 capture returned org.kde.KWin.ScreenShot2.Error.NoAuthorized.",
+        "required": "Use an authorized native capture path or in-engine GPU readback; do not fabricate a substitute image or click a permission prompt without owner authority."
+      }
+    ]
+  },
+  "repair_validation": {
+    "status": "MACHINE_PASS",
+    "command": "target/release/just-dodge --journeys 10 --resolution 960x540",
+    "log_local_path": "/tmp/just-dodge-sg02-live-journeys-final.log",
+    "receipt_verifier": "tools/qa/verify_sg02_live_journeys.py",
+    "journeys_completed": 10,
+    "first_seed": 5562789964732694528,
+    "last_seed": 5562789964732694537,
+    "max_truth_ticks": 406,
+    "first_stage_mask_hex": "7f",
+    "rematch_stage_mask_hex": "7c",
+    "replay_files_are_seed_unique": true,
+    "no_developer_control": true,
+    "truth_timing_changed_in_production": false,
+    "journey_contact_source": "canonical action/root cleanbox packet; QA-only and not visual/contact promotion evidence",
+    "audio_observation": "Missing r6k_strike_contact.wav failed loudly; no silent substitute was used. Audio completion is outside SG02 and remains a later-wave blocker.",
+    "visual_capture": {
+      "status": "BLOCKED",
+      "reason": "The user was actively using another foreground application. Authorized active-window capture selected that unrelated window, so the image was immediately deleted. The agent did not foreground Just Dodge or click a capture permission prompt.",
+      "required": "Obtain owner availability for a brief foreground capture or add audited in-engine GPU readback in a separate unit."
+    }
+  },
+  "next_unit": {
+    "id": "SG02-LIVE-JOURNEY-VISUAL-REVIEW-003",
+    "scope": [
+      "obtain owner availability for an authorized Just Dodge foreground capture without disturbing another active application",
+      "capture the actual native Boot/Menu/Setup/Countdown/Duel/Result/Replay journey surface",
+      "inspect lifecycle readability and confirm the procedural carrier is visibly labeled QA-only rather than production content",
+      "attach machine receipts and native captures to Evidence Review for named human decision"
+    ],
+    "forbidden": [
+      "truth-step changes",
+      "production autoplay",
+      "synthetic terminal outcomes",
+      "skipping outer lifecycle states",
+      "presentation-to-truth writes",
+      "fake visual evidence"
+    ]
+  }
+}
